@@ -3,19 +3,30 @@
 MelodyGen::MelodyGen(float fs) : sampleRate(fs) {
     phase = 0;
     frequency = 440.0;
+    targetFrequency = 440.0;
     timer = 0;
-    currentWaveform = TRIANGLE;
+    currentWaveform = SINE; // Começa com triângulo que é suave mas audível
     
-    // Defaults
+    // Padrões
     currentScale = MINOR;
-    rootKey = 0; // C
-    bpm = 120.0;
+    rootKey = 4; // E
+    bpm = 80.0;
     mood = 0.5;
-    rhythmDensity = 0.5;
+    rhythmDensity = 0.65; // Aumentado para favorecer notas mais longas
     
     currentDurationSamples = 12000;
     currentScaleDegree = 0;
     currentOctave = 4;
+    
+    // Suavização para portamento (glide) entre notas
+    frequencySmoothing = 0.998f; // Aumentado para menos "jumpy"
+    
+    // Envelope para evitar "clicks"
+    envelope = 0.0f;
+    noteOn = true;
+    isResting = false;
+    attackSamples = (int)(sampleRate * 0.005f); // 5ms attack
+    releaseSamples = (int)(sampleRate * 0.01f); // 10ms release
 }
 
 void MelodyGen::setWaveform(Waveform wave) {
@@ -33,12 +44,6 @@ float MelodyGen::mtof(int midiNote) {
 }
 
 int MelodyGen::getInterval(ScaleType scale, int degree) {
-    // Simple lookup for scale intervals within one octave
-    // Degree should be 0-6 for heptatonic, 0-4 for pentatonic
-    int safeDegree = abs(degree);
-    int octaveOffset = (degree / (scale == PENTATONIC_MIN ? 5 : 7)) * 12;
-    if (degree < 0) octaveOffset -= 12; // Handle negative steps roughly
-    
     int intervals[7];
     int count = 7;
 
@@ -47,55 +52,119 @@ int MelodyGen::getInterval(ScaleType scale, int degree) {
         case MINOR: { int t[]={0,2,3,5,7,8,10}; memcpy(intervals, t, sizeof(t)); break; }
         case PENTATONIC_MIN: { int t[]={0,3,5,7,10}; memcpy(intervals, t, sizeof(t)); count=5; break; }
         case BLUES: { int t[]={0,3,5,6,7,10}; memcpy(intervals, t, sizeof(t)); count=6; break; }
-        default: { int t[]={0,2,4,5,7,9,11}; memcpy(intervals, t, sizeof(t)); break; } // Default Major
+        default: { int t[]={0,2,4,5,7,9,11}; memcpy(intervals, t, sizeof(t)); break; } 
     }
+
+    int octaveOffset = 0;
+    int safeDegree = degree;
     
-    return intervals[safeDegree % count] + octaveOffset;
+    // Lógica robusta para oitavas negativas e positivas
+    if (degree >= 0) {
+        octaveOffset = (degree / count) * 12;
+        safeDegree = degree % count;
+    } else {
+        octaveOffset = ((degree - count + 1) / count) * 12;
+        safeDegree = (degree % count);
+        if(safeDegree < 0) safeDegree += count;
+    }
+
+    return intervals[safeDegree] + octaveOffset;
 }
 
 void MelodyGen::pickNextNote() {
-    // 1. Determine Duration based on BPM and Rhythm Density
-    float samplesPerBeat = (sampleRate * 60.0f) / bpm;
-    int r = esp_random() % 100;
+    noteOn = true;
     
-    // Higher rhythmDensity = more 16th notes, Lower = more quarter/half notes
-    if (r < (rhythmDensity * 80)) currentDurationSamples = samplesPerBeat / 4; // 16th
-    else if (r < 90) currentDurationSamples = samplesPerBeat / 2; // 8th
-    else currentDurationSamples = samplesPerBeat; // Quarter
+    // 1. Duração baseada no BPM e chance de pausa
+    float samplesPerBeat = (sampleRate * 60.0f) / bpm;
+    int r_rest = esp_random() % 100;
 
-    // 2. Determine Octave (Bass vs Melody) based on Mood
-    // Low mood = higher chance of bass
-    bool isBass = (esp_random() % 100) < ((1.0f - mood) * 40 + 10); 
-    currentOctave = isBass ? (2 + (esp_random()%2)) : (4 + (esp_random()%2));
+    if (r_rest < 15) { // Reduzir chance de pausa para favorecer notas mais longas
+        isResting = true;
+        currentDurationSamples = (long)(samplesPerBeat); // Pausa de uma semínima
+        return;
+    }
+    isResting = false;
 
-    // 3. Determine Scale Degree (Random Walk)
-    // Instead of random note, move -2, -1, 0, +1, +2 steps
-    int step = (esp_random() % 5) - 2; 
+    // Densidade Rítmica
+    int r_rhythm = esp_random() % 100;
+    if (r_rhythm < (rhythmDensity * 60)) currentDurationSamples = (long)(samplesPerBeat / 2); // 8th
+    else if (r_rhythm < 90) currentDurationSamples = (long)samplesPerBeat; // Quarter
+    else currentDurationSamples = (long)(samplesPerBeat * 1.5); // dotted Quarter or half
+
+    // 2. Oitava (Grave vs Melodia) baseada no Mood
+    bool isBass = (esp_random() % 100) < ((1.0f - mood) * 30 + 5); // Menos probabilidade de baixo extremo
+    currentOctave = isBass ? (2 + (esp_random()%2)) : (3 + (esp_random()%2)); // Oitavas um pouco mais centradas
+
+    // 3. Caminhada na escala (Random Walk) com viés para estabilidade
+    int step = 0;
+    int r_step = esp_random() % 100;
+    if (r_step < 75) { // 75% de chance de passo de -1, 0 ou 1
+        step = (esp_random() % 3) - 1; // -1, 0, 1
+    } else if (r_step < 95) { // 20% de chance de ficar parado
+        step = 0;
+    } else { // 5% de chance de passo de -2 ou 2
+        step = ((esp_random() % 2) * 2 - 1) * 2;
+    }
+
+    // Tendência a retornar para a fundamental
+    if (currentScaleDegree != 0 && (esp_random() % 100 < 20)) { // Aumenta tendência de voltar para fundamental
+        if (currentScaleDegree > 0) step = -1;
+        else step = 1;
+    }
+
     currentScaleDegree += step;
     
-    // Keep degree somewhat centered to avoid drifting to infinity
-    if (currentScaleDegree > 10) currentScaleDegree -= 3;
-    if (currentScaleDegree < -5) currentScaleDegree += 3;
+    // Mantém a melodia numa faixa mais contida e musical
+    if (currentScaleDegree > 6) currentScaleDegree = 6; // Range reduzido
+    if (currentScaleDegree < -6) currentScaleDegree = -6; // Range reduzido
 
-    // 4. Calculate Frequency
+
+    // 4. Calcula Frequência
     int noteInScale = getInterval(currentScale, currentScaleDegree);
     int midiNote = rootKey + (currentOctave * 12) + noteInScale;
     
-    // Clamp MIDI to hearing range
-    if (midiNote < 24) midiNote = 24;
-    if (midiNote > 96) midiNote = 96;
+    // Limita ao alcance audível
+    if (midiNote < 36) midiNote = 36; // Aumenta limite inferior
+    if (midiNote > 84) midiNote = 84; // Reduz limite superior
 
-    frequency = mtof(midiNote);
+    targetFrequency = mtof(midiNote);
 }
 
 float MelodyGen::next() {
-    if (++timer >= currentDurationSamples) {
+    // Gerenciamento de Tempo
+    if (++timer >= currentDurationSamples && currentDurationSamples > 0) {
         timer = 0;
         pickNextNote();
     }
+    
+    if (isResting) {
+        return 0.0f;
+    }
 
+    if (noteOn) {
+        // Opcional: Resetar fase pode causar click se não tiver envelope rápido,
+        // mas garante ataque consistente. Vamos manter fluído.
+        // phase = 0; 
+        noteOn = false;
+    }
+
+    // Suaviza mudança de frequência (Portamento)
+    frequency = frequency * frequencySmoothing + targetFrequency * (1.0f - frequencySmoothing);
+
+    // Incrementa fase
     phase += (2.0f * M_PI * frequency) / sampleRate;
     if (phase >= 2.0f * M_PI) phase -= 2.0f * M_PI;
+
+    // Envelope simples (Trapezoidal)
+    if (timer < attackSamples) {
+        envelope = (float)timer / attackSamples;
+    } else if (timer >= currentDurationSamples - releaseSamples && currentDurationSamples > releaseSamples) {
+        envelope = (float)(currentDurationSamples - timer) / releaseSamples;
+    } else {
+        envelope = 1.0f;
+    }
+    
+    envelope = constrain(envelope, 0.0f, 1.0f);
 
     float out = 0.0f;
     switch(currentWaveform) {
@@ -103,14 +172,18 @@ float MelodyGen::next() {
             out = sinf(phase);
             break;
         case SAWTOOTH:
-            out = ((phase / M_PI) - 1.0f) * 0.4f;
+            // Sawtooth simples: range -1 a 1
+            out = ((phase / M_PI) - 1.0f);
             break;
         case TRIANGLE:
+            // Triangle: range -1 a 1
             out = 2.0f * fabsf(phase / M_PI - 1.0f) - 1.0f;
             break;
         case SQUARE:
             out = (phase < M_PI) ? 1.0f : -1.0f;
             break;
     }
-    return out * 0.5f;
+    
+    // Reduz um pouco o ganho global para evitar clip no I2S/Tape Delay depois
+    return out * envelope * 0.8f;
 }

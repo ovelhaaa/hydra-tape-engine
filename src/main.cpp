@@ -79,7 +79,7 @@ TapeParams globalParams = {
     p_wowRate,      p_delayActive, p_delayTime,       p_feedback, p_mix,
     p_activeHeads,  p_bpm,         p_headsMusical};
 
-enum AudioSource { SOURCE_MP3, SOURCE_SYNTH };
+enum AudioSource { SOURCE_MP3, SOURCE_SYNTH, SOURCE_I2S_IN };
 volatile AudioSource p_source = SOURCE_MP3;
 
 TapeModel *tape = nullptr;
@@ -187,9 +187,11 @@ public:
     i2sBuffer[1] = outSample; // Mono espelhado
 
     size_t bytesWritten;
-    // Escrita síncrona/bloqueante no I2S
+    // Escrita com TIMEOUT para evitar travar se não houver clock (Slave Mode)
+    // Se falhar (timeout), apenas retornamos true para manter a lógica do MP3
+    // rodando ou false se quisermos parar. Aqui, true evita crash hard.
     i2s_write(I2S_PORT, i2sBuffer, sizeof(i2sBuffer), &bytesWritten,
-              portMAX_DELAY);
+              pdMS_TO_TICKS(50));
 
     return true;
   }
@@ -232,6 +234,9 @@ void audioTask(void *parameter) {
   const double INT32_MAX_D = 2147483647.0;
   const float VOL_SCALE = (float)(INT32_MAX_D * 0.90f);
 
+  // Track active source locally to detect changes
+  AudioSource activeSource = p_source;
+
   while (true) {
     // esp_task_wdt_reset();
 
@@ -254,11 +259,33 @@ void audioTask(void *parameter) {
       }
     }
 
-    // 2. Control Playback Trigger
+    // 2. Handle Source Switching (Thread-Safe)
+    if (p_source != activeSource) {
+      // Stop previous source if it was MP3
+      if (activeSource == SOURCE_MP3) {
+        if (mp3->isRunning())
+          mp3->stop();
+      }
+
+      // Update local state
+      activeSource = p_source;
+
+      // Start new source if it is MP3
+      if (activeSource == SOURCE_MP3) {
+        file->seek(0, SEEK_SET);
+        if (mp3->begin(file, out)) {
+          Serial.println("MP3 Auto-Started (Switch).");
+        } else {
+          Serial.println("MP3 Begin Failed (Switch)!");
+        }
+      }
+    }
+
+    // 3. Control Playback Trigger (Manual Restart)
     if (p_triggerPlay) {
       p_triggerPlay = false;
       // Behavior depends on source
-      if (p_source == SOURCE_MP3) {
+      if (activeSource == SOURCE_MP3) {
         if (mp3->isRunning())
           mp3->stop();
         file->seek(0, SEEK_SET);
@@ -272,8 +299,8 @@ void audioTask(void *parameter) {
       }
     }
 
-    // 3. Audio Loop Processing
-    if (p_source == SOURCE_MP3) {
+    // 4. Audio Loop Processing
+    if (activeSource == SOURCE_MP3) {
       if (mp3->isRunning()) {
         if (!mp3->loop()) {
           mp3->stop();
@@ -282,7 +309,7 @@ void audioTask(void *parameter) {
       } else {
         vTaskDelay(10);
       }
-    } else {
+    } else if (activeSource == SOURCE_SYNTH) {
       // SOURCE_SYNTH
       // Generate Block of Samples to maximize efficiency?
       // Or sample-by-sample matching i2s_write blocking behavior.
@@ -309,7 +336,55 @@ void audioTask(void *parameter) {
       }
 
       i2s_write(I2S_PORT, synthBuf, sizeof(synthBuf), &bytesWritten,
-                portMAX_DELAY);
+                pdMS_TO_TICKS(50));
+    } else if (activeSource == SOURCE_I2S_IN) {
+      // SOURCE_I2S_IN: Read -> Process -> Write
+      // 1. Read Input (Blocking with Timeout)
+      int32_t inBuf[64 * 2];
+      size_t bytesRead = 0;
+      esp_err_t err = i2s_read(I2S_PORT, inBuf, sizeof(inBuf), &bytesRead,
+                               pdMS_TO_TICKS(50));
+
+      if (err == ESP_OK && bytesRead > 0) {
+        int samplesRead = bytesRead / 4; // 32-bit samples (stereo interleaved?
+                                         // no, bits_per_sample=32 -> 4 bytes)
+        // Wait, channel_format = RIGHT_LEFT, bits = 32.
+        // 1 Sample = 4 bytes. Stereo Frame = 8 bytes.
+        // inBuf is int32_t.
+
+        int32_t outBuf[64 * 2];
+
+        for (int i = 0; i < samplesRead; i += 2) { // Step by 2 for Stereo
+          // Convert input to float (-1.0 to 1.0)
+          // Input is 32-bit.
+          int32_t left = inBuf[i];
+          // int32_t right = inBuf[i+1];
+          // Mix to Mono for Tape Processor
+          float input = (float)left / 2147483648.0f;
+
+          // Process
+          float processed = input;
+          if (!isBypassed && tape) {
+            processed = tape->process(input);
+          }
+          processed = tanhf(processed);
+
+          // Output
+          int32_t sample = (int32_t)(processed * masterVolume * VOL_SCALE);
+          outBuf[i] = sample;
+          outBuf[i + 1] = sample;
+        }
+
+        // Write Output (with Timeout)
+        size_t bytesWritten;
+        i2s_write(I2S_PORT, outBuf, bytesRead, &bytesWritten,
+                  pdMS_TO_TICKS(50));
+
+      } else {
+        // Timeout reading? Probably no clock or no data.
+        // Yield to avoid Watchdog starvation if loop is tight
+        vTaskDelay(pdMS_TO_TICKS(10));
+      }
     }
   }
 
@@ -563,17 +638,17 @@ void processSerial() {
       Serial.println("Command: PLAY (Restart)");
     } else if (command == "synth") {
       p_source = SOURCE_SYNTH;
-      if (mp3 && mp3->isRunning())
-        mp3->stop();
       Serial.println("Source: SYNTH");
     } else if (command == "mp3") {
-      p_source = SOURCE_MP3;
-      // Don't auto-start, user must type 'play'? or auto-start?
-      // User asked "stops the mp3 if it is playing" implies switching away
-      // stops it. Switching TO it might require 'play'. Let's auto-trigger
-      // play for convenience.
-      p_triggerPlay = true;
+      if (p_source == SOURCE_MP3) {
+        p_triggerPlay = true; // Restart if already active
+      } else {
+        p_source = SOURCE_MP3; // Switch (transition logic handles start)
+      }
       Serial.println("Source: MP3");
+    } else if (command == "input" || command == "ext") {
+      p_source = SOURCE_I2S_IN;
+      Serial.println("Source: I2S INPUT");
     } else {
       Serial.println("Cmd: list, play, synth, mp3, ...");
     }
@@ -645,12 +720,38 @@ void setup() {
 
   paramMutex = xSemaphoreCreateMutex();
 
+  // CHECK BOOT BUTTON (GPIO 0) FOR MASTER/SLAVE SELECTION
+  // Default: SLAVE (according to request)
+  // Hold BOOT during reset: MASTER
+  pinMode(0, INPUT_PULLUP);
+  bool forceMaster = (digitalRead(0) == LOW); // Button pressed is LOW
+
+  Serial.printf("I2S Config strategy: %s\n",
+                forceMaster ? "MASTER (Override)" : "SLAVE (Default)");
+
+  i2s_mode_t activeMode;
+  if (forceMaster) {
+    activeMode = (i2s_mode_t)(I2S_MODE_MASTER | I2S_MODE_TX | I2S_MODE_RX);
+  } else {
+    activeMode = (i2s_mode_t)(I2S_MODE_SLAVE | I2S_MODE_TX | I2S_MODE_RX);
+  }
+
+  /*
+     USER REQUEST CONFIGURATION:
+     Mode: Slave (Default compliant, override with BOOT button)
+     Protocol: I2S (Philips) -> I2S_COMM_FORMAT_STAND_I2S
+     Sample Rate: 48kHz
+     Bits: 32-bit (Pico uses 32-clock slots)
+  */
+
   i2s_config_t i2s_config = {
-      .mode = (i2s_mode_t)(I2S_MODE_MASTER | I2S_MODE_TX),
+      // .mode = (i2s_mode_t)(I2S_MODE_MASTER | I2S_MODE_TX), // ORIGINAL
+      // (Commented for reference)
+      .mode = activeMode,
       .sample_rate = SAMPLE_RATE,
       .bits_per_sample = I2S_BITS_PER_SAMPLE_32BIT,
       .channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT,
-      .communication_format = I2S_COMM_FORMAT_STAND_I2S,
+      .communication_format = I2S_COMM_FORMAT_STAND_I2S, // Philips
       .intr_alloc_flags = ESP_INTR_FLAG_LEVEL1,
       // Buffers de DMA aumentados para segurança com PSRAM
       .dma_buf_count = I2S_DMA_BUF_COUNT,

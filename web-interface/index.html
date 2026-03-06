@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ESP32 Tape Delay Control</title>
+    <style>
+        :root {
+            --bg-color: #1a1a1a;
+            --panel-bg: #2d2d2d;
+            --text-color: #e0e0e0;
+            --accent: #00ff88;
+            --secondary: #444;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .header {
+            grid-column: 1 / -1;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--secondary);
+        }
+
+        .status {
+            font-weight: bold;
+            color: #ff5555;
+        }
+
+        .status.connected {
+            color: var(--accent);
+        }
+
+        .panel {
+            background-color: var(--panel-bg);
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        }
+
+        h2 {
+            margin-top: 0;
+            color: var(--accent);
+            border-bottom: 2px solid var(--secondary);
+            padding-bottom: 10px;
+        }
+
+        .control-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 0.9em;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            accent-color: var(--accent);
+        }
+
+        select,
+        button {
+            width: 100%;
+            padding: 8px;
+            background: #333;
+            border: 1px solid #555;
+            color: white;
+            border-radius: 4px;
+        }
+
+        button {
+            background: var(--secondary);
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        button:hover {
+            background: #555;
+        }
+
+        button.active {
+            background: var(--accent);
+            color: black;
+        }
+
+        .checkbox-group {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .checkbox-label {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            cursor: pointer;
+        }
+
+        .value-display {
+            float: right;
+            font-family: monospace;
+            color: var(--accent);
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="header">
+        <h1>Tape Delay Control</h1>
+        <div>
+            MIDI Device:
+            <select id="midiOut" style="width: auto; display: inline-block;">
+                <option value="">Scanning...</option>
+            </select>
+            <span id="connectionStatus" class="status">Disconnected</span>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- GLOBAL SETTINGS -->
+        <div class="panel">
+            <h2>Global</h2>
+            <div class="control-group">
+                <label>Master Volume <span id="val-vol" class="value-display">100%</span></label>
+                <input type="range" min="0" max="127" value="100"
+                    oninput="sendCC(7, this.value); updateDisplay('val-vol', this.value, '%', 127/100)">
+            </div>
+            <div class="control-group">
+                <label>Audio Source</label>
+                <select onchange="sendCC(70, this.value)">
+                    <option value="0">MP3 Player</option>
+                    <option value="60">Synthesizer (MelodyGen)</option>
+                    <option value="127">Line Input (I2S)</option>
+                </select>
+            </div>
+            <div class="control-group">
+                <button id="btn-bypass" onclick="toggleBypass(this)">BYPASS EFFECT</button>
+            </div>
+            <div class="control-group">
+                <button onclick="sendCC(81, 127)" style="background: #2a9d8f;">▶ PLAY / RESTART</button>
+            </div>
+        </div>
+
+        <!-- TAPE ENGINE -->
+        <div class="panel">
+            <h2>Tape Engine</h2>
+            <div class="control-group">
+                <label>Drive (Saturation) <span id="val-drive" class="value-display">3.0</span></label>
+                <input type="range" min="0" max="127" value="30"
+                    oninput="sendCC(16, this.value); updateDisplay('val-drive', this.value, 'x', 12.7, 1.0)">
+            </div>
+            <div class="control-group">
+                <label>Tape Age (Filter) <span id="val-age" class="value-display">50%</span></label>
+                <input type="range" min="0" max="127" value="64"
+                    oninput="sendCC(15, this.value); updateDisplay('val-age', this.value, '%', 1.27)">
+            </div>
+            <div class="control-group">
+                <label>Tape Speed <span id="val-speed" class="value-display">50%</span></label>
+                <input type="range" min="0" max="127" value="64"
+                    oninput="sendCC(14, this.value); updateDisplay('val-speed', this.value, '%', 1.27)">
+            </div>
+            <div class="control-group">
+                <label>Noise / Hiss <span id="val-noise" class="value-display">10%</span></label>
+                <input type="range" min="0" max="127" value="10"
+                    oninput="sendCC(17, this.value); updateDisplay('val-noise', this.value, '%', 1.27)">
+            </div>
+            <div class="control-group">
+                <label>Flutter & Wow Amount <span id="val-wobble" class="value-display">30%</span></label>
+                <input type="range" min="0" max="127" value="30"
+                    oninput="sendCC(18, this.value); sendCC(20, this.value); updateDisplay('val-wobble', this.value, '%', 1.27)">
+            </div>
+        </div>
+
+        <!-- DELAY CONTROL -->
+        <div class="panel">
+            <h2>Delay & Heads</h2>
+            <div class="control-group"
+                style="border: 1px solid #444; padding: 10px; border-radius: 4px; margin-bottom: 15px;">
+                <label style="font-weight: bold; color: var(--accent);">Effect Mode</label>
+                <div class="checkbox-group">
+                    <label class="checkbox-label"><input type="radio" name="dmode" onclick="sendCC(27, 127)" checked>
+                        Delay + Tape</label>
+                    <label class="checkbox-label"><input type="radio" name="dmode" onclick="sendCC(27, 0)"> Tape
+                        Saturation Only</label>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <label>Mix (Dry/Wet) <span id="val-mix" class="value-display">50%</span></label>
+                <input type="range" min="0" max="127" value="64"
+                    oninput="sendCC(1, this.value); updateDisplay('val-mix', this.value, '%', 1.27)">
+            </div>
+            <div class="control-group">
+                <label>Time <span id="val-time" class="value-display">500ms</span></label>
+                <input type="range" min="0" max="127" value="32"
+                    oninput="sendCC(3, this.value); updateDisplayMap('val-time', this.value, 10, 2000, 'ms')">
+            </div>
+            <div class="control-group">
+                <label>Feedback <span id="val-fb" class="value-display">30%</span></label>
+                <input type="range" min="0" max="127" value="35"
+                    oninput="sendCC(2, this.value); updateDisplay('val-fb', this.value, '%', 1.27)">
+            </div>
+
+            <div class="control-group">
+                <label>Active Heads</label>
+                <div class="checkbox-group">
+                    <label class="checkbox-label"><input type="checkbox" id="head1" checked onchange="updateHeads()">
+                        A</label>
+                    <label class="checkbox-label"><input type="checkbox" id="head2" onchange="updateHeads()"> B</label>
+                    <label class="checkbox-label"><input type="checkbox" id="head3" checked onchange="updateHeads()">
+                        C</label>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <label>Head Mode</label>
+                <div class="checkbox-group">
+                    <label class="checkbox-label"><input type="radio" name="hmode" onclick="sendCC(26, 0)" checked>
+                        Time</label>
+                    <label class="checkbox-label"><input type="radio" name="hmode" onclick="sendCC(26, 127)">
+                        Musical</label>
+                </div>
+            </div>
+        </div>
+
+        <!-- SYNTHESIZER -->
+        <div class="panel">
+            <h2>MelodyGen Synth</h2>
+            <div class="control-group">
+                <label>Scale Type</label>
+                <select onchange="sendCC(52, this.value)">
+                    <option value="0">Chromatic</option>
+                    <option value="25">Major</option>
+                    <option value="50">Minor</option>
+                    <option value="75">Pentatonic Minor</option>
+                    <option value="100">Blues</option>
+                </select>
+            </div>
+            <div class="control-group">
+                <label>Root Key</label>
+                <select onchange="sendCC(53, this.value)">
+                    <option value="0">C</option>
+                    <option value="11">C#</option>
+                    <option value="23">D</option>
+                    <option value="34">D#</option>
+                    <option value="46">E</option>
+                    <option value="58">F</option>
+                    <option value="69">F#</option>
+                    <option value="81">G</option>
+                    <option value="92">G#</option>
+                    <option value="104">A</option>
+                    <option value="115">A#</option>
+                    <option value="127">B</option>
+                </select>
+            </div>
+            <div class="control-group">
+                <label>Waveform</label>
+                <select onchange="sendCC(54, this.value)">
+                    <option value="0">Sine</option>
+                    <option value="42">Sawtooth</option>
+                    <option value="84">Triangle</option>
+                    <option value="127">Square</option>
+                </select>
+            </div>
+            <div class="control-group">
+                <label>Mood (Prob) <span id="val-mood" class="value-display">0.5</span></label>
+                <input type="range" min="0" max="127" value="64"
+                    oninput="sendCC(50, this.value); updateDisplay('val-mood', this.value, '', 127)">
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let midiOutput = null;
+
+        // Mapping Helpers
+        function updateDisplay(id, val, unit, div, offset = 0) {
+            let v = (val / div) + offset;
+            document.getElementById(id).innerText = v.toFixed(1) + unit;
+        }
+
+        function updateDisplayMap(id, val, min, max, unit) {
+            // Matches the linear map in C++
+            let v = min + (val / 127.0) * (max - min);
+            document.getElementById(id).innerText = Math.round(v) + unit;
+        }
+
+        // Logic for Heads Bitmask
+        function updateHeads() {
+            let h1 = document.getElementById('head1').checked ? 1 : 0;
+            let h2 = document.getElementById('head2').checked ? 2 : 0;
+            let h3 = document.getElementById('head3').checked ? 4 : 0;
+            let val = h1 + h2 + h3;
+            // Map 0-7 to 0-127? No, the C++ expects 1-7 mapped from 0-127
+            // C++: mapCC(value, 1, 7). So we need to inverse map.
+            // val is 1-7.
+            // target = (val - 1) / 6 * 127 ?? roughly
+            // Let's just send a rough approximation that hits the bins
+            // 1=0, 7=127.
+            let midiVal = Math.floor((val - 1) * (127 / 6));
+            if (val === 0) midiVal = 0; // All off (technically not allowed by mapCC 1-7 but safety)
+            if (midiVal < 0) midiVal = 0;
+            sendCC(4, midiVal);
+        }
+
+        function toggleBypass(btn) {
+            if (btn.classList.contains('active')) {
+                btn.classList.remove('active');
+                btn.innerText = "BYPASS EFFECT"; // Normal state text? No, wait. 
+                // Default: Effect Active. Bypass OFF.
+                sendCC(80, 0); // Off
+            } else {
+                btn.classList.add('active');
+                btn.innerText = "EFFECT BYPASSED";
+                sendCC(80, 127); // On
+            }
+        }
+
+        // MIDI System
+        if (navigator.requestMIDIAccess) {
+            navigator.requestMIDIAccess().then(onMIDISuccess, onMIDIFailure);
+        } else {
+            alert("Web MIDI not supported in this browser!");
+        }
+
+        function onMIDISuccess(midiAccess) {
+            const midiList = document.getElementById('midiOut');
+
+            function updateList() {
+                midiList.innerHTML = "";
+                let found = false;
+                for (let output of midiAccess.outputs.values()) {
+                    let opt = document.createElement('option');
+                    opt.value = output.id;
+                    opt.innerText = output.name;
+                    midiList.appendChild(opt);
+
+                    // Auto-select ESP32 if found
+                    if (output.name.includes("ESP32") || output.name.includes("TinyUSB")) {
+                        midiOutput = output;
+                        midiList.value = output.id;
+                        found = true;
+                    }
+                }
+                if (!found && midiAccess.outputs.size > 0) {
+                    // Select first available
+                    midiOutput = midiAccess.outputs.values().next().value;
+                }
+
+                updateStatus();
+            }
+
+            midiAccess.onstatechange = updateList;
+            updateList();
+
+            midiList.onchange = (e) => {
+                midiOutput = midiAccess.outputs.get(e.target.value);
+                updateStatus();
+            };
+        }
+
+        function updateStatus() {
+            const s = document.getElementById('connectionStatus');
+            if (midiOutput) {
+                s.innerText = "Connected";
+                s.classList.add('connected');
+            } else {
+                s.innerText = "Disconnected";
+                s.classList.remove('connected');
+            }
+        }
+
+        function onMIDIFailure() {
+            console.error('Could not access your MIDI devices.');
+        }
+
+        function sendCC(cc, value) {
+            if (midiOutput) {
+                // Channel 1 (0xAn + 0xB0 for CC?)
+                // CC message: 0xB0 | channel, cc_num, value
+                midiOutput.send([0xB0, cc, value]);
+            }
+        }
+    </script>
+
+</body>
+
+</html>

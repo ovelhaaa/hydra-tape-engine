@@ -1,0 +1,362 @@
+// ============================================
+// FRIPPERTRONICS MAIN (Parallel Version)
+// ============================================
+// HARDWARE: YD-ESP32-S3 (N16R8) + DAC PCM5102
+// ============================================
+
+#include "Frippertronics_Core.h" // Refactored Library
+#include "MelodyGen.h"
+#include "TapeDelay.h"
+
+
+#include "esp_heap_caps.h"
+#include <Arduino.h>
+#include <driver/i2s.h>
+#include <esp_task_wdt.h>
+#include <math.h>
+
+#include "AudioFileSourceLittleFS.h"
+#include "AudioGeneratorMP3.h"
+#include "AudioOutput.h"
+#include <LittleFS.h>
+
+// ============================================
+// PINOUT
+// ============================================
+#define I2S_BCLK 15
+#define I2S_LRCK 16
+#define I2S_DOUT 17
+#define I2S_DIN 18
+#define RGB_PIN 48
+
+// ============================================
+// AUDIO CONFIG
+// ============================================
+#define SAMPLE_RATE 48000
+#define I2S_DMA_BUF_LEN 256
+#define I2S_DMA_BUF_COUNT 4
+#define I2S_PORT I2S_NUM_0
+
+// ============================================
+// CONTROLS & GLOBALS
+// ============================================
+volatile bool isBypassed = false;
+volatile float masterVolume = 0.3f;
+
+// FRIPPERTRONICS PARAMS
+float p_morph = 0.0f;           // 0.0 = Fripp (Distinct), 1.0 = Eno (Diffused)
+volatile bool p_freeze = false; // Freeze mode
+float p_diffusionAmt = 0.0f;    // Manual diffusion control
+
+// Standard Params
+float p_flutterDepth = 0.35f;
+float p_wowDepth = 0.45;
+float p_dropoutSeverity = 0.90f;
+float p_drive = 3.0f;
+float p_noise = 0.035f;
+float p_flutterRate = 6.0f;
+float p_wowRate = 0.5f;
+float p_tapeSpeed = 0.5f;
+float p_tapeAge = 0.5f;
+float p_headBump = 3.0f;
+float p_azimuth = 0.0f;
+float p_bpm = 120.0f;
+bool p_headsMusical = false;
+bool p_guitarFocus = false;
+float p_tone = 0.5f;
+float p_gateThreshold = 0.001f;
+float p_mood = 0.5f;
+float p_rhythm = 0.5f;
+bool p_delayActive = false;
+float p_delayTime = 500.0f;
+float p_feedback = 0.3f;
+float p_mix = 1.0f;
+int p_activeHeads = 4;
+volatile bool p_triggerPlay = false;
+
+TapeParams globalParams = {p_flutterDepth, p_wowDepth, p_dropoutSeverity,
+                           p_drive,        p_noise,    p_tapeSpeed,
+                           p_tapeAge,      p_headBump, p_azimuth,
+                           p_flutterRate,  p_wowRate,  p_delayActive,
+                           p_delayTime,    p_feedback, p_mix,
+                           p_activeHeads,  p_bpm,      p_headsMusical,
+                           p_guitarFocus,  p_tone};
+
+enum AudioSource { SOURCE_MP3, SOURCE_SYNTH, SOURCE_I2S_IN };
+volatile AudioSource p_source = SOURCE_SYNTH;
+
+TapeModel *tape = nullptr;
+MelodyGen *melody = nullptr;
+AudioGeneratorMP3 *mp3 = nullptr;
+AudioFileSourceLittleFS *file = nullptr;
+SemaphoreHandle_t paramMutex;
+
+// FRIPPERTRONICS OBJECTS
+Diffuser diffuserL;
+Diffuser diffuserR;
+
+// ============================================
+// FORWARD DECLARATIONS
+// ============================================
+void dualPrintln(String s);
+void dualPrint(String s);
+void dualPrintf(const char *format, ...);
+
+// ============================================
+// FRIPPERTRONICS HELPER
+// ============================================
+void applyMorphing() {
+  if (p_freeze) {
+    // FREEZE MODE: Infinite Feedback, no inputs
+    globalParams.feedback = 1.0f;   // Keep it looping
+    globalParams.tapeSpeed *= 0.8f; // Slow down slightly for texture
+    return;
+  }
+
+  // Morph Logic (Fripp <-> Eno)
+  // Fripp: Crisp, High Feedback, distinct
+  // Eno: Diffused, Washed out, Lower feedback (let reverb do work)
+
+  // Base params
+  float morph = p_morph;
+  p_diffusionAmt = morph * 0.85f; // Add diffusion as we morph
+
+  if (morph > 0.5f) {
+    // Eno Territory
+    globalParams.feedback = 0.6f + (morph * 0.1f);
+    globalParams.tapeAge = 0.5f + (morph * 0.4f); // Darker
+  }
+}
+
+// ============================================
+// AUDIO OUTPUT
+// ============================================
+class AudioOutputTapeInterceptor : public AudioOutput {
+public:
+  AudioOutputTapeInterceptor() {}
+  virtual ~AudioOutputTapeInterceptor() {}
+  virtual bool begin() override { return true; }
+
+  // Not used for Synth/MP3 direct logic in tasks, but used if we route via this
+  // class
+  virtual bool ConsumeSample(int16_t sample[2]) override { return true; }
+
+  // Helper to write directly to buffer
+  void writeStereo(float L, float R, int32_t *buffer, int index) {
+    const double INT32_MAX_D = 2147483647.0;
+    const float VOL_SCALE = (float)(INT32_MAX_D * 0.90f);
+
+    int32_t sampleL = (int32_t)(L * masterVolume * VOL_SCALE);
+    int32_t sampleR = (int32_t)(R * masterVolume * VOL_SCALE);
+
+    buffer[index * 2] = sampleL;
+    buffer[index * 2 + 1] = sampleR;
+  }
+};
+AudioOutputTapeInterceptor *out = nullptr;
+
+// ============================================
+// AUDIO TASK
+// ============================================
+void audioTask(void *parameter) {
+  vTaskDelay(pdMS_TO_TICKS(1000));
+  Serial.println("Audio Task: Frippertronics Engine Starting...");
+
+  tape = new TapeModel(SAMPLE_RATE);
+  if (!tape)
+    while (1)
+      vTaskDelay(100);
+
+  tape->updateParams(globalParams);
+  tape->updateFilters(); // Init default
+
+  melody = new MelodyGen(SAMPLE_RATE);
+  out = new AudioOutputTapeInterceptor();
+
+  int32_t synthBuf[64 * 2];
+  size_t bytesWritten;
+  int32_t rxBuf[64 * 2];
+
+  while (true) {
+    // 1. Update Params
+    if (xSemaphoreTake(paramMutex, 0) == pdTRUE) {
+      TapeParams local = globalParams;
+
+      // APPLY FREEZE OVERRIDE
+      if (p_freeze) {
+        local.feedback = 1.0f;    // Infinite
+        local.tapeSpeed *= 0.95f; // Drift
+      }
+
+      xSemaphoreGive(paramMutex);
+      if (tape) {
+        tape->updateParams(local);
+        tape->updateFilters();
+      }
+    }
+
+    if (p_source == SOURCE_I2S_IN) {
+      size_t bytesRead = 0;
+      i2s_read(I2S_PORT, rxBuf, sizeof(rxBuf), &bytesRead, pdMS_TO_TICKS(10));
+    }
+
+    for (int i = 0; i < 64; i++) {
+      float inL = 0.0f;
+      float inR = 0.0f;
+
+      // Source Select
+      if (p_source == SOURCE_I2S_IN) {
+        inL = (float)rxBuf[i * 2] / 2147483648.0f;
+        inR = (float)rxBuf[i * 2 + 1] / 2147483648.0f;
+      } else if (melody) {
+        float g = melody->next();
+        inL = g;
+        inR = g;
+      }
+
+      // FREEZE: Mute Input
+      if (p_freeze) {
+        inL = 0.0f;
+        inR = 0.0f;
+      }
+
+      // TAPE ENGINE
+      float outL, outR;
+      if (!isBypassed && tape) {
+        tape->processStereo(inL, inR, &outL, &outR);
+
+        // --- FRIPPERTRONICS DIFFUSION ---
+        // "Smear" the audio if morph/diffusion is active
+        if (p_diffusionAmt > 0.001f) {
+          diffuserL.gain = 0.5f + (p_diffusionAmt * 0.4f); // Scale diffusion
+          diffuserR.gain = 0.5f + (p_diffusionAmt * 0.4f);
+          outL = diffuserL.process(outL);
+          outR = diffuserR.process(outR);
+        }
+
+        inL = tanhf(outL);
+        inR = tanhf(outR);
+      }
+
+      if (out)
+        out->writeStereo(inL, inR, synthBuf, i);
+    }
+
+    i2s_write(I2S_PORT, synthBuf, sizeof(synthBuf), &bytesWritten,
+              pdMS_TO_TICKS(50));
+  }
+}
+
+void ledTask(void *parameter) {
+  while (true) {
+    // Pulse Red for Record/Freeze
+    if (p_freeze)
+      rgbLedWrite(RGB_PIN, 255, 0, 0);
+    else
+      rgbLedWrite(RGB_PIN, 0, 25, 0); // Green IDLE
+    vTaskDelay(pdMS_TO_TICKS(100));
+  }
+}
+
+// ============================================
+// CLI & HELPERS (Simplified for Main Fripp)
+// ============================================
+void dualPrint(String s) {
+  Serial.print(s);
+  Serial0.print(s);
+}
+void dualPrintln(String s) {
+  Serial.println(s);
+  Serial0.println(s);
+}
+void dualPrintf(const char *format, ...) {
+  char buf[256];
+  va_list args;
+  va_start(args, format);
+  vsnprintf(buf, sizeof(buf), format, args);
+  va_end(args);
+  dualPrint(String(buf));
+}
+
+void executeCommand(String line) {
+  if (line.length() == 0)
+    return;
+  int spaceIdx = line.indexOf(' ');
+  String cmd = line;
+  String valStr = "";
+  if (spaceIdx > 0) {
+    cmd = line.substring(0, spaceIdx);
+    valStr = line.substring(spaceIdx + 1);
+  }
+  float val = valStr.toFloat();
+
+  if (xSemaphoreTake(paramMutex, pdMS_TO_TICKS(10)) == pdTRUE) {
+    if (cmd == "mrp") {
+      p_morph = constrain(val, 0.0f, 100.0f) / 100.0f;
+      applyMorphing();
+      dualPrintf("Morph: %.2f (0=Fripp, 1=Eno)\n", p_morph);
+    } else if (cmd == "frz") {
+      p_freeze = (val > 0);
+      applyMorphing(); // Trigger freeze logic
+      dualPrintf("Freeze: %s\n", p_freeze ? "ON" : "OFF");
+    } else if (cmd == "dif") {
+      p_diffusionAmt = constrain(val, 0.0f, 100.0f) / 100.0f;
+      dualPrintf("Diffusion: %.2f\n", p_diffusionAmt);
+    }
+
+    // ... (Include basic commands for testing) ...
+    if (cmd == "dly")
+      p_delayTime = val;
+    if (cmd == "fbk")
+      p_feedback = val / 100.0f;
+
+    globalParams.delayTimeMs = p_delayTime;
+    globalParams.feedback = p_feedback;
+    xSemaphoreGive(paramMutex);
+  }
+}
+
+void processSerialInput() {
+  if (Serial.available())
+    executeCommand(Serial.readStringUntil('\n'));
+  if (Serial0.available())
+    executeCommand(Serial0.readStringUntil('\n'));
+}
+
+void setup() {
+  delay(3000);
+  setCpuFrequencyMhz(240);
+  paramMutex = xSemaphoreCreateMutex();
+  Serial.begin(115200);
+  Serial0.begin(115200);
+
+  dualPrintln("=== FRIPPERTRONICS TEST MAIN ===");
+  dualPrintln(
+      "Commands: mrp <0-100> (Morph), frz <0/1> (Freeze), dif <0-100> (Diff)");
+
+  i2s_config_t i2s_config = {
+      .mode = (i2s_mode_t)(I2S_MODE_MASTER | I2S_MODE_TX | I2S_MODE_RX),
+      .sample_rate = SAMPLE_RATE,
+      .bits_per_sample = I2S_BITS_PER_SAMPLE_32BIT,
+      .channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT,
+      .communication_format = I2S_COMM_FORMAT_STAND_I2S,
+      .intr_alloc_flags = ESP_INTR_FLAG_LEVEL1,
+      .dma_buf_count = I2S_DMA_BUF_COUNT,
+      .dma_buf_len = I2S_DMA_BUF_LEN,
+      .use_apll = false};
+  i2s_driver_install(I2S_PORT, &i2s_config, 0, NULL);
+  i2s_pin_config_t pin_config = {.bck_io_num = I2S_BCLK,
+                                 .ws_io_num = I2S_LRCK,
+                                 .data_out_num = I2S_DOUT,
+                                 .data_in_num = I2S_DIN};
+  i2s_set_pin(I2S_PORT, &pin_config);
+  i2s_zero_dma_buffer(I2S_PORT);
+
+  xTaskCreatePinnedToCore(audioTask, "Audio", 32768, NULL, 5, NULL, 1);
+  xTaskCreatePinnedToCore(ledTask, "LED", 4096, NULL, 1, NULL, 0);
+}
+
+void loop() {
+  processSerialInput();
+  vTaskDelay(10);
+}

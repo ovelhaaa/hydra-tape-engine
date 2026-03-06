@@ -1,0 +1,1824 @@
+/**
+ * Complete TapeModel Simulation Test with WAV Generation
+ * 
+ * This test replicates the full ESP32-S3 TapeModel signal chain:
+ * - Multi-head delay (7 heads)
+ * - Wow & Flutter modulation
+ * - Head Bump (bass boost)
+ * - Tape Rolloff (high cut)
+ * - Feedback LPF
+ * - Soft saturation
+ * - Dropout simulation
+ * - Tape noise
+ * - DC Blocking
+ * 
+ * Run with: pio test -e native
+ */
+
+#include <unity.h>
+#include <cmath>
+#include <cstdint>
+#include <cstdlib>
+#include <cstring>
+#include <cstdio>
+
+// ============================================================================
+// CONFIGURATION - ADJUST THESE PARAMETERS
+// ============================================================================
+#define SAMPLE_RATE 48000.0f
+#define TEST_DURATION_SECONDS 60.0f
+
+// Set to 1 to run WAV file processing tests, 0 to skip
+#define RUN_WAV_TESTS 0
+
+// === TAPE DELAY PARAMETERS ===
+// Synced with ESP32 TapeDelay.h - uses 0-100 scale (not 0-1)
+struct TapeParams {
+    // Modulation (0-100 scale, Rate in Hz)
+    float flutterDepth = 20.0f;     // 0-100 (20% default)
+    float wowDepth = 15.0f;         // 0-100 (15% default)
+    float flutterRate = 6.0f;       // Hz (3-15)
+    float wowRate = 0.8f;           // Hz (0.3-3)
+    
+    // Degradation (0-100 scale)
+    float dropoutSeverity = 8.0f;   // 0-100
+    float drive = 40.0f;            // 0-100 (-> 0-5 gain), default 40=2x
+    float noise = 30.0f;            // 0-100 (-> ~15% hiss)
+    
+    // Tape character (0-100 scale)
+    float tapeSpeed = 50.0f;        // 0-100 (center)
+    float tapeAge = 40.0f;          // 0-100 (slightly worn)
+    float headBumpAmount = 30.0f;   // 0-100 (-> ~1.5dB boost)
+    float azimuthError = 10.0f;     // 0-100
+    float tone = 50.0f;             // 0-100 (neutral)
+    
+    // Delay settings
+    bool delayActive = true;        // false=Saturator, true=Delay
+    float delayTimeMs = 500.0f;     // Direct delay time in ms
+    float feedback = 40.0f;         // 0-110 (100+=self-oscillation)
+    float dryWet = 50.0f;           // 0-100 mix
+    int activeHeads = 4;            // Bitmask: 1=Head1, 2=Head2, 4=Head3
+    float bpm = 120.0f;             // BPM for musical sync
+    bool headsMusical = false;      // Sync heads to BPM divisions
+    
+    // Input/Output
+    bool guitarFocus = false;       // Input bandpass for guitar
+    
+    // === EFFECT MODES ===
+    bool pingPong = false;          // L/R alternating feedback
+    bool freeze = false;            // Infinite loop mode
+    bool reverse = false;           // Read buffer backwards
+    bool reverseSmear = false;      // Reverse + allpass diffusion
+    bool spring = false;            // Spring reverb post-delay
+    float springDecay = 60.0f;      // 0-100
+    float springDamping = 45.0f;    // 0-100
+    
+    // Master
+    float masterVolume = 30.0f;     // 0-300 (30 default = 0.3)
+};
+
+// Current parameters (edit these to change the sound!)
+TapeParams params;
+
+// ============================================================================
+// UTILITY
+// ============================================================================
+template<typename T>
+T constrain(T x, T a, T b) {
+    if (x < a) return a;
+    if (x > b) return b;
+    return x;
+}
+
+#define TWO_PI               6.28318530718f
+#define BIQUAD_Q_BUTTERWORTH 0.707f
+#define DENORMAL_THRESHOLD   1e-20f
+#define AUDIO_INLINE inline
+
+// Fast random for noise
+static uint32_t rngState = 12345;
+inline uint32_t fastRand() {
+    rngState ^= rngState << 13;
+    rngState ^= rngState >> 17;
+    rngState ^= rngState << 5;
+    return rngState;
+}
+
+inline float whiteNoise() {
+    return ((float)(fastRand() & 0xFFFF) / 32768.0f) - 1.0f;
+}
+
+// ============================================================================
+// WAV FILE WRITER
+// ============================================================================
+class WavWriter {
+private:
+    FILE* file;
+    uint32_t dataSize;
+    
+public:
+    WavWriter() : file(nullptr), dataSize(0) {}
+    
+    bool open(const char* filename, float sampleRate) {
+        file = fopen(filename, "wb");
+        if (!file) {
+            printf("ERROR: Could not create file: %s\n", filename);
+            return false;
+        }
+        
+        uint8_t header[44] = {0};
+        header[0] = 'R'; header[1] = 'I'; header[2] = 'F'; header[3] = 'F';
+        header[8] = 'W'; header[9] = 'A'; header[10] = 'V'; header[11] = 'E';
+        header[12] = 'f'; header[13] = 'm'; header[14] = 't'; header[15] = ' ';
+        header[16] = 16; header[20] = 1; header[22] = 2;
+        
+        uint32_t sr = (uint32_t)sampleRate;
+        header[24] = sr & 0xFF; header[25] = (sr >> 8) & 0xFF;
+        header[26] = (sr >> 16) & 0xFF; header[27] = (sr >> 24) & 0xFF;
+        
+        uint32_t byteRate = sr * 4;
+        header[28] = byteRate & 0xFF; header[29] = (byteRate >> 8) & 0xFF;
+        header[30] = (byteRate >> 16) & 0xFF; header[31] = (byteRate >> 24) & 0xFF;
+        header[32] = 4; header[34] = 16;
+        header[36] = 'd'; header[37] = 'a'; header[38] = 't'; header[39] = 'a';
+        
+        fwrite(header, 1, 44, file);
+        dataSize = 0;
+        return true;
+    }
+    
+    void writeSample(float left, float right) {
+        if (!file) return;
+        int16_t l = (int16_t)(constrain(left, -1.0f, 1.0f) * 32767.0f);
+        int16_t r = (int16_t)(constrain(right, -1.0f, 1.0f) * 32767.0f);
+        fwrite(&l, 2, 1, file);
+        fwrite(&r, 2, 1, file);
+        dataSize += 4;
+    }
+    
+    void close() {
+        if (!file) return;
+        uint32_t fileSize = dataSize + 36;
+        fseek(file, 4, SEEK_SET);
+        fwrite(&fileSize, 4, 1, file);
+        fseek(file, 40, SEEK_SET);
+        fwrite(&dataSize, 4, 1, file);
+        fclose(file);
+        file = nullptr;
+        printf("  WAV written: %.2f MB\n", dataSize / 1048576.0f);
+    }
+};
+
+// ============================================================================
+// WAV FILE READER (for processing external audio)
+// ============================================================================
+class WavReader {
+private:
+    FILE* file;
+    uint32_t dataSize;
+    uint32_t samplesRead;
+    int channels;
+    int bitsPerSample;
+    
+public:
+    uint32_t sampleRate;
+    uint32_t totalSamples;
+    
+    WavReader() : file(nullptr), dataSize(0), samplesRead(0), 
+                  channels(2), bitsPerSample(16), sampleRate(48000), totalSamples(0) {}
+    
+    bool open(const char* filename) {
+        file = fopen(filename, "rb");
+        if (!file) {
+            printf("ERROR: Could not open file: %s\n", filename);
+            return false;
+        }
+        
+        // Read WAV header
+        uint8_t header[44];
+        if (fread(header, 1, 44, file) != 44) {
+            printf("ERROR: Failed to read WAV header\n");
+            fclose(file);
+            file = nullptr;
+            return false;
+        }
+        
+        // Verify RIFF/WAVE
+        if (header[0] != 'R' || header[1] != 'I' || header[2] != 'F' || header[3] != 'F' ||
+            header[8] != 'W' || header[9] != 'A' || header[10] != 'V' || header[11] != 'E') {
+            printf("ERROR: Not a valid WAV file\n");
+            fclose(file);
+            file = nullptr;
+            return false;
+        }
+        
+        channels = header[22] | (header[23] << 8);
+        sampleRate = header[24] | (header[25] << 8) | (header[26] << 16) | (header[27] << 24);
+        bitsPerSample = header[34] | (header[35] << 8);
+        dataSize = header[40] | (header[41] << 8) | (header[42] << 16) | (header[43] << 24);
+        totalSamples = dataSize / (channels * (bitsPerSample / 8));
+        
+        printf("  WAV: %dHz, %dch, %dbit, %.1fs\n", 
+               sampleRate, channels, bitsPerSample, 
+               (float)totalSamples / sampleRate);
+        
+        samplesRead = 0;
+        return true;
+    }
+    
+    bool readSample(float* left, float* right) {
+        if (!file || samplesRead >= totalSamples) return false;
+        
+        if (bitsPerSample == 16) {
+            int16_t samples[2] = {0, 0};
+            if (channels == 2) {
+                if (fread(samples, 4, 1, file) != 1) return false;
+            } else {
+                if (fread(samples, 2, 1, file) != 1) return false;
+                samples[1] = samples[0];
+            }
+            *left = samples[0] / 32768.0f;
+            *right = samples[1] / 32768.0f;
+        } else {
+            // 8-bit
+            uint8_t samples[2] = {128, 128};
+            if (channels == 2) {
+                if (fread(samples, 2, 1, file) != 1) return false;
+            } else {
+                if (fread(samples, 1, 1, file) != 1) return false;
+                samples[1] = samples[0];
+            }
+            *left = (samples[0] - 128) / 128.0f;
+            *right = (samples[1] - 128) / 128.0f;
+        }
+        
+        samplesRead++;
+        return true;
+    }
+    
+    void close() {
+        if (file) {
+            fclose(file);
+            file = nullptr;
+        }
+    }
+    
+    bool isOpen() const { return file != nullptr; }
+};
+
+// Input audio file path (convert MP3 to WAV first)
+// Use: ffmpeg -i data/demo.mp3 data/demo.wav
+#define INPUT_WAV_FILE "data/demo.wav"
+
+
+// ============================================================================
+// BIQUAD FILTER (TDF2)
+// ============================================================================
+class BiquadFilter {
+private:
+    float b0, b1, b2, a1, a2, z1, z2;
+
+public:
+    BiquadFilter() : b0(1), b1(0), b2(0), a1(0), a2(0), z1(0), z2(0) {}
+    void reset() { z1 = z2 = 0; }
+
+    void setLowpass(float fs, float freq, float Q) {
+        float w0 = TWO_PI * freq / fs;
+        float cosw0 = cosf(w0), sinw0 = sinf(w0);
+        float alpha = sinw0 / (2.0f * Q);
+        float a0 = 1.0f + alpha;
+        b0 = ((1.0f - cosw0) / 2.0f) / a0;
+        b1 = (1.0f - cosw0) / a0;
+        b2 = b0;
+        a1 = (-2.0f * cosw0) / a0;
+        a2 = (1.0f - alpha) / a0;
+    }
+    
+    void setHighpass(float fs, float freq, float Q) {
+        float w0 = TWO_PI * freq / fs;
+        float cosw0 = cosf(w0), sinw0 = sinf(w0);
+        float alpha = sinw0 / (2.0f * Q);
+        float a0 = 1.0f + alpha;
+        b0 = ((1.0f + cosw0) / 2.0f) / a0;
+        b1 = -(1.0f + cosw0) / a0;
+        b2 = b0;
+        a1 = (-2.0f * cosw0) / a0;
+        a2 = (1.0f - alpha) / a0;
+    }
+    
+    void setLowShelf(float fs, float freq, float Q, float gainDB) {
+        float A = powf(10.0f, gainDB / 40.0f);
+        float w0 = TWO_PI * freq / fs;
+        float cosw0 = cosf(w0), sinw0 = sinf(w0);
+        float alpha = sinw0 / (2.0f * Q);
+        float sqA = sqrtf(A);
+        float a0 = (A + 1) + (A - 1) * cosw0 + 2 * sqA * alpha;
+        b0 = (A * ((A + 1) - (A - 1) * cosw0 + 2 * sqA * alpha)) / a0;
+        b1 = (2 * A * ((A - 1) - (A + 1) * cosw0)) / a0;
+        b2 = (A * ((A + 1) - (A - 1) * cosw0 - 2 * sqA * alpha)) / a0;
+        a1 = (-2 * ((A - 1) + (A + 1) * cosw0)) / a0;
+        a2 = ((A + 1) + (A - 1) * cosw0 - 2 * sqA * alpha) / a0;
+    }
+    
+    void setHighShelf(float fs, float freq, float Q, float gainDB) {
+        float A = powf(10.0f, gainDB / 40.0f);
+        float w0 = TWO_PI * freq / fs;
+        float cosw0 = cosf(w0), sinw0 = sinf(w0);
+        float alpha = sinw0 / (2.0f * Q);
+        float sqA = sqrtf(A);
+        float a0 = (A + 1) - (A - 1) * cosw0 + 2 * sqA * alpha;
+        b0 = (A * ((A + 1) + (A - 1) * cosw0 + 2 * sqA * alpha)) / a0;
+        b1 = (-2 * A * ((A - 1) + (A + 1) * cosw0)) / a0;
+        b2 = (A * ((A + 1) + (A - 1) * cosw0 - 2 * sqA * alpha)) / a0;
+        a1 = (2 * ((A - 1) - (A + 1) * cosw0)) / a0;
+        a2 = ((A + 1) - (A - 1) * cosw0 - 2 * sqA * alpha) / a0;
+    }
+
+    AUDIO_INLINE float process(float input) {
+        float output = b0 * input + z1;
+        z1 = b1 * input - a1 * output + z2;
+        z2 = b2 * input - a2 * output;
+        if (fabsf(z1) < DENORMAL_THRESHOLD) z1 = 0.0f;
+        if (fabsf(z2) < DENORMAL_THRESHOLD) z2 = 0.0f;
+        return output;
+    }
+};
+
+// ============================================================================
+// DC BLOCKER
+// ============================================================================
+class DCBlocker {
+    float x1, y1, R;
+public:
+    DCBlocker() : x1(0), y1(0), R(0.995f) {}
+    AUDIO_INLINE float process(float input) {
+        float output = input - x1 + R * y1;
+        x1 = input;
+        y1 = output;
+        return output;
+    }
+};
+
+// ============================================================================
+// ALLPASS FILTER (for azimuth simulation)
+// ============================================================================
+class AllpassFilter {
+    float a1, z1;
+public:
+    AllpassFilter() : a1(0), z1(0) {}
+    void setCoeff(float coeff) { a1 = constrain(coeff, -0.99f, 0.99f); }
+    void reset() { z1 = 0; }
+    AUDIO_INLINE float process(float input) {
+        float output = a1 * input + z1;
+        z1 = input - a1 * output;
+        return output;
+    }
+};
+
+// ============================================================================
+// DELAY LINE WITH HERMITE INTERPOLATION
+// ============================================================================
+class DelayLine {
+private:
+    float* buffer;
+    int bufferSize;
+    int writeIdx;
+    
+public:
+    DelayLine(int maxSamples) {
+        bufferSize = maxSamples;
+        buffer = new float[bufferSize];
+        memset(buffer, 0, bufferSize * sizeof(float));
+        writeIdx = 0;
+    }
+    
+    ~DelayLine() { delete[] buffer; }
+    
+    void write(float sample) {
+        buffer[writeIdx] = sample;
+        writeIdx = (writeIdx + 1) % bufferSize;
+    }
+    
+    // Hermite interpolation for smooth modulated delay
+    float readHermite(float delaySamples) {
+        if (delaySamples < 2.0f) delaySamples = 2.0f;
+        if (delaySamples > bufferSize - 4) delaySamples = bufferSize - 4;
+        
+        float readPos = writeIdx - delaySamples;
+        if (readPos < 0) readPos += bufferSize;
+        
+        int idx1 = (int)readPos;
+        int idx0 = (idx1 - 1 + bufferSize) % bufferSize;
+        int idx2 = (idx1 + 1) % bufferSize;
+        int idx3 = (idx1 + 2) % bufferSize;
+        float frac = readPos - idx1;
+        
+        float y0 = buffer[idx0], y1 = buffer[idx1];
+        float y2 = buffer[idx2], y3 = buffer[idx3];
+        
+        // Hermite polynomial
+        float c0 = y1;
+        float c1 = 0.5f * (y2 - y0);
+        float c2 = y0 - 2.5f * y1 + 2.0f * y2 - 0.5f * y3;
+        float c3 = 0.5f * (y3 - y0) + 1.5f * (y1 - y2);
+        
+        return ((c3 * frac + c2) * frac + c1) * frac + c0;
+    }
+};
+
+// ============================================================================
+// MELODY GENERATOR (EXACT COPY FROM ESP32)
+// ============================================================================
+enum Waveform { SINE, SAWTOOTH, TRIANGLE, SQUARE };
+enum ScaleType { CHROMATIC, MAJOR, MINOR, PENTATONIC_MIN, BLUES };
+enum MelodyMode { MODE_NORMAL, MODE_ENO };
+
+class MelodyGen {
+private:
+    // Recursive Sine State
+    float oscSin, oscCos;
+    float sinInc, cosInc;
+    float uniSin, uniCos;
+    float uniSinInc, uniCosInc;
+    float tri, triInc;
+    int normCounter;
+    
+    float phase, frequency, targetFrequency, sampleRate;
+    Waveform currentWaveform;
+    MelodyMode mode;
+    float frequencySmoothing;
+    
+    ScaleType currentScale;
+    int rootKey;
+    float bpm, mood, rhythmDensity;
+    
+    long timer;
+    long currentDurationSamples;
+    int currentScaleDegree, currentOctave;
+    
+    int motif[4], motifIndex;
+    float rhythmPattern[4];
+    int rhythmIndex, phraseCounter;
+    float currentAccent;
+    
+    float detune, timbre, timbreTarget;
+    float tone, toneState, drift;
+    float env, envTarget, envAttack, envRelease;
+    float stereoDrift;
+    bool noteOn, isResting;
+    
+    inline float fastSat(float x) {
+        if (x > 1.0f) return 1.0f;
+        if (x < -1.0f) return -1.0f;
+        return x;
+    }
+    
+    float mtof(int midiNote) {
+        return 440.0f * powf(2.0f, (midiNote - 69) / 12.0f);
+    }
+    
+    int getInterval(ScaleType scale, int degree) {
+        static const int8_t MAJOR_SCALE[] = {0, 2, 4, 5, 7, 9, 11};
+        static const int8_t MINOR_SCALE[] = {0, 2, 3, 5, 7, 8, 10};
+        static const int8_t PENTA_SCALE[] = {0, 3, 5, 7, 10, 0, 0};
+        static const int8_t BLUES_SCALE[] = {0, 3, 5, 6, 7, 10, 0};
+        static const int8_t CHROMATIC_SCALE[] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11};
+        
+        static const int8_t* SCALE_TABLES[] = {
+            CHROMATIC_SCALE, MAJOR_SCALE, MINOR_SCALE, PENTA_SCALE, BLUES_SCALE
+        };
+        static const int SCALE_SIZES[] = {12, 7, 7, 5, 6};
+        
+        int scaleIdx = (int)scale;
+        if (scaleIdx < 0 || scaleIdx > 4) scaleIdx = 1;
+        
+        const int8_t* intervals = SCALE_TABLES[scaleIdx];
+        int count = SCALE_SIZES[scaleIdx];
+        
+        int octaveOffset = 0;
+        int safeDegree = degree;
+        
+        if (degree >= 0) {
+            octaveOffset = (degree / count) * 12;
+            safeDegree = degree % count;
+        } else {
+            octaveOffset = ((degree - count + 1) / count) * 12;
+            safeDegree = (degree % count);
+            if (safeDegree < 0) safeDegree += count;
+        }
+        
+        return intervals[safeDegree] + octaveOffset;
+    }
+    
+    void pickNextNote() {
+        noteOn = true;
+        envTarget = 1.0f;
+        isResting = false;
+        
+        detune = ((fastRand() % 1000) / 1000.0f - 0.5f) * 0.003f;
+        int rT = fastRand() % 100;
+        if (rT < 30) timbreTarget = 0.0f;
+        else if (rT < 60) timbreTarget = 1.0f;
+        else timbreTarget = (float)(fastRand() % 1000) / 1000.0f;
+        
+        tone = 0.2f + (mood * 0.6f);
+        stereoDrift = ((fastRand() % 1000) / 1000.0f - 0.5f) * 0.3f;
+        drift = 1.0f + sinf((float)(fastRand() & 0xFFFF)) * 0.002f;
+        
+        if (mode == MODE_ENO) {
+            float samplesPerBeat = (sampleRate * 60.0f) / bpm;
+            if (fastRand() % 100 > 10) {
+                isResting = true;
+                envTarget = 0.0f;
+                currentDurationSamples = (long)(samplesPerBeat * (2 + (fastRand() % 4)));
+                return;
+            }
+            isResting = false;
+            currentAccent = 0.6f;
+            currentDurationSamples = (long)(samplesPerBeat * (4 + (fastRand() % 4)));
+            envAttack = 0.00005f;
+            envRelease = 0.0002f;
+            
+            if (fastRand() % 100 < 15) {
+                currentScaleDegree += (fastRand() % 2) ? 1 : -1;
+            }
+            if (currentScaleDegree > 3) currentScaleDegree = 3;
+            if (currentScaleDegree < -3) currentScaleDegree = -3;
+            
+            currentOctave = 3 + (fastRand() % 2);
+            
+            int noteInScale = getInterval(currentScale, currentScaleDegree);
+            int midiNote = rootKey + (currentOctave * 12) + noteInScale;
+            targetFrequency = mtof(midiNote);
+            tone *= 0.7f;
+            
+            float pInc = TWO_PI * targetFrequency / sampleRate;
+            sinInc = sinf(pInc);
+            cosInc = cosf(pInc);
+            oscSin = 0.0f;
+            oscCos = 1.0f;
+            
+            float uInc = pInc * (1.0f + detune);
+            uniSinInc = sinf(uInc);
+            uniCosInc = cosf(uInc);
+            uniSin = 0.0f;
+            uniCos = 1.0f;
+            return;
+        }
+        
+        // MODE_NORMAL
+        if (rhythmIndex == 0 && (phraseCounter++ % 2 == 0)) {
+            currentOctave = 3;
+        } else if (rhythmIndex == 0) {
+            currentOctave = 4;
+        }
+        
+        envAttack = (currentOctave <= 3) ? 0.002f : 0.01f;
+        envRelease = 0.002f;
+        
+        float samplesPerBeat = (sampleRate * 60.0f) / bpm;
+        
+        if (rhythmIndex >= 4) {
+            rhythmIndex = 0;
+            if (fastRand() % 100 < 30) {
+                isResting = true;
+                envTarget = 0.0f;
+                currentDurationSamples = (long)(samplesPerBeat * 2.0f);
+                return;
+            }
+            int p = fastRand() % 3;
+            if (p == 0) {
+                rhythmPattern[0] = 1.0f; rhythmPattern[1] = 1.0f;
+                rhythmPattern[2] = 1.0f; rhythmPattern[3] = 1.0f;
+            } else if (p == 1) {
+                rhythmPattern[0] = 1.5f; rhythmPattern[1] = 0.5f;
+                rhythmPattern[2] = 1.0f; rhythmPattern[3] = 1.0f;
+            } else {
+                rhythmPattern[0] = 0.5f; rhythmPattern[1] = 0.5f;
+                rhythmPattern[2] = 0.5f; rhythmPattern[3] = 0.5f;
+            }
+        }
+        
+        float beatMult = rhythmPattern[rhythmIndex++] * rhythmDensity;
+        if (beatMult < 0.25f) beatMult = 0.25f;
+        currentDurationSamples = (long)(samplesPerBeat * beatMult);
+        
+        bool isStrongBeat = (rhythmIndex == 0 || rhythmIndex == 2);
+        if (!isStrongBeat && (fastRand() % 100 < 60)) {
+            isResting = true;
+            envTarget = 0.0f;
+            return;
+        }
+        if ((fastRand() % 100) < 5) {
+            isResting = true;
+            envTarget = 0.0f;
+            return;
+        }
+        
+        if (motifIndex >= 4) motifIndex = 0;
+        int step = motif[motifIndex++];
+        
+        int var = fastRand() % 100;
+        if (var < 20) step = -step;
+        else if (var > 80) motif[motifIndex % 4] = (fastRand() % 5) - 2;
+        
+        if (fastRand() % 100 < 30) {
+            int weights[] = {40, 15, 25, 10, 25, 15, 5};
+            int r = fastRand() % 135;
+            int sum = 0, chosenLvl = 0;
+            for (int i = 0; i < 7; i++) {
+                sum += weights[i];
+                if (r < sum) { chosenLvl = i; break; }
+            }
+            int baseOctave = currentScaleDegree / 7;
+            currentScaleDegree = (baseOctave * 7) + chosenLvl;
+            step = 0;
+        }
+        
+        currentScaleDegree += step;
+        if (currentScaleDegree > 7) currentScaleDegree -= 7;
+        if (currentScaleDegree < -7) currentScaleDegree += 7;
+        
+        currentAccent = isStrongBeat ? 1.0f : 0.7f;
+        if (step != 0) currentAccent += 0.1f;
+        currentAccent = constrain(currentAccent, 0.5f, 1.0f);
+        
+        int noteInScale = getInterval(currentScale, currentScaleDegree);
+        int midiNote = rootKey + (currentOctave * 12) + noteInScale;
+        midiNote = constrain(midiNote, 36, 84);
+        
+        targetFrequency = mtof(midiNote);
+        
+        float pInc = TWO_PI * targetFrequency / sampleRate;
+        sinInc = sinf(pInc);
+        cosInc = cosf(pInc);
+        
+        float uInc = pInc * (1.0f + detune);
+        uniSinInc = sinf(uInc);
+        uniCosInc = cosf(uInc);
+    }
+    
+public:
+    MelodyGen(float fs) : sampleRate(fs) {
+        oscSin = 0.0f; oscCos = 1.0f;
+        sinInc = 0.0f; cosInc = 1.0f;
+        uniSin = 0.0f; uniCos = 1.0f;
+        uniSinInc = 0.0f; uniCosInc = 1.0f;
+        tri = 0.0f; triInc = 0.0f;
+        normCounter = 0;
+        
+        frequency = 440.0f;
+        targetFrequency = 440.0f;
+        timer = 0;
+        currentWaveform = SINE;
+        mode = MODE_NORMAL;
+        
+        currentScale = MINOR;
+        rootKey = 4; // E
+        bpm = 80.0f;
+        mood = 0.5f;
+        rhythmDensity = 0.65f;
+        
+        currentDurationSamples = 12000;
+        currentScaleDegree = 0;
+        currentOctave = 4;
+        frequencySmoothing = 0.998f;
+        
+        motifIndex = 0;
+        rhythmIndex = 0;
+        phraseCounter = 0;
+        currentAccent = 1.0f;
+        motif[0] = 0; motif[1] = 2; motif[2] = 0; motif[3] = -1;
+        rhythmPattern[0] = 1.0f; rhythmPattern[1] = 0.5f;
+        rhythmPattern[2] = 0.5f; rhythmPattern[3] = 1.0f;
+        
+        detune = 0.0f; timbre = 0.0f; timbreTarget = 0.0f;
+        tone = 0.4f; toneState = 0.0f; drift = 1.0f;
+        
+        env = 0.0f; envTarget = 0.0f;
+        envAttack = 0.005f; envRelease = 0.001f;
+        stereoDrift = 0.0f;
+        noteOn = true; isResting = false;
+        
+        pickNextNote();
+        isResting = false;
+        envTarget = 1.0f;
+    }
+    
+    void setWaveform(Waveform wave) { currentWaveform = wave; }
+    void setScale(ScaleType scale) { currentScale = scale; }
+    void setKey(int midiRoot) { rootKey = midiRoot % 12; }
+    void setBPM(float newBpm) { bpm = (newBpm < 30) ? 30 : newBpm; }
+    void setMood(float m) { mood = constrain(m, 0.0f, 1.0f); }
+    void setRhythm(float r) { rhythmDensity = constrain(r, 0.0f, 1.0f); }
+    void setMode(MelodyMode m) { mode = m; }
+    
+    void nextStereo(float* outL, float* outR) {
+        if (++timer >= currentDurationSamples && currentDurationSamples > 0) {
+            timer = 0;
+            pickNextNote();
+        }
+        
+        if (isResting) envTarget = 0.0f;
+        if (noteOn) noteOn = false;
+        
+        frequency = frequency * frequencySmoothing + targetFrequency * (1.0f - frequencySmoothing);
+        
+        // Recursive oscillator
+        float newSin = oscSin * cosInc + oscCos * sinInc;
+        float newCos = oscCos * cosInc - oscSin * sinInc;
+        oscSin = newSin;
+        oscCos = newCos;
+        
+        float newUniSin = uniSin * uniCosInc + uniCos * uniSinInc;
+        float newUniCos = uniCos * uniCosInc - uniSin * uniSinInc;
+        uniSin = newUniSin;
+        uniCos = newUniCos;
+        
+        // Periodic normalization
+        if (++normCounter > 1024) {
+            normCounter = 0;
+            float mag = sqrtf(oscSin * oscSin + oscCos * oscCos);
+            if (mag > 0.0f) { oscSin /= mag; oscCos /= mag; }
+            float uniMag = sqrtf(uniSin * uniSin + uniCos * uniCos);
+            if (uniMag > 0.0f) { uniSin /= uniMag; uniCos /= uniMag; }
+        }
+        
+        // Triangle integrator
+        triInc = (frequency * drift * 4.0f) / sampleRate;
+        if (oscSin >= 0) tri += triInc; else tri -= triInc;
+        tri = constrain(tri, -1.0f, 1.0f);
+        
+        // Envelope
+        if (env < envTarget) env += envAttack * (envTarget - env);
+        else env += envRelease * (envTarget - env);
+        
+        float shapedEnv = env * env;
+        
+        if (shapedEnv <= 0.0001f && envTarget == 0.0f) {
+            *outL = 1e-6f;
+            *outR = 1e-6f;
+            return;
+        }
+        
+        float slew = (mode == MODE_ENO) ? 0.0001f : 0.0005f;
+        timbre += slew * (timbreTarget - timbre);
+        
+        float s = 0.6f * oscSin + 0.4f * uniSin;
+        float outMono = (1.0f - timbre) * s + timbre * tri;
+        
+        outMono = fastSat(outMono * 1.2f);
+        toneState += tone * (outMono - toneState);
+        outMono = toneState;
+        
+        float sig = outMono * shapedEnv * currentAccent * 0.6f;
+        
+        float panL = 1.0f + stereoDrift;
+        float panR = 1.0f - stereoDrift;
+        
+        float norm = 1.0f;
+        if (panL > 1.0f) norm = 1.0f / panL;
+        if (panR > 1.0f && (1.0f / panR) < norm) norm = 1.0f / panR;
+        
+        *outL = sig * panL * norm;
+        *outR = sig * panR * norm;
+    }
+};
+
+
+// ============================================================================
+// COMPLETE TAPE MODEL (mirrors ESP32 implementation)
+// ============================================================================
+class TapeModelTest {
+private:
+    float sampleRate;
+    
+    // Delay lines (stereo, multi-head)
+    DelayLine* delayL;
+    DelayLine* delayR;
+    
+    // Filters
+    BiquadFilter headBumpL, headBumpR;           // Low shelf boost
+    BiquadFilter tapeRolloffL, tapeRolloffR;     // High shelf cut
+    BiquadFilter feedbackLPF_L, feedbackLPF_R;   // Darken repeats
+    BiquadFilter outputLPF_L, outputLPF_R;       // Final smoothing
+    BiquadFilter flutterLPF;                     // Flutter smoothing
+    DCBlocker dcL, dcR;
+    
+    // Modulation state
+    float flutterPhase, wowPhase;
+    float smoothedDelaySamples;
+    
+    // Head positions (in ms) - 3 heads to match ESP32 bitmask
+    float headDelaysMs[3];
+    
+public:
+    TapeModelTest(float fs) : sampleRate(fs), flutterPhase(0), wowPhase(0), smoothedDelaySamples(0) {
+        int maxDelay = (int)(fs * 2.0f); // 2 seconds max
+        delayL = new DelayLine(maxDelay);
+        delayR = new DelayLine(maxDelay);
+        
+        flutterLPF.setLowpass(fs, 15.0f, 0.707f);
+    }
+    
+    ~TapeModelTest() {
+        delete delayL;
+        delete delayR;
+    }
+    
+    void updateFilters(const TapeParams& p) {
+        // Convert 0-100 scale to 0-1 internal scale (matching ESP32)
+        float speedMod = p.tapeSpeed * 0.01f;
+        float ageMod = p.tapeAge * 0.01f;
+        float toneMod = p.tone * 0.01f;
+        float headBump = p.headBumpAmount * 0.01f;
+        
+        // Head bump (bass boost) - matching ESP32 formula
+        // headBumpGain = headBumpAmount * 0.05f (so 30% = 1.5dB)
+        float bumpFreq = 60.0f + speedMod * 60.0f;
+        float bumpGain = headBump * 5.0f;  // 0.05f * 100
+        headBumpL.setLowShelf(sampleRate, bumpFreq, 0.7f, bumpGain);
+        headBumpR.setLowShelf(sampleRate, bumpFreq, 0.7f, bumpGain);
+        
+        // Tape rolloff (darken based on speed/age/tone) - ESP32 formula
+        float baseFreq = 1500.0f + speedMod * 9000.0f;
+        float ageFactor = 1.0f - ageMod * 0.9f;
+        float toneFactor = (toneMod - 0.5f) * 2.0f;
+        if (toneFactor > 0) ageFactor += toneFactor * 0.5f;
+        else ageFactor *= (1.0f + toneFactor * 0.5f);
+        ageFactor = constrain(ageFactor, 0.1f, 1.0f);
+        
+        float cutoff = fmaxf(baseFreq * ageFactor, 400.0f);
+        tapeRolloffL.setHighShelf(sampleRate, cutoff, 0.5f, -50.0f);
+        tapeRolloffR.setHighShelf(sampleRate, cutoff, 0.5f, -50.0f);
+        outputLPF_L.setLowpass(sampleRate, cutoff, 0.707f);
+        outputLPF_R.setLowpass(sampleRate, cutoff, 0.707f);
+        
+        // Feedback LPF - ESP32 formula
+        float fbCutoff = 1200.0f + speedMod * 2500.0f;
+        feedbackLPF_L.setLowpass(sampleRate, fbCutoff, 0.707f);
+        feedbackLPF_R.setLowpass(sampleRate, fbCutoff, 0.707f);
+        
+        // Calculate head delays - using 3 heads (bitmask) instead of 7
+        float msPerBeat = 60000.0f / p.bpm;
+        if (p.headsMusical) {
+            // Musical divisions for 3 heads
+            headDelaysMs[0] = msPerBeat;          // 1/4 note
+            headDelaysMs[1] = msPerBeat * 0.5f;   // 1/8 note
+            headDelaysMs[2] = msPerBeat * 2.0f;   // 1/2 note
+        } else {
+            // Use direct delay time
+            headDelaysMs[0] = p.delayTimeMs;
+            headDelaysMs[1] = p.delayTimeMs * 0.5f;
+            headDelaysMs[2] = p.delayTimeMs * 2.0f;
+        }
+    }
+    
+    void processStereo(float inL, float inR, const TapeParams& p, float* outL, float* outR) {
+        // Convert 0-100 to 0-1 scale (matching ESP32)
+        float flutterD = p.flutterDepth * 0.01f;
+        float wowD = p.wowDepth * 0.01f;
+        float feedback = p.feedback * 0.01f;  // 0-110 -> 0-1.1
+        float wetMix = p.dryWet * 0.01f;
+        float driveAmount = 1.0f + (p.drive * 0.01f) * 4.0f;  // 0-100 -> 1-5x
+        float noiseLevel = p.noise * 0.01f * 0.001f;  // Very subtle
+        float masterVol = p.masterVolume * 0.01f;  // 0-300 -> 0-3
+        
+        // === MODULATION ===
+        float flutterInc = TWO_PI * p.flutterRate / sampleRate;
+        flutterPhase += flutterInc;
+        if (flutterPhase > TWO_PI) flutterPhase -= TWO_PI;
+        
+        float wowInc = TWO_PI * p.wowRate / sampleRate;
+        wowPhase += wowInc;
+        if (wowPhase > TWO_PI) wowPhase -= TWO_PI;
+        
+        float rawMod = sinf(flutterPhase) * flutterD + sinf(wowPhase) * wowD;
+        float mod = flutterLPF.process(rawMod);
+        
+        // === MULTI-HEAD DELAY READ (3 heads, bitmask) ===
+        float wetL = 0.0f, wetR = 0.0f;
+        float headGainSum = 0.0f;
+        
+        for (int h = 0; h < 3; h++) {
+            if (p.activeHeads & (1 << h)) {
+                float delayMs = headDelaysMs[h];
+                float delaySamples = (delayMs / 1000.0f) * sampleRate;
+                
+                // Apply wow/flutter modulation
+                delaySamples *= (1.0f + mod * 0.01f);
+                
+                // Equal weight for active heads
+                float headGain = 1.0f;
+                wetL += delayL->readHermite(delaySamples) * headGain;
+                wetR += delayR->readHermite(delaySamples) * headGain;
+                headGainSum += headGain;
+            }
+        }
+        
+        // Normalize by number of active heads
+        if (headGainSum > 0.0f) {
+            wetL /= headGainSum;
+            wetR /= headGainSum;
+        }
+        
+        // === TAPE CHARACTER ===
+        // Head bump
+        wetL = headBumpL.process(wetL);
+        wetR = headBumpR.process(wetR);
+        
+        // Tape rolloff  
+        wetL = tapeRolloffL.process(wetL);
+        wetR = tapeRolloffR.process(wetR);
+        wetL = outputLPF_L.process(wetL);
+        wetR = outputLPF_R.process(wetR);
+        
+        // === DEGRADATION ===
+        // Dropouts (scaled from 0-100)
+        float dropProb = p.dropoutSeverity * 0.01f;
+        if (dropProb > 0.001f) {
+            if ((fastRand() & 0xFFFF) < (uint32_t)(dropProb * 100)) {
+                float dropAmount = 0.3f + (fastRand() & 0xFF) / 512.0f;
+                wetL *= dropAmount;
+                wetR *= dropAmount;
+            }
+        }
+        
+        // Tape noise
+        if (noiseLevel > 0.00001f) {
+            wetL += whiteNoise() * noiseLevel;
+            wetR += whiteNoise() * noiseLevel;
+        }
+        
+        // === FEEDBACK PATH ===
+        float fbL = feedbackLPF_L.process(wetL) * feedback;
+        float fbR = feedbackLPF_R.process(wetR) * feedback;
+        
+        // Saturation (ESP32-style)
+        float recL = inL + fbL;
+        float recR = inR + fbR;
+        recL = tanhf(recL * driveAmount) / driveAmount;
+        recR = tanhf(recR * driveAmount) / driveAmount;
+        
+        // DC blocking and write to delay
+        delayL->write(dcL.process(recL));
+        delayR->write(dcR.process(recR));
+        
+        // === MIX ===
+        *outL = (inL * (1.0f - wetMix) + wetL * wetMix) * masterVol;
+        *outR = (inR * (1.0f - wetMix) + wetR * wetMix) * masterVol;
+    }
+};
+
+// ============================================================================
+// UNIT TESTS
+// ============================================================================
+void test_biquad_lowpass(void) {
+    BiquadFilter lpf;
+    lpf.setLowpass(48000.0f, 1000.0f, BIQUAD_Q_BUTTERWORTH);
+    float output = 0.0f;
+    for (int i = 0; i < 1000; i++) output = lpf.process(1.0f);
+    TEST_ASSERT_FLOAT_WITHIN(0.05f, 1.0f, output);
+}
+
+void test_dcblocker(void) {
+    DCBlocker dc;
+    float output = 0.0f;
+    for (int i = 0; i < 10000; i++) output = dc.process(1.0f);
+    TEST_ASSERT_FLOAT_WITHIN(0.05f, 0.0f, output);
+}
+
+void test_delay_hermite(void) {
+    DelayLine delay(1000);
+    // Write impulse followed by zeros
+    for (int i = 0; i < 500; i++) delay.write(0.0f); // Fill buffer first
+    delay.write(1.0f);  // Write impulse at position 500
+    for (int i = 0; i < 100; i++) delay.write(0.0f);
+    // Read at 100 samples back should get the impulse
+    float out = delay.readHermite(101.0f);
+    TEST_ASSERT_FLOAT_WITHIN(0.2f, 1.0f, out);
+}
+
+// ============================================================================
+// AUDIO WAV GENERATION - FULL TAPE MODEL
+// ============================================================================
+
+// 1. CLEAN MELODY (no effects - for comparison)
+void test_generate_clean_melody(void) {
+    printf("\n=== GENERATING CLEAN MELODY (no effects) ===\n");
+    
+    WavWriter wav;
+    if (!wav.open("test_01_clean_melody.wav", SAMPLE_RATE)) {
+        TEST_FAIL_MESSAGE("Could not create WAV file");
+        return;
+    }
+    
+    MelodyGen melody(SAMPLE_RATE);
+    int totalSamples = (int)(SAMPLE_RATE * TEST_DURATION_SECONDS);
+    
+    for (int i = 0; i < totalSamples; i++) {
+        float L, R;
+        melody.nextStereo(&L, &R);
+        wav.writeSample(L * params.masterVolume, R * params.masterVolume);
+    }
+    
+    wav.close();
+    TEST_PASS();
+}
+
+// 2. FILTER ONLY (tape character without delay)
+void test_generate_filter_only(void) {
+    printf("\n=== GENERATING FILTER ONLY (tape EQ + azimuth, no delay) ===\n");
+    printf("  Tape Speed: %.0f%%, Age: %.0f%%, Head Bump: %.0f%%, Drive: %.1f\n",
+           params.tapeSpeed * 100, params.tapeAge * 100, params.headBumpAmount * 100, params.drive);
+    
+    WavWriter wav;
+    if (!wav.open("test_02_filter_only.wav", SAMPLE_RATE)) {
+        TEST_FAIL_MESSAGE("Could not create WAV file");
+        return;
+    }
+    
+    MelodyGen melody(SAMPLE_RATE);
+    
+    // Setup tape filters
+    BiquadFilter headBumpL, headBumpR;
+    BiquadFilter tapeRolloffL, tapeRolloffR;
+    BiquadFilter outputLPF_L, outputLPF_R;
+    AllpassFilter azimuthL, azimuthR;  // Azimuth simulation
+    
+    float speedMod = params.tapeSpeed;
+    float ageMod = params.tapeAge;
+    
+    // Head bump
+    float bumpFreq = 60.0f + speedMod * 60.0f;
+    float bumpGain = params.headBumpAmount * 6.0f;
+    headBumpL.setLowShelf(SAMPLE_RATE, bumpFreq, 0.7f, bumpGain);
+    headBumpR.setLowShelf(SAMPLE_RATE, bumpFreq, 0.7f, bumpGain);
+    
+    // Tape rolloff
+    float baseFreq = 1500.0f + speedMod * 9000.0f;
+    float ageFactor = 1.0f - ageMod * 0.9f;
+    float cutoff = fmaxf(baseFreq * ageFactor, 400.0f);
+    tapeRolloffL.setHighShelf(SAMPLE_RATE, cutoff, 0.5f, -50.0f);
+    tapeRolloffR.setHighShelf(SAMPLE_RATE, cutoff, 0.5f, -50.0f);
+    outputLPF_L.setLowpass(SAMPLE_RATE, cutoff, 0.707f);
+    outputLPF_R.setLowpass(SAMPLE_RATE, cutoff, 0.707f);
+    
+    float azimuthPhase = 0.0f;
+    float azimuthError = 0.3f;  // Azimuth misalignment amount
+    
+    int totalSamples = (int)(SAMPLE_RATE * TEST_DURATION_SECONDS);
+    
+    for (int i = 0; i < totalSamples; i++) {
+        float L, R;
+        melody.nextStereo(&L, &R);
+        
+        // Azimuth modulation (slow triangle wave)
+        azimuthPhase += 0.2f / SAMPLE_RATE;
+        if (azimuthPhase > 1.0f) azimuthPhase = 0.0f;
+        float tri = (azimuthPhase < 0.5f) ? (azimuthPhase * 2.0f) : (2.0f - azimuthPhase * 2.0f);
+        float azimuthMod = 0.5f + tri * 1.5f;
+        azimuthL.setCoeff(-0.9f * azimuthError * azimuthMod);
+        azimuthR.setCoeff(-0.9f * azimuthError * azimuthMod * 0.8f); // Slight stereo difference
+        
+        // Apply azimuth
+        L = azimuthL.process(L);
+        R = azimuthR.process(R);
+        
+        // Apply tape filters
+        L = headBumpL.process(L);
+        R = headBumpR.process(R);
+        L = tapeRolloffL.process(L);
+        R = tapeRolloffR.process(R);
+        L = outputLPF_L.process(L);
+        R = outputLPF_R.process(R);
+        
+        // Tape saturation (drive)
+        L = tanhf(L * params.drive) / params.drive;
+        R = tanhf(R * params.drive) / params.drive;
+        
+        // Tape noise (0-100 scale -> internal)
+        float noiseLevel = params.noise * 0.01f * 0.001f;
+        if (noiseLevel > 0.00001f) {
+            L += whiteNoise() * noiseLevel;
+            R += whiteNoise() * noiseLevel;
+        }
+        
+        wav.writeSample(L * params.masterVolume, R * params.masterVolume);
+    }
+    
+    wav.close();
+    TEST_PASS();
+}
+
+// 3. SATURATOR MODE (Engine Mode 0 = delayActive=false)
+// Short delay (~4ms / 200 samples) just for wow/flutter modulation
+void test_generate_saturator_mode(void) {
+    // In ESP32: readTapeAt(200.0f + mod * 40.0f * modDepth, delayLine)
+    float baseDelaySamples = 200.0f; // ~4.2ms at 48kHz
+    float modDepth = 2.0f;           // Same as ESP32
+    float modRange = 40.0f;          // ±40 samples
+    
+    printf("\n=== ENGINE MODE 0: TAPE SATURATOR (delayActive=false) ===\n");
+    printf("Short delay (~4ms) for wow/flutter modulation only\n");
+    printf("  Base: 200 samples, Mod: ±%.0f samples\n", modRange * modDepth);
+    printf("  Drive: %.1f, Flutter: %.0f%%, Wow: %.0f%%\n",
+           params.drive, params.flutterDepth * 100, params.wowDepth * 100);
+    
+    WavWriter wav;
+    if (!wav.open("test_03_saturator_mode.wav", SAMPLE_RATE)) {
+        TEST_FAIL_MESSAGE("Could not create WAV file");
+        return;
+    }
+    
+    MelodyGen melody(SAMPLE_RATE);
+    
+    // Short delay line (just enough for modulation)
+    int delaySize = (int)(SAMPLE_RATE * 0.02f); // 20ms max
+    DelayLine delayL(delaySize);
+    DelayLine delayR(delaySize);
+    
+    // All tape filters (same as ESP32)
+    BiquadFilter headBumpL, headBumpR;
+    BiquadFilter tapeRolloffL, tapeRolloffR;
+    BiquadFilter outputLPF_L, outputLPF_R;
+    BiquadFilter flutterLPF;
+    AllpassFilter azimuthL, azimuthR;
+    DCBlocker dcL, dcR;
+    
+    float speedMod = params.tapeSpeed;
+    float ageMod = params.tapeAge;
+    
+    // Head bump setup
+    float bumpFreq = 60.0f + speedMod * 60.0f;
+    float bumpGain = params.headBumpAmount * 6.0f;
+    headBumpL.setLowShelf(SAMPLE_RATE, bumpFreq, 0.7f, bumpGain);
+    headBumpR.setLowShelf(SAMPLE_RATE, bumpFreq, 0.7f, bumpGain);
+    
+    // Tape rolloff setup
+    float baseFreq = 1500.0f + speedMod * 9000.0f;
+    float ageFactor = 1.0f - ageMod * 0.9f;
+    float cutoff = fmaxf(baseFreq * ageFactor, 400.0f);
+    tapeRolloffL.setHighShelf(SAMPLE_RATE, cutoff, 0.5f, -50.0f);
+    tapeRolloffR.setHighShelf(SAMPLE_RATE, cutoff, 0.5f, -50.0f);
+    outputLPF_L.setLowpass(SAMPLE_RATE, cutoff, 0.707f);
+    outputLPF_R.setLowpass(SAMPLE_RATE, cutoff, 0.707f);
+    flutterLPF.setLowpass(SAMPLE_RATE, 15.0f, 0.707f);
+    
+    float flutterPhase = 0.0f;
+    float wowPhase = 0.0f;
+    float azimuthPhase = 0.0f;
+    
+    int totalSamples = (int)(SAMPLE_RATE * TEST_DURATION_SECONDS);
+    
+    for (int i = 0; i < totalSamples; i++) {
+        float dryL, dryR;
+        melody.nextStereo(&dryL, &dryR);
+        
+        // Wow & Flutter modulation (same as ESP32)
+        flutterPhase += TWO_PI * params.flutterRate / SAMPLE_RATE;
+        if (flutterPhase > TWO_PI) flutterPhase -= TWO_PI;
+        wowPhase += TWO_PI * params.wowRate / SAMPLE_RATE;
+        if (wowPhase > TWO_PI) wowPhase -= TWO_PI;
+        
+        float rawMod = sinf(flutterPhase) * params.flutterDepth + 
+                       sinf(wowPhase) * params.wowDepth;
+        float mod = flutterLPF.process(rawMod);
+        
+        // Calculate modulated delay time (ESP32 style: 200 + mod * 40 * 2)
+        float delaySamples = baseDelaySamples + mod * modRange * modDepth;
+        
+        // Read from delay with modulation
+        float tapeL = delayL.readHermite(delaySamples);
+        float tapeR = delayR.readHermite(delaySamples);
+        
+        // Azimuth modulation
+        azimuthPhase += 0.2f / SAMPLE_RATE;
+        if (azimuthPhase > 1.0f) azimuthPhase = 0.0f;
+        float tri = (azimuthPhase < 0.5f) ? (azimuthPhase * 2.0f) : (2.0f - azimuthPhase * 2.0f);
+        float azimuthMod = 0.5f + tri * 1.5f;
+        azimuthL.setCoeff(-0.9f * params.azimuthError * azimuthMod);
+        azimuthR.setCoeff(-0.9f * params.azimuthError * azimuthMod * 0.8f);
+        
+        // Apply azimuth
+        tapeL = azimuthL.process(tapeL);
+        tapeR = azimuthR.process(tapeR);
+        
+        // Apply tape filters
+        tapeL = headBumpL.process(tapeL);
+        tapeR = headBumpR.process(tapeR);
+        tapeL = tapeRolloffL.process(tapeL);
+        tapeR = tapeRolloffR.process(tapeR);
+        tapeL = outputLPF_L.process(tapeL);
+        tapeR = outputLPF_R.process(tapeR);
+        
+        // Tape saturation
+        tapeL = tanhf(tapeL * params.drive) / params.drive;
+        tapeR = tanhf(tapeR * params.drive) / params.drive;
+        
+        // Tape noise (0-100 scale -> internal)
+        float noiseLevel = params.noise * 0.01f * 0.001f;
+        if (noiseLevel > 0.00001f) {
+            tapeL += whiteNoise() * noiseLevel;
+            tapeR += whiteNoise() * noiseLevel;
+        }
+        
+        // Write to delay (input goes through saturation first like ESP32)
+        float inputSatL = tanhf(dryL * params.drive) / params.drive;
+        float inputSatR = tanhf(dryR * params.drive) / params.drive;
+        delayL.write(dcL.process(inputSatL));
+        delayR.write(dcR.process(inputSatR));
+        
+        // In saturator mode: 100% wet (tape processed signal)
+        wav.writeSample(tapeL * params.masterVolume, tapeR * params.masterVolume);
+    }
+    
+    wav.close();
+    TEST_PASS();
+}
+// 4. DELAY MODE (Engine Mode 1 = delayActive=true)
+// Full tape delay with ALL tape effects applied
+void test_generate_delay_mode(void) {
+    // Calculate delay time from BPM (1/4 note)
+    float msPerBeat = 60000.0f / params.bpm;
+    float delayMs = msPerBeat;  // 1/4 note = 750ms at 80 BPM
+    
+    printf("\n=== ENGINE MODE 1: TAPE DELAY (ALL EFFECTS) ===\n");
+    printf("  BPM: %.0f -> Delay: %.0fms (1/4 note)\n", params.bpm, delayMs);
+    printf("  Feedback: 60%%, Dry/Wet: 60%%\n");
+    printf("  Head Bump: %.0f%%, Tape Speed: %.0f%%, Drive: %.1f\n",
+           params.headBumpAmount * 100, params.tapeSpeed * 100, params.drive);
+    
+    WavWriter wav;
+    if (!wav.open("test_04_delay_mode.wav", SAMPLE_RATE)) {
+        TEST_FAIL_MESSAGE("Could not create WAV file");
+        return;
+    }
+    
+    MelodyGen melody(SAMPLE_RATE);
+    
+    // Delay line
+    int delaySamples = (int)((delayMs / 1000.0f) * SAMPLE_RATE);
+    int delaySize = delaySamples + 1000;
+    DelayLine delayL(delaySize);
+    DelayLine delayR(delaySize);
+    
+    // All tape filters (same as test 03)
+    BiquadFilter headBumpL, headBumpR;
+    BiquadFilter tapeRolloffL, tapeRolloffR;
+    BiquadFilter outputLPF_L, outputLPF_R;
+    BiquadFilter feedbackLPF_L, feedbackLPF_R;
+    BiquadFilter flutterLPF;
+    AllpassFilter azimuthL, azimuthR;
+    DCBlocker dcL, dcR;
+    
+    float speedMod = params.tapeSpeed;
+    float ageMod = params.tapeAge;
+    
+    // Head bump setup
+    float bumpFreq = 60.0f + speedMod * 60.0f;
+    float bumpGain = params.headBumpAmount * 6.0f;
+    headBumpL.setLowShelf(SAMPLE_RATE, bumpFreq, 0.7f, bumpGain);
+    headBumpR.setLowShelf(SAMPLE_RATE, bumpFreq, 0.7f, bumpGain);
+    
+    // Tape rolloff setup
+    float baseFreq = 1500.0f + speedMod * 9000.0f;
+    float ageFactor = 1.0f - ageMod * 0.9f;
+    float cutoff = fmaxf(baseFreq * ageFactor, 400.0f);
+    tapeRolloffL.setHighShelf(SAMPLE_RATE, cutoff, 0.5f, -50.0f);
+    tapeRolloffR.setHighShelf(SAMPLE_RATE, cutoff, 0.5f, -50.0f);
+    outputLPF_L.setLowpass(SAMPLE_RATE, cutoff, 0.707f);
+    outputLPF_R.setLowpass(SAMPLE_RATE, cutoff, 0.707f);
+    feedbackLPF_L.setLowpass(SAMPLE_RATE, 3000.0f, 0.707f);
+    feedbackLPF_R.setLowpass(SAMPLE_RATE, 3000.0f, 0.707f);
+    flutterLPF.setLowpass(SAMPLE_RATE, 15.0f, 0.707f);
+    
+    float flutterPhase = 0.0f, wowPhase = 0.0f, azimuthPhase = 0.0f;
+    
+    // Fixed settings for clear delay
+    float feedback = 0.60f;
+    float dryWet = 0.60f;
+    
+    printf("  Delay samples: %d\n", delaySamples);
+    
+    int totalSamples = (int)(SAMPLE_RATE * TEST_DURATION_SECONDS);
+    
+    for (int i = 0; i < totalSamples; i++) {
+        float dryL, dryR;
+        melody.nextStereo(&dryL, &dryR);
+        
+        // Wow & Flutter modulation
+        flutterPhase += TWO_PI * params.flutterRate / SAMPLE_RATE;
+        wowPhase += TWO_PI * params.wowRate / SAMPLE_RATE;
+        if (flutterPhase > TWO_PI) flutterPhase -= TWO_PI;
+        if (wowPhase > TWO_PI) wowPhase -= TWO_PI;
+        
+        float mod = flutterLPF.process(sinf(flutterPhase) * params.flutterDepth + 
+                                       sinf(wowPhase) * params.wowDepth);
+        
+        // Modulated delay time
+        float modulatedDelay = (float)delaySamples * (1.0f + mod * 0.01f);
+        
+        // Read from delay
+        float wetL = delayL.readHermite(modulatedDelay);
+        float wetR = delayR.readHermite(modulatedDelay);
+        
+        // Azimuth modulation
+        azimuthPhase += 0.2f / SAMPLE_RATE;
+        if (azimuthPhase > 1.0f) azimuthPhase = 0.0f;
+        float tri = (azimuthPhase < 0.5f) ? (azimuthPhase * 2.0f) : (2.0f - azimuthPhase * 2.0f);
+        float azimuthMod = 0.5f + tri * 1.5f;
+        azimuthL.setCoeff(-0.9f * params.azimuthError * azimuthMod);
+        azimuthR.setCoeff(-0.9f * params.azimuthError * azimuthMod * 0.8f);
+        
+        // Apply azimuth to wet signal
+        wetL = azimuthL.process(wetL);
+        wetR = azimuthR.process(wetR);
+        
+        // Apply tape character to wet signal
+        wetL = headBumpL.process(wetL);
+        wetR = headBumpR.process(wetR);
+        wetL = tapeRolloffL.process(wetL);
+        wetR = tapeRolloffR.process(wetR);
+        wetL = outputLPF_L.process(wetL);
+        wetR = outputLPF_R.process(wetR);
+        
+        // Tape saturation on wet signal
+        wetL = tanhf(wetL * params.drive) / params.drive;
+        wetR = tanhf(wetR * params.drive) / params.drive;
+        
+        // Tape noise (0-100 scale -> internal)
+        float noiseLevel = params.noise * 0.01f * 0.001f;
+        if (noiseLevel > 0.00001f) {
+            wetL += whiteNoise() * noiseLevel;
+            wetR += whiteNoise() * noiseLevel;
+        }
+        
+        // Feedback path (filtered)
+        float fbL = feedbackLPF_L.process(wetL) * feedback;
+        float fbR = feedbackLPF_R.process(wetR) * feedback;
+        
+        // Mix input with feedback and write to delay
+        float recL = tanhf((dryL + fbL) * params.drive) / params.drive;
+        float recR = tanhf((dryR + fbR) * params.drive) / params.drive;
+        delayL.write(dcL.process(recL));
+        delayR.write(dcR.process(recR));
+        
+        // Final mix: dry + wet
+        float outL = (dryL * (1.0f - dryWet) + wetL * dryWet) * params.masterVolume;
+        float outR = (dryR * (1.0f - dryWet) + wetR * dryWet) * params.masterVolume;
+        
+        wav.writeSample(outL, outR);
+    }
+    
+    wav.close();
+    printf("=== COMPLETE ===\n");
+    TEST_PASS();
+}
+
+// ============================================================================
+// NEW EFFECT MODE TESTS
+// ============================================================================
+
+// 5. SPRING REVERB MODE
+void test_generate_spring_reverb(void) {
+    printf("\n=== SPRING REVERB TEST ===\n");
+    printf("  6-stage allpass cascade with tape damping\n");
+    printf("  Decay: 70%%, Damping: 50%%\n");
+    
+    WavWriter wav;
+    if (!wav.open("test_05_spring_reverb.wav", SAMPLE_RATE)) {
+        TEST_FAIL_MESSAGE("Could not create WAV file");
+        return;
+    }
+    
+    MelodyGen melody(SAMPLE_RATE);
+    
+    // Spring reverb allpasses (6 stages)
+    AllpassFilter springAP_L[6], springAP_R[6];
+    BiquadFilter springLPF_L[6], springLPF_R[6];
+    
+    // Init with varied coefficients for diffusion
+    float coeffs[6] = {0.55f, 0.50f, 0.45f, 0.40f, 0.55f, 0.50f};
+    for (int i = 0; i < 6; i++) {
+        springAP_L[i].setCoeff(coeffs[i]);
+        springAP_R[i].setCoeff(coeffs[i]);
+        springLPF_L[i].setLowpass(SAMPLE_RATE, 2500.0f, 0.5f);
+        springLPF_R[i].setLowpass(SAMPLE_RATE, 2500.0f, 0.5f);
+    }
+    
+    float springDecay = 0.7f;
+    float springDamping = 0.5f;
+    
+    int totalSamples = (int)(SAMPLE_RATE * TEST_DURATION_SECONDS);
+    
+    for (int i = 0; i < totalSamples; i++) {
+        float dryL, dryR;
+        melody.nextStereo(&dryL, &dryR);
+        
+        float wetL = dryL, wetR = dryR;
+        
+        // 6-stage allpass cascade with LPF damping
+        float coeff = 0.4f + springDecay * 0.5f;
+        float dampFreq = 1500.0f + springDamping * 3000.0f;
+        
+        for (int s = 0; s < 6; s++) {
+            springAP_L[s].setCoeff(coeff);
+            springAP_R[s].setCoeff(coeff);
+            springLPF_L[s].setLowpass(SAMPLE_RATE, dampFreq, 0.5f);
+            springLPF_R[s].setLowpass(SAMPLE_RATE, dampFreq, 0.5f);
+            
+            wetL = springAP_L[s].process(wetL);
+            wetR = springAP_R[s].process(wetR);
+            wetL = springLPF_L[s].process(wetL);
+            wetR = springLPF_R[s].process(wetR);
+        }
+        
+        // Mix: 40% dry, 60% spring
+        float outL = (dryL * 0.4f + wetL * 0.6f) * params.masterVolume;
+        float outR = (dryR * 0.4f + wetR * 0.6f) * params.masterVolume;
+        
+        wav.writeSample(outL, outR);
+    }
+    
+    wav.close();
+    printf("=== COMPLETE ===\n");
+    TEST_PASS();
+}
+
+// 6. REVERSE DELAY MODE
+void test_generate_reverse_delay(void) {
+    printf("\n=== REVERSE DELAY TEST ===\n");
+    printf("  Reading buffer forward = sounds like reverse\n");
+    printf("  BPM: %.0f, Delay: 1 beat\n", params.bpm);
+    
+    WavWriter wav;
+    if (!wav.open("test_06_reverse_delay.wav", SAMPLE_RATE)) {
+        TEST_FAIL_MESSAGE("Could not create WAV file");
+        return;
+    }
+    
+    MelodyGen melody(SAMPLE_RATE);
+    
+    // Delay setup
+    float msPerBeat = 60000.0f / params.bpm;
+    int delaySamples = (int)((msPerBeat / 1000.0f) * SAMPLE_RATE);
+    int delaySize = delaySamples + 1000;
+    DelayLine delayL(delaySize);
+    DelayLine delayR(delaySize);
+    
+    BiquadFilter feedbackLPF_L, feedbackLPF_R;
+    feedbackLPF_L.setLowpass(SAMPLE_RATE, 2000.0f, 0.5f);
+    feedbackLPF_R.setLowpass(SAMPLE_RATE, 2000.0f, 0.5f);
+    
+    DCBlocker dcL, dcR;
+    
+    float feedback = 0.50f;
+    float dryWet = 0.60f;
+    
+    printf("  Delay samples: %d\n", delaySamples);
+    
+    int totalSamples = (int)(SAMPLE_RATE * TEST_DURATION_SECONDS);
+    int writePos = 0;
+    
+    for (int i = 0; i < totalSamples; i++) {
+        float dryL, dryR;
+        melody.nextStereo(&dryL, &dryR);
+        
+        // REVERSE: Read FORWARD from write position (+ instead of -)
+        float readPos = (float)writePos + (float)delaySamples;
+        while (readPos >= delaySize) readPos -= delaySize;
+        
+        float wetL = delayL.readHermite(delaySize - (int)readPos);
+        float wetR = delayR.readHermite(delaySize - (int)readPos);
+        
+        // Feedback (darkened)
+        float fbL = feedbackLPF_L.process(wetL) * feedback;
+        float fbR = feedbackLPF_R.process(wetR) * feedback;
+        
+        // Write to buffer
+        delayL.write(dcL.process(dryL + fbL));
+        delayR.write(dcR.process(dryR + fbR));
+        
+        writePos++;
+        if (writePos >= delaySize) writePos = 0;
+        
+        // Mix
+        float outL = (dryL * (1.0f - dryWet) + wetL * dryWet) * params.masterVolume;
+        float outR = (dryR * (1.0f - dryWet) + wetR * dryWet) * params.masterVolume;
+        
+        wav.writeSample(outL, outR);
+    }
+    
+    wav.close();
+    printf("=== COMPLETE ===\n");
+    TEST_PASS();
+}
+
+// 7. REVERSE REVERB MODE (Reverse + Allpass Smear)
+void test_generate_reverse_reverb(void) {
+    printf("\n=== REVERSE REVERB TEST ===\n");
+    printf("  Reverse delay + 4-stage allpass smearing\n");
+    printf("  BPM: %.0f\n", params.bpm);
+    
+    WavWriter wav;
+    if (!wav.open("test_07_reverse_reverb.wav", SAMPLE_RATE)) {
+        TEST_FAIL_MESSAGE("Could not create WAV file");
+        return;
+    }
+    
+    MelodyGen melody(SAMPLE_RATE);
+    
+    // Delay setup
+    float msPerBeat = 60000.0f / params.bpm;
+    int delaySamples = (int)((msPerBeat / 1000.0f) * SAMPLE_RATE);
+    int delaySize = delaySamples + 1000;
+    DelayLine delayL(delaySize);
+    DelayLine delayR(delaySize);
+    
+    // Reverse smear allpasses
+    AllpassFilter smearAP_L[4], smearAP_R[4];
+    float smearCoeffs[4] = {0.6f, 0.55f, 0.5f, 0.45f};
+    for (int i = 0; i < 4; i++) {
+        smearAP_L[i].setCoeff(smearCoeffs[i]);
+        smearAP_R[i].setCoeff(smearCoeffs[i]);
+    }
+    
+    BiquadFilter feedbackLPF_L, feedbackLPF_R;
+    feedbackLPF_L.setLowpass(SAMPLE_RATE, 1800.0f, 0.5f);
+    feedbackLPF_R.setLowpass(SAMPLE_RATE, 1800.0f, 0.5f);
+    
+    DCBlocker dcL, dcR;
+    
+    float feedback = 0.55f;
+    float dryWet = 0.65f;
+    
+    int totalSamples = (int)(SAMPLE_RATE * TEST_DURATION_SECONDS);
+    int writePos = 0;
+    
+    for (int i = 0; i < totalSamples; i++) {
+        float dryL, dryR;
+        melody.nextStereo(&dryL, &dryR);
+        
+        // REVERSE read
+        float readPos = (float)writePos + (float)delaySamples;
+        while (readPos >= delaySize) readPos -= delaySize;
+        
+        float wetL = delayL.readHermite(delaySize - (int)readPos);
+        float wetR = delayR.readHermite(delaySize - (int)readPos);
+        
+        // Apply smearing allpasses
+        for (int s = 0; s < 4; s++) {
+            wetL = smearAP_L[s].process(wetL);
+            wetR = smearAP_R[s].process(wetR);
+        }
+        
+        // Feedback
+        float fbL = feedbackLPF_L.process(wetL) * feedback;
+        float fbR = feedbackLPF_R.process(wetR) * feedback;
+        
+        delayL.write(dcL.process(dryL + fbL));
+        delayR.write(dcR.process(dryR + fbR));
+        
+        writePos++;
+        if (writePos >= delaySize) writePos = 0;
+        
+        // Mix
+        float outL = (dryL * (1.0f - dryWet) + wetL * dryWet) * params.masterVolume;
+        float outR = (dryR * (1.0f - dryWet) + wetR * dryWet) * params.masterVolume;
+        
+        wav.writeSample(outL, outR);
+    }
+    
+    wav.close();
+    printf("=== COMPLETE ===\n");
+    TEST_PASS();
+}
+
+// ============================================================================
+// EXTERNAL WAV FILE PROCESSING TESTS
+// Process data/demo.wav through tape effects
+// First convert MP3: ffmpeg -i data/demo.mp3 data/demo.wav
+// ============================================================================
+
+// 5. Process external WAV through FILTER mode
+void test_process_wav_filter(void) {
+    printf("\n=== PROCESSING WAV: FILTER MODE ===\n");
+    
+    WavReader input;
+    if (!input.open(INPUT_WAV_FILE)) {
+        printf("SKIP: Input file not found. Convert MP3 first:\n");
+        printf("  ffmpeg -i data/demo.mp3 data/demo.wav\n");
+        TEST_PASS();
+        return;
+    }
+    
+    WavWriter output;
+    if (!output.open("test_05_wav_filter.wav", (float)input.sampleRate)) {
+        input.close();
+        TEST_FAIL_MESSAGE("Could not create output file");
+        return;
+    }
+    
+    // Setup filters
+    BiquadFilter headBumpL, headBumpR;
+    BiquadFilter tapeRolloffL, tapeRolloffR;
+    AllpassFilter azimuthL, azimuthR;
+    DCBlocker dcL, dcR;
+    
+    float sr = (float)input.sampleRate;
+    headBumpL.setLowShelf(sr, 80.0f, 0.7f, params.headBumpAmount * 6.0f);
+    headBumpR.setLowShelf(sr, 80.0f, 0.7f, params.headBumpAmount * 6.0f);
+    float cutoff = 1500.0f + params.tapeSpeed * 6000.0f;
+    tapeRolloffL.setHighShelf(sr, cutoff, 0.5f, -40.0f);
+    tapeRolloffR.setHighShelf(sr, cutoff, 0.5f, -40.0f);
+    
+    float azPhase = 0.0f;
+    float L, R;
+    while (input.readSample(&L, &R)) {
+        azPhase += 0.2f / sr;
+        if (azPhase > 1.0f) azPhase = 0.0f;
+        float tri = (azPhase < 0.5f) ? (azPhase * 2.0f) : (2.0f - azPhase * 2.0f);
+        azimuthL.setCoeff(-0.9f * params.azimuthError * (0.5f + tri));
+        azimuthR.setCoeff(-0.9f * params.azimuthError * (0.5f + tri) * 0.8f);
+        
+        L = azimuthL.process(headBumpL.process(tapeRolloffL.process(L)));
+        R = azimuthR.process(headBumpR.process(tapeRolloffR.process(R)));
+        L = tanhf(L * params.drive) / params.drive;
+        R = tanhf(R * params.drive) / params.drive;
+        float noiseLevel = params.noise * 0.01f * 0.001f;
+        if (noiseLevel > 0.00001f) {
+            L += whiteNoise() * noiseLevel;
+            R += whiteNoise() * noiseLevel;
+        }
+        output.writeSample(dcL.process(L), dcR.process(R));
+    }
+    
+    input.close();
+    output.close();
+    TEST_PASS();
+}
+
+// 6. Process external WAV through SATURATOR mode
+void test_process_wav_saturator(void) {
+    printf("\n=== PROCESSING WAV: SATURATOR MODE ===\n");
+    
+    WavReader input;
+    if (!input.open(INPUT_WAV_FILE)) {
+        printf("SKIP: Input file not found\n");
+        TEST_PASS();
+        return;
+    }
+    
+    WavWriter output;
+    if (!output.open("test_06_wav_saturator.wav", (float)input.sampleRate)) {
+        input.close();
+        TEST_FAIL_MESSAGE("Could not create output file");
+        return;
+    }
+    
+    float sr = (float)input.sampleRate;
+    int delaySize = (int)(sr * 0.02f);
+    DelayLine delayL(delaySize);
+    DelayLine delayR(delaySize);
+    
+    BiquadFilter headBumpL, headBumpR, flutterLPF;
+    BiquadFilter tapeRolloffL, tapeRolloffR;
+    AllpassFilter azimuthL, azimuthR;
+    DCBlocker dcL, dcR;
+    
+    headBumpL.setLowShelf(sr, 80.0f, 0.7f, params.headBumpAmount * 6.0f);
+    headBumpR.setLowShelf(sr, 80.0f, 0.7f, params.headBumpAmount * 6.0f);
+    float cutoff = 1500.0f + params.tapeSpeed * 6000.0f;
+    tapeRolloffL.setHighShelf(sr, cutoff, 0.5f, -40.0f);
+    tapeRolloffR.setHighShelf(sr, cutoff, 0.5f, -40.0f);
+    flutterLPF.setLowpass(sr, 15.0f, 0.707f);
+    
+    float flutterPhase = 0, wowPhase = 0, azPhase = 0;
+    float L, R;
+    
+    while (input.readSample(&L, &R)) {
+        flutterPhase += TWO_PI * params.flutterRate / sr;
+        wowPhase += TWO_PI * params.wowRate / sr;
+        if (flutterPhase > TWO_PI) flutterPhase -= TWO_PI;
+        if (wowPhase > TWO_PI) wowPhase -= TWO_PI;
+        
+        float mod = flutterLPF.process(sinf(flutterPhase) * params.flutterDepth + 
+                                       sinf(wowPhase) * params.wowDepth);
+        float delaySamples = 200.0f + mod * 80.0f;
+        
+        float tapeL = delayL.readHermite(delaySamples);
+        float tapeR = delayR.readHermite(delaySamples);
+        
+        azPhase += 0.2f / sr;
+        if (azPhase > 1.0f) azPhase = 0.0f;
+        azimuthL.setCoeff(-0.9f * params.azimuthError * (0.5f + azPhase));
+        azimuthR.setCoeff(-0.9f * params.azimuthError * (0.5f + azPhase) * 0.8f);
+        
+        tapeL = tanhf(azimuthL.process(headBumpL.process(tapeRolloffL.process(tapeL))) * params.drive) / params.drive;
+        tapeR = tanhf(azimuthR.process(headBumpR.process(tapeRolloffR.process(tapeR))) * params.drive) / params.drive;
+        
+        delayL.write(dcL.process(L));
+        delayR.write(dcR.process(R));
+        
+        float noiseLevel = params.noise * 0.01f * 0.001f;
+        if (noiseLevel > 0.00001f) {
+            tapeL += whiteNoise() * noiseLevel;
+            tapeR += whiteNoise() * noiseLevel;
+        }
+        output.writeSample(tapeL, tapeR);
+    }
+    
+    input.close();
+    output.close();
+    TEST_PASS();
+}
+
+// 7. Process external WAV through DELAY mode
+void test_process_wav_delay(void) {
+    printf("\n=== PROCESSING WAV: DELAY MODE ===\n");
+    printf("  BPM: %.0f, Feedback: %.0f%%, Dry/Wet: %.0f%%\n",
+           params.bpm, params.feedback * 100, params.dryWet * 100);
+    
+    WavReader input;
+    if (!input.open(INPUT_WAV_FILE)) {
+        printf("SKIP: Input file not found\n");
+        TEST_PASS();
+        return;
+    }
+    
+    WavWriter output;
+    if (!output.open("test_07_wav_delay.wav", (float)input.sampleRate)) {
+        input.close();
+        TEST_FAIL_MESSAGE("Could not create output file");
+        return;
+    }
+    
+    // Create tape model with input's sample rate
+    TapeModelTest tape((float)input.sampleRate);
+    tape.updateFilters(params);
+    
+    float L, R, outL, outR;
+    while (input.readSample(&L, &R)) {
+        tape.processStereo(L, R, params, &outL, &outR);
+        output.writeSample(outL, outR);
+    }
+    
+    input.close();
+    output.close();
+    TEST_PASS();
+}
+
+// ============================================================================
+// TEST RUNNER
+// ============================================================================
+void setUp(void) {}
+void tearDown(void) {}
+
+int main(int argc, char **argv) {
+    UNITY_BEGIN();
+    
+    printf("\n=== DSP Unit Tests ===\n");
+    RUN_TEST(test_biquad_lowpass);
+    RUN_TEST(test_dcblocker);
+    RUN_TEST(test_delay_hermite);
+    
+    printf("\n=== Melody Audio Generation (4 files) ===\n");
+    RUN_TEST(test_generate_clean_melody);    // 01 - Clean reference
+    RUN_TEST(test_generate_filter_only);     // 02 - Filter + Azimuth
+    RUN_TEST(test_generate_saturator_mode);  // 03 - Engine Mode 0
+    RUN_TEST(test_generate_delay_mode);      // 04 - Engine Mode 1
+    
+    printf("\n=== New Effect Modes (3 files) ===\n");
+    RUN_TEST(test_generate_spring_reverb);   // 05 - Spring Reverb
+    RUN_TEST(test_generate_reverse_delay);   // 06 - Reverse Delay
+    RUN_TEST(test_generate_reverse_reverb);  // 07 - Reverse Reverb
+    
+#if RUN_WAV_TESTS
+    printf("\n=== WAV File Processing (3 files) ===\n");
+    printf("NOTE: Convert MP3 first: ffmpeg -i data/demo.mp3 data/demo.wav\n");
+    RUN_TEST(test_process_wav_filter);       // 08 - Filter mode
+    RUN_TEST(test_process_wav_saturator);    // 09 - Saturator mode  
+    RUN_TEST(test_process_wav_delay);        // 10 - Delay mode
+#else
+    printf("\n=== WAV File Processing DISABLED ===\n");
+    printf("Set RUN_WAV_TESTS=1 in test_main.cpp to enable\n");
+#endif
+    
+    printf("\n=== FILES GENERATED ===\n");
+    printf("  test_01_clean_melody.wav       - Dry melody\n");
+    printf("  test_02_filter_only.wav        - Tape EQ\n");
+    printf("  test_03_saturator_mode.wav     - Saturator\n");
+    printf("  test_04_delay_mode.wav         - Delay (BPM: %.0f)\n", params.bpm);
+    printf("  test_05_spring_reverb.wav      - Spring Reverb\n");
+    printf("  test_06_reverse_delay.wav      - Reverse Delay\n");
+    printf("  test_07_reverse_reverb.wav     - Reverse Reverb\n");
+#if RUN_WAV_TESTS
+    printf("  test_08_wav_filter.wav         - demo.wav + Filter\n");
+    printf("  test_09_wav_saturator.wav      - demo.wav + Saturator\n");
+    printf("  test_10_wav_delay.wav          - demo.wav + Delay\n");
+#endif
+    
+    return UNITY_END();
+}
+

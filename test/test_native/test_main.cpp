@@ -35,27 +35,27 @@
 // Synced with ESP32 TapeDelay.h - uses 0-100 scale (not 0-1)
 struct TapeParams {
     // Modulation (0-100 scale, Rate in Hz)
-    float flutterDepth = 20.0f;     // 0-100 (20% default)
-    float wowDepth = 15.0f;         // 0-100 (15% default)
+    float flutterDepth = 15.0f;     // 0-100 (15% default - subtle)
+    float wowDepth = 10.0f;         // 0-100 (10% default - subtle)
     float flutterRate = 6.0f;       // Hz (3-15)
     float wowRate = 0.8f;           // Hz (0.3-3)
     
-    // Degradation (0-100 scale)
-    float dropoutSeverity = 8.0f;   // 0-100
-    float drive = 40.0f;            // 0-100 (-> 0-5 gain), default 40=2x
-    float noise = 30.0f;            // 0-100 (-> ~15% hiss)
+    // Degradation (0-100 scale) - REDUCED to prevent clipping
+    float dropoutSeverity = 5.0f;   // 0-100 (was 8)
+    float drive = 10.0f;            // 0-100 -> 1-5x gain, 10=1.4x (was 40=2.6x)
+    float noise = 5.0f;             // 0-100 (was 30 - too much hiss)
     
     // Tape character (0-100 scale)
     float tapeSpeed = 50.0f;        // 0-100 (center)
-    float tapeAge = 40.0f;          // 0-100 (slightly worn)
-    float headBumpAmount = 30.0f;   // 0-100 (-> ~1.5dB boost)
-    float azimuthError = 10.0f;     // 0-100
+    float tapeAge = 30.0f;          // 0-100 (was 40)
+    float headBumpAmount = 20.0f;   // 0-100 (was 30 - reduced bass boost)
+    float azimuthError = 5.0f;      // 0-100 (was 10)
     float tone = 50.0f;             // 0-100 (neutral)
     
     // Delay settings
     bool delayActive = true;        // false=Saturator, true=Delay
     float delayTimeMs = 500.0f;     // Direct delay time in ms
-    float feedback = 40.0f;         // 0-110 (100+=self-oscillation)
+    float feedback = 30.0f;         // 0-110 (was 40 - reduced accumulation)
     float dryWet = 50.0f;           // 0-100 mix
     int activeHeads = 4;            // Bitmask: 1=Head1, 2=Head2, 4=Head3
     float bpm = 120.0f;             // BPM for musical sync
@@ -70,11 +70,12 @@ struct TapeParams {
     bool reverse = false;           // Read buffer backwards
     bool reverseSmear = false;      // Reverse + allpass diffusion
     bool spring = false;            // Spring reverb post-delay
-    float springDecay = 60.0f;      // 0-100
-    float springDamping = 45.0f;    // 0-100
+    float springDecay = 50.0f;      // 0-100 (was 60)
+    float springDamping = 50.0f;    // 0-100 (was 45)
+    float springMix = 50.0f;        // 0-100% (was 60)
     
-    // Master
-    float masterVolume = 30.0f;     // 0-300 (30 default = 0.3)
+    // Master - INCREASED to compensate for lower drive
+    float masterVolume = 70.0f;     // 0-300 (was 30, now 0.7 = unity-ish)
 };
 
 // Current parameters (edit these to change the sound!)
@@ -422,9 +423,70 @@ public:
         float c2 = y0 - 2.5f * y1 + 2.0f * y2 - 0.5f * y3;
         float c3 = 0.5f * (y3 - y0) + 1.5f * (y1 - y2);
         
-        return ((c3 * frac + c2) * frac + c1) * frac + c0;
+    return ((c3 * frac + c2) * frac + c1) * frac + c0;
     }
 };
+
+// ============================================================================
+// DELAY ALLPASS (Schroeder style) - Matches production TapeDelay.h
+// Used for spring reverb and reverse smear
+// ============================================================================
+class DelayAllpass {
+private:
+    float *buffer;
+    int size;
+    int idx;
+    float feedback;
+
+public:
+    DelayAllpass() : buffer(nullptr), size(0), idx(0), feedback(0.5f) {}
+    ~DelayAllpass() { if (buffer) delete[] buffer; }
+
+    void init(int len) {
+        if (buffer) delete[] buffer;
+        size = len;
+        buffer = new float[size];
+        memset(buffer, 0, size * sizeof(float));
+        idx = 0;
+    }
+
+    void setCoeff(float f) { feedback = f; }
+
+    // Schroeder Allpass Process
+    // y[n] = -g*x[n] + x[n-D] + g*y[n-D]
+    AUDIO_INLINE float process(float input) {
+        if (!buffer) return input;
+        
+        float bufOut = buffer[idx];
+        float node = input + feedback * bufOut;
+        // Anti-denormal flush
+        if (fabsf(node) < 1e-15f) node = 0.0f;
+        float output = bufOut - feedback * node;
+        
+        buffer[idx] = node;
+        
+        idx++;
+        if (idx >= size) idx = 0;
+        
+        return output;
+    }
+};
+
+// ============================================================================
+// TUBE-LIKE ASYMMETRIC SATURATOR - Matches production TapeDelay.cpp
+// ============================================================================
+inline float saturator(float x) {
+    // 1. Asymmetry (Tube Bias) - Adds even harmonics
+    if (x > 0.5f)
+        x = 0.5f + (x - 0.5f) * 0.9f;
+
+    // 2. Soft Clipping (Extended headroom)
+    if (x > 2.0f) return 1.0f;
+    if (x < -2.0f) return -1.0f;
+
+    // Smooth cubic clipper (Gentler slope)
+    return x - (0.08f * x * x * x);
+}
 
 // ============================================================================
 // MELODY GENERATOR (EXACT COPY FROM ESP32)
@@ -801,6 +863,8 @@ private:
     BiquadFilter headBumpL, headBumpR;           // Low shelf boost
     BiquadFilter tapeRolloffL, tapeRolloffR;     // High shelf cut
     BiquadFilter feedbackLPF_L, feedbackLPF_R;   // Darken repeats
+    BiquadFilter feedbackHPF_L, feedbackHPF_R;   // Remove mud accumulation
+    AllpassFilter feedbackAllpass_L, feedbackAllpass_R; // Phase smearing
     BiquadFilter outputLPF_L, outputLPF_R;       // Final smoothing
     BiquadFilter flutterLPF;                     // Flutter smoothing
     DCBlocker dcL, dcR;
@@ -833,10 +897,9 @@ public:
         float toneMod = p.tone * 0.01f;
         float headBump = p.headBumpAmount * 0.01f;
         
-        // Head bump (bass boost) - matching ESP32 formula
-        // headBumpGain = headBumpAmount * 0.05f (so 30% = 1.5dB)
-        float bumpFreq = 60.0f + speedMod * 60.0f;
-        float bumpGain = headBump * 5.0f;  // 0.05f * 100
+        // Head bump (bass boost) - TUNED: Fixed at 100Hz (Classic Tape Echo Bump)
+        float bumpFreq = 100.0f;
+        float bumpGain = p.headBumpAmount * 0.05f;  // 0-100 -> 0-5dB
         headBumpL.setLowShelf(sampleRate, bumpFreq, 0.7f, bumpGain);
         headBumpR.setLowShelf(sampleRate, bumpFreq, 0.7f, bumpGain);
         
@@ -854,10 +917,19 @@ public:
         outputLPF_L.setLowpass(sampleRate, cutoff, 0.707f);
         outputLPF_R.setLowpass(sampleRate, cutoff, 0.707f);
         
-        // Feedback LPF - ESP32 formula
-        float fbCutoff = 1200.0f + speedMod * 2500.0f;
-        feedbackLPF_L.setLowpass(sampleRate, fbCutoff, 0.707f);
-        feedbackLPF_R.setLowpass(sampleRate, fbCutoff, 0.707f);
+        // Feedback LPF - ESP32 formula (brighter: 1.5kHz - 12kHz)
+        float fbCutoff = 1500.0f + speedMod * 10500.0f;
+        feedbackLPF_L.setLowpass(sampleRate, fbCutoff, 0.5f);
+        feedbackLPF_R.setLowpass(sampleRate, fbCutoff, 0.5f);
+        
+        // Feedback HPF - Remove mud accumulation (300Hz)
+        feedbackHPF_L.setHighpass(sampleRate, 300.0f, 0.5f);
+        feedbackHPF_R.setHighpass(sampleRate, 300.0f, 0.5f);
+        
+        // Feedback Allpass - Phase smearing for vintage character
+        float allpassCoeff = 0.3f + ageMod * 0.4f;
+        feedbackAllpass_L.setCoeff(allpassCoeff);
+        feedbackAllpass_R.setCoeff(allpassCoeff);
         
         // Calculate head delays - using 3 heads (bitmask) instead of 7
         float msPerBeat = 60000.0f / p.bpm;
@@ -950,15 +1022,33 @@ public:
             wetR += whiteNoise() * noiseLevel;
         }
         
-        // === FEEDBACK PATH ===
-        float fbL = feedbackLPF_L.process(wetL) * feedback;
-        float fbR = feedbackLPF_R.process(wetR) * feedback;
+        // === FEEDBACK PATH (ENHANCED TAPE DEGRADATION) ===
+        float fbL = feedbackLPF_L.process(wetL);
+        float fbR = feedbackLPF_R.process(wetR);
         
-        // Saturation (ESP32-style)
+        // HPF: Remove mud accumulation
+        fbL = feedbackHPF_L.process(fbL);
+        fbR = feedbackHPF_R.process(fbR);
+        
+        // Allpass: Phase smearing (head gap simulation)
+        fbL = feedbackAllpass_L.process(fbL);
+        fbR = feedbackAllpass_R.process(fbR);
+        
+        // Progressive saturation (accumulates per repeat)
+        fbL = tanhf(fbL * 1.3f) / 1.3f;
+        fbR = tanhf(fbR * 1.3f) / 1.3f;
+        
+        // Apply feedback amount (clamped)
+        float safeFeedback = feedback;
+        if (safeFeedback > 0.85f) safeFeedback = 0.85f;
+        fbL *= safeFeedback;
+        fbR *= safeFeedback;
+        
+        // Record signal with saturation (production-style cubic saturator)
         float recL = inL + fbL;
         float recR = inR + fbR;
-        recL = tanhf(recL * driveAmount) / driveAmount;
-        recR = tanhf(recR * driveAmount) / driveAmount;
+        recL = saturator(recL * driveAmount) / driveAmount;
+        recR = saturator(recR * driveAmount) / driveAmount;
         
         // DC blocking and write to delay
         delayL->write(dcL.process(recL));
@@ -1383,8 +1473,9 @@ void test_generate_delay_mode(void) {
 // 5. SPRING REVERB MODE
 void test_generate_spring_reverb(void) {
     printf("\n=== SPRING REVERB TEST ===\n");
-    printf("  6-stage allpass cascade with tape damping\n");
-    printf("  Decay: 70%%, Damping: 50%%\n");
+    printf("  6-stage Schroeder allpass cascade with tape damping\n");
+    printf("  Decay: %.0f%%, Damping: %.0f%%, Mix: %.0f%%\n", 
+           params.springDecay, params.springDamping, params.springMix);
     
     WavWriter wav;
     if (!wav.open("test_05_spring_reverb.wav", SAMPLE_RATE)) {
@@ -1394,21 +1485,27 @@ void test_generate_spring_reverb(void) {
     
     MelodyGen melody(SAMPLE_RATE);
     
-    // Spring reverb allpasses (6 stages)
-    AllpassFilter springAP_L[6], springAP_R[6];
+    // Spring reverb allpasses (6 stages) - using DelayAllpass with prime delays
+    DelayAllpass springAP_L[6], springAP_R[6];
     BiquadFilter springLPF_L[6], springLPF_R[6];
     
-    // Init with varied coefficients for diffusion
-    float coeffs[6] = {0.55f, 0.50f, 0.45f, 0.40f, 0.55f, 0.50f};
+    // Prime delay times matching production TapeDelay.cpp
+    static const int springTimes[6] = {223, 367, 491, 647, 821, 1039}; // Primes ~5-23ms
+    static const float springCoeffs[6] = {0.7f, 0.65f, 0.6f, 0.6f, 0.5f, 0.5f};
+    
     for (int i = 0; i < 6; i++) {
-        springAP_L[i].setCoeff(coeffs[i]);
-        springAP_R[i].setCoeff(coeffs[i]);
+        springAP_L[i].init(springTimes[i]);
+        springAP_R[i].init(springTimes[i] + 23); // Stereo spread
+        springAP_L[i].setCoeff(springCoeffs[i]);
+        springAP_R[i].setCoeff(springCoeffs[i]);
         springLPF_L[i].setLowpass(SAMPLE_RATE, 2500.0f, 0.5f);
         springLPF_R[i].setLowpass(SAMPLE_RATE, 2500.0f, 0.5f);
     }
     
-    float springDecay = 0.7f;
-    float springDamping = 0.5f;
+    // Production-style parameter scaling
+    float springDecayMod = params.springDecay * 0.01f;
+    float springDampMod = params.springDamping * 0.01f;
+    float wetMix = params.springMix * 0.01f;
     
     int totalSamples = (int)(SAMPLE_RATE * TEST_DURATION_SECONDS);
     
@@ -1418,11 +1515,14 @@ void test_generate_spring_reverb(void) {
         
         float wetL = dryL, wetR = dryR;
         
-        // 6-stage allpass cascade with LPF damping
-        float coeff = 0.4f + springDecay * 0.5f;
-        float dampFreq = 1500.0f + springDamping * 3000.0f;
+        // Dynamic coefficient and damping based on params
+        float coeff = 0.4f + springDecayMod * 0.45f;  // 0.4-0.85
+        float dampFreq = 1500.0f + springDampMod * 3000.0f;
         
-        for (int s = 0; s < 6; s++) {
+        // Dynamic stage count based on decay (3-6 stages)
+        int stages = 3 + (int)(springDecayMod * 3);
+        
+        for (int s = 0; s < stages && s < 6; s++) {
             springAP_L[s].setCoeff(coeff);
             springAP_R[s].setCoeff(coeff);
             springLPF_L[s].setLowpass(SAMPLE_RATE, dampFreq, 0.5f);
@@ -1434,9 +1534,9 @@ void test_generate_spring_reverb(void) {
             wetR = springLPF_R[s].process(wetR);
         }
         
-        // Mix: 40% dry, 60% spring
-        float outL = (dryL * 0.4f + wetL * 0.6f) * params.masterVolume;
-        float outR = (dryR * 0.4f + wetR * 0.6f) * params.masterVolume;
+        // Mix using springMix parameter
+        float outL = (dryL * (1.0f - wetMix) + wetL * wetMix) * params.masterVolume * 0.01f;
+        float outR = (dryR * (1.0f - wetMix) + wetR * wetMix) * params.masterVolume * 0.01f;
         
         wav.writeSample(outL, outR);
     }

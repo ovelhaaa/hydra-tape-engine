@@ -3,3 +3,12 @@
 .vscode/c_cpp_properties.json
 .vscode/launch.json
 .vscode/ipch
+
+# Test audio files
+test_01_clean_melody.wav
+test_02_filter_only.wav
+test_03_saturator_mode.wav
+test_04_delay_mode.wav
+test_05_spring_reverb.wav
+test_06_reverse_delay.wav
+test_07_reverse_reverb.wav

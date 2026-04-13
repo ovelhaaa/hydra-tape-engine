@@ -360,8 +360,8 @@ void audioTask(void *parameter) {
 
   // Attempt allocation in PSRAM
   tape = new HydraDspEsp32Adapter(SAMPLE_RATE);
-  if (tape == nullptr) {
-    Serial.println("CRITICAL: TapeModel allocation FAILED!");
+  if (tape == nullptr || !tape->isValid()) {
+    Serial.println("CRITICAL: Hydra DSP adapter initialization FAILED!");
     while (1)
       vTaskDelay(pdMS_TO_TICKS(1000)); // Stay in task but don't crash
   }

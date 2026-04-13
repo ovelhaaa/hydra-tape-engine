@@ -6,6 +6,7 @@
 
 #include "MelodyGen.h"
 #include "TapeDelay.h"
+#include "hydra_dsp_esp32_adapter.h"
 #include "DisplayUI.h"
 #include "ParamDefs.h"
 
@@ -113,7 +114,7 @@ enum AudioSource { SOURCE_MP3, SOURCE_SYNTH, SOURCE_I2S_IN };
 volatile AudioSource p_source =
     SOURCE_SYNTH; // Start with SYNTH to avoid MP3 issues
 
-TapeModel *tape = nullptr;
+HydraDspEsp32Adapter *tape = nullptr;
 MelodyGen *melody = nullptr;
 DisplayUI *displayUI = nullptr;  // OLED Display Interface
 FrippEngine *fripp = nullptr;    // Frippertronics/Eno Engine
@@ -358,13 +359,13 @@ void audioTask(void *parameter) {
   Serial.println("Audio Task: Started");
 
   // Attempt allocation in PSRAM
-  tape = new TapeModel(SAMPLE_RATE);
-  if (tape == nullptr) {
-    Serial.println("CRITICAL: TapeModel allocation FAILED!");
+  tape = new HydraDspEsp32Adapter(SAMPLE_RATE);
+  if (tape == nullptr || !tape->isValid()) {
+    Serial.println("CRITICAL: Hydra DSP adapter initialization FAILED!");
     while (1)
       vTaskDelay(pdMS_TO_TICKS(1000)); // Stay in task but don't crash
   }
-  Serial.println("Audio Task: TapeModel allocated");
+  Serial.println("Audio Task: Hydra DSP adapter allocated");
   tape->updateParams(globalParams);
   tape->updateFilters();
 

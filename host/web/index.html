@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Hydra DSP Web Demo</title>
+    <style>
+      body { font-family: system-ui, sans-serif; background: #111; color: #eee; margin: 0; padding: 1rem; }
+      .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1rem; }
+      .card { background: #1c1c1c; border: 1px solid #333; border-radius: 8px; padding: 1rem; }
+      label { display: block; margin: 0.5rem 0; font-size: 0.9rem; }
+      input[type="range"] { width: 100%; }
+      button { margin: 0.2rem 0.2rem 0.2rem 0; }
+      #status { color: #9ad; min-height: 1.2rem; }
+      audio { width: 100%; }
+    </style>
+  </head>
+  <body>
+    <h1>Hydra DSP Web (WASM + AudioWorklet)</h1>
+    <p id="status">Loading…</p>
+
+    <div class="grid">
+      <section class="card">
+        <h2>Transport</h2>
+        <input id="fileInput" type="file" accept="audio/*" />
+        <audio id="player" controls></audio>
+        <div>
+          <button id="startBtn">Start Audio</button>
+          <button id="connectBtn">Connect FX</button>
+          <button id="bypassBtn">Bypass: OFF</button>
+          <button id="resetBtn">Reset DSP</button>
+          <button id="offlineBtn">Render Offline</button>
+          <a id="downloadLink" style="display:none" download="hydra-offline.wav">Download offline WAV</a>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Main Params</h2>
+        <label>Delay Active <input id="delayActive" type="checkbox" checked></label>
+        <label>Delay Time (ms) <input id="delayTimeMs" type="range" min="10" max="2000" value="500"></label>
+        <label>Feedback <input id="feedback" type="range" min="0" max="100" value="40"></label>
+        <label>Dry/Wet <input id="dryWet" type="range" min="0" max="100" value="50"></label>
+        <label>Drive <input id="drive" type="range" min="0" max="100" value="40"></label>
+        <label>Flutter Depth <input id="flutterDepth" type="range" min="0" max="100" value="20"></label>
+        <label>Wow Depth <input id="wowDepth" type="range" min="0" max="100" value="15"></label>
+      </section>
+    </div>
+
+    <script type="module" src="./main.js"></script>
+  </body>
+</html>

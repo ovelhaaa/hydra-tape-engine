@@ -158,3 +158,12 @@ python3 -m http.server 8080 --directory build-web/web
 - Click **Connect FX** to route through the WASM worklet.
 - Use bypass/reset and the main parameters.
 - Use **Render Offline** for deterministic render through `OfflineAudioContext` and download WAV.
+
+
+### CI/CD (GitHub Pages)
+
+A workflow was added in `.github/workflows/web-pages.yml`.
+
+- Trigger: push on `main` (and manual `workflow_dispatch`).
+- Steps: setup Emscripten, build with `BUILD_WEB=ON`, publish `build-web/web` to GitHub Pages.
+- For the first run, enable Pages in repo settings (Source: **GitHub Actions**).

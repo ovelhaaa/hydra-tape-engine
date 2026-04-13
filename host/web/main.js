@@ -34,6 +34,25 @@ function post(message) {
   if (fxNode) fxNode.port.postMessage(message);
 }
 
+function waitForWorkletReady(node) {
+  return new Promise((resolve, reject) => {
+    const timeout = setTimeout(() => reject(new Error('Timeout waiting for Hydra worklet readiness')), 10000);
+    const onMessage = (event) => {
+      if (event.data?.type === 'ready') {
+        clearTimeout(timeout);
+        node.port.removeEventListener('message', onMessage);
+        resolve();
+      } else if (event.data?.type === 'error') {
+        clearTimeout(timeout);
+        node.port.removeEventListener('message', onMessage);
+        reject(new Error(event.data.message || 'Hydra worklet failed to initialize'));
+      }
+    };
+    node.port.addEventListener('message', onMessage);
+    node.port.start();
+  });
+}
+
 async function ensureAudioGraph() {
   if (context) return;
 
@@ -53,6 +72,8 @@ async function ensureAudioGraph() {
     if (event.data?.type === 'ready') {
       setStatus('WASM ready in AudioWorklet.');
       syncAllParams();
+    } else if (event.data?.type === 'error') {
+      setStatus(`Worklet init error: ${event.data.message}`);
     }
   };
 }
@@ -169,38 +190,43 @@ offlineBtn.addEventListener('click', async () => {
   }
 
   setStatus('Offline render started...');
-  const decodeCtx = new AudioContext({ sampleRate: 48000 });
-  const decoded = await decodeCtx.decodeAudioData(currentFileArrayBuffer.slice(0));
-  await decodeCtx.close();
+  try {
+    const decodeCtx = new AudioContext({ sampleRate: 48000 });
+    const decoded = await decodeCtx.decodeAudioData(currentFileArrayBuffer.slice(0));
+    await decodeCtx.close();
 
-  const offline = new OfflineAudioContext(2, decoded.length, decoded.sampleRate);
-  await offline.audioWorklet.addModule('./hydra-processor.js');
+    const offline = new OfflineAudioContext(2, decoded.length, decoded.sampleRate);
+    await offline.audioWorklet.addModule('./hydra-processor.js');
 
-  const node = new AudioWorkletNode(offline, 'hydra-processor', {
-    numberOfInputs: 1,
-    numberOfOutputs: 1,
-    outputChannelCount: [2],
-    processorOptions: {
-      moduleUrl: './hydra_dsp.js',
-      wasmUrl: './hydra_dsp.wasm'
-    }
-  });
+    const node = new AudioWorkletNode(offline, 'hydra-processor', {
+      numberOfInputs: 1,
+      numberOfOutputs: 1,
+      outputChannelCount: [2],
+      processorOptions: {
+        moduleUrl: './hydra_dsp.js',
+        wasmUrl: './hydra_dsp.wasm'
+      }
+    });
 
-  node.port.postMessage({ type: 'bypass', enabled: false });
-  syncAllParams(node.port);
+    await waitForWorkletReady(node);
+    node.port.postMessage({ type: 'bypass', enabled: false });
+    syncAllParams(node.port);
 
-  const src = offline.createBufferSource();
-  src.buffer = decoded;
-  src.connect(node).connect(offline.destination);
-  src.start();
+    const src = offline.createBufferSource();
+    src.buffer = decoded;
+    src.connect(node).connect(offline.destination);
+    src.start();
 
-  const rendered = await offline.startRendering();
-  const wav = encodeWav([rendered.getChannelData(0), rendered.getChannelData(1)], rendered.sampleRate);
-  const url = URL.createObjectURL(wav);
-  downloadLink.href = url;
-  downloadLink.style.display = 'inline';
-  downloadLink.textContent = 'Download offline WAV';
-  setStatus('Offline render complete.');
+    const rendered = await offline.startRendering();
+    const wav = encodeWav([rendered.getChannelData(0), rendered.getChannelData(1)], rendered.sampleRate);
+    const url = URL.createObjectURL(wav);
+    downloadLink.href = url;
+    downloadLink.style.display = 'inline';
+    downloadLink.textContent = 'Download offline WAV';
+    setStatus('Offline render complete.');
+  } catch (error) {
+    setStatus(`Offline render failed: ${error.message}`);
+  }
 });
 
 setStatus('Ready. Build WASM and click Start Audio.');

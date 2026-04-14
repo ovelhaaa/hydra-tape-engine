@@ -86,6 +86,8 @@ if(BUILD_WEB)
   target_link_options(hydra_dsp_web PRIVATE
     "SHELL:--no-entry"
     "SHELL:-sWASM=1"
+    "SHELL:-sMODULARIZE=1"
+    "SHELL:-sEXPORT_ES6=1"
     "SHELL:-sALLOW_MEMORY_GROWTH=1"
     "SHELL:-sENVIRONMENT=web,worker"
     "SHELL:-sEXPORTED_FUNCTIONS=['_hydra_dsp_create','_hydra_dsp_destroy','_hydra_dsp_prepare','_hydra_dsp_reset','_hydra_dsp_set_parameter','_hydra_dsp_get_parameter','_hydra_dsp_commit','_hydra_dsp_process','_malloc','_free']"

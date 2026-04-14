@@ -13,22 +13,13 @@ function loadHydraRuntime(moduleUrl, wasmUrl) {
 
   HYDRA_SHARED.moduleUrl = moduleUrl;
   HYDRA_SHARED.wasmUrl = wasmUrl;
-
-  HYDRA_SHARED.runtimePromise = new Promise((resolve, reject) => {
-    globalThis.Module = {
-      locateFile: (path) => (path.endsWith('.wasm') ? HYDRA_SHARED.wasmUrl : path),
-      onRuntimeInitialized: () => {
-        HYDRA_SHARED.module = globalThis.Module;
-        resolve(HYDRA_SHARED.module);
-      }
-    };
-
-    try {
-      importScripts(HYDRA_SHARED.moduleUrl);
-    } catch (err) {
-      reject(err);
-    }
-  });
+  HYDRA_SHARED.runtimePromise = (async () => {
+    const createHydraModule = (await import(HYDRA_SHARED.moduleUrl)).default;
+    HYDRA_SHARED.module = await createHydraModule({
+      locateFile: (path, prefix) => (path.endsWith('.wasm') ? HYDRA_SHARED.wasmUrl : `${prefix}${path}`)
+    });
+    return HYDRA_SHARED.module;
+  })();
 
   return HYDRA_SHARED.runtimePromise;
 }

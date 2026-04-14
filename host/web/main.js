@@ -1,3 +1,6 @@
+import { createTransportState } from './transportState.js';
+import { createTransportController } from './transportController.js';
+
 const PARAM = {
   flutterDepth: 0,
   wowDepth: 1,
@@ -22,6 +25,10 @@ const statusEl = document.getElementById('status');
 const player = document.getElementById('player');
 const fileInput = document.getElementById('fileInput');
 const startBtn = document.getElementById('startBtn');
+const playBtn = document.getElementById('playBtn');
+const stopBtn = document.getElementById('stopBtn');
+const repeatBtn = document.getElementById('repeatBtn');
+const repeatBadge = document.getElementById('repeatBadge');
 const connectBtn = document.getElementById('connectBtn');
 const bypassBtn = document.getElementById('bypassBtn');
 const resetBtn = document.getElementById('resetBtn');
@@ -36,6 +43,21 @@ let connected = false;
 let currentFileArrayBuffer;
 const uiState = {};
 const engineState = {};
+
+const transportState = createTransportState();
+createTransportController({ player, transportState, setStatus });
+
+function updateRepeatUI({ isRepeatEnabled }) {
+  repeatBtn.textContent = isRepeatEnabled ? 'Repeat ON' : 'Repeat OFF';
+  repeatBtn.classList.toggle('repeat-toggle--active', isRepeatEnabled);
+  repeatBtn.setAttribute('aria-pressed', String(isRepeatEnabled));
+
+  repeatBadge.textContent = isRepeatEnabled ? 'Repeat ON' : 'Repeat OFF';
+  repeatBadge.classList.toggle('repeat-badge--active', isRepeatEnabled);
+}
+
+updateRepeatUI(transportState.getState());
+transportState.subscribe(updateRepeatUI);
 
 function setStatus(msg) {
   statusEl.textContent = msg;
@@ -119,6 +141,15 @@ function connectGraph() {
   }
 }
 
+async function ensurePlaybackReady() {
+  await ensureAudioGraph();
+  if (context.state !== 'running') await context.resume();
+  if (!source) {
+    source = context.createMediaElementSource(player);
+  }
+  connectGraph();
+}
+
 function syncAllParams(node = fxNode) {
   const map = ['delayActive', 'delayTimeMs', 'feedback', 'dryWet', 'drive', 'flutterDepth', 'wowDepth'];
   map.forEach((id) => {
@@ -143,14 +174,26 @@ fileInput.addEventListener('change', async (event) => {
 });
 
 startBtn.addEventListener('click', async () => {
-  await ensureAudioGraph();
-  if (context.state !== 'running') await context.resume();
+  await ensurePlaybackReady();
+  setStatus('Audio context running. Press Play or use the audio element controls.');
+});
 
-  if (!source) {
-    source = context.createMediaElementSource(player);
-  }
-  connectGraph();
-  setStatus('Audio context running. Press play on the audio element.');
+playBtn.addEventListener('click', async () => {
+  await ensurePlaybackReady();
+  await player.play();
+  setStatus('Playback started.');
+});
+
+stopBtn.addEventListener('click', () => {
+  player.pause();
+  player.currentTime = 0;
+  setStatus('Playback stopped and rewound.');
+});
+
+repeatBtn.addEventListener('click', () => {
+  transportState.toggleRepeat();
+  const { isRepeatEnabled } = transportState.getState();
+  setStatus(isRepeatEnabled ? 'Repeat enabled.' : 'Repeat disabled.');
 });
 
 connectBtn.addEventListener('click', () => {
@@ -258,5 +301,3 @@ offlineBtn.addEventListener('click', async () => {
     setStatus(`Offline render failed: ${error.message}`);
   }
 });
-
-setStatus('Ready. Build WASM and click Start Audio.');

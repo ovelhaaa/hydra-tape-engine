@@ -67,7 +67,7 @@ def main():
     max_abs = 0.0
     err_sq_sum = 0.0
     n = 0
-    diffs = []
+    diffs = [] if args.diff_csv else None
     for index, ((nl, nr), (wl, wr)) in enumerate(zip(native, wasm)):
         dl = nl - wl
         dr = nr - wr
@@ -76,7 +76,8 @@ def main():
         max_abs = max(max_abs, abs_l, abs_r)
         err_sq_sum += dl * dl + dr * dr
         n += 2
-        diffs.append((index, dl, dr, abs_l, abs_r))
+        if args.diff_csv:
+            diffs.append((index, dl, dr, abs_l, abs_r))
 
     rmse = math.sqrt(err_sq_sum / n) if n else 0.0
     passed = max_abs <= args.max_abs_threshold and rmse <= args.rmse_threshold
@@ -119,7 +120,7 @@ def main():
         wav_dir.mkdir(parents=True, exist_ok=True)
         write_stereo_wav(wav_dir / 'native.wav', native)
         write_stereo_wav(wav_dir / 'wasm.wav', wasm)
-        write_stereo_wav(wav_dir / 'diff.wav', [(nl - wl, nr - wr) for (nl, nr), (wl, wr) in zip(native, wasm)])
+        write_stereo_wav(wav_dir / 'diff.wav', ((nl - wl, nr - wr) for (nl, nr), (wl, wr) in zip(native, wasm)))
 
     return 0 if passed else 1
 

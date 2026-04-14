@@ -4,6 +4,15 @@
 #include <vector>
 
 int main() {
+  assert(hydra_dsp_get_api_version() == HYDRA_DSP_API_VERSION);
+  assert(hydra_dsp_get_param_count() == HYDRA_DSP_PARAM_COUNT);
+
+  hydra_dsp_param_spec spec{};
+  assert(hydra_dsp_get_param_spec(HYDRA_DSP_PARAM_DELAY_MS, &spec) == 0);
+  assert(spec.id == HYDRA_DSP_PARAM_DELAY_MS);
+  assert(spec.min_value == 10.0f);
+  assert(spec.max_value == 2000.0f);
+
   hydra_dsp_handle* h = nullptr;
   assert(hydra_dsp_create(44100.0f, 2000.0f, &h) == 0);
   assert(h != nullptr);

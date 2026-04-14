@@ -102,13 +102,14 @@ jobs:
           path: |
             ~/.emscripten_cache
             ~/.cache/emscripten
-            build-wasm
           key: wasm-${{ runner.os }}-${{ hashFiles('CMakeLists.txt', 'dsp/core/**', 'tests/core/**', 'include/**') }}
           restore-keys: |
             wasm-${{ runner.os }}-
 
       - name: Configure wasm core
-        run: emcmake cmake -S . -B build-wasm -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} -DBUILD_WEB=ON -DBUILD_TESTING=ON
+        run: |
+          rm -rf build-wasm
+          emcmake cmake -S . -B build-wasm -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} -DBUILD_WEB=ON -DBUILD_TESTING=ON
 
       - name: Build wasm core targets
         run: >-
@@ -153,7 +154,6 @@ jobs:
           path: |
             ~/.emscripten_cache
             ~/.cache/emscripten
-            build-wasm
           key: wasm-${{ runner.os }}-${{ hashFiles('CMakeLists.txt', 'dsp/core/**', 'tests/core/**', 'include/**') }}
           restore-keys: |
             wasm-${{ runner.os }}-
@@ -165,6 +165,7 @@ jobs:
 
       - name: Configure and build wasm trace runner
         run: |
+          rm -rf build-wasm
           emcmake cmake -S . -B build-wasm -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} -DBUILD_WEB=ON -DBUILD_TESTING=ON
           cmake --build build-wasm --config ${CMAKE_BUILD_TYPE} -j --target hydra_render_trace_wasm
 
@@ -202,7 +203,6 @@ jobs:
           cat ci-reports/native-vs-wasm/equivalence_report.txt
 
       - name: Upload equivalence reports
-        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: native-vs-wasm-equivalence-reports

@@ -8,25 +8,25 @@ globalThis.__hydraShared = HYDRA_SHARED;
 
 function resolveUrl(baseHref, relativeOrAbsolute) {
   if (!relativeOrAbsolute) return relativeOrAbsolute;
-
-  const hasUrlConstructor = typeof URL !== 'undefined';
-  if (hasUrlConstructor) {
-    try {
-      return new URL(relativeOrAbsolute, baseHref || undefined).href;
-    } catch (_error) {
-      // Fallback handled below.
-    }
-  }
-
-  if (
-    relativeOrAbsolute.startsWith('./') ||
-    relativeOrAbsolute.startsWith('/') ||
-    relativeOrAbsolute.includes(':')
-  ) {
+  if (/^[a-zA-Z][a-zA-Z\d+\-.]*:/.test(relativeOrAbsolute) || relativeOrAbsolute.startsWith('//')) {
     return relativeOrAbsolute;
   }
 
-  return `./${relativeOrAbsolute}`;
+  const base = String(baseHref || '');
+  const slashIndex = base.lastIndexOf('/');
+  const baseDir = slashIndex >= 0 ? base.slice(0, slashIndex + 1) : './';
+
+  if (relativeOrAbsolute.startsWith('/')) {
+    const schemeIdx = base.indexOf('://');
+    if (schemeIdx >= 0) {
+      const hostEnd = base.indexOf('/', schemeIdx + 3);
+      const origin = hostEnd >= 0 ? base.slice(0, hostEnd) : base;
+      return `${origin}${relativeOrAbsolute}`;
+    }
+    return relativeOrAbsolute;
+  }
+
+  return `${baseDir}${relativeOrAbsolute}`;
 }
 
 function loadHydraRuntime(moduleUrl, wasmUrl) {

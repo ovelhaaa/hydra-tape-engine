@@ -1,18 +1,20 @@
 #!/usr/bin/env python3
 import argparse
+import array
 import json
 import math
 import pathlib
 import subprocess
+import sys
 import wave
 
-SCENARIOS = [
-    'baseline_glue',
-    'short_slap_bright',
-    'feedback_edge',
-    'saturated_dark',
-    'modulated_space',
-]
+
+def get_scenarios(native_bin):
+    out = subprocess.check_output([native_bin, '--list-scenarios'], text=True)
+    scenarios = [line.strip() for line in out.splitlines() if line.strip()]
+    if not scenarios:
+        raise RuntimeError(f'no scenarios returned by {native_bin} --list-scenarios')
+    return scenarios
 
 
 def run_capture(cmd):
@@ -33,11 +35,11 @@ def write_stereo_wav(path, values, sample_rate=48000):
         wav_file.setnchannels(2)
         wav_file.setsampwidth(2)
         wav_file.setframerate(sample_rate)
-        frames = bytearray()
+        data = array.array('h')
         for left, right in values:
-            frames += clamp_pcm16(left * 32767.0).to_bytes(2, byteorder='little', signed=True)
-            frames += clamp_pcm16(right * 32767.0).to_bytes(2, byteorder='little', signed=True)
-        wav_file.writeframes(bytes(frames))
+            data.append(clamp_pcm16(left * 32767.0))
+            data.append(clamp_pcm16(right * 32767.0))
+        wav_file.writeframes(data.tobytes())
 
 
 def compute_metrics(native, wasm):
@@ -64,6 +66,8 @@ def main():
     ap.add_argument('--rmse-threshold', type=float, default=1e-6)
     args = ap.parse_args()
 
+    scenarios = get_scenarios(args.native)
+
     root = pathlib.Path(args.output_dir)
     root.mkdir(parents=True, exist_ok=True)
 
@@ -72,7 +76,7 @@ def main():
         'scenarios': [],
     }
 
-    for scenario in SCENARIOS:
+    for scenario in scenarios:
         scenario_dir = root / scenario
         scenario_dir.mkdir(parents=True, exist_ok=True)
 
@@ -92,7 +96,7 @@ def main():
         write_stereo_wav(wasm_wav, wasm)
 
         null_cmd = [
-            'python3',
+            sys.executable,
             args.null_test_script,
             '--reference', str(native_wav),
             '--candidate', str(wasm_wav),

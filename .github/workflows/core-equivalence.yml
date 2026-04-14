@@ -1,0 +1,208 @@
+name: Core Equivalence CI
+
+on:
+  pull_request:
+  push:
+    branches: ["main"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: core-equivalence-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CMAKE_BUILD_TYPE: Release
+  MAX_ABS_THRESHOLD: 1e-5
+  RMSE_THRESHOLD: 1e-6
+
+jobs:
+  build_native_core:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Cache CMake/ccache (native)
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.ccache
+            build-native
+          key: native-${{ runner.os }}-${{ hashFiles('CMakeLists.txt', 'dsp/core/**', 'tests/core/**', 'include/**') }}
+          restore-keys: |
+            native-${{ runner.os }}-
+
+      - name: Configure native core
+        run: cmake -S . -B build-native -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} -DBUILD_TESTING=ON
+
+      - name: Build native core targets
+        run: >-
+          cmake --build build-native --config ${CMAKE_BUILD_TYPE} -j
+          --target hydra_dsp_core hydra_render_trace_native hydra_golden_regression_native
+
+      - name: Upload native build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-core-build
+          path: |
+            build-native/hydra_render_trace_native
+            build-native/hydra_golden_regression_native
+
+  test_native_core:
+    runs-on: ubuntu-latest
+    needs: build_native_core
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Cache CMake/ccache (native)
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.ccache
+            build-native
+          key: native-${{ runner.os }}-${{ hashFiles('CMakeLists.txt', 'dsp/core/**', 'tests/core/**', 'include/**') }}
+          restore-keys: |
+            native-${{ runner.os }}-
+
+      - name: Configure native core
+        run: cmake -S . -B build-native -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} -DBUILD_TESTING=ON
+
+      - name: Build native tests
+        run: cmake --build build-native --config ${CMAKE_BUILD_TYPE} -j
+
+      - name: Run native test suite
+        run: |
+          mkdir -p ci-reports/native
+          ctest --test-dir build-native --output-on-failure | tee ci-reports/native/ctest_native.txt
+
+      - name: Upload native test reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-core-test-reports
+          path: ci-reports/native
+
+  build_wasm_core:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Emscripten
+        uses: mymindstorm/setup-emsdk@v14
+        with:
+          version: 3.1.62
+
+      - name: Cache Emscripten/CMake (wasm)
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.emscripten_cache
+            ~/.cache/emscripten
+            build-wasm
+          key: wasm-${{ runner.os }}-${{ hashFiles('CMakeLists.txt', 'dsp/core/**', 'tests/core/**', 'include/**') }}
+          restore-keys: |
+            wasm-${{ runner.os }}-
+
+      - name: Configure wasm core
+        run: emcmake cmake -S . -B build-wasm -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} -DBUILD_WEB=ON -DBUILD_TESTING=ON
+
+      - name: Build wasm core targets
+        run: >-
+          cmake --build build-wasm --config ${CMAKE_BUILD_TYPE} -j
+          --target hydra_render_trace_wasm hydra_golden_regression_wasm
+
+      - name: Upload wasm build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: wasm-core-build
+          path: |
+            build-wasm/wasm-tests/hydra_render_trace.js
+            build-wasm/wasm-tests/hydra_render_trace.wasm
+            build-wasm/wasm-tests/hydra_golden_regression.js
+            build-wasm/wasm-tests/hydra_golden_regression.wasm
+
+  test_native_vs_wasm:
+    runs-on: ubuntu-latest
+    needs: [build_native_core, build_wasm_core]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Emscripten
+        uses: mymindstorm/setup-emsdk@v14
+        with:
+          version: 3.1.62
+
+      - name: Cache CMake/ccache (native)
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.ccache
+            build-native
+          key: native-${{ runner.os }}-${{ hashFiles('CMakeLists.txt', 'dsp/core/**', 'tests/core/**', 'include/**') }}
+          restore-keys: |
+            native-${{ runner.os }}-
+
+      - name: Cache Emscripten/CMake (wasm)
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.emscripten_cache
+            ~/.cache/emscripten
+            build-wasm
+          key: wasm-${{ runner.os }}-${{ hashFiles('CMakeLists.txt', 'dsp/core/**', 'tests/core/**', 'include/**') }}
+          restore-keys: |
+            wasm-${{ runner.os }}-
+
+      - name: Configure and build native trace runner
+        run: |
+          cmake -S . -B build-native -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} -DBUILD_TESTING=ON
+          cmake --build build-native --config ${CMAKE_BUILD_TYPE} -j --target hydra_render_trace_native
+
+      - name: Configure and build wasm trace runner
+        run: |
+          emcmake cmake -S . -B build-wasm -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} -DBUILD_WEB=ON -DBUILD_TESTING=ON
+          cmake --build build-wasm --config ${CMAKE_BUILD_TYPE} -j --target hydra_render_trace_wasm
+
+      - name: Run native vs wasm equivalence
+        run: |
+          mkdir -p ci-reports/native-vs-wasm
+          python3 tests/core/compare_native_wasm.py \
+            --native build-native/hydra_render_trace_native \
+            --wasm-js build-wasm/wasm-tests/hydra_render_trace.js \
+            --test-name native_vs_wasm_equivalence \
+            --max-abs-threshold ${MAX_ABS_THRESHOLD} \
+            --rmse-threshold ${RMSE_THRESHOLD} \
+            --report-json ci-reports/native-vs-wasm/equivalence_report.json \
+            --report-txt ci-reports/native-vs-wasm/equivalence_report.txt \
+            --diff-csv ci-reports/native-vs-wasm/diff.csv \
+            --render-wav-dir ci-reports/native-vs-wasm/audio
+
+      - name: Summarize equivalence results
+        run: |
+          echo "### Native ↔ WASM Equivalence" >> "$GITHUB_STEP_SUMMARY"
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          report = json.loads(Path('ci-reports/native-vs-wasm/equivalence_report.json').read_text())
+          row = f"| {report['test_name']} | {report['max_abs']:.12e} | {report['rmse']:.12e} | {report['status']} |"
+          lines = [
+              "| Test | max_abs | rmse | Status |",
+              "|---|---:|---:|---|",
+              row,
+          ]
+          with open('/tmp/equivalence_summary.md', 'w', encoding='utf-8') as fp:
+              fp.write("\n".join(lines) + "\n")
+          PY
+          cat /tmp/equivalence_summary.md >> "$GITHUB_STEP_SUMMARY"
+          cat ci-reports/native-vs-wasm/equivalence_report.txt
+
+      - name: Upload equivalence reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-vs-wasm-equivalence-reports
+          path: ci-reports/native-vs-wasm

@@ -230,3 +230,44 @@ Even with shared source and deterministic setup, tiny numerical differences are 
 - library-level transcendental implementation details.
 
 The equivalence thresholds above are chosen to absorb these inevitable low-level differences while still enforcing behavioral parity.
+
+## Merge gate: native ↔ wasm equivalence
+
+A dedicated CI workflow (`.github/workflows/core-equivalence.yml`) enforces parity between the native and wasm cores with four required jobs:
+
+- `build_native_core`
+- `test_native_core`
+- `build_wasm_core`
+- `test_native_vs_wasm`
+
+### Artifacts published by CI
+
+The equivalence job uploads:
+
+- `equivalence_report.json` (numeric machine-readable summary)
+- `equivalence_report.txt` (human-readable summary)
+- `diff.csv` (per-sample deltas)
+- `audio/native.wav`, `audio/wasm.wav`, `audio/diff.wav` (optional rendered comparisons)
+
+The native test job uploads `ctest_native.txt` with full logs.
+
+### Log summary format
+
+Each equivalence run prints and publishes the per-test summary in the form:
+
+- `max_abs`
+- `rmse`
+- `status` (`PASS` or `FAIL`)
+
+When divergence exceeds tolerance (`max_abs > 1e-5` or `rmse > 1e-6`), `test_native_vs_wasm` fails and blocks merge.
+
+### Branch protection setup
+
+Configure branch protection/ruleset for `main` with required status checks:
+
+- `build_native_core`
+- `test_native_core`
+- `build_wasm_core`
+- `test_native_vs_wasm`
+
+This step is done in GitHub repository settings (outside this repository tree).

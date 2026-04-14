@@ -33,6 +33,17 @@ function loadHydraRuntime(wasmUrl) {
 }
 
 class HydraProcessor extends AudioWorkletProcessor {
+  static get parameterDescriptors() {
+    return [
+      { name: 'p_12', defaultValue: 500, minValue: 10, maxValue: 2000, automationRate: 'a-rate' }, // delayTimeMs
+      { name: 'p_13', defaultValue: 40, minValue: 0, maxValue: 100, automationRate: 'a-rate' }, // feedback
+      { name: 'p_14', defaultValue: 50, minValue: 0, maxValue: 100, automationRate: 'a-rate' }, // dryWet
+      { name: 'p_3', defaultValue: 40, minValue: 0, maxValue: 100, automationRate: 'a-rate' }, // drive
+      { name: 'p_0', defaultValue: 20, minValue: 0, maxValue: 100, automationRate: 'a-rate' }, // flutterDepth
+      { name: 'p_1', defaultValue: 15, minValue: 0, maxValue: 100, automationRate: 'a-rate' } // wowDepth
+    ];
+  }
+
   constructor(options) {
     super();
     this.ready = false;
@@ -40,6 +51,21 @@ class HydraProcessor extends AudioWorkletProcessor {
     this.handle = 0;
     this.capacity = 0;
     this.pendingMessages = [];
+    this.paramState = new Map([
+      [12, 500],
+      [13, 40],
+      [14, 50],
+      [3, 40],
+      [0, 20],
+      [1, 15]
+    ]);
+    this.delayActive = 1;
+    this.debugState = false;
+    this.blocksUntilDebugSnapshot = 0;
+
+    this.bypassMixCurrent = 1.0;
+    this.bypassMixTarget = 1.0;
+    this.bypassRampSamples = Math.max(1, Math.round(sampleRate * 0.01)); // 10ms clickless transition
 
     const opts = (options && options.processorOptions) || {};
     this.wasmUrl = opts.wasmUrl || './hydra_dsp.wasm';
@@ -94,6 +120,30 @@ class HydraProcessor extends AudioWorkletProcessor {
     }
   }
 
+  smoothToward(paramId, targetValue, alpha) {
+    const current = this.paramState.get(paramId) ?? targetValue;
+    const next = current + (targetValue - current) * alpha;
+    this.paramState.set(paramId, next);
+    this.api.setParameter(this.handle, paramId, next);
+  }
+
+  applyContinuousParams(parameters) {
+    const entries = [
+      [12, parameters.p_12],
+      [13, parameters.p_13],
+      [14, parameters.p_14],
+      [3, parameters.p_3],
+      [0, parameters.p_0],
+      [1, parameters.p_1]
+    ];
+    for (const [paramId, values] of entries) {
+      if (!values || values.length === 0) continue;
+      const targetValue = values.length > 1 ? values[values.length - 1] : values[0];
+      this.smoothToward(paramId, targetValue, 0.35);
+    }
+    this.api.commit(this.handle);
+  }
+
   onMessage(msg) {
     if (!msg) return;
 
@@ -105,15 +155,22 @@ class HydraProcessor extends AudioWorkletProcessor {
 
     if (msg.type === 'bypass') {
       this.bypass = !!msg.enabled;
+      this.bypassMixTarget = this.bypass ? 0 : 1;
+      this.port.postMessage({ type: 'stateAck', key: 'bypass', value: this.bypass ? 1 : 0 });
     } else if (msg.type === 'reset') {
       this.api.reset(this.handle);
-    } else if (msg.type === 'param') {
-      this.api.setParameter(this.handle, msg.paramId, msg.value);
+      this.port.postMessage({ type: 'stateAck', key: 'reset', value: 1 });
+    } else if (msg.type === 'command' && msg.command === 'delayActive') {
+      this.delayActive = msg.value ? 1 : 0;
+      this.api.setParameter(this.handle, 11, this.delayActive);
       this.api.commit(this.handle);
+      this.port.postMessage({ type: 'stateAck', key: 'delayActive', value: this.delayActive });
+    } else if (msg.type === 'debugState') {
+      this.debugState = !!msg.enabled;
     }
   }
 
-  process(inputs, outputs) {
+  process(inputs, outputs, parameters) {
     const input = inputs[0] || [];
     const output = outputs[0] || [];
     const frames = output[0]?.length || 128;
@@ -123,21 +180,46 @@ class HydraProcessor extends AudioWorkletProcessor {
 
     if (!output[0]) return true;
 
-    if (!this.ready || this.bypass) {
+    if (!this.ready) {
       output[0].set(inL);
       if (output[1]) output[1].set(inR);
       return true;
     }
 
     this.ensureBuffers(frames);
+    this.applyContinuousParams(parameters);
 
     this.module.HEAPF32.set(inL, this.inL >> 2);
     this.module.HEAPF32.set(inR, this.inR >> 2);
     this.api.process(this.handle, this.inL, this.inR, this.outL, this.outR, frames);
 
-    output[0].set(this.module.HEAPF32.subarray(this.outL >> 2, (this.outL >> 2) + frames));
-    if (output[1]) {
-      output[1].set(this.module.HEAPF32.subarray(this.outR >> 2, (this.outR >> 2) + frames));
+    const wetL = this.module.HEAPF32.subarray(this.outL >> 2, (this.outL >> 2) + frames);
+    const wetR = this.module.HEAPF32.subarray(this.outR >> 2, (this.outR >> 2) + frames);
+    const rampStep = (this.bypassMixTarget - this.bypassMixCurrent) / this.bypassRampSamples;
+    for (let i = 0; i < frames; i++) {
+      if (Math.abs(this.bypassMixCurrent - this.bypassMixTarget) > 1e-6) {
+        this.bypassMixCurrent += rampStep;
+        if ((rampStep > 0 && this.bypassMixCurrent > this.bypassMixTarget) ||
+            (rampStep < 0 && this.bypassMixCurrent < this.bypassMixTarget)) {
+          this.bypassMixCurrent = this.bypassMixTarget;
+        }
+      }
+      const dryMix = 1 - this.bypassMixCurrent;
+      output[0][i] = (wetL[i] * this.bypassMixCurrent) + (inL[i] * dryMix);
+      if (output[1]) {
+        output[1][i] = (wetR[i] * this.bypassMixCurrent) + (inR[i] * dryMix);
+      }
+    }
+
+    if (this.debugState) {
+      this.blocksUntilDebugSnapshot -= 1;
+      if (this.blocksUntilDebugSnapshot <= 0) {
+        this.blocksUntilDebugSnapshot = 10;
+        this.port.postMessage({
+          type: 'stateSnapshot',
+          values: Object.fromEntries(this.paramState.entries())
+        });
+      }
     }
 
     return true;

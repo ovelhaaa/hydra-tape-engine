@@ -130,6 +130,22 @@ Por isso a validação usa equivalência com tolerâncias, não igualdade bit-a-
 
 ---
 
+
+## Suíte A/B offline (percepção auditiva sem ESP32)
+
+Para gerar pacote de revisão com pares WAV (`native` vs `wasm`) e null-test:
+
+```bash
+python3 tests/core/build_ab_review_package.py   --native build/hydra_render_trace_native   --wasm-js build-web/wasm-tests/hydra_render_trace.js   --output-dir artifacts/ab_review
+```
+
+O pacote inclui, por cenário, `native.wav`, `wasm.wav`, `diff.wav`, `summary.json` e `null_test.txt`.
+
+Checklist de release e critério de aceite: `docs/RELEASE_CHECKLIST.md`.
+Template para rastrear mudanças sonoras: `RELEASE_NOTES_TEMPLATE.md`.
+
+---
+
 ## Critério de aceite
 
 Aceite para mudança interna de DSP:

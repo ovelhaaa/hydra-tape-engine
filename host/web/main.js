@@ -196,9 +196,8 @@ async function ensurePlaybackReady() {
 
 
 function getControlStateFromUI() {
-  const controlIds = ['delayActive', 'delayTimeMs', 'feedback', 'dryWet', 'drive', 'flutterDepth', 'wowDepth'];
   const snapshot = {};
-  controlIds.forEach((id) => {
+  Object.keys(PARAM_METADATA).forEach((id) => {
     const el = document.getElementById(id);
     if (!el) return;
     snapshot[id] = el.type === 'checkbox' ? (el.checked ? 1 : 0) : Number(el.value);
@@ -387,21 +386,22 @@ resetBtn.addEventListener('click', () => {
 
 exportPresetBtn.addEventListener('click', () => {
   try {
+    const timestamp = new Date().toISOString();
     const presetJson = serializePreset(getControlStateFromUI(), {
-      name: `Hydra Preset ${new Date().toISOString()}`
+      name: `Hydra Preset ${timestamp}`
     });
     const blob = new Blob([presetJson], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement('a');
     anchor.href = url;
-    anchor.download = `hydra-preset-${new Date().toISOString().replace(/[:.]/g, '-')}.json`;
+    anchor.download = `hydra-preset-${timestamp.replace(/[:.]/g, '-')}.json`;
     document.body.append(anchor);
     anchor.click();
     anchor.remove();
     URL.revokeObjectURL(url);
-    setStatus('Preset exportado com sucesso.');
+    setStatus('Preset exported successfully.');
   } catch (error) {
-    setStatus(`Falha ao exportar preset: ${error.message}`);
+    setStatus(`Failed to export preset: ${error.message}`);
   }
 });
 
@@ -419,12 +419,12 @@ importPresetInput.addEventListener('change', async (event) => {
     const { controlState, migratedFromVersion } = deserializePresetFromText(text);
     applyControlStateToUI(controlState);
     if (migratedFromVersion) {
-      setStatus(`Preset importado e migrado de v${migratedFromVersion} para v2.`);
+      setStatus(`Preset imported and migrated from v${migratedFromVersion} to v2.`);
     } else {
-      setStatus('Preset importado com sucesso.');
+      setStatus('Preset imported successfully.');
     }
   } catch (error) {
-    setStatus(`Erro ao importar preset: ${error.message}`);
+    setStatus(`Failed to import preset: ${error.message}`);
   }
 });
 

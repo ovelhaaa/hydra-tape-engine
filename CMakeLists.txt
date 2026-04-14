@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.20)
 project(hydra_tape_engine LANGUAGES C CXX)
 
 option(BUILD_WEB "Build WebAssembly artifacts with Emscripten" OFF)
+option(BUILD_TESTING "Build tests" ON)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -17,6 +18,21 @@ target_include_directories(hydra_dsp_core
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${CMAKE_CURRENT_SOURCE_DIR}/dsp/core
 )
+
+if(BUILD_TESTING)
+  include(CTest)
+
+  add_executable(hydra_core_smoke tests/core/smoke_core.cpp)
+  target_link_libraries(hydra_core_smoke PRIVATE hydra_dsp_core)
+  add_test(NAME core_smoke COMMAND hydra_core_smoke)
+
+  add_executable(hydra_core_regression tests/core/regression_core.cpp)
+  target_link_libraries(hydra_core_regression PRIVATE hydra_dsp_core)
+  add_test(NAME core_regression COMMAND hydra_core_regression)
+
+  add_executable(hydra_render_trace_native tests/core/render_trace.cpp)
+  target_link_libraries(hydra_render_trace_native PRIVATE hydra_dsp_core)
+endif()
 
 if(BUILD_WEB)
   if(NOT EMSCRIPTEN)
@@ -59,4 +75,33 @@ if(BUILD_WEB)
       "${HYDRA_WEB_DIR}"
     VERBATIM
   )
+
+  if(BUILD_TESTING)
+    add_executable(hydra_render_trace_wasm
+      dsp/core/tape_core.cpp
+      dsp/core/hydra_dsp_c_api.cpp
+      tests/core/render_trace.cpp
+    )
+    target_include_directories(hydra_render_trace_wasm PRIVATE
+      ${CMAKE_CURRENT_SOURCE_DIR}/include
+      ${CMAKE_CURRENT_SOURCE_DIR}/dsp/core
+    )
+    set_target_properties(hydra_render_trace_wasm PROPERTIES
+      OUTPUT_NAME "hydra_render_trace"
+      SUFFIX ".js"
+      RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/wasm-tests"
+    )
+    target_link_options(hydra_render_trace_wasm PRIVATE
+      "SHELL:-sENVIRONMENT=node"
+    )
+    find_package(Python3 COMPONENTS Interpreter REQUIRED)
+    add_test(
+      NAME native_vs_wasm_equivalence
+      COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/tests/core/compare_native_wasm.py
+              --native $<TARGET_FILE:hydra_render_trace_native>
+              --wasm-js $<TARGET_FILE:hydra_render_trace_wasm>
+              --max-abs-threshold 1e-5
+              --rmse-threshold 1e-6
+    )
+  endif()
 endif()

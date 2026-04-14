@@ -167,3 +167,66 @@ A workflow was added in `.github/workflows/web-pages.yml`.
 - Trigger: push on `main` (and manual `workflow_dispatch`).
 - Steps: setup Emscripten, build with `BUILD_WEB=ON`, publish `build-web/web` to GitHub Pages.
 - For the first run, enable Pages in repo settings (Source: **GitHub Actions**).
+
+## Shared DSP architecture (PR3)
+
+The final structure for shared processing and hosts is:
+
+- `dsp/core/`: canonical DSP engine (`TapeCore`) + C ABI bridge (`hydra_dsp_c_api.cpp`).
+- `host/native/`: native adapters and embeddings (e.g. ESP32 glue in `host/native/esp32`).
+- `host/web/`: browser host files (`index.html`, `main.js`, worklet wiring).
+- `include/`: public cross-host C API (`hydra_dsp.h`).
+- `tests/`: native regression and native-vs-wasm equivalence tooling.
+
+### Determinism and fixed conditions
+
+To maximize reproducibility of regression/equivalence runs:
+
+- deterministic pseudo-random seeds are used for noise/dropout generators on reset;
+- test signals and block sizes are fixed;
+- parameter automation schedule uses fixed frame indices and fixed values.
+
+### Regression/equivalence tolerances (float32)
+
+The initial documented tolerance for native-vs-wasm output equivalence is:
+
+- `max_abs <= 1e-5`
+- `RMSE <= 1e-6`
+
+### Exact build/test commands
+
+#### Native (Linux/macOS)
+
+```bash
+cmake -S . -B build
+cmake --build build -j
+ctest --test-dir build --output-on-failure
+```
+
+This runs:
+
+- `core_smoke`
+- `core_regression` (deterministic buffer, reset/state, simple automation)
+
+#### WebAssembly + equivalence
+
+```bash
+emcmake cmake -S . -B build-web -DBUILD_WEB=ON -DBUILD_TESTING=ON
+cmake --build build-web -j
+ctest --test-dir build-web --output-on-failure
+```
+
+This additionally runs:
+
+- `native_vs_wasm_equivalence` via `tests/core/compare_native_wasm.py`
+  using the same input, parameters, and call order for both backends.
+
+### Expected platform divergences
+
+Even with shared source and deterministic setup, tiny numerical differences are expected due to:
+
+- compiler/backend math optimizations (native vs wasm code generation),
+- floating-point contraction/FMA differences,
+- library-level transcendental implementation details.
+
+The equivalence thresholds above are chosen to absorb these inevitable low-level differences while still enforcing behavioral parity.

@@ -1,7 +1,6 @@
 #include "tape_core.hpp"
 
 #include <algorithm>
-#include <chrono>
 #include <cmath>
 #include <cstring>
 #include <new>
@@ -33,7 +32,7 @@ public:
 private: float b0=1,b1=0,b2=0,a1=0,a2=0,z1=0,z2=0; };
 class AllpassFilter { public: void setCoeff(float c){a1=clampf(c,-0.99f,0.99f);} void reset(){z1=0;} float process(float in){ float out=a1*in+z1; z1=in-a1*out; return out;} private: float a1=0,z1=0; };
 class DropoutGenerator { public: void reset(){smoothedLevel=targetLevel=1; samplesUntilNext=dropoutDuration=0; seed=987654321u;} void setSeverity(float sev){severity=clampf(sev,0,1);} float process(){ if(samplesUntilNext<=0){ if(dropoutDuration<=0){ float chance=severity*0.0005f; if((fast_rand()&0xFFFF)<(chance*65535.f)){dropoutDuration=100+(fast_rand()%2000); targetLevel=0.1f+((fast_rand()&0xFF)/255.f)*0.4f; samplesUntilNext=dropoutDuration;} else {targetLevel=1; samplesUntilNext=1000+(fast_rand()%5000);} } else {dropoutDuration--; samplesUntilNext=1;} } samplesUntilNext--; float c=(targetLevel<smoothedLevel)?0.0005f:0.002f; smoothedLevel += c*(targetLevel-smoothedLevel); return smoothedLevel; } private: uint32_t fast_rand(){seed=seed*1664525u+1013904223u; return seed;} float smoothedLevel=1,targetLevel=1; int samplesUntilNext=0,dropoutDuration=0; float severity=0.5f; uint32_t seed=987654321u; };
-class TapeNoiseGenerator { public: explicit TapeNoiseGenerator(float fs){reset(fs);} void reset(float fs){state[0]=state[1]=state[2]=0; uint32_t t=(uint32_t)std::chrono::steady_clock::now().time_since_epoch().count(); seed=123456789u+t; hissShaper.setHighShelf(fs,3000,0.7f,6);} float next(){ uint32_t r=fast_rand(); if(r&1)state[0]=white(); else if(r&2)state[1]=white(); else state[2]=white(); return hissShaper.process((state[0]+state[1]+state[2])*0.33f);} private: uint32_t fast_rand(){seed=seed*1664525u+1013904223u; return seed;} float white(){uint32_t r=fast_rand(); return ((float)(r&0xFFFF)/32768.f)-1.f;} float state[3]{}; uint32_t seed=1; BiquadFilter hissShaper; };
+class TapeNoiseGenerator { public: explicit TapeNoiseGenerator(float fs){reset(fs);} void reset(float fs){state[0]=state[1]=state[2]=0; seed=123456789u; hissShaper.setHighShelf(fs,3000,0.7f,6);} float next(){ uint32_t r=fast_rand(); if(r&1)state[0]=white(); else if(r&2)state[1]=white(); else state[2]=white(); return hissShaper.process((state[0]+state[1]+state[2])*0.33f);} private: uint32_t fast_rand(){seed=seed*1664525u+1013904223u; return seed;} float white(){uint32_t r=fast_rand(); return ((float)(r&0xFFFF)/32768.f)-1.f;} float state[3]{}; uint32_t seed=1; BiquadFilter hissShaper; };
 class DelayAllpass { public: ~DelayAllpass(){delete[] buffer;} void init(int len){delete[] buffer; size=len; buffer=new(std::nothrow) float[size]{}; idx=0;} void clear(){if(buffer&&size>0) std::memset(buffer,0,sizeof(float)*size); idx=0;} void setCoeff(float f){feedback=f;} float process(float in){ if(!buffer) return in; float bo=buffer[idx]; float node=in+feedback*bo; if(std::fabs(node)<1e-15f) node=0; float out=bo-feedback*node; buffer[idx]=node; idx=(idx+1)%size; return out;} private: float* buffer=nullptr; int size=0,idx=0; float feedback=0.5f; };
 }
 

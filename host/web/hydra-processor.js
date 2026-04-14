@@ -6,6 +6,29 @@ const HYDRA_SHARED = globalThis.__hydraShared || {
 };
 globalThis.__hydraShared = HYDRA_SHARED;
 
+function resolveUrl(baseHref, relativeOrAbsolute) {
+  if (!relativeOrAbsolute) return relativeOrAbsolute;
+  if (/^[a-zA-Z][a-zA-Z\d+\-.]*:/.test(relativeOrAbsolute) || relativeOrAbsolute.startsWith('//')) {
+    return relativeOrAbsolute;
+  }
+
+  const base = String(baseHref || '');
+  const slashIndex = base.lastIndexOf('/');
+  const baseDir = slashIndex >= 0 ? base.slice(0, slashIndex + 1) : './';
+
+  if (relativeOrAbsolute.startsWith('/')) {
+    const schemeIdx = base.indexOf('://');
+    if (schemeIdx >= 0) {
+      const hostEnd = base.indexOf('/', schemeIdx + 3);
+      const origin = hostEnd >= 0 ? base.slice(0, hostEnd) : base;
+      return `${origin}${relativeOrAbsolute}`;
+    }
+    return relativeOrAbsolute;
+  }
+
+  return `${baseDir}${relativeOrAbsolute}`;
+}
+
 function loadHydraRuntime(moduleUrl, wasmUrl) {
   if (HYDRA_SHARED.runtimePromise) {
     return HYDRA_SHARED.runtimePromise;
@@ -14,8 +37,9 @@ function loadHydraRuntime(moduleUrl, wasmUrl) {
   HYDRA_SHARED.moduleUrl = moduleUrl;
   HYDRA_SHARED.wasmUrl = wasmUrl;
   HYDRA_SHARED.runtimePromise = (async () => {
-    const moduleUrlResolved = new URL(HYDRA_SHARED.moduleUrl, globalThis.location.href).href;
-    const wasmUrlResolved = new URL(HYDRA_SHARED.wasmUrl, globalThis.location.href).href;
+    const hrefBase = (globalThis.location && globalThis.location.href) || '';
+    const moduleUrlResolved = resolveUrl(hrefBase, HYDRA_SHARED.moduleUrl);
+    const wasmUrlResolved = resolveUrl(hrefBase, HYDRA_SHARED.wasmUrl);
     const createHydraModule = (await import(moduleUrlResolved)).default;
     HYDRA_SHARED.module = await createHydraModule({
       locateFile: (path) => (path.endsWith('.wasm') ? wasmUrlResolved : path)

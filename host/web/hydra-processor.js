@@ -14,9 +14,11 @@ function loadHydraRuntime(moduleUrl, wasmUrl) {
   HYDRA_SHARED.moduleUrl = moduleUrl;
   HYDRA_SHARED.wasmUrl = wasmUrl;
   HYDRA_SHARED.runtimePromise = (async () => {
-    const createHydraModule = (await import(HYDRA_SHARED.moduleUrl)).default;
+    const moduleUrlResolved = new URL(HYDRA_SHARED.moduleUrl, globalThis.location.href).href;
+    const wasmUrlResolved = new URL(HYDRA_SHARED.wasmUrl, globalThis.location.href).href;
+    const createHydraModule = (await import(moduleUrlResolved)).default;
     HYDRA_SHARED.module = await createHydraModule({
-      locateFile: (path, prefix) => (path.endsWith('.wasm') ? HYDRA_SHARED.wasmUrl : (prefix || '') + path)
+      locateFile: (path) => (path.endsWith('.wasm') ? wasmUrlResolved : path)
     });
     return HYDRA_SHARED.module;
   })();

@@ -120,13 +120,6 @@ class HydraProcessor extends AudioWorkletProcessor {
     }
   }
 
-  smoothToward(paramId, targetValue, alpha) {
-    const current = this.paramState.get(paramId) ?? targetValue;
-    const next = current + (targetValue - current) * alpha;
-    this.paramState.set(paramId, next);
-    this.api.setParameter(this.handle, paramId, next);
-  }
-
   applyContinuousParams(parameters) {
     const entries = [
       [12, parameters.p_12],
@@ -136,10 +129,16 @@ class HydraProcessor extends AudioWorkletProcessor {
       [0, parameters.p_0],
       [1, parameters.p_1]
     ];
+    const frames = entries[0]?.[1]?.length || 128;
+    const smoothingWindowFrames = Math.max(1, Math.floor(sampleRate * 0.004)); // ~4ms
+    const alpha = Math.min(1, frames / smoothingWindowFrames);
     for (const [paramId, values] of entries) {
       if (!values || values.length === 0) continue;
       const targetValue = values.length > 1 ? values[values.length - 1] : values[0];
-      this.smoothToward(paramId, targetValue, 0.35);
+      const current = this.paramState.get(paramId) ?? targetValue;
+      const next = current + (targetValue - current) * alpha;
+      this.paramState.set(paramId, next);
+      this.api.setParameter(this.handle, paramId, next);
     }
     this.api.commit(this.handle);
   }

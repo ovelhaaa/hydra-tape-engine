@@ -36,10 +36,12 @@ jobs:
           path: |
             ~/.emscripten_cache
             ~/.cache/emscripten
-            build-web
           key: web-${{ runner.os }}-${{ hashFiles('CMakeLists.txt', 'host/web/**', 'dsp/core/**', 'include/**') }}
           restore-keys: |
             web-${{ runner.os }}-
+
+      - name: Clean configure directory
+        run: rm -rf build-web
 
       - name: Configure (Emscripten)
         run: emcmake cmake -S . -B build-web -DBUILD_WEB=ON -DBUILD_TESTING=OFF -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}

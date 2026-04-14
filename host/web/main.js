@@ -19,7 +19,18 @@ const CONTINUOUS_PARAM_IDS = new Set([
   'flutterDepth',
   'wowDepth'
 ]);
+const PARAM_METADATA = {
+  drive: { group: 'Gain', engineParamId: PARAM.drive, layer: 'AudioWorklet (AudioParam → DSP)' },
+  flutterDepth: { group: 'Envelope/Mod', engineParamId: PARAM.flutterDepth, layer: 'AudioWorklet (AudioParam → DSP)' },
+  wowDepth: { group: 'Envelope/Mod', engineParamId: PARAM.wowDepth, layer: 'AudioWorklet (AudioParam → DSP)' },
+  delayTimeMs: { group: 'FX', engineParamId: PARAM.delayTimeMs, layer: 'AudioWorklet (AudioParam → DSP)' },
+  feedback: { group: 'FX', engineParamId: PARAM.feedback, layer: 'AudioWorklet (AudioParam → DSP)' },
+  dryWet: { group: 'FX', engineParamId: PARAM.dryWet, layer: 'AudioWorklet (AudioParam → DSP)' },
+  delayActive: { group: 'FX Switch', engineParamId: PARAM.delayActive, layer: 'AudioWorklet (MessagePort command)' }
+};
 const DEBUG_ROUNDTRIP = false;
+const UI_THROTTLE_NORMAL_MS = 33;
+const UI_THROTTLE_LOW_POWER_MS = 120;
 
 const statusEl = document.getElementById('status');
 const player = document.getElementById('player');
@@ -33,6 +44,11 @@ const bypassBtn = document.getElementById('bypassBtn');
 const resetBtn = document.getElementById('resetBtn');
 const offlineBtn = document.getElementById('offlineBtn');
 const downloadLink = document.getElementById('downloadLink');
+const previewBadge = document.getElementById('previewBadge');
+const perfBadge = document.getElementById('perfBadge');
+const paramMapTableBody = document.getElementById('paramMapTableBody');
+const latencyCheckBtn = document.getElementById('latencyCheckBtn');
+const latencyReport = document.getElementById('latencyReport');
 
 let context;
 let source;
@@ -42,6 +58,14 @@ let connected = false;
 let currentFileArrayBuffer;
 const uiState = {};
 const engineState = {};
+let lowPowerMode = false;
+let uiUpdateThrottleMs = UI_THROTTLE_NORMAL_MS;
+let uiVisualUpdateAt = 0;
+let uiNeedsFlush = false;
+let performanceMonitorStarted = false;
+let lastRafAt = 0;
+let lowPerfSamples = 0;
+let rafId = 0;
 
 const transportState = createTransportState();
 createTransportController({ player, transportState, setStatus });
@@ -60,6 +84,20 @@ function setStatus(msg) {
   statusEl.textContent = msg;
 }
 
+function updatePreviewBadge() {
+  const previewActive = !player.paused && connected;
+  previewBadge.textContent = previewActive ? 'Preview ativo' : 'Preview inativo';
+  previewBadge.classList.toggle('pill--active', previewActive);
+  previewBadge.setAttribute('aria-live', 'polite');
+}
+
+function applyLowPowerMode(enabled) {
+  lowPowerMode = enabled;
+  uiUpdateThrottleMs = enabled ? UI_THROTTLE_LOW_POWER_MS : UI_THROTTLE_NORMAL_MS;
+  perfBadge.textContent = enabled ? 'Fallback visual: ON' : 'Fallback visual: OFF';
+  perfBadge.classList.toggle('pill--active', enabled);
+}
+
 function post(message) {
   if (fxNode) fxNode.port.postMessage(message);
 }
@@ -73,8 +111,12 @@ function setContinuousParam(id, value, node = fxNode) {
   const param = node.parameters.get(getAudioParamName(id));
   if (!param) return;
   const t = node.context.currentTime;
-  param.cancelScheduledValues(t);
-  param.setValueAtTime(value, t);
+  if (typeof param.cancelAndHoldAtTime === 'function') {
+    param.cancelAndHoldAtTime(t);
+  } else {
+    param.cancelScheduledValues(t);
+  }
+  param.linearRampToValueAtTime(value, t + 0.015);
 }
 
 function waitForWorkletReady(node) {
@@ -125,6 +167,7 @@ async function ensureAudioGraph() {
       Object.assign(engineState, event.data.values);
     }
   };
+  startPerformanceMonitor();
 }
 
 function connectGraph() {
@@ -159,6 +202,89 @@ function syncAllParams(node = fxNode) {
       node?.port.postMessage({ type: 'command', command: id, value });
     }
   });
+  requestUIFlush();
+}
+
+function renderParamMapping() {
+  const rows = Object.entries(PARAM_METADATA).map(([id, meta]) => {
+    const control = document.getElementById(id);
+    const defaultValue = control?.type === 'checkbox' ? (control.checked ? 1 : 0) : Number(control?.value);
+    return `<tr><td>${id}</td><td>${meta.group}</td><td>${meta.engineParamId}</td><td>${meta.layer}</td><td>${defaultValue}</td></tr>`;
+  });
+  paramMapTableBody.innerHTML = rows.join('');
+}
+
+function updateControlReadouts() {
+  Object.keys(PARAM_METADATA).forEach((id) => {
+    const el = document.getElementById(id);
+    if (!el || el.type === 'checkbox') return;
+    const valueEl = document.querySelector(`[data-value-for="${id}"]`);
+    if (valueEl) valueEl.textContent = Number(el.value).toFixed(0);
+  });
+}
+
+function requestUIFlush() {
+  uiNeedsFlush = true;
+  if (rafId) return;
+  const tick = (ts) => {
+    rafId = 0;
+    if (uiNeedsFlush && ts - uiVisualUpdateAt >= uiUpdateThrottleMs) {
+      uiNeedsFlush = false;
+      uiVisualUpdateAt = ts;
+      updateControlReadouts();
+    }
+    if (uiNeedsFlush) {
+      rafId = requestAnimationFrame(tick);
+    }
+  };
+  rafId = requestAnimationFrame(tick);
+}
+
+function startPerformanceMonitor() {
+  if (performanceMonitorStarted) return;
+  performanceMonitorStarted = true;
+  const monitor = (ts) => {
+    if (lastRafAt) {
+      const delta = ts - lastRafAt;
+      if (delta > 45) {
+        lowPerfSamples += 1;
+      } else {
+        lowPerfSamples = Math.max(0, lowPerfSamples - 1);
+      }
+      if (lowPerfSamples > 25 && !lowPowerMode) applyLowPowerMode(true);
+      if (lowPerfSamples < 5 && lowPowerMode) applyLowPowerMode(false);
+    }
+    lastRafAt = ts;
+    requestAnimationFrame(monitor);
+  };
+  requestAnimationFrame(monitor);
+}
+
+async function runLatencyStabilityCheck() {
+  if (!fxNode || !context) {
+    latencyReport.textContent = 'Inicie o áudio primeiro para validar latência.';
+    return;
+  }
+  const scenarioStart = performance.now();
+  const paramIds = ['delayTimeMs', 'feedback', 'dryWet', 'drive', 'flutterDepth', 'wowDepth'];
+  const rounds = 36;
+  for (let i = 0; i < rounds; i++) {
+    const phase = i / rounds;
+    paramIds.forEach((id, idx) => {
+      const el = document.getElementById(id);
+      const min = Number(el.min);
+      const max = Number(el.max);
+      const sweep = (Math.sin((phase * Math.PI * 2) + idx) + 1) / 2;
+      const value = min + (max - min) * sweep;
+      setContinuousParam(PARAM[id], value);
+    });
+    // Keep audio updates realtime; only visual updates are throttled.
+    requestUIFlush();
+    await new Promise((resolve) => setTimeout(resolve, 8));
+  }
+  const elapsedMs = performance.now() - scenarioStart;
+  const baseLatencyMs = (context.baseLatency || 0) * 1000;
+  latencyReport.textContent = `Validação concluída: ${rounds} ciclos multi-parâmetro em ${elapsedMs.toFixed(1)}ms | baseLatency=${baseLatencyMs.toFixed(2)}ms | fallback=${lowPowerMode ? 'ON' : 'OFF'}`;
 }
 
 fileInput.addEventListener('change', async (event) => {
@@ -180,6 +306,7 @@ playBtn.addEventListener('click', async () => {
     await ensurePlaybackReady();
     await player.play();
     setStatus('Playback started.');
+    updatePreviewBadge();
   } catch (error) {
     setStatus(`Playback failed: ${error.message}`);
   }
@@ -189,6 +316,7 @@ stopBtn.addEventListener('click', () => {
   player.pause();
   player.currentTime = 0;
   setStatus('Playback stopped and rewound.');
+  updatePreviewBadge();
 });
 
 repeatBtn.addEventListener('click', () => {
@@ -201,6 +329,7 @@ connectBtn.addEventListener('click', () => {
   connected = !connected;
   connectBtn.textContent = connected ? 'Disconnect FX' : 'Connect FX';
   connectGraph();
+  updatePreviewBadge();
 });
 
 bypassBtn.addEventListener('click', () => {
@@ -223,8 +352,17 @@ resetBtn.addEventListener('click', () => {
     } else {
       post({ type: 'command', command: id, value });
     }
+    requestUIFlush();
   });
 });
+player.addEventListener('play', updatePreviewBadge);
+player.addEventListener('pause', updatePreviewBadge);
+player.addEventListener('ended', updatePreviewBadge);
+latencyCheckBtn.addEventListener('click', runLatencyStabilityCheck);
+renderParamMapping();
+updateControlReadouts();
+updatePreviewBadge();
+applyLowPowerMode(false);
 
 function encodeWav(stereo, sampleRate) {
   const length = stereo[0].length;

@@ -1,7 +1,8 @@
+import createHydraModule from './hydra_dsp.js';
+
 const HYDRA_SHARED = globalThis.__hydraShared || {
   runtimePromise: null,
   module: null,
-  moduleUrl: null,
   wasmUrl: null
 };
 globalThis.__hydraShared = HYDRA_SHARED;
@@ -29,18 +30,15 @@ function resolveUrl(baseHref, relativeOrAbsolute) {
   return `${baseDir}${relativeOrAbsolute}`;
 }
 
-function loadHydraRuntime(moduleUrl, wasmUrl) {
+function loadHydraRuntime(wasmUrl) {
   if (HYDRA_SHARED.runtimePromise) {
     return HYDRA_SHARED.runtimePromise;
   }
 
-  HYDRA_SHARED.moduleUrl = moduleUrl;
   HYDRA_SHARED.wasmUrl = wasmUrl;
   HYDRA_SHARED.runtimePromise = (async () => {
     const hrefBase = (globalThis.location && globalThis.location.href) || '';
-    const moduleUrlResolved = resolveUrl(hrefBase, HYDRA_SHARED.moduleUrl);
     const wasmUrlResolved = resolveUrl(hrefBase, HYDRA_SHARED.wasmUrl);
-    const createHydraModule = (await import(moduleUrlResolved)).default;
     HYDRA_SHARED.module = await createHydraModule({
       locateFile: (path) => (path.endsWith('.wasm') ? wasmUrlResolved : path)
     });
@@ -60,7 +58,6 @@ class HydraProcessor extends AudioWorkletProcessor {
     this.pendingMessages = [];
 
     const opts = (options && options.processorOptions) || {};
-    this.moduleUrl = opts.moduleUrl || './hydra_dsp.js';
     this.wasmUrl = opts.wasmUrl || './hydra_dsp.wasm';
 
     this.port.onmessage = (event) => this.onMessage(event.data);
@@ -86,7 +83,7 @@ class HydraProcessor extends AudioWorkletProcessor {
 
   async initWasm() {
     try {
-      this.module = await loadHydraRuntime(this.moduleUrl, this.wasmUrl);
+      this.module = await loadHydraRuntime(this.wasmUrl);
       this.api = {
         create: this.module.cwrap('hydra_dsp_create', 'number', ['number', 'number', 'number']),
         destroy: this.module.cwrap('hydra_dsp_destroy', null, ['number']),

@@ -63,7 +63,6 @@ async function ensureAudioGraph() {
     numberOfOutputs: 1,
     outputChannelCount: [2],
     processorOptions: {
-      moduleUrl: './hydra_dsp.js',
       wasmUrl: './hydra_dsp.wasm'
     }
   });
@@ -203,7 +202,6 @@ offlineBtn.addEventListener('click', async () => {
       numberOfOutputs: 1,
       outputChannelCount: [2],
       processorOptions: {
-        moduleUrl: './hydra_dsp.js',
         wasmUrl: './hydra_dsp.wasm'
       }
     });

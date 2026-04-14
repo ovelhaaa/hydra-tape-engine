@@ -116,7 +116,6 @@ function setContinuousParam(id, value, node = fxNode) {
   } else {
     param.cancelScheduledValues(t);
   }
-  param.setValueAtTime(value, t);
   param.linearRampToValueAtTime(value, t + 0.015);
 }
 

@@ -122,3 +122,48 @@ Pressing the Boot button (GPIO 0) toggles the effect bypass.
 - **Architecture:**
   - Core 0: Audio processing task (High priority).
   - Core 1: Control loop and Serial communication.
+
+## Web build (Emscripten)
+
+This repository now supports a browser host that reuses the same C++ core (`dsp/core`) via the C ABI (`include/hydra_dsp.h`) and WebAssembly.
+
+### Reproducible commands
+
+1. Configure and build (requires Emscripten SDK in PATH):
+
+```bash
+emcmake cmake -S . -B build-web -DBUILD_WEB=ON
+cmake --build build-web --target hydra_dsp_web
+```
+
+Build outputs:
+
+- `build-web/web/hydra_dsp.js` (Emscripten JS bindings/runtime)
+- `build-web/web/hydra_dsp.wasm` (DSP core)
+- `build-web/web/index.html`
+- `build-web/web/main.js`
+- `build-web/web/hydra-processor.js`
+
+2. Serve locally:
+
+```bash
+python3 -m http.server 8080 --directory build-web/web
+```
+
+3. Run demo:
+
+- Open `http://127.0.0.1:8080`.
+- Click **Start Audio**.
+- Load an audio file in the file picker and press play.
+- Click **Connect FX** to route through the WASM worklet.
+- Use bypass/reset and the main parameters.
+- Use **Render Offline** for deterministic render through `OfflineAudioContext` and download WAV.
+
+
+### CI/CD (GitHub Pages)
+
+A workflow was added in `.github/workflows/web-pages.yml`.
+
+- Trigger: push on `main` (and manual `workflow_dispatch`).
+- Steps: setup Emscripten, build with `BUILD_WEB=ON`, publish `build-web/web` to GitHub Pages.
+- For the first run, enable Pages in repo settings (Source: **GitHub Actions**).

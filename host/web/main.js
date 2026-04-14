@@ -8,6 +8,15 @@ const PARAM = {
   dryWet: 14,
   reset: 28
 };
+const CONTINUOUS_PARAM_IDS = new Set([
+  'delayTimeMs',
+  'feedback',
+  'dryWet',
+  'drive',
+  'flutterDepth',
+  'wowDepth'
+]);
+const DEBUG_ROUNDTRIP = false;
 
 const statusEl = document.getElementById('status');
 const player = document.getElementById('player');
@@ -25,6 +34,8 @@ let fxNode;
 let bypass = false;
 let connected = false;
 let currentFileArrayBuffer;
+const uiState = {};
+const engineState = {};
 
 function setStatus(msg) {
   statusEl.textContent = msg;
@@ -32,6 +43,19 @@ function setStatus(msg) {
 
 function post(message) {
   if (fxNode) fxNode.port.postMessage(message);
+}
+
+function getAudioParamName(id) {
+  return `p_${id}`;
+}
+
+function setContinuousParam(id, value, node = fxNode) {
+  if (!node) return;
+  const param = node.parameters.get(getAudioParamName(id));
+  if (!param) return;
+  const t = node.context.currentTime;
+  param.cancelScheduledValues(t);
+  param.setValueAtTime(value, t);
 }
 
 function waitForWorkletReady(node) {
@@ -70,9 +94,16 @@ async function ensureAudioGraph() {
   fxNode.port.onmessage = (event) => {
     if (event.data?.type === 'ready') {
       setStatus('WASM ready in AudioWorklet.');
+      if (DEBUG_ROUNDTRIP) {
+        post({ type: 'debugState', enabled: true });
+      }
       syncAllParams();
     } else if (event.data?.type === 'error') {
       setStatus(`Worklet init error: ${event.data.message}`);
+    } else if (event.data?.type === 'stateAck') {
+      engineState[event.data.key] = event.data.value;
+    } else if (event.data?.type === 'stateSnapshot') {
+      Object.assign(engineState, event.data.values);
     }
   };
 }
@@ -88,20 +119,17 @@ function connectGraph() {
   }
 }
 
-function syncAllParams(targetPort = fxNode?.port) {
-  const map = [
-    ['delayActive', (v) => (v.checked ? 1 : 0)],
-    ['delayTimeMs', (v) => Number(v.value)],
-    ['feedback', (v) => Number(v.value)],
-    ['dryWet', (v) => Number(v.value)],
-    ['drive', (v) => Number(v.value)],
-    ['flutterDepth', (v) => Number(v.value)],
-    ['wowDepth', (v) => Number(v.value)]
-  ];
-
-  map.forEach(([id, fn]) => {
+function syncAllParams(node = fxNode) {
+  const map = ['delayActive', 'delayTimeMs', 'feedback', 'dryWet', 'drive', 'flutterDepth', 'wowDepth'];
+  map.forEach((id) => {
     const el = document.getElementById(id);
-    targetPort?.postMessage({ type: 'param', paramId: PARAM[id], value: fn(el) });
+    const value = el.type === 'checkbox' ? (el.checked ? 1 : 0) : Number(el.value);
+    uiState[id] = value;
+    if (CONTINUOUS_PARAM_IDS.has(id)) {
+      setContinuousParam(PARAM[id], value, node);
+    } else {
+      node?.port.postMessage({ type: 'command', command: id, value });
+    }
   });
 }
 
@@ -139,14 +167,18 @@ bypassBtn.addEventListener('click', () => {
 
 resetBtn.addEventListener('click', () => {
   post({ type: 'reset' });
-  post({ type: 'param', paramId: PARAM.reset, value: 1 });
 });
 
 ['delayActive', 'delayTimeMs', 'feedback', 'dryWet', 'drive', 'flutterDepth', 'wowDepth'].forEach((id) => {
   const el = document.getElementById(id);
   el.addEventListener('input', () => {
     const value = el.type === 'checkbox' ? (el.checked ? 1 : 0) : Number(el.value);
-    post({ type: 'param', paramId: PARAM[id], value });
+    uiState[id] = value;
+    if (CONTINUOUS_PARAM_IDS.has(id)) {
+      setContinuousParam(PARAM[id], value);
+    } else {
+      post({ type: 'command', command: id, value });
+    }
   });
 });
 
@@ -208,7 +240,7 @@ offlineBtn.addEventListener('click', async () => {
 
     await waitForWorkletReady(node);
     node.port.postMessage({ type: 'bypass', enabled: false });
-    syncAllParams(node.port);
+    syncAllParams(node);
 
     const src = offline.createBufferSource();
     src.buffer = decoded;

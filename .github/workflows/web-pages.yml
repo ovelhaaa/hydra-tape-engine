@@ -1,6 +1,7 @@
 name: Web Demo (Build + Deploy Pages)
 
 on:
+  pull_request:
   push:
     branches: ["main"]
   workflow_dispatch:
@@ -11,8 +12,11 @@ permissions:
   id-token: write
 
 concurrency:
-  group: pages
-  cancel-in-progress: false
+  group: pages-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CMAKE_BUILD_TYPE: Release
 
 jobs:
   build:
@@ -26,21 +30,40 @@ jobs:
         with:
           version: 3.1.62
 
+      - name: Cache Emscripten/CMake
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.emscripten_cache
+            ~/.cache/emscripten
+            build-web
+          key: web-${{ runner.os }}-${{ hashFiles('CMakeLists.txt', 'host/web/**', 'dsp/core/**', 'include/**') }}
+          restore-keys: |
+            web-${{ runner.os }}-
+
       - name: Configure (Emscripten)
-        run: emcmake cmake -S . -B build-web -DBUILD_WEB=ON
+        run: emcmake cmake -S . -B build-web -DBUILD_WEB=ON -DBUILD_TESTING=OFF -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
 
       - name: Build web target
-        run: cmake --build build-web --target hydra_dsp_web --config Release -j
+        run: cmake --build build-web --target hydra_dsp_web --config ${CMAKE_BUILD_TYPE} -j
 
       - name: Add .nojekyll
         run: touch build-web/web/.nojekyll
 
+      - name: Upload preview artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-demo-build
+          path: build-web/web
+
       - name: Upload Pages artifact
+        if: github.event_name != 'pull_request'
         uses: actions/upload-pages-artifact@v3
         with:
           path: build-web/web
 
   deploy:
+    if: github.event_name != 'pull_request'
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}

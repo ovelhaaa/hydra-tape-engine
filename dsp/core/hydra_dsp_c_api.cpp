@@ -9,6 +9,38 @@ struct hydra_dsp_handle {
   bool dirty;
 };
 
+static const hydra_dsp_param_spec kParamSpecs[HYDRA_DSP_PARAM_COUNT] = {
+    {HYDRA_DSP_PARAM_FLUTTER_DEPTH, "flutterDepth", 0.0f, 100.0f, 20.0f, HYDRA_DSP_SMOOTHING_BLOCK_EDGE},
+    {HYDRA_DSP_PARAM_WOW_DEPTH, "wowDepth", 0.0f, 100.0f, 15.0f, HYDRA_DSP_SMOOTHING_BLOCK_EDGE},
+    {HYDRA_DSP_PARAM_DROPOUT, "dropoutSeverity", 0.0f, 100.0f, 8.0f, HYDRA_DSP_SMOOTHING_BLOCK_EDGE},
+    {HYDRA_DSP_PARAM_DRIVE, "drive", 0.0f, 100.0f, 40.0f, HYDRA_DSP_SMOOTHING_BLOCK_EDGE},
+    {HYDRA_DSP_PARAM_NOISE, "noise", 0.0f, 100.0f, 30.0f, HYDRA_DSP_SMOOTHING_BLOCK_EDGE},
+    {HYDRA_DSP_PARAM_TAPE_SPEED, "tapeSpeed", 0.0f, 100.0f, 50.0f, HYDRA_DSP_SMOOTHING_BLOCK_EDGE},
+    {HYDRA_DSP_PARAM_TAPE_AGE, "tapeAge", 0.0f, 100.0f, 40.0f, HYDRA_DSP_SMOOTHING_BLOCK_EDGE},
+    {HYDRA_DSP_PARAM_HEAD_BUMP, "headBumpAmount", 0.0f, 100.0f, 30.0f, HYDRA_DSP_SMOOTHING_BLOCK_EDGE},
+    {HYDRA_DSP_PARAM_AZIMUTH, "azimuthError", 0.0f, 100.0f, 10.0f, HYDRA_DSP_SMOOTHING_BLOCK_EDGE},
+    {HYDRA_DSP_PARAM_FLUTTER_RATE, "flutterRate", 0.1f, 20.0f, 6.0f, HYDRA_DSP_SMOOTHING_BLOCK_EDGE},
+    {HYDRA_DSP_PARAM_WOW_RATE, "wowRate", 0.1f, 5.0f, 0.8f, HYDRA_DSP_SMOOTHING_BLOCK_EDGE},
+    {HYDRA_DSP_PARAM_DELAY_ACTIVE, "delayActive", 0.0f, 1.0f, 0.0f, HYDRA_DSP_SMOOTHING_NONE},
+    {HYDRA_DSP_PARAM_DELAY_MS, "delayTimeMs", 10.0f, 2000.0f, 500.0f, HYDRA_DSP_SMOOTHING_PER_SAMPLE_INTERNAL},
+    {HYDRA_DSP_PARAM_FEEDBACK, "feedback", 0.0f, 100.0f, 40.0f, HYDRA_DSP_SMOOTHING_BLOCK_EDGE},
+    {HYDRA_DSP_PARAM_DRY_WET, "dryWet", 0.0f, 100.0f, 50.0f, HYDRA_DSP_SMOOTHING_BLOCK_EDGE},
+    {HYDRA_DSP_PARAM_ACTIVE_HEADS, "activeHeads", 1.0f, 7.0f, 4.0f, HYDRA_DSP_SMOOTHING_NONE},
+    {HYDRA_DSP_PARAM_BPM, "bpm", 30.0f, 300.0f, 120.0f, HYDRA_DSP_SMOOTHING_BLOCK_EDGE},
+    {HYDRA_DSP_PARAM_HEADS_MUSICAL, "headsMusical", 0.0f, 1.0f, 0.0f, HYDRA_DSP_SMOOTHING_NONE},
+    {HYDRA_DSP_PARAM_GUITAR_FOCUS, "guitarFocus", 0.0f, 1.0f, 0.0f, HYDRA_DSP_SMOOTHING_NONE},
+    {HYDRA_DSP_PARAM_TONE, "tone", 0.0f, 100.0f, 50.0f, HYDRA_DSP_SMOOTHING_BLOCK_EDGE},
+    {HYDRA_DSP_PARAM_PING_PONG, "pingPong", 0.0f, 1.0f, 0.0f, HYDRA_DSP_SMOOTHING_NONE},
+    {HYDRA_DSP_PARAM_FREEZE, "freeze", 0.0f, 1.0f, 0.0f, HYDRA_DSP_SMOOTHING_NONE},
+    {HYDRA_DSP_PARAM_REVERSE, "reverse", 0.0f, 1.0f, 0.0f, HYDRA_DSP_SMOOTHING_NONE},
+    {HYDRA_DSP_PARAM_REVERSE_SMEAR, "reverseSmear", 0.0f, 1.0f, 0.0f, HYDRA_DSP_SMOOTHING_NONE},
+    {HYDRA_DSP_PARAM_SPRING, "spring", 0.0f, 1.0f, 0.0f, HYDRA_DSP_SMOOTHING_NONE},
+    {HYDRA_DSP_PARAM_SPRING_DECAY, "springDecay", 0.0f, 100.0f, 60.0f, HYDRA_DSP_SMOOTHING_BLOCK_EDGE},
+    {HYDRA_DSP_PARAM_SPRING_DAMPING, "springDamping", 0.0f, 100.0f, 45.0f, HYDRA_DSP_SMOOTHING_BLOCK_EDGE},
+    {HYDRA_DSP_PARAM_SPRING_MIX, "springMix", 0.0f, 100.0f, 50.0f, HYDRA_DSP_SMOOTHING_BLOCK_EDGE},
+    {HYDRA_DSP_PARAM_RESET, "reset", 0.0f, 1.0f, 0.0f, HYDRA_DSP_SMOOTHING_NONE},
+};
+
 static void from_c(const hydra_dsp_params& in, hydra::dsp::TapeParams* out) {
   out->flutterDepth = in.flutterDepth;
   out->wowDepth = in.wowDepth;
@@ -77,6 +109,25 @@ static int set_param(hydra_dsp_handle* h, hydra_dsp_param_id id, float v) {
 }
 
 extern "C" {
+uint32_t hydra_dsp_get_api_version(void) {
+  return HYDRA_DSP_API_VERSION;
+}
+
+uint32_t hydra_dsp_get_param_count(void) {
+  return HYDRA_DSP_PARAM_COUNT;
+}
+
+const hydra_dsp_param_spec* hydra_dsp_get_param_specs(void) {
+  return kParamSpecs;
+}
+
+int hydra_dsp_get_param_spec(hydra_dsp_param_id param_id, hydra_dsp_param_spec* out_spec) {
+  if (!out_spec) return -1;
+  if (param_id < 0 || param_id >= HYDRA_DSP_PARAM_COUNT) return -2;
+  *out_spec = kParamSpecs[param_id];
+  return 0;
+}
+
 int hydra_dsp_create(float sample_rate, float max_delay_ms, hydra_dsp_handle** out_handle) {
   if (!out_handle) return -1;
   auto* h = new (std::nothrow) hydra_dsp_handle;
@@ -132,6 +183,20 @@ int hydra_dsp_get_parameter(hydra_dsp_handle* handle, hydra_dsp_param_id param_i
     case HYDRA_DSP_PARAM_DELAY_MS: *out_value = handle->params.delayTimeMs; break;
     case HYDRA_DSP_PARAM_FEEDBACK: *out_value = handle->params.feedback; break;
     case HYDRA_DSP_PARAM_DRY_WET: *out_value = handle->params.dryWet; break;
+    case HYDRA_DSP_PARAM_ACTIVE_HEADS: *out_value = (float)handle->params.activeHeads; break;
+    case HYDRA_DSP_PARAM_BPM: *out_value = handle->params.bpm; break;
+    case HYDRA_DSP_PARAM_HEADS_MUSICAL: *out_value = handle->params.headsMusical ? 1.0f : 0.0f; break;
+    case HYDRA_DSP_PARAM_GUITAR_FOCUS: *out_value = handle->params.guitarFocus ? 1.0f : 0.0f; break;
+    case HYDRA_DSP_PARAM_TONE: *out_value = handle->params.tone; break;
+    case HYDRA_DSP_PARAM_PING_PONG: *out_value = handle->params.pingPong ? 1.0f : 0.0f; break;
+    case HYDRA_DSP_PARAM_FREEZE: *out_value = handle->params.freeze ? 1.0f : 0.0f; break;
+    case HYDRA_DSP_PARAM_REVERSE: *out_value = handle->params.reverse ? 1.0f : 0.0f; break;
+    case HYDRA_DSP_PARAM_REVERSE_SMEAR: *out_value = handle->params.reverseSmear ? 1.0f : 0.0f; break;
+    case HYDRA_DSP_PARAM_SPRING: *out_value = handle->params.spring ? 1.0f : 0.0f; break;
+    case HYDRA_DSP_PARAM_SPRING_DECAY: *out_value = handle->params.springDecay; break;
+    case HYDRA_DSP_PARAM_SPRING_DAMPING: *out_value = handle->params.springDamping; break;
+    case HYDRA_DSP_PARAM_SPRING_MIX: *out_value = handle->params.springMix; break;
+    case HYDRA_DSP_PARAM_RESET: *out_value = 0.0f; break;
     default: return -2;
   }
   return 0;

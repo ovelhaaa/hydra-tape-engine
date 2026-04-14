@@ -10,6 +10,16 @@ typedef struct hydra_dsp_handle hydra_dsp_handle;
 
 enum { HYDRA_DSP_CHANNELS_STEREO = 2 };
 
+enum {
+  HYDRA_DSP_API_VERSION_MAJOR = 1,
+  HYDRA_DSP_API_VERSION_MINOR = 0,
+  HYDRA_DSP_API_VERSION_PATCH = 0,
+  HYDRA_DSP_API_VERSION =
+      (HYDRA_DSP_API_VERSION_MAJOR << 16) |
+      (HYDRA_DSP_API_VERSION_MINOR << 8) |
+      HYDRA_DSP_API_VERSION_PATCH
+};
+
 typedef struct hydra_dsp_params {
   float flutterDepth, wowDepth, dropoutSeverity, drive, noise;
   float tapeSpeed, tapeAge, headBumpAmount, azimuthError;
@@ -22,35 +32,56 @@ typedef struct hydra_dsp_params {
 
 typedef enum hydra_dsp_param_id {
   HYDRA_DSP_PARAM_FLUTTER_DEPTH = 0,
-  HYDRA_DSP_PARAM_WOW_DEPTH,
-  HYDRA_DSP_PARAM_DROPOUT,
-  HYDRA_DSP_PARAM_DRIVE,
-  HYDRA_DSP_PARAM_NOISE,
-  HYDRA_DSP_PARAM_TAPE_SPEED,
-  HYDRA_DSP_PARAM_TAPE_AGE,
-  HYDRA_DSP_PARAM_HEAD_BUMP,
-  HYDRA_DSP_PARAM_AZIMUTH,
-  HYDRA_DSP_PARAM_FLUTTER_RATE,
-  HYDRA_DSP_PARAM_WOW_RATE,
-  HYDRA_DSP_PARAM_DELAY_ACTIVE,
-  HYDRA_DSP_PARAM_DELAY_MS,
-  HYDRA_DSP_PARAM_FEEDBACK,
-  HYDRA_DSP_PARAM_DRY_WET,
-  HYDRA_DSP_PARAM_ACTIVE_HEADS,
-  HYDRA_DSP_PARAM_BPM,
-  HYDRA_DSP_PARAM_HEADS_MUSICAL,
-  HYDRA_DSP_PARAM_GUITAR_FOCUS,
-  HYDRA_DSP_PARAM_TONE,
-  HYDRA_DSP_PARAM_PING_PONG,
-  HYDRA_DSP_PARAM_FREEZE,
-  HYDRA_DSP_PARAM_REVERSE,
-  HYDRA_DSP_PARAM_REVERSE_SMEAR,
-  HYDRA_DSP_PARAM_SPRING,
-  HYDRA_DSP_PARAM_SPRING_DECAY,
-  HYDRA_DSP_PARAM_SPRING_DAMPING,
-  HYDRA_DSP_PARAM_SPRING_MIX,
-  HYDRA_DSP_PARAM_RESET
+  HYDRA_DSP_PARAM_WOW_DEPTH = 1,
+  HYDRA_DSP_PARAM_DROPOUT = 2,
+  HYDRA_DSP_PARAM_DRIVE = 3,
+  HYDRA_DSP_PARAM_NOISE = 4,
+  HYDRA_DSP_PARAM_TAPE_SPEED = 5,
+  HYDRA_DSP_PARAM_TAPE_AGE = 6,
+  HYDRA_DSP_PARAM_HEAD_BUMP = 7,
+  HYDRA_DSP_PARAM_AZIMUTH = 8,
+  HYDRA_DSP_PARAM_FLUTTER_RATE = 9,
+  HYDRA_DSP_PARAM_WOW_RATE = 10,
+  HYDRA_DSP_PARAM_DELAY_ACTIVE = 11,
+  HYDRA_DSP_PARAM_DELAY_MS = 12,
+  HYDRA_DSP_PARAM_FEEDBACK = 13,
+  HYDRA_DSP_PARAM_DRY_WET = 14,
+  HYDRA_DSP_PARAM_ACTIVE_HEADS = 15,
+  HYDRA_DSP_PARAM_BPM = 16,
+  HYDRA_DSP_PARAM_HEADS_MUSICAL = 17,
+  HYDRA_DSP_PARAM_GUITAR_FOCUS = 18,
+  HYDRA_DSP_PARAM_TONE = 19,
+  HYDRA_DSP_PARAM_PING_PONG = 20,
+  HYDRA_DSP_PARAM_FREEZE = 21,
+  HYDRA_DSP_PARAM_REVERSE = 22,
+  HYDRA_DSP_PARAM_REVERSE_SMEAR = 23,
+  HYDRA_DSP_PARAM_SPRING = 24,
+  HYDRA_DSP_PARAM_SPRING_DECAY = 25,
+  HYDRA_DSP_PARAM_SPRING_DAMPING = 26,
+  HYDRA_DSP_PARAM_SPRING_MIX = 27,
+  HYDRA_DSP_PARAM_RESET = 28,
+  HYDRA_DSP_PARAM_COUNT = 29
 } hydra_dsp_param_id;
+
+typedef enum hydra_dsp_smoothing_policy {
+  HYDRA_DSP_SMOOTHING_NONE = 0,
+  HYDRA_DSP_SMOOTHING_BLOCK_EDGE = 1,
+  HYDRA_DSP_SMOOTHING_PER_SAMPLE_INTERNAL = 2
+} hydra_dsp_smoothing_policy;
+
+typedef struct hydra_dsp_param_spec {
+  hydra_dsp_param_id id;
+  const char* name;
+  float min_value;
+  float max_value;
+  float default_value;
+  hydra_dsp_smoothing_policy smoothing;
+} hydra_dsp_param_spec;
+
+uint32_t hydra_dsp_get_api_version(void);
+uint32_t hydra_dsp_get_param_count(void);
+const hydra_dsp_param_spec* hydra_dsp_get_param_specs(void);
+int hydra_dsp_get_param_spec(hydra_dsp_param_id param_id, hydra_dsp_param_spec* out_spec);
 
 int hydra_dsp_create(float sample_rate, float max_delay_ms, hydra_dsp_handle** out_handle);
 void hydra_dsp_destroy(hydra_dsp_handle* handle);

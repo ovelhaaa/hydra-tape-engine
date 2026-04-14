@@ -60,7 +60,7 @@ typedef enum hydra_dsp_param_id {
   HYDRA_DSP_PARAM_SPRING_DAMPING = 26,
   HYDRA_DSP_PARAM_SPRING_MIX = 27,
   HYDRA_DSP_PARAM_RESET = 28,
-  HYDRA_DSP_PARAM_COUNT = 29
+  HYDRA_DSP_PARAM_COUNT
 } hydra_dsp_param_id;
 
 typedef enum hydra_dsp_smoothing_policy {

@@ -148,8 +148,13 @@ class HydraProcessor extends AudioWorkletProcessor {
     if (!msg) return;
 
     if (!this.ready) {
-      if (msg.type === 'bypass') this.bypass = !!msg.enabled;
-      else this.pendingMessages.push(msg);
+      if (msg.type === 'bypass') {
+        this.bypass = !!msg.enabled;
+        this.bypassMixTarget = this.bypass ? 0 : 1;
+        // Keep startup state coherent: before first processed block, there is no
+        // prior wet/dry history to preserve, so align current mix immediately.
+        this.bypassMixCurrent = this.bypassMixTarget;
+      } else this.pendingMessages.push(msg);
       return;
     }
 

@@ -28,7 +28,6 @@ const startBtn = document.getElementById('startBtn');
 const playBtn = document.getElementById('playBtn');
 const stopBtn = document.getElementById('stopBtn');
 const repeatBtn = document.getElementById('repeatBtn');
-const repeatBadge = document.getElementById('repeatBadge');
 const connectBtn = document.getElementById('connectBtn');
 const bypassBtn = document.getElementById('bypassBtn');
 const resetBtn = document.getElementById('resetBtn');
@@ -52,8 +51,6 @@ function updateRepeatUI({ isRepeatEnabled }) {
   repeatBtn.classList.toggle('repeat-toggle--active', isRepeatEnabled);
   repeatBtn.setAttribute('aria-pressed', String(isRepeatEnabled));
 
-  repeatBadge.textContent = isRepeatEnabled ? 'Repeat ON' : 'Repeat OFF';
-  repeatBadge.classList.toggle('repeat-badge--active', isRepeatEnabled);
 }
 
 updateRepeatUI(transportState.getState());
@@ -179,9 +176,13 @@ startBtn.addEventListener('click', async () => {
 });
 
 playBtn.addEventListener('click', async () => {
-  await ensurePlaybackReady();
-  await player.play();
-  setStatus('Playback started.');
+  try {
+    await ensurePlaybackReady();
+    await player.play();
+    setStatus('Playback started.');
+  } catch (error) {
+    setStatus(`Playback failed: ${error.message}`);
+  }
 });
 
 stopBtn.addEventListener('click', () => {

@@ -11,10 +11,14 @@ function writeRepeatToStorage(storage, value) {
   storage.setItem(REPEAT_STORAGE_KEY, value ? 'true' : 'false');
 }
 
-export function createTransportState(storage = globalThis.sessionStorage) {
+export function createTransportState(storage) {
+  let resolvedStorage = storage;
   let isRepeatEnabled = false;
   try {
-    isRepeatEnabled = readRepeatFromStorage(storage);
+    if (typeof resolvedStorage === 'undefined') {
+      resolvedStorage = globalThis.sessionStorage;
+    }
+    isRepeatEnabled = readRepeatFromStorage(resolvedStorage);
   } catch {
     isRepeatEnabled = false;
   }
@@ -31,7 +35,7 @@ export function createTransportState(storage = globalThis.sessionStorage) {
     if (isRepeatEnabled === next) return;
     isRepeatEnabled = next;
     try {
-      writeRepeatToStorage(storage, isRepeatEnabled);
+      writeRepeatToStorage(resolvedStorage, isRepeatEnabled);
     } catch {
       // Ignore storage write errors for private browsing and restricted contexts.
     }

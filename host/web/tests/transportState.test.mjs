@@ -34,3 +34,25 @@ test('toggleRepeat updates state and persists in storage', () => {
   assert.equal(state.getState().isRepeatEnabled, false);
   assert.equal(storage.getItem(REPEAT_STORAGE_KEY), 'false');
 });
+
+
+test('createTransportState degrades gracefully when sessionStorage access throws', () => {
+  const originalDescriptor = Object.getOwnPropertyDescriptor(globalThis, 'sessionStorage');
+  Object.defineProperty(globalThis, 'sessionStorage', {
+    configurable: true,
+    get() {
+      throw new Error('blocked');
+    }
+  });
+
+  try {
+    const state = createTransportState();
+    assert.equal(state.getState().isRepeatEnabled, false);
+  } finally {
+    if (originalDescriptor) {
+      Object.defineProperty(globalThis, 'sessionStorage', originalDescriptor);
+    } else {
+      delete globalThis.sessionStorage;
+    }
+  }
+});

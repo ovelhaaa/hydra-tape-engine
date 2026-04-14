@@ -1,51 +1,35 @@
 import createHydraModule from './hydra_dsp.js';
 
 const HYDRA_SHARED = globalThis.__hydraShared || {
-  runtimePromise: null,
-  module: null,
-  wasmUrl: null
+  runtimes: new Map()
 };
+if (!(HYDRA_SHARED.runtimes instanceof Map)) {
+  HYDRA_SHARED.runtimes = new Map();
+}
 globalThis.__hydraShared = HYDRA_SHARED;
 
 function resolveUrl(baseHref, relativeOrAbsolute) {
-  if (!relativeOrAbsolute) return relativeOrAbsolute;
-  if (/^[a-zA-Z][a-zA-Z\d+\-.]*:/.test(relativeOrAbsolute) || relativeOrAbsolute.startsWith('//')) {
+  try {
+    return new URL(relativeOrAbsolute, baseHref).href;
+  } catch (_) {
     return relativeOrAbsolute;
   }
-
-  const base = String(baseHref || '');
-  const slashIndex = base.lastIndexOf('/');
-  const baseDir = slashIndex >= 0 ? base.slice(0, slashIndex + 1) : './';
-
-  if (relativeOrAbsolute.startsWith('/')) {
-    const schemeIdx = base.indexOf('://');
-    if (schemeIdx >= 0) {
-      const hostEnd = base.indexOf('/', schemeIdx + 3);
-      const origin = hostEnd >= 0 ? base.slice(0, hostEnd) : base;
-      return `${origin}${relativeOrAbsolute}`;
-    }
-    return relativeOrAbsolute;
-  }
-
-  return `${baseDir}${relativeOrAbsolute}`;
 }
 
 function loadHydraRuntime(wasmUrl) {
-  if (HYDRA_SHARED.runtimePromise) {
-    return HYDRA_SHARED.runtimePromise;
-  }
+  const wasmUrlResolved = resolveUrl(import.meta.url, wasmUrl || './hydra_dsp.wasm');
+  const cached = HYDRA_SHARED.runtimes.get(wasmUrlResolved);
+  if (cached) return cached;
 
-  HYDRA_SHARED.wasmUrl = wasmUrl;
-  HYDRA_SHARED.runtimePromise = (async () => {
-    const hrefBase = (globalThis.location && globalThis.location.href) || '';
-    const wasmUrlResolved = resolveUrl(hrefBase, HYDRA_SHARED.wasmUrl);
-    HYDRA_SHARED.module = await createHydraModule({
+  const runtimePromise = (async () => {
+    const module = await createHydraModule({
       locateFile: (path) => (path.endsWith('.wasm') ? wasmUrlResolved : path)
     });
-    return HYDRA_SHARED.module;
+    return module;
   })();
+  HYDRA_SHARED.runtimes.set(wasmUrlResolved, runtimePromise);
 
-  return HYDRA_SHARED.runtimePromise;
+  return runtimePromise;
 }
 
 class HydraProcessor extends AudioWorkletProcessor {

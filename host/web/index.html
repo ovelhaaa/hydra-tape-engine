@@ -11,6 +11,7 @@
       label { display: block; margin: 0.5rem 0; font-size: 0.9rem; }
       input[type="range"] { width: 100%; }
       button { margin: 0.2rem 0.2rem 0.2rem 0; }
+      .repeat-toggle--active { background: #2d7d46; color: #fff; border: 1px solid #6fe294; }
       #status { color: #9ad; min-height: 1.2rem; }
       audio { width: 100%; }
     </style>
@@ -26,6 +27,9 @@
         <audio id="player" controls></audio>
         <div>
           <button id="startBtn">Start Audio</button>
+          <button id="playBtn">Play</button>
+          <button id="stopBtn">Stop</button>
+          <button id="repeatBtn" aria-pressed="false">Repeat OFF</button>
           <button id="connectBtn">Connect FX</button>
           <button id="bypassBtn">Bypass: OFF</button>
           <button id="resetBtn">Reset DSP</button>

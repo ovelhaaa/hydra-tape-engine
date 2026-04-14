@@ -140,6 +140,17 @@ if(BUILD_WEB)
               --rmse-threshold 1e-6
     )
 
+    add_test(
+      NAME native_wasm_ab_review_package
+      COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/tests/core/build_ab_review_package.py
+              --native $<TARGET_FILE:hydra_render_trace_native>
+              --wasm-js $<TARGET_FILE:hydra_render_trace_wasm>
+              --null-test-script ${CMAKE_SOURCE_DIR}/tests/core/null_test_wav.py
+              --output-dir ${CMAKE_BINARY_DIR}/ab_review
+              --max-abs-threshold 1e-5
+              --rmse-threshold 1e-6
+    )
+
     add_executable(hydra_golden_regression_wasm
       dsp/core/tape_core.cpp
       dsp/core/hydra_dsp_c_api.cpp

@@ -40,7 +40,7 @@ jobs:
           restore-keys: |
             web-${{ runner.os }}-
 
-      - name: Clean configure directory
+      - name: Clean stale build-web cache
         run: rm -rf build-web
 
       - name: Configure (Emscripten)

@@ -31,6 +31,13 @@ if(BUILD_TESTING)
   target_link_libraries(hydra_core_regression PRIVATE hydra_dsp_core)
   add_test(NAME core_regression COMMAND hydra_core_regression)
 
+  add_test(
+    NAME core_abi_symbols
+    COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/tests/core/abi_symbols_check.py
+            --nm ${CMAKE_NM}
+            --library $<TARGET_FILE:hydra_dsp_core>
+  )
+
   add_executable(hydra_render_trace_native tests/core/render_trace.cpp)
   target_link_libraries(hydra_render_trace_native PRIVATE hydra_dsp_core)
 
@@ -90,7 +97,7 @@ if(BUILD_WEB)
     "SHELL:-sEXPORT_ES6=1"
     "SHELL:-sALLOW_MEMORY_GROWTH=1"
     "SHELL:-sENVIRONMENT=web,worker"
-    "SHELL:-sEXPORTED_FUNCTIONS=['_hydra_dsp_create','_hydra_dsp_destroy','_hydra_dsp_prepare','_hydra_dsp_reset','_hydra_dsp_set_parameter','_hydra_dsp_get_parameter','_hydra_dsp_commit','_hydra_dsp_process','_malloc','_free']"
+    "SHELL:-sEXPORTED_FUNCTIONS=['_hydra_dsp_get_api_version','_hydra_dsp_get_param_count','_hydra_dsp_get_param_specs','_hydra_dsp_get_param_spec','_hydra_dsp_get_param_spec_for_handle','_hydra_dsp_create','_hydra_dsp_destroy','_hydra_dsp_prepare','_hydra_dsp_reset','_hydra_dsp_set_parameter','_hydra_dsp_get_parameter','_hydra_dsp_set_params','_hydra_dsp_commit','_hydra_dsp_process','_malloc','_free']"
     "SHELL:-sEXPORTED_RUNTIME_METHODS=['cwrap']"
   )
 

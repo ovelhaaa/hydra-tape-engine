@@ -1,5 +1,6 @@
 import { createTransportState } from './transportState.js';
 import { createTransportController } from './transportController.js';
+import { DEFAULT_CONTROL_STATE, deserializePresetFromText, serializePreset } from './presetSerialization.js';
 
 const PARAM = {
   flutterDepth: 0,
@@ -43,6 +44,9 @@ const connectBtn = document.getElementById('connectBtn');
 const bypassBtn = document.getElementById('bypassBtn');
 const resetBtn = document.getElementById('resetBtn');
 const offlineBtn = document.getElementById('offlineBtn');
+const exportPresetBtn = document.getElementById('exportPresetBtn');
+const importPresetBtn = document.getElementById('importPresetBtn');
+const importPresetInput = document.getElementById('importPresetInput');
 const downloadLink = document.getElementById('downloadLink');
 const previewBadge = document.getElementById('previewBadge');
 const perfBadge = document.getElementById('perfBadge');
@@ -188,6 +192,30 @@ async function ensurePlaybackReady() {
     source = context.createMediaElementSource(player);
   }
   connectGraph();
+}
+
+
+function getControlStateFromUI() {
+  const snapshot = {};
+  Object.keys(PARAM_METADATA).forEach((id) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    snapshot[id] = el.type === 'checkbox' ? (el.checked ? 1 : 0) : Number(el.value);
+  });
+  return { ...DEFAULT_CONTROL_STATE, ...snapshot };
+}
+
+function applyControlStateToUI(controlState) {
+  Object.entries(controlState).forEach(([id, value]) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    if (el.type === 'checkbox') {
+      el.checked = value >= 1;
+    } else {
+      el.value = String(value);
+    }
+  });
+  syncAllParams();
 }
 
 function syncAllParams(node = fxNode) {
@@ -355,6 +383,51 @@ resetBtn.addEventListener('click', () => {
     requestUIFlush();
   });
 });
+
+exportPresetBtn.addEventListener('click', () => {
+  try {
+    const timestamp = new Date().toISOString();
+    const presetJson = serializePreset(getControlStateFromUI(), {
+      name: `Hydra Preset ${timestamp}`
+    });
+    const blob = new Blob([presetJson], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = `hydra-preset-${timestamp.replace(/[:.]/g, '-')}.json`;
+    document.body.append(anchor);
+    anchor.click();
+    anchor.remove();
+    URL.revokeObjectURL(url);
+    setStatus('Preset exported successfully.');
+  } catch (error) {
+    setStatus(`Failed to export preset: ${error.message}`);
+  }
+});
+
+importPresetBtn.addEventListener('click', () => {
+  importPresetInput.value = '';
+  importPresetInput.click();
+});
+
+importPresetInput.addEventListener('change', async (event) => {
+  const file = event.target.files?.[0];
+  if (!file) return;
+
+  try {
+    const text = await file.text();
+    const { controlState, migratedFromVersion } = deserializePresetFromText(text);
+    applyControlStateToUI(controlState);
+    if (migratedFromVersion) {
+      setStatus(`Preset imported and migrated from v${migratedFromVersion} to v2.`);
+    } else {
+      setStatus('Preset imported successfully.');
+    }
+  } catch (error) {
+    setStatus(`Failed to import preset: ${error.message}`);
+  }
+});
+
 player.addEventListener('play', updatePreviewBadge);
 player.addEventListener('pause', updatePreviewBadge);
 player.addEventListener('ended', updatePreviewBadge);

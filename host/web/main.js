@@ -98,9 +98,7 @@ function setActionFeedback(msg, state = 'info') {
 function updatePreviewBadge() {
   const previewActive = !player.paused && connected;
   previewBadge.textContent = previewActive ? 'Preview ativo' : 'Preview inativo';
-  previewBadge.classList.toggle('pill--active', previewActive);
   previewBadge.dataset.state = previewActive ? 'success' : 'info';
-  previewBadge.setAttribute('aria-live', 'polite');
 }
 
 function applyLowPowerMode(enabled) {

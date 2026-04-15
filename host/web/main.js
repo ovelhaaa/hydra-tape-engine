@@ -1,6 +1,7 @@
 import { createTransportState } from './transportState.js';
 import { createTransportController } from './transportController.js';
 import { DEFAULT_CONTROL_STATE, deserializePresetFromText, serializePreset } from './presetSerialization.js';
+import { formatRuntimeError } from './runtimeDiagnostics.js';
 
 const PARAM = {
   flutterDepth: 0,
@@ -96,25 +97,10 @@ function setActionFeedback(msg, state = 'info') {
   actionFeedback.dataset.state = state;
 }
 
-function inferRuntimeHint(error) {
-  const message = String(error?.message || error || '').toLowerCase();
-  if (location.protocol === 'file:') {
-    return 'Página aberta via file://. Use servidor HTTP local (ex.: python3 -m http.server --directory build-web/web).';
-  }
-  if (message.includes('hydra_dsp') || message.includes('worklet') || message.includes('fetch') || message.includes('import')) {
-    return `Falha ao carregar runtime web (hydra_dsp.js/wasm ou worklet). ${WEB_BUILD_HELP}`;
-  }
-  return null;
-}
-
-function reportRuntimeError(contextLabel, error) {
-  const detail = error?.message || String(error);
-  const hint = inferRuntimeHint(error);
-  const fullMessage = hint
-    ? `${contextLabel}: ${detail}. Dica: ${hint}`
-    : `${contextLabel}: ${detail}`;
-  setStatus(fullMessage, 'error');
-  setActionFeedback(hint || 'Erro de runtime na versão web', 'error');
+function reportRuntimeError(contextLabel, error, feedbackFallback = 'Erro de runtime na versão web') {
+  const { hint, message } = formatRuntimeError(contextLabel, error);
+  setStatus(message, 'error');
+  setActionFeedback(hint || feedbackFallback, 'error');
   console.error(`${contextLabel}:`, error);
 }
 

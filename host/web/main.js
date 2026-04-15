@@ -54,6 +54,7 @@ const actionFeedback = document.getElementById('actionFeedback');
 const paramMapTableBody = document.getElementById('paramMapTableBody');
 const latencyCheckBtn = document.getElementById('latencyCheckBtn');
 const latencyReport = document.getElementById('latencyReport');
+const WEB_BUILD_HELP = 'Execute o build web (emcmake/cmake), sirva build-web/web via HTTP e tente novamente.';
 
 let context;
 let source;
@@ -93,6 +94,28 @@ function setStatus(msg, state = 'info') {
 function setActionFeedback(msg, state = 'info') {
   actionFeedback.textContent = msg;
   actionFeedback.dataset.state = state;
+}
+
+function inferRuntimeHint(error) {
+  const message = String(error?.message || error || '').toLowerCase();
+  if (location.protocol === 'file:') {
+    return 'Página aberta via file://. Use servidor HTTP local (ex.: python3 -m http.server --directory build-web/web).';
+  }
+  if (message.includes('hydra_dsp') || message.includes('worklet') || message.includes('fetch') || message.includes('import')) {
+    return `Falha ao carregar runtime web (hydra_dsp.js/wasm ou worklet). ${WEB_BUILD_HELP}`;
+  }
+  return null;
+}
+
+function reportRuntimeError(contextLabel, error) {
+  const detail = error?.message || String(error);
+  const hint = inferRuntimeHint(error);
+  const fullMessage = hint
+    ? `${contextLabel}: ${detail}. Dica: ${hint}`
+    : `${contextLabel}: ${detail}`;
+  setStatus(fullMessage, 'error');
+  setActionFeedback(hint || 'Erro de runtime na versão web', 'error');
+  console.error(`${contextLabel}:`, error);
 }
 
 function updatePreviewBadge() {
@@ -335,8 +358,12 @@ fileInput.addEventListener('change', async (event) => {
 });
 
 startBtn.addEventListener('click', async () => {
-  await ensurePlaybackReady();
-  setStatus('Audio context running. Press Play or use the audio element controls.', 'success');
+  try {
+    await ensurePlaybackReady();
+    setStatus('Audio context running. Press Play or use the audio element controls.', 'success');
+  } catch (error) {
+    reportRuntimeError('Falha ao iniciar o áudio', error);
+  }
 });
 
 playBtn.addEventListener('click', async () => {
@@ -346,8 +373,7 @@ playBtn.addEventListener('click', async () => {
     setStatus('Playback started.', 'success');
     updatePreviewBadge();
   } catch (error) {
-    setStatus(`Playback failed: ${error.message}`, 'error');
-    setActionFeedback('Erro ao iniciar preview', 'error');
+    reportRuntimeError('Falha no playback', error);
   }
 });
 
@@ -537,7 +563,6 @@ offlineBtn.addEventListener('click', async () => {
     setStatus('Offline render complete.', 'success');
     setActionFeedback('Render offline concluído', 'success');
   } catch (error) {
-    setStatus(`Offline render failed: ${error.message}`, 'error');
-    setActionFeedback('Erro no render offline', 'error');
+    reportRuntimeError('Falha no render offline', error);
   }
 });

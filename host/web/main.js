@@ -1,6 +1,7 @@
 import { createTransportState } from './transportState.js';
 import { createTransportController } from './transportController.js';
 import { DEFAULT_CONTROL_STATE, deserializePresetFromText, serializePreset } from './presetSerialization.js';
+import { formatRuntimeError } from './runtimeDiagnostics.js';
 
 const PARAM = {
   flutterDepth: 0,
@@ -93,6 +94,13 @@ function setStatus(msg, state = 'info') {
 function setActionFeedback(msg, state = 'info') {
   actionFeedback.textContent = msg;
   actionFeedback.dataset.state = state;
+}
+
+function reportRuntimeError(contextLabel, error) {
+  const { hint, message } = formatRuntimeError(contextLabel, error);
+  setStatus(message, 'error');
+  setActionFeedback(hint || 'Erro de runtime na versão web', 'error');
+  console.error(`${contextLabel}:`, error);
 }
 
 function updatePreviewBadge() {
@@ -335,8 +343,12 @@ fileInput.addEventListener('change', async (event) => {
 });
 
 startBtn.addEventListener('click', async () => {
-  await ensurePlaybackReady();
-  setStatus('Audio context running. Press Play or use the audio element controls.', 'success');
+  try {
+    await ensurePlaybackReady();
+    setStatus('Audio context running. Press Play or use the audio element controls.', 'success');
+  } catch (error) {
+    reportRuntimeError('Falha ao iniciar o áudio', error);
+  }
 });
 
 playBtn.addEventListener('click', async () => {
@@ -346,8 +358,7 @@ playBtn.addEventListener('click', async () => {
     setStatus('Playback started.', 'success');
     updatePreviewBadge();
   } catch (error) {
-    setStatus(`Playback failed: ${error.message}`, 'error');
-    setActionFeedback('Erro ao iniciar preview', 'error');
+    reportRuntimeError('Falha no playback', error);
   }
 });
 
@@ -537,7 +548,6 @@ offlineBtn.addEventListener('click', async () => {
     setStatus('Offline render complete.', 'success');
     setActionFeedback('Render offline concluído', 'success');
   } catch (error) {
-    setStatus(`Offline render failed: ${error.message}`, 'error');
-    setActionFeedback('Erro no render offline', 'error');
+    reportRuntimeError('Falha no render offline', error);
   }
 });

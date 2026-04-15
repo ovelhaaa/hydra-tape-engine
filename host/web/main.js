@@ -88,7 +88,6 @@ transportState.subscribe(updateRepeatUI);
 function setStatus(msg, state = 'info') {
   statusEl.textContent = msg;
   statusEl.dataset.state = state;
-  statusEl.setAttribute('aria-live', state === 'error' ? 'assertive' : 'polite');
 }
 
 function setActionFeedback(msg, state = 'info') {

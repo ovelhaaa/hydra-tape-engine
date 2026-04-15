@@ -97,10 +97,10 @@ function setActionFeedback(msg, state = 'info') {
   actionFeedback.dataset.state = state;
 }
 
-function reportRuntimeError(contextLabel, error) {
+function reportRuntimeError(contextLabel, error, feedbackFallback = 'Erro de runtime na versão web') {
   const { hint, message } = formatRuntimeError(contextLabel, error);
   setStatus(message, 'error');
-  setActionFeedback(hint || 'Erro de runtime na versão web', 'error');
+  setActionFeedback(hint || feedbackFallback, 'error');
   console.error(`${contextLabel}:`, error);
 }
 

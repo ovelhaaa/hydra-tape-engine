@@ -55,6 +55,7 @@ const actionFeedback = document.getElementById('actionFeedback');
 const paramMapTableBody = document.getElementById('paramMapTableBody');
 const latencyCheckBtn = document.getElementById('latencyCheckBtn');
 const latencyReport = document.getElementById('latencyReport');
+const WEB_BUILD_HELP = 'Execute o build web (emcmake/cmake), sirva build-web/web via HTTP e tente novamente.';
 
 let context;
 let source;

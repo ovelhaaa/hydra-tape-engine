@@ -5,80 +5,324 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Hydra DSP Web Demo</title>
     <style>
-      body { font-family: system-ui, sans-serif; background: #111; color: #eee; margin: 0; padding: 1rem; }
-      .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1rem; }
-      .card { background: #1c1c1c; border: 1px solid #333; border-radius: 8px; padding: 1rem; }
-      label { display: block; margin: 0.5rem 0; font-size: 0.9rem; }
-      input[type="range"] { width: 100%; }
-      button { margin: 0.2rem 0.2rem 0.2rem 0; }
-      .repeat-toggle--active { background: #2d7d46; color: #fff; border: 1px solid #6fe294; }
-      #status { color: #9ad; min-height: 1.2rem; }
-      audio { width: 100%; }
-      .panel-header { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
-      .pill { font-size: 0.75rem; padding: 0.15rem 0.5rem; border-radius: 999px; border: 1px solid #666; color: #ccc; }
-      .pill--active { background: #2d7d46; border-color: #6fe294; color: #fff; }
-      .meta { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.6rem; }
-      .value { color: #9ad; float: right; }
+      :root {
+        --font-sans: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+        --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+
+        --bg-base: #0f1114;
+        --bg-panel: #171b21;
+        --bg-panel-elevated: #1d232b;
+        --border-subtle: #2b333f;
+        --text-primary: #eef3f8;
+        --text-secondary: #b6c1cf;
+        --text-muted: #8e9aad;
+        --accent: #4f9dff;
+        --accent-strong: #2d7dff;
+        --success: #3db97a;
+        --warning: #dca34d;
+        --danger: #e25f5f;
+        --focus: #7fc6ff;
+
+        --space-1: 0.25rem;
+        --space-2: 0.5rem;
+        --space-3: 0.75rem;
+        --space-4: 1rem;
+        --space-5: 1.25rem;
+        --space-6: 1.5rem;
+        --space-8: 2rem;
+
+        --radius-sm: 6px;
+        --radius-md: 10px;
+        --radius-lg: 14px;
+      }
+
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        background: var(--bg-base);
+        color: var(--text-primary);
+        font-family: var(--font-sans);
+        line-height: 1.4;
+      }
+
+      main { padding: var(--space-5); max-width: 1400px; margin: 0 auto; }
+      h1 { margin: 0; font-size: 1.4rem; }
+      h2 { margin: 0; font-size: 1rem; }
+      h3 { margin: 0; font-size: 0.95rem; color: var(--text-secondary); }
+      p { margin: 0; }
+
+      .transport-bar {
+        position: sticky;
+        top: 0;
+        z-index: 2;
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--space-4);
+        align-items: center;
+        justify-content: space-between;
+        padding: var(--space-4) var(--space-5);
+        border-bottom: 1px solid var(--border-subtle);
+        background: color-mix(in srgb, var(--bg-base) 88%, black);
+        backdrop-filter: blur(6px);
+      }
+
+      .transport-controls,
+      .preset-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--space-2);
+        align-items: center;
+      }
+
+      .status {
+        margin-top: var(--space-3);
+        min-height: 1.5rem;
+        color: var(--text-secondary);
+        font-size: 0.92rem;
+      }
+      .status[data-state="success"] { color: var(--success); }
+      .status[data-state="error"] { color: var(--danger); }
+      .status[data-state="warning"] { color: var(--warning); }
+
+      .layout-grid {
+        display: grid;
+        grid-template-columns: minmax(440px, 1.4fr) minmax(280px, 1fr);
+        gap: var(--space-5);
+        margin-top: var(--space-4);
+      }
+
+      .stack { display: grid; gap: var(--space-5); align-content: start; }
+
+      .card {
+        background: var(--bg-panel);
+        border: 1px solid var(--border-subtle);
+        border-radius: var(--radius-lg);
+        padding: var(--space-5);
+      }
+
+      .panel-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: var(--space-3);
+        margin-bottom: var(--space-3);
+      }
+
+      .meta { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-bottom: var(--space-4); }
+
+      .pill {
+        font-size: 0.76rem;
+        color: var(--text-secondary);
+        padding: 0.2rem 0.55rem;
+        border-radius: 999px;
+        border: 1px solid var(--border-subtle);
+        background: var(--bg-panel-elevated);
+      }
+      .pill--active,
+      .pill[data-state="success"] { color: #fff; background: color-mix(in srgb, var(--success) 28%, var(--bg-panel)); border-color: var(--success); }
+      .pill[data-state="error"] { color: #fff; background: color-mix(in srgb, var(--danger) 30%, var(--bg-panel)); border-color: var(--danger); }
+      .pill[data-state="warning"] { color: #fff; background: color-mix(in srgb, var(--warning) 35%, var(--bg-panel)); border-color: var(--warning); }
+
+      .param-grid { display: grid; gap: var(--space-4); }
+      fieldset {
+        border: 1px solid var(--border-subtle);
+        border-radius: var(--radius-md);
+        padding: var(--space-4);
+        margin: 0;
+      }
+      legend { color: var(--text-secondary); font-size: 0.88rem; padding: 0 var(--space-2); }
+
+      .control-row { margin-bottom: var(--space-3); }
+      .control-row:last-child { margin-bottom: 0; }
+      .control-label {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        color: var(--text-secondary);
+        font-size: 0.9rem;
+        margin-bottom: var(--space-1);
+      }
+      .value { color: var(--accent); font-family: var(--font-mono); }
+
+      input[type="range"],
+      input[type="file"],
+      button,
+      .button-link {
+        width: 100%;
+      }
+
+      input[type="range"] { accent-color: var(--accent-strong); }
+      input[type="checkbox"] { accent-color: var(--accent-strong); }
+
+      button,
+      .button-link {
+        border: 1px solid var(--border-subtle);
+        background: var(--bg-panel-elevated);
+        color: var(--text-primary);
+        border-radius: var(--radius-sm);
+        padding: 0.5rem 0.75rem;
+        font: inherit;
+        cursor: pointer;
+        text-align: center;
+        text-decoration: none;
+        transition: border-color 120ms ease, background 120ms ease, transform 120ms ease;
+      }
+      button:hover,
+      .button-link:hover { border-color: var(--accent); background: #25303c; }
+      button:active,
+      .button-link:active { transform: translateY(1px); }
+
+      button[data-pressed="true"] {
+        background: color-mix(in srgb, var(--success) 24%, var(--bg-panel-elevated));
+        border-color: var(--success);
+      }
+
+      :focus-visible {
+        outline: 2px solid var(--focus);
+        outline-offset: 2px;
+      }
+
+      .row-inline {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: var(--space-3);
+        color: var(--text-secondary);
+        font-size: 0.92rem;
+      }
+
+      .table-wrap { overflow: auto; max-height: 320px; }
       table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
-      th, td { border-bottom: 1px solid #2e2e2e; text-align: left; padding: 0.25rem 0.2rem; }
-      .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
-      #latencyReport { margin-top: 0.5rem; color: #9ad; min-height: 1rem; font-size: 0.85rem; }
+      th, td {
+        border-bottom: 1px solid var(--border-subtle);
+        text-align: left;
+        padding: 0.35rem 0.3rem;
+        white-space: nowrap;
+      }
+      .mono { font-family: var(--font-mono); }
+      #latencyReport { margin-top: var(--space-2); color: var(--text-secondary); min-height: 1rem; font-size: 0.85rem; }
+
+      @media (max-width: 1100px) {
+        .layout-grid { grid-template-columns: 1fr; }
+      }
+
+      @media (max-width: 720px) {
+        main { padding: var(--space-4); }
+        .transport-bar { padding: var(--space-3) var(--space-4); }
+        .transport-controls > *,
+        .preset-actions > * { flex: 1 1 160px; }
+      }
     </style>
   </head>
   <body>
-    <h1>Hydra DSP Web (WASM + AudioWorklet)</h1>
-    <p id="status">Loading…</p>
+    <header class="transport-bar" aria-label="Transport controls and file loading">
+      <h1>Hydra DSP Web</h1>
+      <div class="transport-controls" role="group" aria-label="Playback transport">
+        <input id="fileInput" type="file" accept="audio/*" aria-label="Load audio file" />
+        <button id="startBtn" aria-label="Initialize audio context">Start Audio</button>
+        <button id="playBtn" aria-label="Play audio preview">Play</button>
+        <button id="stopBtn" aria-label="Stop playback">Stop</button>
+        <button id="repeatBtn" aria-pressed="false" data-pressed="false" aria-label="Toggle playback repeat">Repeat OFF</button>
+        <button id="connectBtn" aria-label="Toggle effect connection">Connect FX</button>
+        <button id="bypassBtn" data-pressed="false" aria-label="Toggle effect bypass">Bypass: OFF</button>
+      </div>
+    </header>
 
-    <div class="grid">
-      <section class="card">
-        <h2>Transport</h2>
-        <input id="fileInput" type="file" accept="audio/*" />
-        <audio id="player" controls></audio>
-        <div>
-          <button id="startBtn">Start Audio</button>
-          <button id="playBtn">Play</button>
-          <button id="stopBtn">Stop</button>
-          <button id="repeatBtn" aria-pressed="false">Repeat OFF</button>
-          <button id="connectBtn">Connect FX</button>
-          <button id="bypassBtn">Bypass: OFF</button>
-          <button id="resetBtn">Reset DSP</button>
-          <button id="offlineBtn">Render Offline</button>
-          <button id="exportPresetBtn">Export Preset</button>
-          <button id="importPresetBtn">Import Preset</button>
-          <input id="importPresetInput" type="file" accept="application/json,.json" style="display:none" />
-          <a id="downloadLink" style="display:none" download="hydra-offline.wav">Download offline WAV</a>
-        </div>
-      </section>
+    <main>
+      <p id="status" class="status" role="status" aria-live="polite">Loading…</p>
+      <div class="layout-grid">
+        <div class="stack">
+          <section class="card" aria-labelledby="paramsTitle">
+            <div class="panel-header">
+              <h2 id="paramsTitle">Painel de parâmetros</h2>
+              <span id="previewBadge" class="pill" role="status" aria-live="polite">Preview inativo</span>
+            </div>
 
-      <section class="card">
-        <div class="panel-header">
-          <h2>Main Params</h2>
-          <span id="previewBadge" class="pill">Preview inativo</span>
-        </div>
-        <div class="meta">
-          <span id="perfBadge" class="pill">Fallback visual: OFF</span>
-        </div>
-        <label>Delay Active <input id="delayActive" type="checkbox" checked></label>
-        <label>Delay Time (ms) <span class="value mono" data-value-for="delayTimeMs">500</span><input id="delayTimeMs" type="range" min="10" max="2000" value="500"></label>
-        <label>Feedback <span class="value mono" data-value-for="feedback">40</span><input id="feedback" type="range" min="0" max="100" value="40"></label>
-        <label>Dry/Wet <span class="value mono" data-value-for="dryWet">50</span><input id="dryWet" type="range" min="0" max="100" value="50"></label>
-        <label>Drive <span class="value mono" data-value-for="drive">40</span><input id="drive" type="range" min="0" max="100" value="40"></label>
-        <label>Flutter Depth <span class="value mono" data-value-for="flutterDepth">20</span><input id="flutterDepth" type="range" min="0" max="100" value="20"></label>
-        <label>Wow Depth <span class="value mono" data-value-for="wowDepth">15</span><input id="wowDepth" type="range" min="0" max="100" value="15"></label>
-        <button id="latencyCheckBtn">Validar latência/estabilidade</button>
-        <div id="latencyReport"></div>
-      </section>
+            <div class="meta">
+              <span id="perfBadge" class="pill">Fallback visual: OFF</span>
+              <span id="actionFeedback" class="pill" role="status" aria-live="polite">Aguardando ação</span>
+            </div>
 
-      <section class="card">
-        <h2>Mapeamento de parâmetros</h2>
-        <table>
-          <thead>
-            <tr><th>Controle</th><th>Grupo</th><th>ID</th><th>Camada</th><th>Default</th></tr>
-          </thead>
-          <tbody id="paramMapTableBody"></tbody>
-        </table>
-      </section>
-    </div>
+            <div class="param-grid">
+              <fieldset>
+                <legend>Estado e entrada</legend>
+                <label class="row-inline" for="delayActive">Delay Active
+                  <input id="delayActive" type="checkbox" checked aria-label="Enable or disable delay processing" />
+                </label>
+              </fieldset>
+
+              <fieldset>
+                <legend>Tempo e repetição</legend>
+                <div class="control-row">
+                  <label class="control-label" for="delayTimeMs">Delay Time (ms) <span class="value mono" data-value-for="delayTimeMs">500</span></label>
+                  <input id="delayTimeMs" type="range" min="10" max="2000" value="500" aria-label="Delay time in milliseconds" />
+                </div>
+                <div class="control-row">
+                  <label class="control-label" for="feedback">Feedback <span class="value mono" data-value-for="feedback">40</span></label>
+                  <input id="feedback" type="range" min="0" max="100" value="40" aria-label="Feedback amount" />
+                </div>
+                <div class="control-row">
+                  <label class="control-label" for="dryWet">Dry/Wet <span class="value mono" data-value-for="dryWet">50</span></label>
+                  <input id="dryWet" type="range" min="0" max="100" value="50" aria-label="Dry and wet signal blend" />
+                </div>
+              </fieldset>
+
+              <fieldset>
+                <legend>Característica e modulação</legend>
+                <div class="control-row">
+                  <label class="control-label" for="drive">Drive <span class="value mono" data-value-for="drive">40</span></label>
+                  <input id="drive" type="range" min="0" max="100" value="40" aria-label="Drive amount" />
+                </div>
+                <div class="control-row">
+                  <label class="control-label" for="flutterDepth">Flutter Depth <span class="value mono" data-value-for="flutterDepth">20</span></label>
+                  <input id="flutterDepth" type="range" min="0" max="100" value="20" aria-label="Flutter depth" />
+                </div>
+                <div class="control-row">
+                  <label class="control-label" for="wowDepth">Wow Depth <span class="value mono" data-value-for="wowDepth">15</span></label>
+                  <input id="wowDepth" type="range" min="0" max="100" value="15" aria-label="Wow depth" />
+                </div>
+              </fieldset>
+            </div>
+          </section>
+
+          <section class="card" aria-labelledby="mappingTitle">
+            <div class="panel-header">
+              <h2 id="mappingTitle">Mapeamento de parâmetros</h2>
+              <button id="latencyCheckBtn" aria-label="Run latency and stability check">Validar latência/estabilidade</button>
+            </div>
+            <div id="latencyReport" role="status" aria-live="polite"></div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr><th>Controle</th><th>Grupo</th><th>ID</th><th>Camada</th><th>Default</th></tr>
+                </thead>
+                <tbody id="paramMapTableBody"></tbody>
+              </table>
+            </div>
+          </section>
+        </div>
+
+        <aside class="stack" aria-label="Presets and utility actions">
+          <section class="card" aria-labelledby="presetTitle">
+            <h2 id="presetTitle">Presets</h2>
+            <p style="margin: 0.4rem 0 0.9rem; color: var(--text-muted); font-size: 0.9rem;">Exporte o estado atual, importe presets e renderize preview offline.</p>
+            <div class="preset-actions" role="group" aria-label="Preset and utility actions">
+              <button id="exportPresetBtn" aria-label="Export current preset to JSON">Export Preset</button>
+              <button id="importPresetBtn" aria-label="Import preset from JSON">Import Preset</button>
+              <button id="resetBtn" aria-label="Reset DSP engine">Reset DSP</button>
+              <button id="offlineBtn" aria-label="Render audio offline with current settings">Render Offline</button>
+              <input id="importPresetInput" type="file" accept="application/json,.json" style="display:none" aria-hidden="true" />
+              <a id="downloadLink" class="button-link" style="display:none" download="hydra-offline.wav">Download offline WAV</a>
+            </div>
+          </section>
+
+          <section class="card" aria-label="Audio preview player">
+            <h3>Audio Preview</h3>
+            <audio id="player" controls style="width: 100%; margin-top: 0.75rem;"></audio>
+          </section>
+        </aside>
+      </div>
+    </main>
 
     <script type="module" src="./main.js"></script>
   </body>

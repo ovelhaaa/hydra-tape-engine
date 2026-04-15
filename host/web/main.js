@@ -50,6 +50,7 @@ const importPresetInput = document.getElementById('importPresetInput');
 const downloadLink = document.getElementById('downloadLink');
 const previewBadge = document.getElementById('previewBadge');
 const perfBadge = document.getElementById('perfBadge');
+const actionFeedback = document.getElementById('actionFeedback');
 const paramMapTableBody = document.getElementById('paramMapTableBody');
 const latencyCheckBtn = document.getElementById('latencyCheckBtn');
 const latencyReport = document.getElementById('latencyReport');
@@ -76,30 +77,35 @@ createTransportController({ player, transportState, setStatus });
 
 function updateRepeatUI({ isRepeatEnabled }) {
   repeatBtn.textContent = isRepeatEnabled ? 'Repeat ON' : 'Repeat OFF';
-  repeatBtn.classList.toggle('repeat-toggle--active', isRepeatEnabled);
   repeatBtn.setAttribute('aria-pressed', String(isRepeatEnabled));
-
+  repeatBtn.dataset.pressed = String(isRepeatEnabled);
 }
+
 
 updateRepeatUI(transportState.getState());
 transportState.subscribe(updateRepeatUI);
 
-function setStatus(msg) {
+function setStatus(msg, state = 'info') {
   statusEl.textContent = msg;
+  statusEl.dataset.state = state;
+}
+
+function setActionFeedback(msg, state = 'info') {
+  actionFeedback.textContent = msg;
+  actionFeedback.dataset.state = state;
 }
 
 function updatePreviewBadge() {
   const previewActive = !player.paused && connected;
   previewBadge.textContent = previewActive ? 'Preview ativo' : 'Preview inativo';
-  previewBadge.classList.toggle('pill--active', previewActive);
-  previewBadge.setAttribute('aria-live', 'polite');
+  previewBadge.dataset.state = previewActive ? 'success' : 'info';
 }
 
 function applyLowPowerMode(enabled) {
   lowPowerMode = enabled;
   uiUpdateThrottleMs = enabled ? UI_THROTTLE_LOW_POWER_MS : UI_THROTTLE_NORMAL_MS;
   perfBadge.textContent = enabled ? 'Fallback visual: ON' : 'Fallback visual: OFF';
-  perfBadge.classList.toggle('pill--active', enabled);
+  perfBadge.dataset.state = enabled ? 'warning' : 'info';
 }
 
 function post(message) {
@@ -158,13 +164,14 @@ async function ensureAudioGraph() {
 
   fxNode.port.onmessage = (event) => {
     if (event.data?.type === 'ready') {
-      setStatus('WASM ready in AudioWorklet.');
+      setStatus('WASM ready in AudioWorklet.', 'success');
       if (DEBUG_ROUNDTRIP) {
         post({ type: 'debugState', enabled: true });
       }
       syncAllParams();
     } else if (event.data?.type === 'error') {
-      setStatus(`Worklet init error: ${event.data.message}`);
+      setStatus(`Worklet init error: ${event.data.message}`, 'error');
+      setActionFeedback('Falha ao iniciar worklet', 'error');
     } else if (event.data?.type === 'stateAck') {
       engineState[event.data.key] = event.data.value;
     } else if (event.data?.type === 'stateSnapshot') {
@@ -291,6 +298,7 @@ function startPerformanceMonitor() {
 async function runLatencyStabilityCheck() {
   if (!fxNode || !context) {
     latencyReport.textContent = 'Inicie o áudio primeiro para validar latência.';
+    setActionFeedback('Validação indisponível sem áudio', 'warning');
     return;
   }
   const scenarioStart = performance.now();
@@ -313,6 +321,7 @@ async function runLatencyStabilityCheck() {
   const elapsedMs = performance.now() - scenarioStart;
   const baseLatencyMs = (context.baseLatency || 0) * 1000;
   latencyReport.textContent = `Validação concluída: ${rounds} ciclos multi-parâmetro em ${elapsedMs.toFixed(1)}ms | baseLatency=${baseLatencyMs.toFixed(2)}ms | fallback=${lowPowerMode ? 'ON' : 'OFF'}`;
+  setActionFeedback('Validação de latência concluída', 'success');
 }
 
 fileInput.addEventListener('change', async (event) => {
@@ -321,53 +330,61 @@ fileInput.addEventListener('change', async (event) => {
   const url = URL.createObjectURL(file);
   player.src = url;
   currentFileArrayBuffer = await file.arrayBuffer();
-  setStatus(`Loaded ${file.name}`);
+  setStatus(`Loaded ${file.name}`, 'success');
+  setActionFeedback('Arquivo de áudio carregado', 'success');
 });
 
 startBtn.addEventListener('click', async () => {
   await ensurePlaybackReady();
-  setStatus('Audio context running. Press Play or use the audio element controls.');
+  setStatus('Audio context running. Press Play or use the audio element controls.', 'success');
 });
 
 playBtn.addEventListener('click', async () => {
   try {
     await ensurePlaybackReady();
     await player.play();
-    setStatus('Playback started.');
+    setStatus('Playback started.', 'success');
     updatePreviewBadge();
   } catch (error) {
-    setStatus(`Playback failed: ${error.message}`);
+    setStatus(`Playback failed: ${error.message}`, 'error');
+    setActionFeedback('Erro ao iniciar preview', 'error');
   }
 });
 
 stopBtn.addEventListener('click', () => {
   player.pause();
   player.currentTime = 0;
-  setStatus('Playback stopped and rewound.');
+  setStatus('Playback stopped and rewound.', 'info');
   updatePreviewBadge();
 });
 
 repeatBtn.addEventListener('click', () => {
   transportState.toggleRepeat();
   const { isRepeatEnabled } = transportState.getState();
-  setStatus(isRepeatEnabled ? 'Repeat enabled.' : 'Repeat disabled.');
+  setStatus(isRepeatEnabled ? 'Repeat enabled.' : 'Repeat disabled.', 'info');
 });
 
 connectBtn.addEventListener('click', () => {
   connected = !connected;
   connectBtn.textContent = connected ? 'Disconnect FX' : 'Connect FX';
+  connectBtn.dataset.pressed = String(connected);
   connectGraph();
   updatePreviewBadge();
+  setActionFeedback(connected ? 'Preview FX ativo' : 'Preview FX bypassado', connected ? 'success' : 'info');
 });
 
 bypassBtn.addEventListener('click', () => {
   bypass = !bypass;
   bypassBtn.textContent = `Bypass: ${bypass ? 'ON' : 'OFF'}`;
+  bypassBtn.dataset.pressed = String(bypass);
   post({ type: 'bypass', enabled: bypass });
+  setActionFeedback(bypass ? 'Bypass ativo' : 'Processamento ativo', bypass ? 'warning' : 'success');
 });
 
 resetBtn.addEventListener('click', () => {
   post({ type: 'reset' });
+  setStatus('DSP reset command sent.', 'info');
+  setActionFeedback('DSP resetado', 'success');
 });
 
 ['delayActive', 'delayTimeMs', 'feedback', 'dryWet', 'drive', 'flutterDepth', 'wowDepth'].forEach((id) => {
@@ -399,9 +416,11 @@ exportPresetBtn.addEventListener('click', () => {
     anchor.click();
     anchor.remove();
     URL.revokeObjectURL(url);
-    setStatus('Preset exported successfully.');
+    setStatus('Preset exported successfully.', 'success');
+    setActionFeedback('Preset salvo', 'success');
   } catch (error) {
-    setStatus(`Failed to export preset: ${error.message}`);
+    setStatus(`Failed to export preset: ${error.message}`, 'error');
+    setActionFeedback('Erro ao salvar preset', 'error');
   }
 });
 
@@ -419,12 +438,15 @@ importPresetInput.addEventListener('change', async (event) => {
     const { controlState, migratedFromVersion } = deserializePresetFromText(text);
     applyControlStateToUI(controlState);
     if (migratedFromVersion) {
-      setStatus(`Preset imported and migrated from v${migratedFromVersion} to v2.`);
+      setStatus(`Preset imported and migrated from v${migratedFromVersion} to v2.`, 'success');
+      setActionFeedback('Preset importado com migração', 'success');
     } else {
-      setStatus('Preset imported successfully.');
+      setStatus('Preset imported successfully.', 'success');
+      setActionFeedback('Preset importado', 'success');
     }
   } catch (error) {
-    setStatus(`Failed to import preset: ${error.message}`);
+    setStatus(`Failed to import preset: ${error.message}`, 'error');
+    setActionFeedback('Erro de validação do preset', 'error');
   }
 });
 
@@ -436,6 +458,8 @@ renderParamMapping();
 updateControlReadouts();
 updatePreviewBadge();
 applyLowPowerMode(false);
+connectBtn.dataset.pressed = String(connected);
+bypassBtn.dataset.pressed = String(bypass);
 
 function encodeWav(stereo, sampleRate) {
   const length = stereo[0].length;
@@ -471,11 +495,13 @@ function encodeWav(stereo, sampleRate) {
 
 offlineBtn.addEventListener('click', async () => {
   if (!currentFileArrayBuffer) {
-    setStatus('Load an audio file first.');
+    setStatus('Load an audio file first.', 'warning');
+    setActionFeedback('Importe áudio antes do render', 'warning');
     return;
   }
 
-  setStatus('Offline render started...');
+  setStatus('Offline render started...', 'info');
+  setActionFeedback('Render offline em andamento', 'info');
   try {
     const decodeCtx = new AudioContext({ sampleRate: 48000 });
     const decoded = await decodeCtx.decodeAudioData(currentFileArrayBuffer.slice(0));
@@ -508,8 +534,10 @@ offlineBtn.addEventListener('click', async () => {
     downloadLink.href = url;
     downloadLink.style.display = 'inline';
     downloadLink.textContent = 'Download offline WAV';
-    setStatus('Offline render complete.');
+    setStatus('Offline render complete.', 'success');
+    setActionFeedback('Render offline concluído', 'success');
   } catch (error) {
-    setStatus(`Offline render failed: ${error.message}`);
+    setStatus(`Offline render failed: ${error.message}`, 'error');
+    setActionFeedback('Erro no render offline', 'error');
   }
 });

@@ -108,7 +108,6 @@ function applyLowPowerMode(enabled) {
   lowPowerMode = enabled;
   uiUpdateThrottleMs = enabled ? UI_THROTTLE_LOW_POWER_MS : UI_THROTTLE_NORMAL_MS;
   perfBadge.textContent = enabled ? 'Fallback visual: ON' : 'Fallback visual: OFF';
-  perfBadge.classList.toggle('pill--active', enabled);
   perfBadge.dataset.state = enabled ? 'warning' : 'info';
 }
 

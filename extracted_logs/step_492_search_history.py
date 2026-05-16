@@ -1,0 +1,2 @@
+"import os\nimport sys\n\ndef search_history():\n    appdata = os.environ.get('APPDATA')\n    if not appdata:\n        print(\"No APPDATA found\")\n        return\n        \n    history_dir = os.path.join(appdata, 'Code', 'User', 'History')\n    if not os.
+<truncated 1536 bytes>

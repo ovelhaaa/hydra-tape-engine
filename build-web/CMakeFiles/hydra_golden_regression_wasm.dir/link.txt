@@ -1,0 +1,1 @@
+C:\emsdk\upstream\emscripten\em++.bat -sENVIRONMENT=node @CMakeFiles\hydra_golden_regression_wasm.dir\objects1.rsp -o wasm-tests\hydra_golden_regression.js

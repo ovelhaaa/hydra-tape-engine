@@ -1,0 +1,2 @@
+"# Hydra Web Interface — Full Overhaul Walkthrough\n\n## What Was Done\n\n### Bugs Fixed\n\n| # | File | Fix |\n|---|---|---|\n| 1 | `main.js` | **Mono WAV crash** — `encodeWav` now safely extracts all available channels and upmixes mono→stereo if ne
+<truncated 2881 bytes>

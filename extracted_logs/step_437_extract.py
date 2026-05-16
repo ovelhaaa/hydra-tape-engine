@@ -1,0 +1,2 @@
+"import os\nimport sys\nimport re\nsys.stdout.reconfigure(encoding='utf-8')\nconv_id = 'fd9b0664-8b50-4cc1-b885-ddcfd8cd72f3'\nlog_path = os.path.join(r'C:\\Users\\devx\\.gemini\\antigravity\\brain', conv_id, '.system_generated', 'logs', 'overview.txt')\nw
+<truncated 711 bytes>

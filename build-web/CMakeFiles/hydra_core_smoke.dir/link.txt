@@ -1,0 +1,1 @@
+C:\emsdk\upstream\emscripten\em++.bat @CMakeFiles\hydra_core_smoke.dir\objects1.rsp -o hydra_core_smoke.js @CMakeFiles\hydra_core_smoke.dir\linkLibs.rsp

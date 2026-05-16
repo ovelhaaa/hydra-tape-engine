@@ -1,0 +1,2 @@
+"import os\nimport sys\nsys.stdout.reconfigure(encoding='utf-8')\n\n# Search in both recent conversations just in case\nconv_ids = ['fd9b0664-8b50-4cc1-b885-ddcfd8cd72f3', 'e833441b-14a0-43fe-99c1-a539d6bddd59']\n\nfound = False\nfor cid in conv_ids:\n    
+<truncated 1177 bytes>

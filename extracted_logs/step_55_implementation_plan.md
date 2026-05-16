@@ -1,0 +1,2 @@
+"# Web Interface Review & Improvement Plan\n\n## Summary\n\nA thorough review of the web implementation (`build-web/web/`) against the ESP32 firmware (`src/main.cpp`) and the full DSP C API (`dsp/core/hydra_dsp_c_api.cpp`). The review identified **critical
+<truncated 7937 bytes>

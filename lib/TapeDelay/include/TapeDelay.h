@@ -163,9 +163,9 @@ private:
   }
 
 public:
-  TapeNoiseGenerator(float fs) {
+  TapeNoiseGenerator(float fs, uint32_t seedOffset = 0u) {
     state[0] = state[1] = state[2] = 0;
-    seed = 123456789 + micros();
+    seed = 123456789 + micros() + seedOffset;
     hissShaper.setHighShelf(fs, 3000.0f, 0.7f, 6.0f);
   }
 
@@ -352,6 +352,7 @@ private:
 
   DropoutGenerator dropout;
   TapeNoiseGenerator noiseGen;
+  TapeNoiseGenerator noiseGenR;
   BiquadFilter headBump;
   BiquadFilter tapeRolloff;
   BiquadFilter outputLPF;
@@ -397,6 +398,9 @@ private:
   // Runaway Protection
   float delayEnableRamp;
   float smoothedDelaySamples;
+  float smoothedAzCoeff;
+  float springFB_L;
+  float springFB_R;
 
   float *delayLine;
   float *delayLineR;
@@ -423,17 +427,13 @@ private:
 
   // Soft Knee Compressor (1.5:1 ratio) - The "Glue"
   AUDIO_INLINE float feedbackCompressor(float x) {
-    const float thresh = 0.6f;
-    const float ratio = 1.5f;
-
+    const float t = 0.6f, r = 1.5f, knee = 0.2f;
     float a = fabsf(x);
-    if (a <= thresh)
-      return x;
-
-    float excess = a - thresh;
-    float compressed = thresh + excess / ratio;
-
-    return copysignf(compressed, x);
+    if (a <= t - knee * 0.5f) return x;
+    if (a >= t + knee * 0.5f) return copysignf(t + (a - t) / r, x);
+    float kx = (a - (t - knee * 0.5f)) / knee;
+    float ratio = 1.0f + (1.0f / r - 1.0f) * kx * kx;
+    return copysignf(a * ratio, x);
   }
 
   // Soft Knee Output Limiter - Prevents digital clipping

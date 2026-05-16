@@ -1,0 +1,2 @@
+"# Web Interface Full Overhaul — Task List\n\n## Bug Fixes\n- [x] Fix mono crash in `encodeWav` (offline render)\n- [x] Fix sample rate inconsistency (live vs offline, force 48kHz)\n- [x] Remove duplicate `WEB_BUILD_HELP` constant in `main.js`\n- [x] Fix
+<truncated 1786 bytes>

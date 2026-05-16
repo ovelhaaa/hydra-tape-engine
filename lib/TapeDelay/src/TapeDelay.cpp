@@ -1,8 +1,8 @@
 #include "TapeDelay.h"
 
 TapeModel::TapeModel(float fs, float maxDelayTimeMs)
-    : sampleRate(fs), noiseGen(fs), flutterPhase(0), wowPhase(0),
-      azimuthPhase(0), delayEnableRamp(0.0f), smoothedDelaySamples(0.0f) {
+    : sampleRate(fs), noiseGen(fs, 0u), noiseGenR(fs, 2000u), flutterPhase(0), wowPhase(0),
+      azimuthPhase(0), delayEnableRamp(0.0f), smoothedDelaySamples(0.0f), smoothedAzCoeff(0.0f), springFB_L(0.0f), springFB_R(0.0f) {
   // Safe buffer calculation
   bufferSize = (int32_t)(fs * (maxDelayTimeMs / 1000.0f));
   size_t bytes = bufferSize * sizeof(float);
@@ -122,14 +122,14 @@ void TapeModel::updateFilters() {
   // It has: setLowShelf, setHighShelf, setLowpass.
   // We will Simulate HPF with LowShelf -30dB at 150Hz.
   if (currentParams.guitarFocus) {
-    inputHPF.setLowShelf(sampleRate, 150.0f, 0.7f, -30.0f);
-    inputHPFR.setLowShelf(sampleRate, 150.0f, 0.7f, -30.0f);
+    inputHPF.setHighpass(sampleRate, 150.0f, 0.707f);
+    inputHPFR.setHighpass(sampleRate, 150.0f, 0.707f);
     inputLPF.setLowpass(sampleRate, 5000.0f, 0.707f);
     inputLPFR.setLowpass(sampleRate, 5000.0f, 0.707f);
   } else {
     // Neutral - wide open
-    inputHPF.setLowShelf(sampleRate, 20.0f, 0.7f, 0.0f);
-    inputHPFR.setLowShelf(sampleRate, 20.0f, 0.7f, 0.0f);
+    inputHPF.setHighpass(sampleRate, 20.0f, 0.707f);
+    inputHPFR.setHighpass(sampleRate, 20.0f, 0.707f);
     inputLPF.setLowpass(sampleRate, 20000.0f, 0.707f);
     inputLPFR.setLowpass(sampleRate, 20000.0f, 0.707f);
   }
@@ -183,10 +183,10 @@ void TapeModel::updateFilters() {
     finalCutoff = 400.0f;
 
   // Dual cut to eliminate digital brightness:
-  // 1. Aggressive high shelf (-50dB)
-  tapeRolloff.setHighShelf(sampleRate, finalCutoff, 0.5f, -50.0f);
-  tapeRolloffR.setHighShelf(sampleRate, finalCutoff, 0.5f, -50.0f);
-
+  // 1. High shelf (-12dB) shifted an octave higher to prevent extreme resonance overlap
+  tapeRolloff.setHighShelf(sampleRate, finalCutoff * 2.0f, 0.5f, -12.0f);
+  tapeRolloffR.setHighShelf(sampleRate, finalCutoff * 2.0f, 0.5f, -12.0f);
+ 
   // 2. Low Pass Filter (LPF) to clean up remaining highs
   outputLPF.setLowpass(sampleRate, finalCutoff, 0.707f);
   outputLPFR.setLowpass(sampleRate, finalCutoff, 0.707f);
@@ -580,14 +580,23 @@ IRAM_ATTR void TapeModel::processStereo(float inL, float inR, float *outL,
   if (flutterPhase > 6.28318f)
     flutterPhase -= 6.28318f;
 
-  float wowInc = 6.28318f * p->wowRate / sampleRate;
+float wowInc = 6.28318f * p->wowRate / sampleRate;
   wowPhase += wowInc;
   if (wowPhase > 6.28318f)
     wowPhase -= 6.28318f;
 
-  // Scale Depths: 0-100 -> 0.0-1.0
-  float rawMod =
-      (sinf(flutterPhase) * (p->flutterDepth * 0.01f)) + (sinf(wowPhase) * (p->wowDepth * 0.01f));
+  // --- SMOOTH DELAY TIME (STEREO SHARED) ---
+  float targetDelay = p->delayTimeMs * sampleRate * 0.001f;
+  const float delaySmoothAlpha = 1.0f - expf(-1.0f / (0.200f * sampleRate));
+  smoothedDelaySamples += delaySmoothAlpha * (targetDelay - smoothedDelaySamples);
+
+  // Scale Depths: proportional to delay time + asymmetric wow harmonics
+  float flutterAmp = smoothedDelaySamples * (p->flutterDepth * 0.001f);
+  float wowAmp     = smoothedDelaySamples * (p->wowDepth * 0.001f);
+  float rawMod = (sinf(flutterPhase) * flutterAmp)
+               + (sinf(wowPhase)      * wowAmp * 0.8f)
+               + (sinf(wowPhase*2.0f) * wowAmp * 0.15f)
+               + (sinf(wowPhase*3.0f) * wowAmp * 0.05f);
   float mod = flutterLPF.process(rawMod);
 
   azimuthPhase += (0.2f / sampleRate);
@@ -599,24 +608,22 @@ IRAM_ATTR void TapeModel::processStereo(float inL, float inR, float *outL,
 
   bool useAzimuth = (p->azimuthError > 0.01f);
   if (useAzimuth) {
-
-    // Scale Azimuth: 0-100 -> 0.0-1.0
-    float azCoeff = -0.90f * (p->azimuthError * 0.01f) * azimuthMod;
-    azimuthFilter.setCoeff(azCoeff);
-    azimuthFilterR.setCoeff(
-        azCoeff); // Share coefficient, apply to both filters
+    float targetAz = -0.90f * (p->azimuthError * 0.01f) * azimuthMod;
+    smoothedAzCoeff += 0.001f * (targetAz - smoothedAzCoeff);
+    azimuthFilter.setCoeff(smoothedAzCoeff);
+    azimuthFilterR.setCoeff(smoothedAzCoeff);
   }
 
   // --- SHARED NOISE & DROPOUT ---
   float dropoutGain = dropout.process();
-  float hiss = 0.0f;
+  float hissL = 0.0f, hissR = 0.0f;
   if (p->noise > 0.001f) {
-    // Shared noise source (Mono noise), scaled 0-100 -> 0-0.1 (doubled for audibility)
-    hiss = noiseGen.next() * (p->noise * 0.001f) * (1.0f + (2.0f * (1.0f - dropoutGain)));
+    float noiseMult = (p->noise * 0.001f) * (1.0f + (2.0f * (1.0f - dropoutGain)));
+    hissL = noiseGen.next() * noiseMult;
+    hissR = noiseGenR.next() * noiseMult;
   }
 
   // --- RAMP LOGIC (STEREO SHARED) ---
-  // Using same ramp for stereo as param is global
   if (p->delayActive) {
     delayEnableRamp += 0.001f;
     if (delayEnableRamp > 1.0f)
@@ -624,11 +631,6 @@ IRAM_ATTR void TapeModel::processStereo(float inL, float inR, float *outL,
   } else {
     delayEnableRamp = 0.0f;
   }
-
-  // --- SMOOTH DELAY TIME (STEREO SHARED) ---
-  float targetDelay = p->delayTimeMs * sampleRate * 0.001f;
-  // Reduced smoothing speed to prevent extreme pitch shifts (artifacts)
-  smoothedDelaySamples += 0.0001f * (targetDelay - smoothedDelaySamples);
 
   // --- CHANNEL PROCESSING HELPER (Inline-ish logic) ---
   auto processChannel = [&](float input, float *buffer, BiquadFilter &hb,
@@ -642,12 +644,11 @@ IRAM_ATTR void TapeModel::processStereo(float inL, float inR, float *outL,
     condInput = iLP.process(condInput);
 
     float tapeSig = 0.0f;
-    float modDepth = 2.0f;
     float headGainSum = 0.0f;
 
     // READ (with REVERSE support)
     if (!p->delayActive) {
-      tapeSig = readTapeAt(200.0f + mod * 40.0f * modDepth, buffer);
+      tapeSig = readTapeAt(200.0f + mod, buffer);
     } else {
       float baseDelay = smoothedDelaySamples;
       float d1, d2, d3;
@@ -663,13 +664,12 @@ IRAM_ATTR void TapeModel::processStereo(float inL, float inR, float *outL,
         d3 = baseDelay;
       }
 
-      d1 += mod * 40.0f * modDepth;
-      d2 += mod * 60.0f * modDepth;
-      d3 += mod * 80.0f * modDepth;
+      d1 += mod * 0.33f;
+      d2 += mod * 0.66f;
+      d3 += mod;
 
       // === REVERSE MODE: Use readTapeReverse ===
       if (p->reverse) {
-        // Reverse works best with single long delay (head 3)
         tapeSig = readTapeReverse(d3, buffer);
         headGainSum = 1.0f;
       } else {
@@ -694,12 +694,10 @@ IRAM_ATTR void TapeModel::processStereo(float inL, float inR, float *outL,
 
     // DEGRADE
     tapeSig *= dropoutGain;
-    // MOVED NOISE TO OUTPUT STAGE to prevent "Rumble" at low tape speeds
-    // tapeSig += hiss;
-
     if (useAzimuth)
       tapeSig = az.process(tapeSig);
 
+    float preColorationTape = tapeSig;
     tapeSig = hb.process(tapeSig);
     tapeSig = tr.process(tapeSig);
     tapeSig = outLPF.process(tapeSig);
@@ -707,22 +705,12 @@ IRAM_ATTR void TapeModel::processStereo(float inL, float inR, float *outL,
     // --- FEEDBACK & DRIVE (ENHANCED TAPE DEGRADATION) ---
     float feedSig = 0.0f;
     if (p->delayActive) {
-      feedSig = tapeSig;
-      
-      // === AUTHENTIC TAPE DEGRADATION CHAIN ===
-      // 1. LPF: Aggressive high cut (darkens each repeat)
-      feedSig = fbLPF.process(feedSig);
-      
-      // 2. HPF: Remove mud accumulation
+      // TAP FROM PRE-COLORATION TO AVOID DOUBLE DARKENING
+      feedSig = fbLPF.process(preColorationTape);
       feedSig = fbHPF.process(feedSig);
-      
-      // 3. Allpass: Phase smearing (head gap simulation)
       feedSig = fbAllpass.process(feedSig);
-      
-      // 4. Progressive saturation (accumulates per repeat)
       feedSig = tanhf(feedSig * 1.3f) / 1.3f;
 
-      // Scale 0-100 -> 0.0-1.0
       float safeFeedback = p->feedback * 0.01f;
       if (safeFeedback > 0.88f)
         safeFeedback = 0.88f;
@@ -731,33 +719,26 @@ IRAM_ATTR void TapeModel::processStereo(float inL, float inR, float *outL,
       feedSig = feedbackCompressor(feedSig);
       feedSig *= delayEnableRamp;
 
-      // Damping (Fade out feedback if silence persists)
       if (fabsf(input) < 1e-6f && fabsf(feedSig) < 1e-4f) {
         feedSig *= 0.9995f;
       }
     }
 
     // Summing
-    // Scale Drive: 0-100 -> 0.0-5.0 Gain
     float inDriven = input * (p->drive * 0.05f);
     float recSig = inDriven + feedSig;
 
-    // Apply DC Block to Record Signal (Input + Feedback) before saturation
     recSig = dc.process(recSig);
 
-    // Soft Clipper Limit for Buffer
     if (recSig > 4.0f)
       recSig = 4.0f;
     else if (recSig < -4.0f)
       recSig = -4.0f;
 
-    // Write to buffer
-    // FREEZE FIX: Stop writing input when frozen (Loop existing content)
     if (!p->freeze) {
       buffer[writeHead] = saturator(recSig);
     }
 
-    // Scale Mix 0-100 -> 0.0-1.0
     float mix = p->dryWet * 0.01f;
     return outputLimiter((input * (1.0f - mix)) + (tapeSig * mix));
   };
@@ -773,14 +754,10 @@ IRAM_ATTR void TapeModel::processStereo(float inL, float inR, float *outL,
                          azimuthFilterR, dcBlockerR, inputHPFR, inputLPFR,
                          feedbackLPFR, feedbackHPFR, feedbackAllpassR);
 
-  // === POST-PROCESSING: NEW EFFECT MODES ===
-  
   // Inject Noise here (Post-Filter, Pre-Reverb)
-  // This bypasses the dark Speed LPF, keeping hiss "fresh"
-  // Attenuate slightly as it's adding to full mix
   if (p->noise > 0.001f) {
-      *outL += hiss * 0.5f;
-      *outR += hiss * 0.5f;
+      *outL += hissL * 0.5f;
+      *outR += hissR * 0.5f;
   }
 
   // --- REVERSE SMEAR (Allpass diffusion for Reverse Reverb) ---
@@ -791,48 +768,40 @@ IRAM_ATTR void TapeModel::processStereo(float inL, float inR, float *outL,
     }
   }
   
-  // --- SPRING REVERB (6-stage allpass cascade with tape damping) ---
+  // --- SPRING REVERB (Recirculating Schroeder cascade) ---
   if (p->spring) {
-    // Save dry signal for mix
     float dryL = *outL;
     float dryR = *outR;
     
-    // OPTIMIZED: Coeffs updated in updateFilters()
-    // Dynamic stage count based on decay (Scale Decay 0-100 -> 0-1)
-    int stages = 3 + (int)((p->springDecay * 0.01f) * 3);   // 3-6 stages
+    int stages = 3 + (int)((p->springDecay * 0.01f) * 3);
     
-    // Process wet signal through allpass cascade
-    float wetL = *outL;
-    float wetR = *outR;
+    float inWithFBL = *outL + springFB_L * (p->springDecay * 0.01f * 0.85f);
+    float inWithFBR = *outR + springFB_R * (p->springDecay * 0.01f * 0.85f);
+    
+    float wetL = inWithFBL;
+    float wetR = inWithFBR;
     for (int i = 0; i < stages && i < 6; i++) {
       wetL = springAP_L[i].process(wetL);
       wetR = springAP_R[i].process(wetR);
-      
       wetL = springLPF_L[i].process(wetL);
       wetR = springLPF_R[i].process(wetR);
     }
+    springFB_L = wetL; springFB_R = wetR;
     
-    // Apply mix (0-100% wet)
-    float wetMix = p->springMix * 0.01f;  // 0-100 -> 0-1
-    *outL = dryL * (1.0f - wetMix) + wetL * wetMix;
-    *outR = dryR * (1.0f - wetMix) + wetR * wetMix;
-    
-    // Apply limiter again after spring
-    *outL = outputLimiter(*outL);
-    *outR = outputLimiter(*outR);
+    float wetMix = p->springMix * 0.01f;
+    *outL = outputLimiter(dryL * (1.0f - wetMix) + wetL * wetMix);
+    *outR = outputLimiter(dryR * (1.0f - wetMix) + wetR * wetMix);
   }
   
   // --- FREEZE CROSSFADE ---
   if (p->freeze) {
-    freezeFade += 0.0002f;  // ~100ms fade @ 48kHz
+    freezeFade += 0.0002f;
     if (freezeFade > 1.0f) freezeFade = 1.0f;
   } else {
-    freezeFade -= 0.0008f;  // Faster unfade
+    freezeFade -= 0.0008f;
     if (freezeFade < 0.0f) freezeFade = 0.0f;
   }
 
-  // Advance Head ONCE for both channels (sync)
-  // FIXED: writeHead MUST advance even in freeze mode to read the loop!
   writeHead++;
   if (writeHead >= bufferSize)
     writeHead = 0;

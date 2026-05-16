@@ -1,0 +1,2 @@
+C:\emsdk\upstream\emscripten\emar.bat qc libhydra_dsp_core.a CMakeFiles/hydra_dsp_core.dir/dsp/core/tape_core.cpp.o CMakeFiles/hydra_dsp_core.dir/dsp/core/hydra_dsp_c_api.cpp.o
+C:\emsdk\upstream\emscripten\emranlib.bat libhydra_dsp_core.a

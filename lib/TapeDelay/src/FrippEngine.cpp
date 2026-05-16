@@ -192,9 +192,11 @@ void FrippEngine::processStereo(float inL, float inR, float *outL, float *outR) 
   float monoIn = (inL + inR) * 0.5f;
   float absIn = fabsf(monoIn);
   if (absIn > envelope) {
-    envelope += 0.001f * (absIn - envelope);  // Fast attack
+    const float attackCoef = 1.0f - expf(-1.0f / (0.010f * sampleRate)); // 10ms attack
+    envelope += attackCoef * (absIn - envelope);
   } else {
-    envelope += 0.00005f * (absIn - envelope);  // Slow release
+    const float releaseCoef = 1.0f - expf(-1.0f / (2.000f * sampleRate)); // 2s release
+    envelope += releaseCoef * (absIn - envelope);
   }
   
   // === DETERMINE INPUT LEVEL ===

@@ -19,6 +19,81 @@ inline float fast_sin(float x) {
   return P * (y * std::fabs(y) - y) + y;
 }
 
+
+struct FastTanhLUT {
+  static constexpr int N = 1024;
+  float table[N + 1]{};
+
+  void init() {
+    for (int i = 0; i <= N; ++i) {
+      float x = -4.0f + 8.0f * (float(i) / float(N));
+      table[i] = std::tanh(x);
+    }
+  }
+
+  inline float process(float x) const {
+    x = clampf(x, -4.0f, 4.0f);
+    float u = (x + 4.0f) * (float(N) * 0.125f);
+    int i = static_cast<int>(u);
+    if (i >= N) return table[N];
+    float f = u - float(i);
+    return table[i] + f * (table[i + 1] - table[i]);
+  }
+};
+
+struct TapeMagnetics {
+  const FastTanhLUT* lut = nullptr;
+  float fs = 48000.0f;
+  float m = 0.0f;
+  float biasPhase = 0.0f;
+
+  float drive = 1.0f;
+  float biasAmount = 0.08f;
+  float biasHz = 18000.0f;
+  float coercivity = 0.12f;
+  float remanence = 0.985f;
+  float satNorm = 1.0f;
+
+  void updateParams(float sampleRate, const TapeParams& params) {
+    fs = std::max(1.0f, sampleRate);
+    float driveNorm = clampf(params.drive * 0.01f, 0.0f, 1.0f);
+    float ageNorm = clampf(params.tapeAge * 0.01f, 0.0f, 1.0f);
+    float speedNorm = clampf(params.tapeSpeed * 0.01f, 0.0f, 1.0f);
+
+    drive = 0.9f + driveNorm * 0.35f;
+    biasAmount = 0.035f + (1.0f - speedNorm) * 0.035f + driveNorm * 0.035f;
+    biasHz = std::min(18000.0f, fs * 0.45f);
+    coercivity = 0.07f + ageNorm * 0.10f;
+    remanence = 0.970f + ageNorm * 0.024f;
+    satNorm = 1.0f / std::max(0.55f, 0.82f + 0.18f * remanence);
+  }
+
+  inline float process(float x) {
+    if (!lut) return x;
+    biasPhase += biasHz / fs;
+    biasPhase -= std::floor(biasPhase);
+    float tri = 4.0f * std::fabs(biasPhase - 0.5f) - 1.0f;
+
+    // Gate the inaudible HF bias out of truly silent record paths so an
+    // empty buffer does not accumulate a bias tone. Existing remanent
+    // magnetization still decays through the hysteresis term below.
+    float biasGate = (std::fabs(x) > 1e-7f) ? 1.0f : 0.0f;
+    float xb = x * drive + (biasAmount * biasGate * tri);
+    float h = xb + coercivity * m;
+    float y = lut->process(h);
+
+    m = remanence * m + (1.0f - remanence) * y;
+    if (std::fabs(m) < 1e-20f) m = 0.0f;
+
+    return satNorm * (0.82f * y + 0.18f * m);
+  }
+
+  inline void reset() {
+    m = 0.0f;
+    biasPhase = 0.0f;
+  }
+};
+
 class DCBlocker { public: float process(float input){ float out=input-x1+R*y1; x1=input; y1=out; if (std::fabs(y1)<1e-20f) y1=0; return out;} void clear(){x1=y1=0;} private: float x1=0,y1=0,R=0.995f; };
 class BiquadFilter {
 public:
@@ -36,19 +111,19 @@ class DelayAllpass { public: ~DelayAllpass(){delete[] buffer;} void init(int len
 }
 
 struct TapeCore::Impl {
-  explicit Impl(float fs,float maxDelayMs):sampleRate(fs),noiseGen(fs,123456789u),noiseGenR(fs,987654321u){ bufferSize=(int32_t)(fs*(maxDelayMs/1000.f)); delayLine=new(std::nothrow) float[bufferSize]{}; delayLineR=new(std::nothrow) float[bufferSize]{}; if(!delayLine||!delayLineR){delete[]delayLine;delete[]delayLineR;delayLine=delayLineR=nullptr;bufferSize=0;return;} static const float sc[6]={0.7f,0.65f,0.6f,0.6f,0.5f,0.5f}; static const int st[6]={223,367,491,647,821,1039}; for(int i=0;i<6;i++){springAP_L[i].init(st[i]);springAP_R[i].init(st[i]+23);springAP_L[i].setCoeff(sc[i]);springAP_R[i].setCoeff(sc[i]);springLPF_L[i].setLowpass(fs,2500,0.5f);springLPF_R[i].setLowpass(fs,2500,0.5f);} static const float rc[4]={0.6f,0.55f,0.5f,0.45f}; static const int rt[4]={151,313,569,797}; for(int i=0;i<4;i++){reverseAP_L[i].init(rt[i]);reverseAP_R[i].init(rt[i]+17);reverseAP_L[i].setCoeff(rc[i]);reverseAP_R[i].setCoeff(rc[i]);} updateFilters(); flutterLPF.setLowpass(fs,15,0.707f);}
+  explicit Impl(float fs,float maxDelayMs):sampleRate(fs),noiseGen(fs,123456789u),noiseGenR(fs,987654321u){ tanhLUT.init(); magneticsL.lut=&tanhLUT; magneticsR.lut=&tanhLUT; magneticsL.updateParams(fs,currentParams); magneticsR.updateParams(fs,currentParams); bufferSize=(int32_t)(fs*(maxDelayMs/1000.f)); delayLine=new(std::nothrow) float[bufferSize]{}; delayLineR=new(std::nothrow) float[bufferSize]{}; if(!delayLine||!delayLineR){delete[]delayLine;delete[]delayLineR;delayLine=delayLineR=nullptr;bufferSize=0;return;} static const float sc[6]={0.7f,0.65f,0.6f,0.6f,0.5f,0.5f}; static const int st[6]={223,367,491,647,821,1039}; for(int i=0;i<6;i++){springAP_L[i].init(st[i]);springAP_R[i].init(st[i]+23);springAP_L[i].setCoeff(sc[i]);springAP_R[i].setCoeff(sc[i]);springLPF_L[i].setLowpass(fs,2500,0.5f);springLPF_R[i].setLowpass(fs,2500,0.5f);} static const float rc[4]={0.6f,0.55f,0.5f,0.45f}; static const int rt[4]={151,313,569,797}; for(int i=0;i<4;i++){reverseAP_L[i].init(rt[i]);reverseAP_R[i].init(rt[i]+17);reverseAP_L[i].setCoeff(rc[i]);reverseAP_R[i].setCoeff(rc[i]);} updateFilters(); flutterLPF.setLowpass(fs,15,0.707f);}
   ~Impl(){delete[]delayLine;delete[]delayLineR;}
   bool valid() const {return delayLine&&delayLineR&&bufferSize>0;}
-  float saturator(float x){ if(x>0.5f)x=0.5f+(x-0.5f)*0.8f; if(x>1.5f)return 1; if(x<-1.5f)return -1; return x-(0.1f*x*x*x);} 
   float feedbackCompressor(float x){ const float t=0.6f,r=1.5f,k=0.2f; float a=std::fabs(x); if(a<=t-k*0.5f)return x; if(a>=t+k*0.5f)return std::copysign(t+(a-t)/r,x); float kx=(a-(t-k*0.5f))/k; float ratio=1.f+(1.f/r-1.f)*kx*kx; return std::copysign(a*ratio,x);} 
   float outputLimiter(float x){ if(x>0.9f){float e=x-0.9f;x=0.9f+e*0.1f;} else if(x<-0.9f){float e=x+0.9f;x=-0.9f+e*0.1f;} return clampf(x,-0.99f,0.99f);} 
   float readTapeAt(float d,float* b){ if(!b||bufferSize==0) return 0; d=clampf(d,2,(float)bufferSize-4); float rp=(float)writeHead-d; if(rp<0)rp+=bufferSize; int32_t r=(int32_t)rp; float f=rp-r; int32_t i1=r,i2=(r>0)?r-1:bufferSize-1,i0=(r<bufferSize-1)?r+1:0,i3=(i0<bufferSize-1)?i0+1:0; float d1=b[i1],d0=b[i0],d2=b[i2],d3=b[i3]; float c0=d1,c1=0.5f*(d0-d2),c2=d2-2.5f*d1+2.f*d0-0.5f*d3,c3=0.5f*(d3-d1)+1.5f*(d1-d0); return ((c3*f+c2)*f+c1)*f+c0; }
   float readTapeReverse(float d,float* b){ if(!b||bufferSize<=0)return 0; d=clampf(d,2,(float)bufferSize-4); int32_t di=(int32_t)d; if(std::abs(di-reverseWindowSize)>1000){reverseCounter=0;reverseWindowSize=di;} reverseCounter++; if(reverseCounter>=std::max(1,di))reverseCounter=0; float rp=(float)writeHead-d+(float)reverseCounter; int32_t r=((int32_t)rp%bufferSize+bufferSize)%bufferSize; float f=rp-std::floor(rp); int32_t i1=r,i0=(r>0)?r-1:bufferSize-1,i2=(r<bufferSize-1)?r+1:0,i3=(i2<bufferSize-1)?i2+1:0; float d1=b[i1],d0=b[i0],d2=b[i2],d3=b[i3]; float c0=d1,c1=0.5f*(d0-d2),c2=d2-2.5f*d1+2.f*d0-0.5f*d3,c3=0.5f*(d3-d1)+1.5f*(d1-d0); return ((c3*f+c2)*f+c1)*f+c0; }
   void updateFilters();
-  float sampleRate; TapeParams currentParams{}; float flutterPhase=0,wowPhase=0,azimuthPhase=0; float flutterInc=0,wowInc=0; BiquadFilter flutterLPF; DropoutGenerator dropout; TapeNoiseGenerator noiseGen, noiseGenR; BiquadFilter headBump,tapeRolloff,outputLPF; AllpassFilter azimuthFilter; DCBlocker dcBlocker; BiquadFilter inputHPF,inputLPF; BiquadFilter headBumpR,tapeRolloffR,outputLPFR; AllpassFilter azimuthFilterR; DCBlocker dcBlockerR; BiquadFilter inputHPFR,inputLPFR; BiquadFilter feedbackLPF,feedbackLPFR,feedbackHPF,feedbackHPFR; AllpassFilter feedbackAllpass,feedbackAllpassR; DelayAllpass springAP_L[6],springAP_R[6],reverseAP_L[4],reverseAP_R[4]; BiquadFilter springLPF_L[6],springLPF_R[6]; float springFB_L=0,springFB_R=0; float freezeFade=0; float delayEnableRamp=0,smoothedDelaySamples=0,smoothedAzCoeff=0; float* delayLine=nullptr; float* delayLineR=nullptr; int32_t bufferSize=0,writeHead=0,reverseCounter=0,reverseWindowSize=0;
+  FastTanhLUT tanhLUT; TapeMagnetics magneticsL,magneticsR; float sampleRate; TapeParams currentParams{}; float flutterPhase=0,wowPhase=0,azimuthPhase=0; float flutterInc=0,wowInc=0; BiquadFilter flutterLPF; DropoutGenerator dropout; TapeNoiseGenerator noiseGen, noiseGenR; BiquadFilter headBump,tapeRolloff,outputLPF; AllpassFilter azimuthFilter; DCBlocker dcBlocker; BiquadFilter inputHPF,inputLPF; BiquadFilter headBumpR,tapeRolloffR,outputLPFR; AllpassFilter azimuthFilterR; DCBlocker dcBlockerR; BiquadFilter inputHPFR,inputLPFR; BiquadFilter feedbackLPF,feedbackLPFR,feedbackHPF,feedbackHPFR; AllpassFilter feedbackAllpass,feedbackAllpassR; DelayAllpass springAP_L[6],springAP_R[6],reverseAP_L[4],reverseAP_R[4]; BiquadFilter springLPF_L[6],springLPF_R[6]; float springFB_L=0,springFB_R=0; float freezeFade=0; float delayEnableRamp=0,smoothedDelaySamples=0,smoothedAzCoeff=0; float* delayLine=nullptr; float* delayLineR=nullptr; int32_t bufferSize=0,writeHead=0,reverseCounter=0,reverseWindowSize=0;
 };
 
 void TapeCore::Impl::updateFilters(){
+  magneticsL.updateParams(sampleRate,currentParams); magneticsR.updateParams(sampleRate,currentParams);
   flutterInc = TWO_PI * currentParams.flutterRate / sampleRate;
   wowInc = TWO_PI * currentParams.wowRate / sampleRate;
   float speedMod=currentParams.tapeSpeed*0.01f,ageMod=currentParams.tapeAge*0.01f,toneMod=currentParams.tone*0.01f;
@@ -74,7 +149,7 @@ void TapeCore::reset(){
   impl_->writeHead=0; impl_->reverseCounter=0; impl_->reverseWindowSize=0;
   impl_->flutterPhase=impl_->wowPhase=impl_->azimuthPhase=0;
   impl_->freezeFade=0; impl_->delayEnableRamp=0; impl_->smoothedDelaySamples=0; impl_->smoothedAzCoeff=0; impl_->springFB_L=impl_->springFB_R=0;
-  impl_->dcBlocker.clear(); impl_->dcBlockerR.clear(); impl_->dropout.reset(); impl_->noiseGen.reset(impl_->sampleRate, 123456789u); impl_->noiseGenR.reset(impl_->sampleRate, 987654321u);
+  impl_->dcBlocker.clear(); impl_->dcBlockerR.clear(); impl_->magneticsL.reset(); impl_->magneticsR.reset(); impl_->dropout.reset(); impl_->noiseGen.reset(impl_->sampleRate, 123456789u); impl_->noiseGenR.reset(impl_->sampleRate, 987654321u);
   impl_->flutterLPF.reset(); impl_->headBump.reset(); impl_->headBumpR.reset(); impl_->tapeRolloff.reset(); impl_->tapeRolloffR.reset(); impl_->outputLPF.reset(); impl_->outputLPFR.reset();
   impl_->inputHPF.reset(); impl_->inputHPFR.reset(); impl_->inputLPF.reset(); impl_->inputLPFR.reset(); impl_->feedbackLPF.reset(); impl_->feedbackLPFR.reset(); impl_->feedbackHPF.reset(); impl_->feedbackHPFR.reset();
   impl_->azimuthFilter.reset(); impl_->azimuthFilterR.reset(); impl_->feedbackAllpass.reset(); impl_->feedbackAllpassR.reset();
@@ -86,7 +161,7 @@ void TapeCore::reset(){
 void TapeCore::updateParams(const TapeParams& newParams){
   if(!isValid()) return;
   if(!impl_->currentParams.delayActive && newParams.delayActive){
-    impl_->delayEnableRamp=0; impl_->dcBlocker.clear(); impl_->dcBlockerR.clear();
+    impl_->delayEnableRamp=0; impl_->dcBlocker.clear(); impl_->dcBlockerR.clear(); impl_->magneticsL.reset(); impl_->magneticsR.reset();
     std::memset(impl_->delayLine,0,sizeof(float)*impl_->bufferSize); std::memset(impl_->delayLineR,0,sizeof(float)*impl_->bufferSize);
     impl_->smoothedDelaySamples = newParams.delayTimeMs * impl_->sampleRate * 0.001f;
   }
@@ -133,7 +208,7 @@ void TapeCore::processStereo(float inL,float inR,float* outL,float* outR){
   }
   if(p->delayActive){impl_->delayEnableRamp+=0.001f;if(impl_->delayEnableRamp>1)impl_->delayEnableRamp=1;} else impl_->delayEnableRamp=0;
 
-  auto processCh=[&](float input,float* buffer,BiquadFilter& hb,BiquadFilter& tr,BiquadFilter& outLPF,AllpassFilter& az,DCBlocker& dc,BiquadFilter&iHP,BiquadFilter&iLP,BiquadFilter&fbLPF,BiquadFilter&fbHPF,AllpassFilter&fbAP){
+  auto processCh=[&](float input,float* buffer,BiquadFilter& hb,BiquadFilter& tr,BiquadFilter& outLPF,AllpassFilter& az,DCBlocker& dc,TapeMagnetics& mag,BiquadFilter&iHP,BiquadFilter&iLP,BiquadFilter&fbLPF,BiquadFilter&fbHPF,AllpassFilter&fbAP){
     float cond=iLP.process(iHP.process(input)); float tapeSig=0,headGainSum=0,base=impl_->smoothedDelaySamples;
     float d1,d2,d3; if(p->headsMusical){ float beatMs=60000.f/p->bpm; d1=beatMs*0.333f*impl_->sampleRate*0.001f; d2=beatMs*0.75f*impl_->sampleRate*0.001f; d3=beatMs*1.0f*impl_->sampleRate*0.001f;} else {d1=base*0.33f; d2=base*0.66f; d3=base;}
     d1 += mod * 0.33f; d2 += mod * 0.66f; d3 += mod;
@@ -146,13 +221,13 @@ void TapeCore::processStereo(float inL,float inR,float* outL,float* outR){
     tapeSig *= dropoutGain; if(useAzimuth) tapeSig=az.process(tapeSig);
     float preFiltTape = tapeSig;
     tapeSig=outLPF.process(tr.process(hb.process(tapeSig)));
-    float feedSig=0; if(p->delayActive){ feedSig=fbAP.process(fbHPF.process(fbLPF.process(preFiltTape))); feedSig=std::tanh(feedSig*1.3f)/1.3f; float safe=p->feedback*0.01f; if(safe>0.88f)safe=0.88f; feedSig *= safe; feedSig = impl_->feedbackCompressor(feedSig); feedSig *= impl_->delayEnableRamp; }
-    float recSig=dc.process((cond*(p->drive*0.05f))+feedSig); recSig=clampf(recSig,-4,4); if(!p->freeze) buffer[impl_->writeHead]=impl_->saturator(recSig);
+    float feedSig=0; if(p->delayActive){ feedSig=fbAP.process(fbHPF.process(fbLPF.process(preFiltTape))); feedSig=impl_->tanhLUT.process(feedSig*1.3f)/1.3f; float safe=p->feedback*0.01f; if(safe>0.88f)safe=0.88f; feedSig *= safe; feedSig = impl_->feedbackCompressor(feedSig); feedSig *= impl_->delayEnableRamp; }
+    float recSig=dc.process((cond*(p->drive*0.05f))+feedSig); recSig=clampf(recSig,-4,4); if(!p->freeze) buffer[impl_->writeHead]=mag.process(recSig);
     float mix=p->dryWet*0.01f; return impl_->outputLimiter((input*(1-mix))+(tapeSig*mix));
   };
 
-  *outL=processCh(inL,impl_->delayLine,impl_->headBump,impl_->tapeRolloff,impl_->outputLPF,impl_->azimuthFilter,impl_->dcBlocker,impl_->inputHPF,impl_->inputLPF,impl_->feedbackLPF,impl_->feedbackHPF,impl_->feedbackAllpass);
-  *outR=processCh(inR,impl_->delayLineR,impl_->headBumpR,impl_->tapeRolloffR,impl_->outputLPFR,impl_->azimuthFilterR,impl_->dcBlockerR,impl_->inputHPFR,impl_->inputLPFR,impl_->feedbackLPFR,impl_->feedbackHPFR,impl_->feedbackAllpassR);
+  *outL=processCh(inL,impl_->delayLine,impl_->headBump,impl_->tapeRolloff,impl_->outputLPF,impl_->azimuthFilter,impl_->dcBlocker,impl_->magneticsL,impl_->inputHPF,impl_->inputLPF,impl_->feedbackLPF,impl_->feedbackHPF,impl_->feedbackAllpass);
+  *outR=processCh(inR,impl_->delayLineR,impl_->headBumpR,impl_->tapeRolloffR,impl_->outputLPFR,impl_->azimuthFilterR,impl_->dcBlockerR,impl_->magneticsR,impl_->inputHPFR,impl_->inputLPFR,impl_->feedbackLPFR,impl_->feedbackHPFR,impl_->feedbackAllpassR);
   if(p->noise>0.001f){*outL += hissL*0.5f; *outR += hissR*0.5f;}
   if(p->reverseSmear && p->reverse){ for(int i=0;i<4;i++){ *outL=impl_->reverseAP_L[i].process(*outL); *outR=impl_->reverseAP_R[i].process(*outR);} }
   if(p->spring){ 

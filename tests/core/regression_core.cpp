@@ -56,6 +56,54 @@ void configure_deterministic(hydra_dsp_handle* h) {
   assert(hydra_dsp_commit(h) == 0);
 }
 
+
+void configure_silent_wet_delay(hydra_dsp_handle* h, float drive = 0.0f) {
+  hydra_dsp_params p{};
+  p.flutterDepth = 0.0f;
+  p.wowDepth = 0.0f;
+  p.dropoutSeverity = 0.0f;
+  p.drive = drive;
+  p.noise = 0.0f;
+  p.tapeSpeed = 50.0f;
+  p.tapeAge = 0.0f;
+  p.headBumpAmount = 0.0f;
+  p.azimuthError = 0.0f;
+  p.flutterRate = 0.1f;
+  p.wowRate = 0.1f;
+  p.delayActive = 1.0f;
+  p.delayTimeMs = 10.0f;
+  p.feedback = 0.0f;
+  p.dryWet = 100.0f;
+  p.activeHeads = 4.0f;
+  p.bpm = 120.0f;
+  p.headsMusical = 0.0f;
+  p.guitarFocus = 0.0f;
+  p.tone = 100.0f;
+  p.pingPong = 0.0f;
+  p.freeze = 0.0f;
+  p.reverse = 0.0f;
+  p.reverseSmear = 0.0f;
+  p.spring = 0.0f;
+  p.springDecay = 0.0f;
+  p.springDamping = 0.0f;
+  p.springMix = 0.0f;
+  assert(hydra_dsp_set_params(h, &p) == 0);
+  assert(hydra_dsp_commit(h) == 0);
+}
+
+float process_peak(hydra_dsp_handle* h, const std::vector<float>& inL, const std::vector<float>& inR) {
+  std::vector<float> outL(inL.size());
+  std::vector<float> outR(inR.size());
+  assert(hydra_dsp_process(h, inL.data(), inR.data(), outL.data(), outR.data(), inL.size()) == 0);
+
+  float peak = 0.0f;
+  for (size_t i = 0; i < outL.size(); ++i) {
+    peak = std::max(peak, std::fabs(outL[i]));
+    peak = std::max(peak, std::fabs(outR[i]));
+  }
+  return peak;
+}
+
 void test_known_buffer() {
   hydra_dsp_handle* h = make_handle();
   configure_deterministic(h);
@@ -140,12 +188,50 @@ void test_parameter_automation() {
   hydra_dsp_destroy(h);
 }
 
+
+void test_silent_wet_delay_does_not_record_bias() {
+  hydra_dsp_handle* h = make_handle();
+  configure_silent_wet_delay(h);
+
+  std::vector<float> zeros(2048, 0.0f);
+  const float peak = process_peak(h, zeros, zeros);
+  assert(peak < 1e-7f);
+
+  hydra_dsp_destroy(h);
+}
+
+void test_reenabled_delay_clears_magnetic_state() {
+  hydra_dsp_handle* h = make_handle();
+  configure_silent_wet_delay(h, 100.0f);
+
+  std::vector<float> hot(256, 0.75f);
+  assert(process_peak(h, hot, hot) >= 0.0f);
+
+  hydra_dsp_params disabled{};
+  disabled.delayActive = 0.0f;
+  disabled.delayTimeMs = 10.0f;
+  disabled.activeHeads = 4.0f;
+  disabled.tone = 100.0f;
+  assert(hydra_dsp_set_params(h, &disabled) == 0);
+  assert(hydra_dsp_commit(h) == 0);
+
+  configure_silent_wet_delay(h);
+
+  std::vector<float> zeros(2048, 0.0f);
+  const float peak = process_peak(h, zeros, zeros);
+  assert(peak < 1e-7f);
+
+  hydra_dsp_destroy(h);
+}
+
 }  // namespace
 
 int main() {
   test_known_buffer();
   test_reset_state();
   test_parameter_automation();
+  test_silent_wet_delay_does_not_record_bias();
+  test_reenabled_delay_clears_magnetic_state();
   std::cout << "regression_core: ok\n";
   return 0;
 }

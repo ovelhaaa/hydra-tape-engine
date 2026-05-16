@@ -96,7 +96,10 @@ if(BUILD_WEB)
     "SHELL:-sMODULARIZE=1"
     "SHELL:-sEXPORT_ES6=1"
     "SHELL:-sALLOW_MEMORY_GROWTH=1"
-    "SHELL:-sENVIRONMENT=web,worker,worklet"
+    # Emscripten only accepts web/webview/worker/node/shell here. AudioWorklet
+    # runs the generated ES module as web-compatible JS, not via a separate
+    # `worklet` ENVIRONMENT token.
+    "SHELL:-sENVIRONMENT=web,worker"
     "SHELL:-sEXPORTED_FUNCTIONS=['_hydra_dsp_get_api_version','_hydra_dsp_get_param_count','_hydra_dsp_get_param_specs','_hydra_dsp_get_param_spec','_hydra_dsp_get_param_spec_for_handle','_hydra_dsp_create','_hydra_dsp_destroy','_hydra_dsp_prepare','_hydra_dsp_reset','_hydra_dsp_set_parameter','_hydra_dsp_get_parameter','_hydra_dsp_set_params','_hydra_dsp_commit','_hydra_dsp_process','_malloc','_free']"
     "SHELL:-sEXPORTED_RUNTIME_METHODS=['cwrap','HEAP32','HEAPF32']"
   )

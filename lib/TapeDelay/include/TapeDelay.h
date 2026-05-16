@@ -393,7 +393,11 @@ struct TapeMagnetics {
     biasPhase -= floorf(biasPhase);
     float tri = 4.0f * fabsf(biasPhase - 0.5f) - 1.0f;
 
-    float xb = x * drive + biasAmount * tri;
+    // Gate the inaudible HF bias out of truly silent record paths so an
+    // empty buffer does not accumulate a bias tone. Existing remanent
+    // magnetization still decays through the hysteresis term below.
+    float biasGate = (fabsf(x) > 1e-7f) ? 1.0f : 0.0f;
+    float xb = x * drive + (biasAmount * biasGate * tri);
     float h = xb + coercivity * m;
     float y = lut->process(h);
 

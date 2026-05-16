@@ -74,7 +74,11 @@ struct TapeMagnetics {
     biasPhase -= std::floor(biasPhase);
     float tri = 4.0f * std::fabs(biasPhase - 0.5f) - 1.0f;
 
-    float xb = x * drive + biasAmount * tri;
+    // Gate the inaudible HF bias out of truly silent record paths so an
+    // empty buffer does not accumulate a bias tone. Existing remanent
+    // magnetization still decays through the hysteresis term below.
+    float biasGate = (std::fabs(x) > 1e-7f) ? 1.0f : 0.0f;
+    float xb = x * drive + (biasAmount * biasGate * tri);
     float h = xb + coercivity * m;
     float y = lut->process(h);
 
@@ -157,7 +161,7 @@ void TapeCore::reset(){
 void TapeCore::updateParams(const TapeParams& newParams){
   if(!isValid()) return;
   if(!impl_->currentParams.delayActive && newParams.delayActive){
-    impl_->delayEnableRamp=0; impl_->dcBlocker.clear(); impl_->dcBlockerR.clear();
+    impl_->delayEnableRamp=0; impl_->dcBlocker.clear(); impl_->dcBlockerR.clear(); impl_->magneticsL.reset(); impl_->magneticsR.reset();
     std::memset(impl_->delayLine,0,sizeof(float)*impl_->bufferSize); std::memset(impl_->delayLineR,0,sizeof(float)*impl_->bufferSize);
     impl_->smoothedDelaySamples = newParams.delayTimeMs * impl_->sampleRate * 0.001f;
   }

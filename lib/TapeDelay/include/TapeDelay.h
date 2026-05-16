@@ -80,6 +80,24 @@ public:
     a2 = (ap1 + am1 * cosw0 - twosqrtAalpha) / a0;
   }
 
+  // Peaking EQ - head bump dedicado sem elevar todo o grave
+  void setPeak(float fs, float freq, float Q, float gainDB) {
+    freq = fminf(freq, 0.45f * fs);
+    Q = fmaxf(Q, 0.001f);
+    float A = powf(10.0f, gainDB * 0.025f);
+    float w0 = TWO_PI * freq / fs;
+    float s = sinf(w0);
+    float c = cosf(w0);
+    float alpha = s / (2.0f * Q);
+
+    float a0 = 1.0f + alpha / A;
+    b0 = (1.0f + alpha * A) / a0;
+    b1 = (-2.0f * c) / a0;
+    b2 = (1.0f - alpha * A) / a0;
+    a1 = (-2.0f * c) / a0;
+    a2 = (1.0f - alpha / A) / a0;
+  }
+
   // High shelf - simula perda de agudos
   void setHighShelf(float fs, float freq, float Q, float gainDB) {
     float A = powf(10.0f, gainDB / 40.0f);

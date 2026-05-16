@@ -3,6 +3,9 @@
 TapeModel::TapeModel(float fs, float maxDelayTimeMs)
     : sampleRate(fs), noiseGen(fs, 0u), noiseGenR(fs, 2000u), flutterPhase(0), wowPhase(0),
       azimuthPhase(0), delayEnableRamp(0.0f), smoothedDelaySamples(0.0f), smoothedAzCoeff(0.0f), springFB_L(0.0f), springFB_R(0.0f) {
+  tanhLUT.init();
+  magneticsL.lut = &tanhLUT;
+  magneticsR.lut = &tanhLUT;
   // Safe buffer calculation
   bufferSize = (int32_t)(fs * (maxDelayTimeMs / 1000.0f));
   size_t bytes = bufferSize * sizeof(float);
@@ -56,6 +59,9 @@ TapeModel::TapeModel(float fs, float maxDelayTimeMs)
   currentParams.spring = false;
   currentParams.springDecay = 0.5f;
   currentParams.springDamping = 0.5f;
+  currentParams.springMix = 50.0f;
+  magneticsL.updateParams(fs, currentParams);
+  magneticsR.updateParams(fs, currentParams);
   
   // Freeze state init
   freezeFade = 0.0f;
@@ -235,6 +241,8 @@ void TapeModel::updateParams(const TapeParams &newParams) {
     // Reset DC Blockers to avoid popping
     dcBlocker = DCBlocker();
     dcBlockerR = DCBlocker();
+    magneticsL.reset();
+    magneticsR.reset();
 
     // CLEAR BUFFERS to prevent garbage feedback
     if (delayLine)
@@ -249,6 +257,8 @@ void TapeModel::updateParams(const TapeParams &newParams) {
   }
 
   currentParams = newParams;
+  magneticsL.updateParams(sampleRate, currentParams);
+  magneticsR.updateParams(sampleRate, currentParams);
   dropout.setSeverity(newParams.dropoutSeverity);
   updateFilters();
 }
@@ -355,23 +365,6 @@ IRAM_ATTR float TapeModel::readTapeReverse(float delaySamples, float *buffer) {
   float c3 = 0.5f * (d3 - d1) + 1.5f * (d1 - d0);
 
   return ((c3 * f + c2) * f + c1) * f + c0;
-}
-
-// Tube-like Asymmetric Saturation (Smoother)
-AUDIO_INLINE float saturator(float x) {
-  // 1. Asymmetry (Tube Bias) - Adds even harmonics
-  // Lower bias influence for cleaner headroom
-  if (x > 0.5f)
-    x = 0.5f + (x - 0.5f) * 0.9f;
-
-  // 2. Soft Clipping (Tapered)
-  if (x > 2.0f)
-    return 1.0f; // Extended headroom
-  if (x < -2.0f)
-    return -1.0f;
-
-  // Smooth cubic clipper (Gentler slope)
-  return x - (0.08f * x * x * x);
 }
 
 IRAM_ATTR float TapeModel::process(float input) {
@@ -520,7 +513,7 @@ IRAM_ATTR float TapeModel::process(float input) {
     feedSig = feedbackAllpass.process(feedSig);
     
     // 4. Progressive saturation (accumulates per repeat)
-    feedSig = tanhf(feedSig * 1.3f) / 1.3f;
+    feedSig = tanhLUT.process(feedSig * 1.3f) / 1.3f;
 
     // 5. Clamp user feedback to safe limit internally
     // 5. Clamp user feedback to safe limit internally
@@ -552,7 +545,7 @@ IRAM_ATTR float TapeModel::process(float input) {
   else if (recSig < -4.0f)
     recSig = -4.0f;
 
-  delayLine[writeHead] = saturator(recSig);
+  delayLine[writeHead] = magneticsL.process(recSig);
 
   writeHead++;
   if (writeHead >= bufferSize)
@@ -635,7 +628,7 @@ float wowInc = 6.28318f * p->wowRate / sampleRate;
   // --- CHANNEL PROCESSING HELPER (Inline-ish logic) ---
   auto processChannel = [&](float input, float *buffer, BiquadFilter &hb,
                             BiquadFilter &tr, BiquadFilter &outLPF,
-                            AllpassFilter &az, DCBlocker &dc, BiquadFilter &iHP,
+                            AllpassFilter &az, DCBlocker &dc, TapeMagnetics &mag, BiquadFilter &iHP,
                             BiquadFilter &iLP, BiquadFilter &fbLPF, 
                             BiquadFilter &fbHPF, AllpassFilter &fbAllpass) -> float {
     // INPUT CONDITIONING
@@ -709,7 +702,7 @@ float wowInc = 6.28318f * p->wowRate / sampleRate;
       feedSig = fbLPF.process(preColorationTape);
       feedSig = fbHPF.process(feedSig);
       feedSig = fbAllpass.process(feedSig);
-      feedSig = tanhf(feedSig * 1.3f) / 1.3f;
+      feedSig = tanhLUT.process(feedSig * 1.3f) / 1.3f;
 
       float safeFeedback = p->feedback * 0.01f;
       if (safeFeedback > 0.88f)
@@ -736,7 +729,7 @@ float wowInc = 6.28318f * p->wowRate / sampleRate;
       recSig = -4.0f;
 
     if (!p->freeze) {
-      buffer[writeHead] = saturator(recSig);
+      buffer[writeHead] = mag.process(recSig);
     }
 
     float mix = p->dryWet * 0.01f;
@@ -746,12 +739,12 @@ float wowInc = 6.28318f * p->wowRate / sampleRate;
   // PROCESS LEFT
   *outL =
       processChannel(inL, delayLine, headBump, tapeRolloff, outputLPF,
-                     azimuthFilter, dcBlocker, inputHPF, inputLPF, feedbackLPF,
+                     azimuthFilter, dcBlocker, magneticsL, inputHPF, inputLPF, feedbackLPF,
                      feedbackHPF, feedbackAllpass);
 
   // PROCESS RIGHT
   *outR = processChannel(inR, delayLineR, headBumpR, tapeRolloffR, outputLPFR,
-                         azimuthFilterR, dcBlockerR, inputHPFR, inputLPFR,
+                         azimuthFilterR, dcBlockerR, magneticsR, inputHPFR, inputLPFR,
                          feedbackLPFR, feedbackHPFR, feedbackAllpassR);
 
   // Inject Noise here (Post-Filter, Pre-Reverb)

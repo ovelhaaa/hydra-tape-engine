@@ -338,6 +338,77 @@ struct TapeParams {
   float springMix;      // 0-100% dry/wet mix for spring reverb
 };
 
+
+struct FastTanhLUT {
+  static constexpr int N = 1024;
+  float table[N + 1];
+
+  void init() {
+    for (int i = 0; i <= N; ++i) {
+      float x = -4.0f + 8.0f * (float(i) / float(N));
+      table[i] = tanhf(x);
+    }
+  }
+
+  AUDIO_INLINE float process(float x) const {
+    x = fminf(4.0f, fmaxf(-4.0f, x));
+    float u = (x + 4.0f) * (float(N) * 0.125f);
+    int i = int(u);
+    if (i >= N) return table[N];
+    float f = u - float(i);
+    return table[i] + f * (table[i + 1] - table[i]);
+  }
+};
+
+struct TapeMagnetics {
+  const FastTanhLUT* lut = nullptr;
+  float fs = 48000.0f;
+  float m = 0.0f;
+  float biasPhase = 0.0f;
+
+  float drive = 1.0f;
+  float biasAmount = 0.08f;
+  float biasHz = 18000.0f;
+  float coercivity = 0.12f;
+  float remanence = 0.985f;
+  float satNorm = 1.0f;
+
+  void updateParams(float sampleRate, const TapeParams& params) {
+    fs = fmaxf(1.0f, sampleRate);
+    float driveNorm = constrain(params.drive * 0.01f, 0.0f, 1.0f);
+    float ageNorm = constrain(params.tapeAge * 0.01f, 0.0f, 1.0f);
+    float speedNorm = constrain(params.tapeSpeed * 0.01f, 0.0f, 1.0f);
+
+    drive = 0.9f + driveNorm * 0.35f;
+    biasAmount = 0.035f + (1.0f - speedNorm) * 0.035f + driveNorm * 0.035f;
+    biasHz = fminf(18000.0f, fs * 0.45f);
+    coercivity = 0.07f + ageNorm * 0.10f;
+    remanence = 0.970f + ageNorm * 0.024f;
+    satNorm = 1.0f / fmaxf(0.55f, 0.82f + 0.18f * remanence);
+  }
+
+  AUDIO_INLINE float process(float x) {
+    if (!lut) return x;
+    biasPhase += biasHz / fs;
+    biasPhase -= floorf(biasPhase);
+    float tri = 4.0f * fabsf(biasPhase - 0.5f) - 1.0f;
+
+    float xb = x * drive + biasAmount * tri;
+    float h = xb + coercivity * m;
+    float y = lut->process(h);
+
+    m = remanence * m + (1.0f - remanence) * y;
+    if (fabsf(m) < DENORMAL_THRESHOLD) m = 0.0f;
+
+    return satNorm * (0.82f * y + 0.18f * m);
+  }
+
+  AUDIO_INLINE void reset() {
+    m = 0.0f;
+    biasPhase = 0.0f;
+  }
+};
+
 // ============================================================================
 // TAPE MODEL
 // ============================================================================
@@ -345,6 +416,10 @@ class TapeModel {
 private:
   float sampleRate;
   TapeParams currentParams;
+
+  FastTanhLUT tanhLUT;
+  TapeMagnetics magneticsL;
+  TapeMagnetics magneticsR;
 
   float flutterPhase, wowPhase;
   float azimuthPhase;
@@ -407,23 +482,6 @@ private:
   int32_t bufferSize;
   int32_t writeHead;
   bool usesSPIRAM;
-
-  // Tube-like Asymmetric Saturation
-  AUDIO_INLINE float saturator(float x) {
-    // 1. Asymmetry (Tube Bias) - Adds even harmonics
-    // Positive swings get slightly compressed earlier than negative
-    if (x > 0.5f)
-      x = 0.5f + (x - 0.5f) * 0.8f;
-
-    // 2. Soft Clipping (Tapered)
-    if (x > 1.5f)
-      return 1.0f;
-    if (x < -1.5f)
-      return -1.0f;
-
-    // Smooth cubic clipper
-    return x - (0.1f * x * x * x);
-  }
 
   // Soft Knee Compressor (1.5:1 ratio) - The "Glue"
   AUDIO_INLINE float feedbackCompressor(float x) {

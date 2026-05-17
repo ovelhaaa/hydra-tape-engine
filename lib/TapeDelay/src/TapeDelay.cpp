@@ -213,6 +213,8 @@ void TapeModel::updateFilters() {
   // 2. Low Pass Filter (LPF) to clean up remaining highs
   outputLPF.setLowpass(sampleRate, finalCutoff, 0.707f);
   outputLPFR.setLowpass(sampleRate, finalCutoff, 0.707f);
+  dropoutLPF.setCutoff(sampleRate, finalCutoff);
+  dropoutLPFR.setCutoff(sampleRate, finalCutoff);
 
   // --- FEEDBACK FILTERS (Authentic tape degradation per repeat) ---
   // 1. LPF: More aggressive high cut for vintage darkness
@@ -501,12 +503,17 @@ IRAM_ATTR float TapeModel::process(float input) {
   }
 
   // --- DEGRADAÇÃO & FILTROS ---
-  float dropoutGain = dropout.process();
-  tapeSignal *= dropoutGain;
+  dropout.beginFrame(sampleRate);
+  DropoutFrame dropoutValue = dropout.value(0, sampleRate);
+  float dynamicDropoutCutoff = (6000.0f + (p->tapeSpeed * 100.0f)) *
+                               (0.35f + 0.65f * dropoutValue.hfLoss);
+  dropoutLPF.setCutoff(sampleRate, dynamicDropoutCutoff);
+  tapeSignal = dropoutLPF.process(tapeSignal);
+  tapeSignal *= dropoutValue.ampGain;
 
   if (p->noise > 0.001f) {
-    float hiss =
-        noiseGen.next() * p->noise * (1.0f + (2.0f * (1.0f - dropoutGain)));
+    float hiss = noiseGen.next() * p->noise *
+                 (1.0f + (2.0f * (1.0f - dropoutValue.ampGain)));
     tapeSignal += hiss;
   }
 
@@ -635,10 +642,13 @@ IRAM_ATTR void TapeModel::processStereo(float inL, float inR, float *outL,
   }
 
   // --- SHARED NOISE & DROPOUT ---
-  float dropoutGain = dropout.process();
+  dropout.beginFrame(sampleRate);
+  DropoutFrame dropoutL = dropout.value(0, sampleRate);
+  DropoutFrame dropoutR = dropout.value(1, sampleRate);
+  float dropoutAvg = 0.5f * (dropoutL.ampGain + dropoutR.ampGain);
   float hissL = 0.0f, hissR = 0.0f;
   if (p->noise > 0.001f) {
-    float noiseMult = (p->noise * 0.001f) * (1.0f + (2.0f * (1.0f - dropoutGain)));
+    float noiseMult = (p->noise * 0.001f) * (1.0f + (2.0f * (1.0f - dropoutAvg)));
     hissL = noiseGen.next() * noiseMult;
     hissR = noiseGenR.next() * noiseMult;
   }
@@ -655,6 +665,7 @@ IRAM_ATTR void TapeModel::processStereo(float inL, float inR, float *outL,
   // --- CHANNEL PROCESSING HELPER (Inline-ish logic) ---
   auto processChannel = [&](float input, float *buffer, BiquadFilter &hb,
                             BiquadFilter &tr, BiquadFilter &outLPF,
+                            OnePoleLP &dropoutFilter, DropoutFrame dropoutValue,
                             AllpassFilter &az, DCBlocker &dc, TapeMagnetics &mag, BiquadFilter &iHP,
                             BiquadFilter &iLP, BiquadFilter &fbLPF, 
                             BiquadFilter &fbHPF, AllpassFilter &fbAllpass,
@@ -714,7 +725,11 @@ IRAM_ATTR void TapeModel::processStereo(float inL, float inR, float *outL,
     }
 
     // DEGRADE
-    tapeSig *= dropoutGain;
+    float dynamicDropoutCutoff = (6000.0f + (p->tapeSpeed * 100.0f)) *
+                                 (0.35f + 0.65f * dropoutValue.hfLoss);
+    dropoutFilter.setCutoff(sampleRate, dynamicDropoutCutoff);
+    tapeSig = dropoutFilter.process(tapeSig);
+    tapeSig *= dropoutValue.ampGain;
     if (useAzimuth)
       tapeSig = az.process(tapeSig);
 
@@ -767,12 +782,12 @@ IRAM_ATTR void TapeModel::processStereo(float inL, float inR, float *outL,
   // PROCESS LEFT
   *outL =
       processChannel(inL, delayLine, headBump, tapeRolloff, outputLPF,
-                     azimuthFilter, dcBlocker, magneticsL, inputHPF, inputLPF, feedbackLPF,
+                     dropoutLPF, dropoutL, azimuthFilter, dcBlocker, magneticsL, inputHPF, inputLPF, feedbackLPF,
                      feedbackHPF, feedbackAllpass, modL);
 
   // PROCESS RIGHT
   *outR = processChannel(inR, delayLineR, headBumpR, tapeRolloffR, outputLPFR,
-                         azimuthFilterR, dcBlockerR, magneticsR, inputHPFR, inputLPFR,
+                         dropoutLPFR, dropoutR, azimuthFilterR, dcBlockerR, magneticsR, inputHPFR, inputLPFR,
                          feedbackLPFR, feedbackHPFR, feedbackAllpassR, modR);
 
   // Inject Noise here (Post-Filter, Pre-Reverb)

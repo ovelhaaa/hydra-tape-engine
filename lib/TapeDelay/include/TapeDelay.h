@@ -164,6 +164,37 @@ public:
 };
 
 // ============================================================================
+// ONE-POLE LOWPASS - cheap dynamic HF loss for dropout/contact events
+// ============================================================================
+class OnePoleLP {
+private:
+  float a;
+  float z;
+
+public:
+  OnePoleLP() : a(0.1f), z(0.0f) {}
+  void reset() { z = 0.0f; }
+
+  void setCutoff(float fs, float fc) {
+    fc = constrain(fc, 20.0f, 0.45f * fs);
+    float x = expf(-TWO_PI * fc / fs);
+    a = 1.0f - x;
+  }
+
+  void setCutoffFast(float fs, float fc) {
+    fc = constrain(fc, 20.0f, 0.45f * fs);
+    float x = TWO_PI * fc / fs;
+    a = constrain(x / (1.0f + x), 0.0f, 1.0f);
+  }
+
+  AUDIO_INLINE float process(float input) {
+    z += a * (input - z);
+    if (fabsf(z) < DENORMAL_THRESHOLD) z = 0.0f;
+    return z;
+  }
+};
+
+// ============================================================================
 // PINK NOISE com perfil espectral de tape hiss
 // ============================================================================
 class TapeNoiseGenerator {
@@ -204,56 +235,122 @@ public:
 };
 
 // ============================================================================
-// DROPOUT GENERATOR
+// MULTI-SCALE DROPOUT GENERATOR
 // ============================================================================
+struct DropoutFrame {
+  float ampGain = 1.0f;
+  float hfLoss = 1.0f;
+};
+
 class DropoutGenerator {
 private:
-  float smoothedLevel;
-  float targetLevel;
-  int samplesUntilNext;
-  int dropoutDuration;
-  float severity;
-  uint32_t seed;
+  struct State {
+    float amp = 1.0f;
+    float ampTarget = 1.0f;
+    float hf = 1.0f;
+    float hfTarget = 1.0f;
+    float severity = 0.5f;
+    int remain = 0;
+    uint32_t s = 987654321u;
 
-  AUDIO_INLINE uint32_t fast_rand() {
-    seed = seed * 1664525u + 1013904223u;
-    return seed;
-  }
+    void reset(uint32_t seed) {
+      amp = ampTarget = 1.0f;
+      hf = hfTarget = 1.0f;
+      remain = 0;
+      s = seed;
+    }
 
-public:
-  DropoutGenerator()
-      : smoothedLevel(1.0f), targetLevel(1.0f), samplesUntilNext(0),
-        dropoutDuration(0), severity(0.5f), seed(987654321) {}
+    AUDIO_INLINE uint32_t randu() {
+      s = s * 1664525u + 1013904223u;
+      return s;
+    }
 
-  void setSeverity(float sev) { severity = constrain(sev, 0.0f, 1.0f); }
+    AUDIO_INLINE float rand01() {
+      return float(randu() >> 8) * (1.0f / 16777216.0f);
+    }
 
-  AUDIO_INLINE float process() {
-    if (samplesUntilNext <= 0) {
-      if (dropoutDuration <= 0) {
-        float chance =
-            severity * 0.0005f; // Ajustado para ser probabilidade por sample
-        // Usando lógica inteira rápida para chance
-        if ((fast_rand() & 0xFFFF) < (chance * 65535.0f)) {
-          dropoutDuration = 100 + (fast_rand() % 2000);
-          targetLevel = 0.1f + ((fast_rand() & 0xFF) / 255.0f) * 0.4f;
-          samplesUntilNext = dropoutDuration;
+    AUDIO_INLINE void maybeTrigger(float fs) {
+      float safeFs = fmaxf(1.0f, fs);
+      float p = (severity * 0.00012f) * (48000.0f / safeFs);
+      if (rand01() < p) {
+        float r = rand01();
+
+        if (r < 0.72f) {
+          remain = int((0.001f + 0.019f * rand01()) * fs);  // dust
+          ampTarget = 0.65f + 0.30f * rand01();
+          hfTarget = 0.35f + 0.45f * rand01();
+        } else if (r < 0.96f) {
+          remain = int((0.020f + 0.130f * rand01()) * fs);  // oxide
+          ampTarget = 0.18f + 0.55f * rand01();
+          hfTarget = 0.12f + 0.35f * rand01();
         } else {
-          targetLevel = 1.0f;
-          samplesUntilNext = 1000 + (fast_rand() % 5000); // Check again soon
+          remain = int((0.150f + 0.600f * rand01()) * fs);  // spacing/contact
+          ampTarget = 0.05f + 0.35f * rand01();
+          hfTarget = 0.05f + 0.20f * rand01();
         }
-      } else {
-        dropoutDuration--;
-        samplesUntilNext = 1;
       }
     }
-    samplesUntilNext--;
 
-    float smoothCoeff = (targetLevel < smoothedLevel)
-                            ? 0.0005f
-                            : 0.002f; // Ataque rápido, release lento
-    smoothedLevel += smoothCoeff * (targetLevel - smoothedLevel);
+    AUDIO_INLINE void process(float fs) {
+      if (remain <= 0) {
+        ampTarget = 1.0f;
+        hfTarget = 1.0f;
+        maybeTrigger(fs);
+      } else {
+        --remain;
+      }
 
-    return smoothedLevel;
+      float scale = 48000.0f / fmaxf(1.0f, fs);
+      float down = (0.0012f + 0.006f * severity) * scale;
+      float up = 0.00025f * scale;
+      float ca = (ampTarget < amp) ? down : up;
+      float ch = (hfTarget < hf) ? down * 1.8f : up * 0.7f;
+
+      amp += ca * (ampTarget - amp);
+      hf += ch * (hfTarget - hf);
+    }
+  };
+
+  State common;
+  State local[2];
+  DropoutFrame frame;
+  float severity = 0.5f;
+
+public:
+  DropoutGenerator() { reset(); }
+
+  void reset() {
+    common.reset(987654321u);
+    local[0].reset(2246822519u);
+    local[1].reset(3266489917u);
+    severity = 0.5f;
+    setSeverity(severity);
+    frame = {1.0f, 1.0f};
+  }
+
+  void setSeverity(float sev) {
+    severity = constrain(sev, 0.0f, 1.0f);
+    common.severity = severity;
+    local[0].severity = severity * 0.45f;
+    local[1].severity = severity * 0.45f;
+  }
+
+  AUDIO_INLINE void beginFrame(float fs) {
+    common.process(fs);
+    frame.ampGain = common.amp;
+    frame.hfLoss = common.hf;
+  }
+
+  AUDIO_INLINE DropoutFrame value(int channel, float fs) {
+    int ch = (channel != 0) ? 1 : 0;
+    local[ch].process(fs);
+
+    DropoutFrame out;
+    out.ampGain = constrain(frame.ampGain * (0.75f + 0.25f * local[ch].amp),
+                            0.02f, 1.0f);
+    out.hfLoss = constrain(frame.hfLoss * (0.70f + 0.30f * local[ch].hf),
+                           0.02f, 1.0f);
+    return out;
   }
 };
 
@@ -462,6 +559,7 @@ private:
   BiquadFilter headBump;
   BiquadFilter tapeRolloff;
   BiquadFilter outputLPF;
+  OnePoleLP dropoutLPF;
   AllpassFilter azimuthFilter;
   DCBlocker dcBlocker;
 
@@ -473,6 +571,7 @@ private:
   BiquadFilter headBumpR;
   BiquadFilter tapeRolloffR;
   BiquadFilter outputLPFR;
+  OnePoleLP dropoutLPFR;
   AllpassFilter azimuthFilterR;
   DCBlocker dcBlockerR;
   BiquadFilter inputHPFR;

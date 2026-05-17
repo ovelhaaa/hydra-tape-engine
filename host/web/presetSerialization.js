@@ -82,23 +82,58 @@ function clampNumber(value, min, max, fallback) {
   return Math.min(max, Math.max(min, value));
 }
 
+function sanitizeParam(paramId, value) {
+  const config = RANGE_BY_PARAM[paramId];
+  if (!config) return undefined;
+  const numeric = Number(value);
+  const clamped = clampNumber(numeric, config.min, config.max, DEFAULT_CONTROL_STATE[paramId]);
+  return config.isBoolean ? (clamped >= 0.5 ? 1 : 0) : clamped;
+}
+
 export function sanitizeControlState(input = {}) {
   const merged = { ...DEFAULT_CONTROL_STATE, ...(isObject(input) ? input : {}) };
   const sanitized = {};
-  Object.entries(RANGE_BY_PARAM).forEach(([paramId, config]) => {
-    const numeric = Number(merged[paramId]);
-    const clamped = clampNumber(numeric, config.min, config.max, DEFAULT_CONTROL_STATE[paramId]);
-    sanitized[paramId] = config.isBoolean ? (clamped >= 0.5 ? 1 : 0) : clamped;
+  Object.keys(RANGE_BY_PARAM).forEach((paramId) => {
+    sanitized[paramId] = sanitizeParam(paramId, merged[paramId]);
   });
   return sanitized;
 }
 
-export function buildPresetFromControlState(controlState, { name = 'Hydra Preset', metadata = {} } = {}) {
-  const state = sanitizeControlState(controlState);
-  return {
+function sanitizeProvidedControlState(input = {}) {
+  const sanitized = {};
+  if (!isObject(input)) return sanitized;
+  Object.keys(RANGE_BY_PARAM).forEach((paramId) => {
+    if (Object.prototype.hasOwnProperty.call(input, paramId)) {
+      sanitized[paramId] = sanitizeParam(paramId, input[paramId]);
+    }
+  });
+  return sanitized;
+}
+
+function buildFxChainFromState(state) {
+  const enabled = Object.prototype.hasOwnProperty.call(state, 'delayActive')
+    ? state.delayActive >= 0.5
+    : DEFAULT_CONTROL_STATE.delayActive >= 0.5;
+  return [
+    {
+      type: 'tapeDelay',
+      enabled,
+      params: { ...state }
+    }
+  ];
+}
+
+export function buildPresetFromControlState(
+  controlState,
+  { name = 'Hydra Preset', metadata = {}, fillDefaults = false } = {}
+) {
+  const state = fillDefaults
+    ? sanitizeControlState(controlState)
+    : sanitizeProvidedControlState(controlState);
+  const preset = {
     version: CURRENT_PRESET_VERSION,
     name,
-    // Flat parameter store maps directly to all C API configurations
+    // Flat parameter store maps directly to all C API configurations.
     engineParams: { ...state },
     metadata: {
       createdAt: new Date().toISOString(),
@@ -106,6 +141,13 @@ export function buildPresetFromControlState(controlState, { name = 'Hydra Preset
       ...metadata
     }
   };
+
+  if (fillDefaults) {
+    // Keep the legacy WebAudio chain shape for old preset importers and tests.
+    preset.fxChain = buildFxChainFromState(state);
+  }
+
+  return preset;
 }
 
 export function serializePreset(controlState, options = {}) {
@@ -122,15 +164,16 @@ function migrateV1ToV2(v1Preset) {
     drive: v1Engine.drive,
     flutterDepth: v1Engine.flutterDepth,
     wowDepth: v1Engine.wowDepth,
-    delayTimeMs: v1FxParams.delayTimeMs,
-    feedback: v1FxParams.feedback,
-    dryWet: v1FxParams.dryWet,
-    delayActive: v1Fx.enabled === undefined ? undefined : (v1Fx.enabled ? 1 : 0)
+    delayTimeMs: v1FxParams.delayTimeMs ?? v1Engine.delayTimeMs,
+    feedback: v1FxParams.feedback ?? v1Engine.feedback,
+    dryWet: v1FxParams.dryWet ?? v1Engine.dryWet,
+    delayActive: v1Fx.enabled === undefined ? v1Engine.delayActive : (v1Fx.enabled ? 1 : 0)
   });
 
   const meta = isObject(v1Preset.metadata) ? v1Preset.metadata : {};
   return buildPresetFromControlState(migratedControl, {
     name: typeof v1Preset.name === 'string' && v1Preset.name.trim() ? v1Preset.name : 'Migrated Preset',
+    fillDefaults: true,
     metadata: {
       ...meta,
       migratedFromVersion: 1
@@ -158,7 +201,7 @@ export function deserializePresetFromText(text) {
   try {
     parsed = JSON.parse(text);
   } catch {
-    throw new Error('Invalid preset: Malformed JSON text.');
+    throw new Error('Preset inválido: JSON malformado.');
   }
 
   if (!isObject(parsed)) {
@@ -177,12 +220,27 @@ export function deserializePresetFromText(text) {
 
   ensureValidV2Shape(v2Preset);
 
-  // Overwrite missing params with architectural defaults safely
-  const controlState = sanitizeControlState(v2Preset.engineParams);
+  const fx = Array.isArray(v2Preset.fxChain) && isObject(v2Preset.fxChain[0])
+    ? v2Preset.fxChain[0]
+    : null;
+  const fxParams = fx && isObject(fx.params) ? fx.params : {};
+  const mergedParams = {
+    ...v2Preset.engineParams,
+    ...fxParams,
+    ...(fx && fx.enabled !== undefined ? { delayActive: fx.enabled ? 1 : 0 } : {})
+  };
+
+  // Legacy fxChain presets are sparse and should import as a complete UI state;
+  // flat v2 engineParams exports preserve exactly the parameters they contain.
+  const fillDefaults = migratedFromVersion !== null || !!fx;
+  const controlState = fillDefaults
+    ? sanitizeControlState(mergedParams)
+    : sanitizeProvidedControlState(mergedParams);
 
   return {
     preset: buildPresetFromControlState(controlState, {
       name: v2Preset.name,
+      fillDefaults,
       metadata: isObject(v2Preset.metadata) ? v2Preset.metadata : {}
     }),
     controlState,

@@ -15,6 +15,7 @@
 #define DENORMAL_THRESHOLD   1e-20f
 #define HERMITE_MIN_DELAY    2.0f
 #define HERMITE_MARGIN       4.0f
+#define TAPE_BUFFER_GUARD    4
 #define FEEDBACK_MAX_SAFE    1.05f  // Allow self-oscillation (> 1.0)
 #define FEEDBACK_CLAMP       1.2f
 
@@ -431,6 +432,34 @@ struct TapeMagnetics {
   }
 };
 
+
+// ============================================================================
+// DETERMINISTIC MECHANICAL NOISE - capstan/tension wander source
+// ============================================================================
+struct MechNoise {
+  uint32_t s = 22222u;
+  float z1 = 0.0f;
+  float z2 = 0.0f;
+
+  explicit MechNoise(uint32_t seed = 22222u) : s(seed) {}
+
+  AUDIO_INLINE uint32_t randu() {
+    s = s * 1664525u + 1013904223u;
+    return s;
+  }
+
+  AUDIO_INLINE float white() {
+    return float((randu() >> 9) & 0x7FFFFF) * (1.0f / 4194304.0f) - 1.0f;
+  }
+
+  AUDIO_INLINE float lowRate(float aSlow, float aFast) {
+    float w = white();
+    z1 += aSlow * (w - z1);
+    z2 += aFast * (z1 - z2);
+    return z2;
+  }
+};
+
 // ============================================================================
 // TAPE MODEL
 // ============================================================================
@@ -445,7 +474,12 @@ private:
 
   float flutterPhase, wowPhase;
   float azimuthPhase;
+  float flutterInc, wowInc, azimuthInc;
+  float delaySmoothAlpha, delayRampInc;
   BiquadFilter flutterLPF;
+  BiquadFilter flutterLPFR;
+  MechNoise mechNoiseL;
+  MechNoise mechNoiseR;
 
   DropoutGenerator dropout;
   TapeNoiseGenerator noiseGen;
@@ -502,6 +536,7 @@ private:
   float *delayLine;
   float *delayLineR;
   int32_t bufferSize;
+  int32_t delayBufferCapacity;
   int32_t writeHead;
   bool usesSPIRAM;
 
@@ -532,6 +567,10 @@ private:
     return x;
   }
 
+  AUDIO_INLINE float fastSin(float x) { return sinf(x); }
+  AUDIO_INLINE float hermite4(float ym1, float y0, float y1, float y2, float f);
+  AUDIO_INLINE void mirrorDelayGuard(float *buffer);
+  AUDIO_INLINE float mechanicalMod(float scrape, BiquadFilter &flutterFilter);
   AUDIO_INLINE float readTapeAt(float delaySamples, float *buffer);
   AUDIO_INLINE float readTapeReverse(float delaySamples, float *buffer);
 

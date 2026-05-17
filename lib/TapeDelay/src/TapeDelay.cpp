@@ -2,13 +2,16 @@
 
 TapeModel::TapeModel(float fs, float maxDelayTimeMs)
     : sampleRate(fs), noiseGen(fs, 0u), noiseGenR(fs, 2000u), flutterPhase(0), wowPhase(0),
-      azimuthPhase(0), delayEnableRamp(0.0f), smoothedDelaySamples(0.0f), smoothedAzCoeff(0.0f), springFB_L(0.0f), springFB_R(0.0f) {
+      azimuthPhase(0), flutterInc(0.0f), wowInc(0.0f), azimuthInc(0.0f),
+      delaySmoothAlpha(0.0f), delayRampInc(0.0f), mechNoiseL(22222u), mechNoiseR(33333u),
+      delayEnableRamp(0.0f), smoothedDelaySamples(0.0f), smoothedAzCoeff(0.0f), springFB_L(0.0f), springFB_R(0.0f) {
   tanhLUT.init();
   magneticsL.lut = &tanhLUT;
   magneticsR.lut = &tanhLUT;
   // Safe buffer calculation
   bufferSize = (int32_t)(fs * (maxDelayTimeMs / 1000.0f));
-  size_t bytes = bufferSize * sizeof(float);
+  delayBufferCapacity = bufferSize + TAPE_BUFFER_GUARD;
+  size_t bytes = delayBufferCapacity * sizeof(float);
 
   // Attempt PSRAM allocation first
   delayLine = (float *)heap_caps_malloc(bytes, MALLOC_CAP_SPIRAM);
@@ -24,19 +27,21 @@ TapeModel::TapeModel(float fs, float maxDelayTimeMs)
       heap_caps_free(delayLineR);
 
     bufferSize = (int32_t)(fs * 0.4f);
-    delayLine = (float *)heap_caps_malloc(bufferSize * sizeof(float),
+    delayBufferCapacity = bufferSize + TAPE_BUFFER_GUARD;
+    delayLine = (float *)heap_caps_malloc(delayBufferCapacity * sizeof(float),
                                           MALLOC_CAP_INTERNAL);
-    delayLineR = (float *)heap_caps_malloc(bufferSize * sizeof(float),
+    delayLineR = (float *)heap_caps_malloc(delayBufferCapacity * sizeof(float),
                                            MALLOC_CAP_INTERNAL);
     usesSPIRAM = false;
   }
 
   if (delayLine && delayLineR) {
-    memset(delayLine, 0, bufferSize * sizeof(float));
-    memset(delayLineR, 0, bufferSize * sizeof(float));
+    memset(delayLine, 0, delayBufferCapacity * sizeof(float));
+    memset(delayLineR, 0, delayBufferCapacity * sizeof(float));
   } else {
     Serial.println("CRITICAL: Total memory failure!");
     bufferSize = 0;
+    delayBufferCapacity = 0;
   }
 
   writeHead = 0;
@@ -91,6 +96,7 @@ TapeModel::TapeModel(float fs, float maxDelayTimeMs)
 
   updateFilters();
   flutterLPF.setLowpass(fs, 15.0f, 0.707f);
+  flutterLPFR.setLowpass(fs, 15.0f, 0.707f);
 
   // Guitar Focus Filters Defaults
   inputHPF.setLowpass(fs, 150.0f,
@@ -112,6 +118,12 @@ void TapeModel::updateFilters() {
   float speedMod = currentParams.tapeSpeed * 0.01f;
   float ageMod = currentParams.tapeAge * 0.01f;
   float toneMod = currentParams.tone * 0.01f;
+
+  flutterInc = TWO_PI * currentParams.flutterRate / sampleRate;
+  wowInc = TWO_PI * currentParams.wowRate / sampleRate;
+  azimuthInc = 0.2f / sampleRate;
+  delaySmoothAlpha = 1.0f - expf(-1.0f / (0.200f * sampleRate));
+  delayRampInc = 1.0f / (0.250f * sampleRate);
 
   // 0. Input Conditioning (Guitar Focus)
   // HPF = 150Hz to remove mud
@@ -218,6 +230,12 @@ void TapeModel::updateFilters() {
   feedbackAllpass.setCoeff(allpassCoeff);
   feedbackAllpassR.setCoeff(allpassCoeff);
 
+  float flutterCutoff = currentParams.flutterRate * 1.6f;
+  if (flutterCutoff < 4.0f) flutterCutoff = 4.0f;
+  if (flutterCutoff > 12.0f) flutterCutoff = 12.0f;
+  flutterLPF.setLowpass(sampleRate, flutterCutoff, 0.707f);
+  flutterLPFR.setLowpass(sampleRate, flutterCutoff, 0.707f);
+
   // 4. Spring Reverb Updates (Moved from process loop to save CPU)
   // Limit max feedback to 0.85 to prevent instability/denormals
   float springDecayMod = currentParams.springDecay * 0.01f;
@@ -246,9 +264,9 @@ void TapeModel::updateParams(const TapeParams &newParams) {
 
     // CLEAR BUFFERS to prevent garbage feedback
     if (delayLine)
-      memset(delayLine, 0, bufferSize * sizeof(float));
+      memset(delayLine, 0, delayBufferCapacity * sizeof(float));
     if (delayLineR)
-      memset(delayLineR, 0, bufferSize * sizeof(float));
+      memset(delayLineR, 0, delayBufferCapacity * sizeof(float));
 
     // Also reset smoothed delay to target to avoid swoop if time changed while
     // off
@@ -263,42 +281,52 @@ void TapeModel::updateParams(const TapeParams &newParams) {
   updateFilters();
 }
 
+AUDIO_INLINE float TapeModel::hermite4(float ym1, float y0, float y1, float y2, float f) {
+  float c0 = y0;
+  float c1 = 0.5f * (y1 - ym1);
+  float c2 = ym1 - 2.5f * y0 + 2.0f * y1 - 0.5f * y2;
+  float c3 = 0.5f * (y2 - ym1) + 1.5f * (y0 - y1);
+  return ((c3 * f + c2) * f + c1) * f + c0;
+}
+
+AUDIO_INLINE void TapeModel::mirrorDelayGuard(float *buffer) {
+  if (!buffer || bufferSize <= 0) return;
+  for (int i = 0; i < TAPE_BUFFER_GUARD; ++i) {
+    buffer[bufferSize + i] = buffer[i];
+  }
+}
+
+AUDIO_INLINE float TapeModel::mechanicalMod(float scrape, BiquadFilter &flutterFilter) {
+  float capstan = fastSin(wowPhase) + 0.18f * fastSin(2.0f * wowPhase + 0.7f);
+  float flutter = flutterFilter.process(fastSin(flutterPhase) + 0.35f * scrape);
+
+  float flutterAmp = smoothedDelaySamples * (currentParams.flutterDepth * 0.001f);
+  float wowAmp = smoothedDelaySamples * (currentParams.wowDepth * 0.001f);
+  return (wowAmp * capstan) + (flutterAmp * flutter) +
+         (0.00015f * smoothedDelaySamples * scrape);
+}
+
 AUDIO_INLINE float TapeModel::readTapeAt(float delaySamples, float *buffer) {
   if (!buffer || bufferSize == 0)
     return 0.0f;
 
-  if (delaySamples < 2.0f)
-    delaySamples = 2.0f;
-  if (delaySamples > bufferSize - 4.0f)
-    delaySamples = (float)bufferSize - 4.0f;
+  if (delaySamples < HERMITE_MIN_DELAY)
+    delaySamples = HERMITE_MIN_DELAY;
+  if (delaySamples > bufferSize - HERMITE_MARGIN)
+    delaySamples = (float)bufferSize - HERMITE_MARGIN;
 
   float readPos = (float)writeHead - delaySamples;
-
   if (readPos < 0.0f)
     readPos += bufferSize;
-  else if (readPos >= bufferSize)
-    readPos -= bufferSize;
 
   int32_t r = (int32_t)readPos;
   float f = readPos - r;
 
-  int32_t i1 = r;
-  int32_t i2 = (r > 0) ? r - 1 : bufferSize - 1;
-  int32_t i0 = (r < bufferSize - 1) ? r + 1 : 0;
-  int32_t i3 = (i0 < bufferSize - 1) ? i0 + 1 : 0;
-
-  float d1 = buffer[i1];
-  float d0 = buffer[i0];
-  float d2 = buffer[i2];
-  float d3 = buffer[i3];
-
-  // Hermite Interpolation
-  float c0 = d1;
-  float c1 = 0.5f * (d0 - d2);
-  float c2 = d2 - 2.5f * d1 + 2.0f * d0 - 0.5f * d3;
-  float c3 = 0.5f * (d3 - d1) + 1.5f * (d1 - d0);
-
-  return ((c3 * f + c2) * f + c1) * f + c0;
+  // Guard samples mirror the beginning of the circular buffer at the end, so
+  // forward Catmull-Rom taps are contiguous on ESP32-S3/PSRAM reads. Only the
+  // single previous-sample tap needs a wrap branch at the physical start.
+  int32_t prev = (r > 0) ? r - 1 : bufferSize - 1;
+  return hermite4(buffer[prev], buffer[r], buffer[r + 1], buffer[r + 2], f);
 }
 
 // === REVERSE DELAY: Read buffer in opposite direction ===
@@ -374,23 +402,18 @@ IRAM_ATTR float TapeModel::process(float input) {
   TapeParams *p = &currentParams;
 
   // --- MODULATION ---
-  float flutterInc = TWO_PI * p->flutterRate / sampleRate;
   flutterPhase += flutterInc;
   if (flutterPhase > TWO_PI)
     flutterPhase -= TWO_PI;
 
-  float wowInc = TWO_PI * p->wowRate / sampleRate;
   wowPhase += wowInc;
   if (wowPhase > TWO_PI)
     wowPhase -= TWO_PI;
 
-  // Wow and Flutter combined
-  float rawMod =
-      (sinf(flutterPhase) * p->flutterDepth) + (sinf(wowPhase) * p->wowDepth);
-  // Filter motion to simulate capstan inertia
-  float mod = flutterLPF.process(rawMod);
+  float scrape = mechNoiseL.lowRate(0.00008f, 0.0025f);
+  float mod = mechanicalMod(scrape, flutterLPF);
 
-  azimuthPhase += (0.2f / sampleRate);
+  azimuthPhase += azimuthInc;
   if (azimuthPhase > 1.0f)
     azimuthPhase = 0.0f;
   float tri = (azimuthPhase < 0.5f) ? (azimuthPhase * 2.0f)
@@ -405,7 +428,7 @@ IRAM_ATTR float TapeModel::process(float input) {
   // --- RAMP LOGIC ---
   if (p->delayActive) {
     // Slower ramp for stability (~250ms)
-    delayEnableRamp += (1.0f / (0.25f * sampleRate));
+    delayEnableRamp += delayRampInc;
     if (delayEnableRamp > 1.0f)
       delayEnableRamp = 1.0f;
   } else {
@@ -415,7 +438,7 @@ IRAM_ATTR float TapeModel::process(float input) {
   // --- SMOOTH DELAY TIME ---
   float targetDelay = p->delayTimeMs * sampleRate * 0.001f;
   // Simple one-pole smoothing
-  smoothedDelaySamples += 0.001f * (targetDelay - smoothedDelaySamples);
+  smoothedDelaySamples += delaySmoothAlpha * (targetDelay - smoothedDelaySamples);
 
   // --- LEITURA (MANTIDA IGUAL) ---
   float tapeSignal = 0.0f;
@@ -546,6 +569,9 @@ IRAM_ATTR float TapeModel::process(float input) {
     recSig = -4.0f;
 
   delayLine[writeHead] = magneticsL.process(recSig);
+  if (writeHead < TAPE_BUFFER_GUARD) {
+    mirrorDelayGuard(delayLine);
+  }
 
   writeHead++;
   if (writeHead >= bufferSize)
@@ -567,32 +593,28 @@ IRAM_ATTR void TapeModel::processStereo(float inL, float inR, float *outL,
 
   TapeParams *p = &currentParams;
 
-  // --- SHARED MODULATION (Resources Saved!) ---
-  float flutterInc = 6.28318f * p->flutterRate / sampleRate;
+  // --- SHARED MECHANICAL MODULATION ---
   flutterPhase += flutterInc;
-  if (flutterPhase > 6.28318f)
-    flutterPhase -= 6.28318f;
+  if (flutterPhase > TWO_PI)
+    flutterPhase -= TWO_PI;
 
-float wowInc = 6.28318f * p->wowRate / sampleRate;
   wowPhase += wowInc;
-  if (wowPhase > 6.28318f)
-    wowPhase -= 6.28318f;
+  if (wowPhase > TWO_PI)
+    wowPhase -= TWO_PI;
 
   // --- SMOOTH DELAY TIME (STEREO SHARED) ---
   float targetDelay = p->delayTimeMs * sampleRate * 0.001f;
-  const float delaySmoothAlpha = 1.0f - expf(-1.0f / (0.200f * sampleRate));
   smoothedDelaySamples += delaySmoothAlpha * (targetDelay - smoothedDelaySamples);
 
-  // Scale Depths: proportional to delay time + asymmetric wow harmonics
-  float flutterAmp = smoothedDelaySamples * (p->flutterDepth * 0.001f);
-  float wowAmp     = smoothedDelaySamples * (p->wowDepth * 0.001f);
-  float rawMod = (sinf(flutterPhase) * flutterAmp)
-               + (sinf(wowPhase)      * wowAmp * 0.8f)
-               + (sinf(wowPhase*2.0f) * wowAmp * 0.15f)
-               + (sinf(wowPhase*3.0f) * wowAmp * 0.05f);
-  float mod = flutterLPF.process(rawMod);
+  // Per-channel deterministic low-rate noise models tension/friction wander.
+  // This avoids injecting white noise directly into the delay tap while keeping
+  // stereo motion subtly decorrelated.
+  float scrapeL = mechNoiseL.lowRate(0.00008f, 0.0025f);
+  float scrapeR = mechNoiseR.lowRate(0.00008f, 0.0025f);
+  float modL = mechanicalMod(scrapeL, flutterLPF);
+  float modR = mechanicalMod(scrapeR, flutterLPFR);
 
-  azimuthPhase += (0.2f / sampleRate);
+  azimuthPhase += azimuthInc;
   if (azimuthPhase > 1.0f)
     azimuthPhase = 0.0f;
   float tri = (azimuthPhase < 0.5f) ? (azimuthPhase * 2.0f)
@@ -618,7 +640,7 @@ float wowInc = 6.28318f * p->wowRate / sampleRate;
 
   // --- RAMP LOGIC (STEREO SHARED) ---
   if (p->delayActive) {
-    delayEnableRamp += 0.001f;
+    delayEnableRamp += delayRampInc;
     if (delayEnableRamp > 1.0f)
       delayEnableRamp = 1.0f;
   } else {
@@ -630,7 +652,8 @@ float wowInc = 6.28318f * p->wowRate / sampleRate;
                             BiquadFilter &tr, BiquadFilter &outLPF,
                             AllpassFilter &az, DCBlocker &dc, TapeMagnetics &mag, BiquadFilter &iHP,
                             BiquadFilter &iLP, BiquadFilter &fbLPF, 
-                            BiquadFilter &fbHPF, AllpassFilter &fbAllpass) -> float {
+                            BiquadFilter &fbHPF, AllpassFilter &fbAllpass,
+                            float channelMod) -> float {
     // INPUT CONDITIONING
     float condInput = input;
     condInput = iHP.process(condInput);
@@ -641,7 +664,7 @@ float wowInc = 6.28318f * p->wowRate / sampleRate;
 
     // READ (with REVERSE support)
     if (!p->delayActive) {
-      tapeSig = readTapeAt(200.0f + mod, buffer);
+      tapeSig = readTapeAt(200.0f + channelMod, buffer);
     } else {
       float baseDelay = smoothedDelaySamples;
       float d1, d2, d3;
@@ -657,9 +680,9 @@ float wowInc = 6.28318f * p->wowRate / sampleRate;
         d3 = baseDelay;
       }
 
-      d1 += mod * 0.33f;
-      d2 += mod * 0.66f;
-      d3 += mod;
+      d1 += channelMod * 0.33f;
+      d2 += channelMod * 0.66f;
+      d3 += channelMod;
 
       // === REVERSE MODE: Use readTapeReverse ===
       if (p->reverse) {
@@ -740,12 +763,12 @@ float wowInc = 6.28318f * p->wowRate / sampleRate;
   *outL =
       processChannel(inL, delayLine, headBump, tapeRolloff, outputLPF,
                      azimuthFilter, dcBlocker, magneticsL, inputHPF, inputLPF, feedbackLPF,
-                     feedbackHPF, feedbackAllpass);
+                     feedbackHPF, feedbackAllpass, modL);
 
   // PROCESS RIGHT
   *outR = processChannel(inR, delayLineR, headBumpR, tapeRolloffR, outputLPFR,
                          azimuthFilterR, dcBlockerR, magneticsR, inputHPFR, inputLPFR,
-                         feedbackLPFR, feedbackHPFR, feedbackAllpassR);
+                         feedbackLPFR, feedbackHPFR, feedbackAllpassR, modR);
 
   // Inject Noise here (Post-Filter, Pre-Reverb)
   if (p->noise > 0.001f) {
@@ -793,6 +816,11 @@ float wowInc = 6.28318f * p->wowRate / sampleRate;
   } else {
     freezeFade -= 0.0008f;
     if (freezeFade < 0.0f) freezeFade = 0.0f;
+  }
+
+  if (writeHead < TAPE_BUFFER_GUARD) {
+    mirrorDelayGuard(delayLine);
+    mirrorDelayGuard(delayLineR);
   }
 
   writeHead++;

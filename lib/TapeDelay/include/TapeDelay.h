@@ -577,13 +577,17 @@ private:
   BiquadFilter inputHPFR;
   BiquadFilter inputLPFR;
 
-  // Feedback specific filters
-  BiquadFilter feedbackLPF;
-  BiquadFilter feedbackLPFR;
-  BiquadFilter feedbackHPF;     // Remove mud accumulation
+  // Feedback-specific light physical tape chain
+  BiquadFilter feedbackHeadBump;
+  BiquadFilter feedbackHeadBumpR;
+  BiquadFilter feedbackGapLoss;
+  BiquadFilter feedbackGapLossR;
+  BiquadFilter feedbackHPF;       // Remove mud accumulation
   BiquadFilter feedbackHPFR;
-  AllpassFilter feedbackAllpass;  // Phase smearing for vintage character
-  AllpassFilter feedbackAllpassR;
+  AllpassFilter feedbackPhase;    // Phase smearing for vintage character
+  AllpassFilter feedbackPhaseR;
+  TapeMagnetics feedbackTapeSaturation;
+  TapeMagnetics feedbackTapeSaturationR;
   
   // === NEW EFFECT MODE FILTERS ===
   // Spring Reverb (6-stage allpass cascade with damping)

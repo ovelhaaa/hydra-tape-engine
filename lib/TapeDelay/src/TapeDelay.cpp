@@ -505,11 +505,13 @@ IRAM_ATTR float TapeModel::process(float input) {
   // --- DEGRADAÇÃO & FILTROS ---
   dropout.beginFrame(sampleRate);
   DropoutFrame dropoutValue = dropout.value(0, sampleRate);
-  float dynamicDropoutCutoff = (6000.0f + (p->tapeSpeed * 100.0f)) *
-                               (0.35f + 0.65f * dropoutValue.hfLoss);
-  dropoutLPF.setCutoff(sampleRate, dynamicDropoutCutoff);
-  tapeSignal = dropoutLPF.process(tapeSignal);
-  tapeSignal *= dropoutValue.ampGain;
+  if (dropoutValue.hfLoss < 0.9995f || dropoutValue.ampGain < 0.9995f) {
+    float dynamicDropoutCutoff = (6000.0f + (p->tapeSpeed * 100.0f)) *
+                                 (0.35f + 0.65f * dropoutValue.hfLoss);
+    dropoutLPF.setCutoffFast(sampleRate, dynamicDropoutCutoff);
+    tapeSignal = dropoutLPF.process(tapeSignal);
+    tapeSignal *= dropoutValue.ampGain;
+  }
 
   if (p->noise > 0.001f) {
     float hiss = noiseGen.next() * p->noise *
@@ -725,11 +727,13 @@ IRAM_ATTR void TapeModel::processStereo(float inL, float inR, float *outL,
     }
 
     // DEGRADE
-    float dynamicDropoutCutoff = (6000.0f + (p->tapeSpeed * 100.0f)) *
-                                 (0.35f + 0.65f * dropoutValue.hfLoss);
-    dropoutFilter.setCutoff(sampleRate, dynamicDropoutCutoff);
-    tapeSig = dropoutFilter.process(tapeSig);
-    tapeSig *= dropoutValue.ampGain;
+    if (dropoutValue.hfLoss < 0.9995f || dropoutValue.ampGain < 0.9995f) {
+      float dynamicDropoutCutoff = (6000.0f + (p->tapeSpeed * 100.0f)) *
+                                   (0.35f + 0.65f * dropoutValue.hfLoss);
+      dropoutFilter.setCutoffFast(sampleRate, dynamicDropoutCutoff);
+      tapeSig = dropoutFilter.process(tapeSig);
+      tapeSig *= dropoutValue.ampGain;
+    }
     if (useAzimuth)
       tapeSig = az.process(tapeSig);
 

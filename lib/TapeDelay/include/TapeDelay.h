@@ -181,6 +181,12 @@ public:
     a = 1.0f - x;
   }
 
+  void setCutoffFast(float fs, float fc) {
+    fc = constrain(fc, 20.0f, 0.45f * fs);
+    float x = TWO_PI * fc / fs;
+    a = constrain(x / (1.0f + x), 0.0f, 1.0f);
+  }
+
   AUDIO_INLINE float process(float input) {
     z += a * (input - z);
     if (fabsf(z) < DENORMAL_THRESHOLD) z = 0.0f;
@@ -264,7 +270,8 @@ private:
     }
 
     AUDIO_INLINE void maybeTrigger(float fs) {
-      float p = severity * 0.00012f;
+      float safeFs = fmaxf(1.0f, fs);
+      float p = (severity * 0.00012f) * (48000.0f / safeFs);
       if (rand01() < p) {
         float r = rand01();
 
@@ -293,8 +300,9 @@ private:
         --remain;
       }
 
-      float down = 0.0012f + 0.006f * severity;
-      float up = 0.00025f;
+      float scale = 48000.0f / fmaxf(1.0f, fs);
+      float down = (0.0012f + 0.006f * severity) * scale;
+      float up = 0.00025f * scale;
       float ca = (ampTarget < amp) ? down : up;
       float ch = (hfTarget < hf) ? down * 1.8f : up * 0.7f;
 

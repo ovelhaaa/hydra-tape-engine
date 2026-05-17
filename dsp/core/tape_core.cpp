@@ -103,7 +103,7 @@ public:
   void setHighpass(float fs,float freq,float Q){ float w0=2*PI*freq/fs,cosw0=std::cos(w0),sinw0=std::sin(w0),alpha=sinw0/(2*Q),a0=1+alpha; b0=((1+cosw0)/2)/a0; b1=-(1+cosw0)/a0; b2=b0; a1=(-2*cosw0)/a0; a2=(1-alpha)/a0; }
   float process(float in){ float out=b0*in+z1; z1=b1*in-a1*out+z2; z2=b2*in-a2*out; if (std::fabs(z1)<1e-20f) z1=0; if (std::fabs(z2)<1e-20f) z2=0; return out; }
 private: float b0=1,b1=0,b2=0,a1=0,a2=0,z1=0,z2=0; };
-class OnePoleLP { public: void reset(){z=0;} void setCutoff(float fs,float fc){ fc=clampf(fc,20.f,0.45f*fs); float x=std::exp(-TWO_PI*fc/fs); a=1.f-x; } float process(float in){ z += a*(in-z); if(std::fabs(z)<1e-20f) z=0; return z; } private: float a=0.1f,z=0; };
+class OnePoleLP { public: void reset(){z=0;} void setCutoff(float fs,float fc){ fc=clampf(fc,20.f,0.45f*fs); float x=std::exp(-TWO_PI*fc/fs); a=1.f-x; } void setCutoffFast(float fs,float fc){ fc=clampf(fc,20.f,0.45f*fs); float x=TWO_PI*fc/fs; a=clampf(x/(1.f+x),0.f,1.f); } float process(float in){ z += a*(in-z); if(std::fabs(z)<1e-20f) z=0; return z; } private: float a=0.1f,z=0; };
 class AllpassFilter { public: void setCoeff(float c){a1=clampf(c,-0.99f,0.99f);} void reset(){z1=0;} float process(float in){ float out=a1*in+z1; z1=in-a1*out; return out;} private: float a1=0,z1=0; };
 struct DropoutFrame { float ampGain=1.0f; float hfLoss=1.0f; };
 class DropoutGenerator {
@@ -118,8 +118,8 @@ private:
     void reset(uint32_t seed){amp=ampTarget=hf=hfTarget=1.0f; remain=0; s=seed;}
     uint32_t randu(){s=s*1664525u+1013904223u; return s;}
     float rand01(){return float(randu()>>8)*(1.0f/16777216.0f);}
-    void maybeTrigger(float fs){float p=severity*0.00012f; if(rand01()<p){float r=rand01(); if(r<0.72f){remain=int((0.001f+0.019f*rand01())*fs); ampTarget=0.65f+0.30f*rand01(); hfTarget=0.35f+0.45f*rand01();} else if(r<0.96f){remain=int((0.020f+0.130f*rand01())*fs); ampTarget=0.18f+0.55f*rand01(); hfTarget=0.12f+0.35f*rand01();} else {remain=int((0.150f+0.600f*rand01())*fs); ampTarget=0.05f+0.35f*rand01(); hfTarget=0.05f+0.20f*rand01();}}}
-    void process(float fs){if(remain<=0){ampTarget=1.0f; hfTarget=1.0f; maybeTrigger(fs);} else --remain; float down=0.0012f+0.006f*severity, up=0.00025f; float ca=(ampTarget<amp)?down:up, ch=(hfTarget<hf)?down*1.8f:up*0.7f; amp += ca*(ampTarget-amp); hf += ch*(hfTarget-hf);}
+    void maybeTrigger(float fs){float safeFs=std::max(1.f,fs); float p=(severity*0.00012f)*(48000.f/safeFs); if(rand01()<p){float r=rand01(); if(r<0.72f){remain=int((0.001f+0.019f*rand01())*fs); ampTarget=0.65f+0.30f*rand01(); hfTarget=0.35f+0.45f*rand01();} else if(r<0.96f){remain=int((0.020f+0.130f*rand01())*fs); ampTarget=0.18f+0.55f*rand01(); hfTarget=0.12f+0.35f*rand01();} else {remain=int((0.150f+0.600f*rand01())*fs); ampTarget=0.05f+0.35f*rand01(); hfTarget=0.05f+0.20f*rand01();}}}
+    void process(float fs){if(remain<=0){ampTarget=1.0f; hfTarget=1.0f; maybeTrigger(fs);} else --remain; float scale=48000.f/std::max(1.f,fs); float down=(0.0012f+0.006f*severity)*scale, up=0.00025f*scale; float ca=(ampTarget<amp)?down:up, ch=(hfTarget<hf)?down*1.8f:up*0.7f; amp += ca*(ampTarget-amp); hf += ch*(hfTarget-hf);}
   } common, local[2];
   float severity=0.5f; DropoutFrame frame;
 };
@@ -247,10 +247,13 @@ void TapeCore::processStereo(float inL,float inR,float* outL,float* outR){
       if(p->activeHeads & 4){ tapeSig += impl_->readTapeAt(d3,buffer)*0.55f; headGainSum += 0.55f; }
       if(headGainSum>0) tapeSig/=headGainSum;
     }
-    float dynamicCutoff=(6000.f+(p->tapeSpeed*100.f))*(0.35f+0.65f*drop.hfLoss);
-    dropoutFilter.setCutoff(impl_->sampleRate,dynamicCutoff);
-    tapeSig=dropoutFilter.process(tapeSig);
-    tapeSig *= drop.ampGain; if(useAzimuth) tapeSig=az.process(tapeSig);
+    if(drop.hfLoss<0.9995f||drop.ampGain<0.9995f){
+      float dynamicCutoff=(6000.f+(p->tapeSpeed*100.f))*(0.35f+0.65f*drop.hfLoss);
+      dropoutFilter.setCutoffFast(impl_->sampleRate,dynamicCutoff);
+      tapeSig=dropoutFilter.process(tapeSig);
+      tapeSig *= drop.ampGain;
+    }
+    if(useAzimuth) tapeSig=az.process(tapeSig);
     tapeSig=gapLossFilter.process(tapeSig);
     float feedSig=0; if(p->delayActive){ feedSig=feedbackAgingFilt.process(tapeSig); feedSig=fbAP.process(fbHPF.process(feedbackBumpFilter.process(feedSig))); feedSig=impl_->tanhLUT.process(feedSig*1.3f)/1.3f; float safe=p->feedback*0.01f; if(safe>0.88f)safe=0.88f; feedSig *= safe; feedSig = impl_->feedbackCompressor(feedSig); feedSig *= impl_->delayEnableRamp; }
     tapeSig=reproHeadBumpFilter.process(tr.process(tapeSig));

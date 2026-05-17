@@ -191,7 +191,7 @@ void TapeCore::reset(){
 void TapeCore::updateParams(const TapeParams& newParams){
   if(!isValid()) return;
   if(!impl_->currentParams.delayActive && newParams.delayActive){
-    impl_->delayEnableRamp=0; impl_->dcBlocker.clear(); impl_->dcBlockerR.clear(); impl_->magneticsL.reset(); impl_->magneticsR.reset();
+    impl_->delayEnableRamp=0; impl_->dcBlocker.clear(); impl_->dcBlockerR.clear(); impl_->magneticsL.reset(); impl_->magneticsR.reset(); impl_->feedbackTapeSaturation.reset(); impl_->feedbackTapeSaturationR.reset();
     std::memset(impl_->delayLine,0,sizeof(float)*impl_->bufferCapacity); std::memset(impl_->delayLineR,0,sizeof(float)*impl_->bufferCapacity);
     impl_->smoothedDelaySamples = newParams.delayTimeMs * impl_->sampleRate * 0.001f;
   }

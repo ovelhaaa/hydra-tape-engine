@@ -537,16 +537,18 @@ IRAM_ATTR float TapeModel::process(float input) {
 
   // --- FEEDBACK & DRIVE (light physical tape degradation) ---
   float feedSig = 0.0f;
+  float condInput = inputLPF.process(inputHPF.process(input));
+
   if (p->delayActive) {
     feedSig = feedbackHPF.process(signalForFeedback);
 
     float safeFeedback = p->feedback * 0.01f;
-    if (safeFeedback > 0.85f)
-      safeFeedback = 0.85f;
+    if (safeFeedback > 0.88f)
+      safeFeedback = 0.88f;
 
     const float feedbackWearAmount = p->tapeAge * 0.01f;
     float feedbackDrive = 1.0f + (safeFeedback * 0.35f) +
-                          constrain(fabsf(input) * 0.20f, 0.0f, 0.25f) +
+                          constrain(fabsf(condInput) * 0.20f, 0.0f, 0.25f) +
                           (feedbackWearAmount * 0.10f);
     feedSig *= feedbackDrive;
     feedSig = feedbackHeadBump.process(feedSig);
@@ -560,7 +562,7 @@ IRAM_ATTR float TapeModel::process(float input) {
     feedSig *= delayEnableRamp;
   }
 
-  float inDriven = input * (p->drive * 0.05f);
+  float inDriven = condInput * (p->drive * 0.05f);
   float recSig = inDriven + feedSig;
 
   // DC Block processed here (Record Path) instead of feedback path

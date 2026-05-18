@@ -169,11 +169,12 @@ struct TapeCore::Impl {
   float mechanicalMod(float scrape,BiquadFilter& flutterFilter){ float capstan=fast_sin(wowPhase)+0.18f*fast_sin(2.f*wowPhase+0.7f); float flutter=flutterFilter.process(fast_sin(flutterPhase)+0.35f*scrape); float flutterAmp=smoothedDelaySamples*(currentParams.flutterDepth*0.001f),wowAmp=smoothedDelaySamples*(currentParams.wowDepth*0.001f); return wowAmp*capstan+flutterAmp*flutter+kScrapeModAmount*smoothedDelaySamples*scrape; }
   float readTapeAt(float d,float* b){ if(!b||bufferSize==0) return 0; d=clampf(d,2,(float)bufferSize-4); float rp=(float)writeHead-d; if(rp<0)rp+=bufferSize; int32_t r=(int32_t)rp; float f=rp-r; int32_t prev=(r>0)?r-1:bufferSize-1; return hermite4(b[prev],b[r],b[r+1],b[r+2],f); }
   float readTapeReverse(float d,float* b){ if(!b||bufferSize<=0)return 0; d=clampf(d,2,(float)bufferSize-4); int32_t di=(int32_t)d; if(std::abs(di-reverseWindowSize)>1000){reverseCounter=0;reverseWindowSize=di;} reverseCounter++; if(reverseCounter>=std::max(1,di))reverseCounter=0; float rp=(float)writeHead-d+(float)reverseCounter; int32_t r=((int32_t)rp%bufferSize+bufferSize)%bufferSize; float f=rp-std::floor(rp); int32_t i1=r,i0=(r>0)?r-1:bufferSize-1,i2=(r<bufferSize-1)?r+1:0,i3=(i2<bufferSize-1)?i2+1:0; float d1=b[i1],d0=b[i0],d2=b[i2],d3=b[i3]; float c0=d1,c1=0.5f*(d0-d2),c2=d2-2.5f*d1+2.f*d0-0.5f*d3,c3=0.5f*(d3-d1)+1.5f*(d1-d0); return ((c3*f+c2)*f+c1)*f+c0; }
-  void updateSampleRateConstants(){ const float fs=std::max(1.0f,sampleRate); delaySmoothAlpha=1.f-std::exp(-1.f/(0.200f*fs)); delayRampInc=1.f/(0.250f*fs); azimuthInc=0.2f/fs; mechNoiseSlowAlpha=mechNoiseOnePoleAlpha(fs,kMechNoiseSlowTimeSeconds); mechNoiseFastAlpha=mechNoiseOnePoleAlpha(fs,kMechNoiseFastTimeSeconds); }
+  void updateSampleRateConstants(){ const float fs=std::max(1.0f,sampleRate); delaySmoothAlpha=1.f-std::exp(-1.f/(0.200f*fs)); delayRampInc=1.f/(0.250f*fs); azimuthInc=0.2f/fs; mechNoiseSlowAlpha=mechNoiseOnePoleAlpha(fs,kMechNoiseSlowTimeSeconds); mechNoiseFastAlpha=mechNoiseOnePoleAlpha(fs,kMechNoiseFastTimeSeconds); duckAttackCoeff=1.f-std::exp(-1.f/(0.002f*fs)); duckReleaseCoeff=1.f-std::exp(-1.f/(0.080f*fs)); }
   void updateCachedParams();
   void updateFilters();
   FastTanhLUT tanhLUT; TapeMagnetics magneticsL,magneticsR; float sampleRate; TapeParams currentParams{}; float flutterPhase=0,wowPhase=0,azimuthPhase=0; float flutterInc=0,wowInc=0,azimuthInc=0,delaySmoothAlpha=0,delayRampInc=0,mechNoiseSlowAlpha=0,mechNoiseFastAlpha=0;
   float driveGain=0,dryGain=0.5f,wetGain=0.5f,safeFeedback=0,feedbackWearAmount=0;
+  float inEnvL=0,inEnvR=0,duckAttackCoeff=0,duckReleaseCoeff=0,noiseBaseGain=0,noiseMinDuckGain=0.25f,noiseDuckStrength=10.0f;
   float tapeSpeedNorm=0.5f,tapeAgeNorm=0.4f,toneNorm=0.5f,azimuthErrorNorm=0;
   float musicalHeadDelay1=0,musicalHeadDelay2=0,musicalHeadDelay3=0,springFeedbackGain=0,springWetGain=0.5f;
   int springStages=3;
@@ -208,6 +209,9 @@ void TapeCore::Impl::updateCachedParams(){
   reverseSmear=currentParams.reverseSmear;
   spring=currentParams.spring;
   useAzimuth=azimuthErrorNorm>0.0001f;
+  noiseBaseGain=currentParams.noise*0.001f;
+  noiseMinDuckGain=0.22f;
+  noiseDuckStrength=10.0f;
 }
 
 void TapeCore::Impl::updateFilters(){
@@ -239,7 +243,7 @@ void TapeCore::reset(){
   if(!isValid()) return;
   std::memset(impl_->delayLine,0,sizeof(float)*impl_->bufferCapacity);
   std::memset(impl_->delayLineR,0,sizeof(float)*impl_->bufferCapacity);
-  impl_->writeHead=0; impl_->reverseCounter=0; impl_->reverseWindowSize=0;
+  impl_->writeHead=0; impl_->reverseCounter=0; impl_->reverseWindowSize=0; impl_->inEnvL=0; impl_->inEnvR=0;
   impl_->flutterPhase=impl_->wowPhase=impl_->azimuthPhase=0;
   impl_->freezeFade=0; impl_->delayEnableRamp=0; impl_->smoothedDelaySamples=0; impl_->smoothedAzCoeff=0; impl_->springFB_L=impl_->springFB_R=0;
   impl_->dcBlocker.clear(); impl_->dcBlockerR.clear(); impl_->magneticsL.reset(); impl_->magneticsR.reset(); impl_->dropout.reset(); impl_->noiseGen.reset(impl_->sampleRate, 123456789u); impl_->noiseGenR.reset(impl_->sampleRate, 987654321u); impl_->mechNoiseL.reset(); impl_->mechNoiseR.reset();
@@ -293,14 +297,21 @@ void TapeCore::processStereo(float inL,float inR,float* outL,float* outR){
   DropoutFrame dropoutR=impl_->dropout.value(1,impl_->sampleRate);
   float dropoutAvg=0.5f*(dropoutL.ampGain+dropoutR.ampGain);
   float hissL=0, hissR=0;
-  if(p->noise>0.001f) {
-    float noiseMult = (p->noise*0.001f)*(1+(2*(1-dropoutAvg)));
-    hissL=impl_->noiseGen.next()*noiseMult;
-    hissR=impl_->noiseGenR.next()*noiseMult;
+  if(impl_->noiseBaseGain>0.000001f) {
+    float absInL=std::fabs(inL), absInR=std::fabs(inR);
+    float aL=(absInL>impl_->inEnvL)?impl_->duckAttackCoeff:impl_->duckReleaseCoeff;
+    float aR=(absInR>impl_->inEnvR)?impl_->duckAttackCoeff:impl_->duckReleaseCoeff;
+    impl_->inEnvL += aL*(absInL-impl_->inEnvL);
+    impl_->inEnvR += aR*(absInR-impl_->inEnvR);
+    float duckL=clampf(1.0f-(impl_->noiseDuckStrength*impl_->inEnvL),impl_->noiseMinDuckGain,1.0f);
+    float duckR=clampf(1.0f-(impl_->noiseDuckStrength*impl_->inEnvR),impl_->noiseMinDuckGain,1.0f);
+    float noiseMult = impl_->noiseBaseGain*(1+(2*(1-dropoutAvg)));
+    hissL=impl_->noiseGen.next()*noiseMult*duckL;
+    hissR=impl_->noiseGenR.next()*noiseMult*duckR;
   }
   if(impl_->delayActive){impl_->delayEnableRamp+=impl_->delayRampInc;if(impl_->delayEnableRamp>1)impl_->delayEnableRamp=1;} else impl_->delayEnableRamp=0;
 
-  auto processCh=[&](float input,float* buffer,BiquadFilter& reproHeadBumpFilter,BiquadFilter& tr,BiquadFilter& outputGapLossFilter,AllpassFilter& az,DCBlocker& dc,TapeMagnetics& mag,BiquadFilter&iHP,BiquadFilter&iLP,OnePoleLP&feedbackGapLossFilter,BiquadFilter&fbHPF,BiquadFilter&feedbackHeadBumpFilter,AllpassFilter&feedbackPhaseFilter,OnePoleLP&dropoutFilter,DropoutFrame drop,float mod){
+  auto processCh=[&](float input,float noiseInjected,float* buffer,BiquadFilter& reproHeadBumpFilter,BiquadFilter& tr,BiquadFilter& outputGapLossFilter,AllpassFilter& az,DCBlocker& dc,TapeMagnetics& mag,BiquadFilter&iHP,BiquadFilter&iLP,OnePoleLP&feedbackGapLossFilter,BiquadFilter&fbHPF,BiquadFilter&feedbackHeadBumpFilter,AllpassFilter&feedbackPhaseFilter,OnePoleLP&dropoutFilter,DropoutFrame drop,float mod){
     // --- input conditioning ---
     float cond=iLP.process(iHP.process(input));
     // --- delay read ---
@@ -321,6 +332,7 @@ void TapeCore::processStereo(float inL,float inR,float* outL,float* outR){
       tapeSig *= drop.ampGain;
     }
     if(useAzimuth) tapeSig=az.process(tapeSig);
+    tapeSig += noiseInjected;
     // --- playback head EQ ---
     float signalForFeedback=tapeSig;
     tapeSig=outputGapLossFilter.process(reproHeadBumpFilter.process(tr.process(tapeSig)));
@@ -333,9 +345,8 @@ void TapeCore::processStereo(float inL,float inR,float* outL,float* outR){
     return impl_->outputLimiter((input*impl_->dryGain)+(tapeSig*impl_->wetGain));
   };
 
-  *outL=processCh(inL,impl_->delayLine,impl_->reproHeadBump,impl_->tapeRolloff,impl_->gapLossLPF,impl_->azimuthFilter,impl_->dcBlocker,impl_->magneticsL,impl_->inputHPF,impl_->inputLPF,impl_->feedbackGapLoss,impl_->feedbackHPF,impl_->feedbackHeadBump,impl_->feedbackPhase,impl_->dropoutLPF,dropoutL,modL);
-  *outR=processCh(inR,impl_->delayLineR,impl_->reproHeadBumpR,impl_->tapeRolloffR,impl_->gapLossLPFR,impl_->azimuthFilterR,impl_->dcBlockerR,impl_->magneticsR,impl_->inputHPFR,impl_->inputLPFR,impl_->feedbackGapLossR,impl_->feedbackHPFR,impl_->feedbackHeadBumpR,impl_->feedbackPhaseR,impl_->dropoutLPFR,dropoutR,modR);
-  if(p->noise>0.001f){*outL += hissL*0.5f; *outR += hissR*0.5f;}
+  *outL=processCh(inL,hissL,impl_->delayLine,impl_->reproHeadBump,impl_->tapeRolloff,impl_->gapLossLPF,impl_->azimuthFilter,impl_->dcBlocker,impl_->magneticsL,impl_->inputHPF,impl_->inputLPF,impl_->feedbackGapLoss,impl_->feedbackHPF,impl_->feedbackHeadBump,impl_->feedbackPhase,impl_->dropoutLPF,dropoutL,modL);
+  *outR=processCh(inR,hissR,impl_->delayLineR,impl_->reproHeadBumpR,impl_->tapeRolloffR,impl_->gapLossLPFR,impl_->azimuthFilterR,impl_->dcBlockerR,impl_->magneticsR,impl_->inputHPFR,impl_->inputLPFR,impl_->feedbackGapLossR,impl_->feedbackHPFR,impl_->feedbackHeadBumpR,impl_->feedbackPhaseR,impl_->dropoutLPFR,dropoutR,modR);
   if(impl_->reverseSmear && impl_->reverse){ for(int i=0;i<4;i++){ *outL=impl_->reverseAP_L[i].process(*outL); *outR=impl_->reverseAP_R[i].process(*outR);} }
   if(impl_->spring){
     float dryL=*outL,dryR=*outR;

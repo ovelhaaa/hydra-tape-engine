@@ -24,10 +24,18 @@ function loadHydraRuntime(wasmBinary) {
   return runtimePromise;
 }
 
+// The core DSP exposes wider bounds for modulation/dropout controls,
+// but the web host intentionally narrows them for a more musical UX.
+const WEB_PARAM_TUNING = Object.freeze({
+  flutterDepth: Object.freeze({ defaultValue: 14, minValue: 0, maxValue: 45 }),
+  wowDepth: Object.freeze({ defaultValue: 10, minValue: 0, maxValue: 35 }),
+  dropoutSeverity: Object.freeze({ defaultValue: 5, minValue: 0, maxValue: 40 })
+});
+
 const CONTINUOUS_PARAM_SPECS = [
-  { name: 'p_0', defaultValue: 14, minValue: 0, maxValue: 45 },    // flutterDepth (musical web range)
-  { name: 'p_1', defaultValue: 10, minValue: 0, maxValue: 35 },    // wowDepth (musical web range)
-  { name: 'p_2', defaultValue: 5, minValue: 0, maxValue: 40 },     // dropoutSeverity (less frequent/intense)
+  { name: 'p_0', ...WEB_PARAM_TUNING.flutterDepth },                // flutterDepth
+  { name: 'p_1', ...WEB_PARAM_TUNING.wowDepth },                    // wowDepth
+  { name: 'p_2', ...WEB_PARAM_TUNING.dropoutSeverity },             // dropoutSeverity
   { name: 'p_3', defaultValue: 40, minValue: 0, maxValue: 100 },   // drive
   { name: 'p_4', defaultValue: 30, minValue: 0, maxValue: 100 },   // noise
   { name: 'p_5', defaultValue: 50, minValue: 0, maxValue: 100 },   // tapeSpeed

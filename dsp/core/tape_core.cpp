@@ -174,7 +174,9 @@ struct TapeCore::Impl {
   void updateFilters();
   FastTanhLUT tanhLUT; TapeMagnetics magneticsL,magneticsR; float sampleRate; TapeParams currentParams{}; float flutterPhase=0,wowPhase=0,azimuthPhase=0; float flutterInc=0,wowInc=0,azimuthInc=0,delaySmoothAlpha=0,delayRampInc=0,mechNoiseSlowAlpha=0,mechNoiseFastAlpha=0;
   float driveGain=0,dryGain=0.5f,wetGain=0.5f,safeFeedback=0,feedbackWearAmount=0;
-  float tapeSpeedNorm=0.5f,tapeAgeNorm=0.4f,toneNorm=0.5f;
+  float tapeSpeedNorm=0.5f,tapeAgeNorm=0.4f,toneNorm=0.5f,azimuthErrorNorm=0;
+  float musicalHeadDelay1=0,musicalHeadDelay2=0,musicalHeadDelay3=0,springFeedbackGain=0,springWetGain=0.5f;
+  int springStages=3;
   uint8_t activeHeadMask=4;
   bool delayActive=false,headsMusical=false,reverse=false,freeze=false,reverseSmear=false,spring=false,useAzimuth=false;
   BiquadFilter flutterLPF,flutterLPFR; MechNoise mechNoiseL{22222u},mechNoiseR{33333u}; DropoutGenerator dropout; TapeNoiseGenerator noiseGen, noiseGenR; BiquadFilter reproHeadBump,tapeRolloff,gapLossLPF; OnePoleLP dropoutLPF,dropoutLPFR; AllpassFilter azimuthFilter; DCBlocker dcBlocker; BiquadFilter inputHPF,inputLPF; BiquadFilter reproHeadBumpR,tapeRolloffR,gapLossLPFR; AllpassFilter azimuthFilterR; DCBlocker dcBlockerR; BiquadFilter inputHPFR,inputLPFR; OnePoleLP feedbackGapLoss,feedbackGapLossR; BiquadFilter feedbackHPF,feedbackHPFR,feedbackHeadBump,feedbackHeadBumpR; AllpassFilter feedbackPhase,feedbackPhaseR;  DelayAllpass springAP_L[6],springAP_R[6],reverseAP_L[4],reverseAP_R[4]; BiquadFilter springLPF_L[6],springLPF_R[6]; float springFB_L=0,springFB_R=0; float freezeFade=0; float delayEnableRamp=0,smoothedDelaySamples=0,smoothedAzCoeff=0; float* delayLine=nullptr; float* delayLineR=nullptr; int32_t bufferSize=0,bufferCapacity=0,writeHead=0,reverseCounter=0,reverseWindowSize=0;
@@ -189,6 +191,15 @@ void TapeCore::Impl::updateCachedParams(){
   tapeSpeedNorm=currentParams.tapeSpeed*0.01f;
   tapeAgeNorm=feedbackWearAmount;
   toneNorm=currentParams.tone*0.01f;
+  azimuthErrorNorm=currentParams.azimuthError*0.01f;
+  float beatMs=60000.f/std::max(1.f,currentParams.bpm);
+  musicalHeadDelay1=beatMs*0.333f*sampleRate*0.001f;
+  musicalHeadDelay2=beatMs*0.75f*sampleRate*0.001f;
+  musicalHeadDelay3=beatMs*sampleRate*0.001f;
+  float springDecayNorm=currentParams.springDecay*0.01f;
+  springStages=3+static_cast<int>(springDecayNorm*3.f);
+  springFeedbackGain=springDecayNorm*0.85f;
+  springWetGain=clampf(currentParams.springMix*0.01f,0.f,1.f);
   activeHeadMask=static_cast<uint8_t>(currentParams.activeHeads)&0x07u;
   delayActive=currentParams.delayActive;
   headsMusical=currentParams.headsMusical;
@@ -196,7 +207,7 @@ void TapeCore::Impl::updateCachedParams(){
   freeze=currentParams.freeze;
   reverseSmear=currentParams.reverseSmear;
   spring=currentParams.spring;
-  useAzimuth=currentParams.azimuthError>0.01f;
+  useAzimuth=azimuthErrorNorm>0.0001f;
 }
 
 void TapeCore::Impl::updateFilters(){
@@ -271,7 +282,7 @@ void TapeCore::processStereo(float inL,float inR,float* outL,float* outR){
   float tri=(impl_->azimuthPhase<0.5f)?(impl_->azimuthPhase*2):(2-impl_->azimuthPhase*2); float azimuthMod=0.5f+(tri*1.5f);
   const bool useAzimuth=impl_->useAzimuth;
   if(useAzimuth){
-    float targetAz=-0.90f*(p->azimuthError*0.01f)*azimuthMod;
+    float targetAz=-0.90f*impl_->azimuthErrorNorm*azimuthMod;
     impl_->smoothedAzCoeff += 0.001f * (targetAz - impl_->smoothedAzCoeff);
     impl_->azimuthFilter.setCoeff(impl_->smoothedAzCoeff);
     impl_->azimuthFilterR.setCoeff(impl_->smoothedAzCoeff);
@@ -294,7 +305,7 @@ void TapeCore::processStereo(float inL,float inR,float* outL,float* outR){
     float cond=iLP.process(iHP.process(input));
     // --- delay read ---
     float tapeSig=0,headGainSum=0,base=impl_->smoothedDelaySamples;
-    float d1,d2,d3; if(impl_->headsMusical){ float beatMs=60000.f/p->bpm; d1=beatMs*0.333f*impl_->sampleRate*0.001f; d2=beatMs*0.75f*impl_->sampleRate*0.001f; d3=beatMs*1.0f*impl_->sampleRate*0.001f;} else {d1=base*0.33f; d2=base*0.66f; d3=base;}
+    float d1,d2,d3; if(impl_->headsMusical){ d1=impl_->musicalHeadDelay1; d2=impl_->musicalHeadDelay2; d3=impl_->musicalHeadDelay3;} else {d1=base*0.33f; d2=base*0.66f; d3=base;}
     d1 += mod * 0.33f; d2 += mod * 0.66f; d3 += mod;
     if(!impl_->delayActive){ tapeSig = impl_->readTapeAt(200.f+mod,buffer);} else if(impl_->reverse){ tapeSig = impl_->readTapeReverse(d3,buffer); headGainSum=1.f;} else {
       if(impl_->activeHeadMask & 1){ tapeSig += impl_->readTapeAt(d1,buffer)*1.0f; headGainSum += 1.0f; }
@@ -328,13 +339,13 @@ void TapeCore::processStereo(float inL,float inR,float* outL,float* outR){
   if(impl_->reverseSmear && impl_->reverse){ for(int i=0;i<4;i++){ *outL=impl_->reverseAP_L[i].process(*outL); *outR=impl_->reverseAP_R[i].process(*outR);} }
   if(impl_->spring){
     float dryL=*outL,dryR=*outR;
-    int stages=3+(int)((p->springDecay*0.01f)*3);
-    float inWithFBL = *outL + impl_->springFB_L * (p->springDecay * 0.01f * 0.85f);
-    float inWithFBR = *outR + impl_->springFB_R * (p->springDecay * 0.01f * 0.85f);
+    int stages=impl_->springStages;
+    float inWithFBL = *outL + impl_->springFB_L * impl_->springFeedbackGain;
+    float inWithFBR = *outR + impl_->springFB_R * impl_->springFeedbackGain;
     float wetL = inWithFBL, wetR = inWithFBR;
     for(int i=0;i<stages&&i<6;i++){ wetL=impl_->springLPF_L[i].process(impl_->springAP_L[i].process(wetL)); wetR=impl_->springLPF_R[i].process(impl_->springAP_R[i].process(wetR)); }
     impl_->springFB_L = wetL; impl_->springFB_R = wetR;
-    float wetMix=p->springMix*0.01f;
+    float wetMix=impl_->springWetGain;
     *outL=impl_->outputLimiter(dryL*(1-wetMix)+wetL*wetMix); *outR=impl_->outputLimiter(dryR*(1-wetMix)+wetR*wetMix);
   }
   if(impl_->freeze){impl_->freezeFade+=0.0002f; if(impl_->freezeFade>1)impl_->freezeFade=1;} else {impl_->freezeFade-=0.0008f; if(impl_->freezeFade<0)impl_->freezeFade=0;}

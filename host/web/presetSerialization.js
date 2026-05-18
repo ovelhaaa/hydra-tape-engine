@@ -1,11 +1,17 @@
 export const CURRENT_PRESET_VERSION = 2;
 
+const WEB_PARAM_TUNING = Object.freeze({
+  flutterDepth: Object.freeze({ min: 0, max: 45, defaultValue: 14 }),
+  wowDepth: Object.freeze({ min: 0, max: 35, defaultValue: 10 }),
+  dropoutSeverity: Object.freeze({ min: 0, max: 40, defaultValue: 5 })
+});
+
 // Define valid ranges, defaults, and types for all 28 architecture variables
 export const DEFAULT_CONTROL_STATE = {
   // Tape mechanics
-  flutterDepth: 20,
-  wowDepth: 15,
-  dropoutSeverity: 8,
+  flutterDepth: WEB_PARAM_TUNING.flutterDepth.defaultValue,
+  wowDepth: WEB_PARAM_TUNING.wowDepth.defaultValue,
+  dropoutSeverity: WEB_PARAM_TUNING.dropoutSeverity.defaultValue,
   drive: 40,
   noise: 30,
   tapeSpeed: 50,
@@ -39,9 +45,9 @@ export const DEFAULT_CONTROL_STATE = {
 
 const RANGE_BY_PARAM = {
   // Tape mechanics
-  flutterDepth: { min: 0, max: 100 },
-  wowDepth: { min: 0, max: 100 },
-  dropoutSeverity: { min: 0, max: 100 },
+  flutterDepth: { min: WEB_PARAM_TUNING.flutterDepth.min, max: WEB_PARAM_TUNING.flutterDepth.max },
+  wowDepth: { min: WEB_PARAM_TUNING.wowDepth.min, max: WEB_PARAM_TUNING.wowDepth.max },
+  dropoutSeverity: { min: WEB_PARAM_TUNING.dropoutSeverity.min, max: WEB_PARAM_TUNING.dropoutSeverity.max },
   drive: { min: 0, max: 100 },
   noise: { min: 0, max: 100 },
   tapeSpeed: { min: 0, max: 100 },

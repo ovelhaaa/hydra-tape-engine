@@ -5,9 +5,9 @@
 namespace hydra::dsp {
 
 struct TapeParams {
-  float flutterDepth = 20.0f;
-  float wowDepth = 15.0f;
-  float dropoutSeverity = 8.0f;
+  float flutterDepth = 14.0f;
+  float wowDepth = 10.0f;
+  float dropoutSeverity = 5.0f;
   float drive = 40.0f;
   float noise = 30.0f;
   float tapeSpeed = 50.0f;

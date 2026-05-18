@@ -25,9 +25,9 @@ function loadHydraRuntime(wasmBinary) {
 }
 
 const CONTINUOUS_PARAM_SPECS = [
-  { name: 'p_0', defaultValue: 20, minValue: 0, maxValue: 100 },   // flutterDepth
-  { name: 'p_1', defaultValue: 15, minValue: 0, maxValue: 100 },   // wowDepth
-  { name: 'p_2', defaultValue: 8, minValue: 0, maxValue: 100 },    // dropoutSeverity
+  { name: 'p_0', defaultValue: 14, minValue: 0, maxValue: 45 },    // flutterDepth (musical web range)
+  { name: 'p_1', defaultValue: 10, minValue: 0, maxValue: 35 },    // wowDepth (musical web range)
+  { name: 'p_2', defaultValue: 5, minValue: 0, maxValue: 40 },     // dropoutSeverity (less frequent/intense)
   { name: 'p_3', defaultValue: 40, minValue: 0, maxValue: 100 },   // drive
   { name: 'p_4', defaultValue: 30, minValue: 0, maxValue: 100 },   // noise
   { name: 'p_5', defaultValue: 50, minValue: 0, maxValue: 100 },   // tapeSpeed

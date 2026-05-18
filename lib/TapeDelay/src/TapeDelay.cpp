@@ -309,10 +309,13 @@ AUDIO_INLINE float TapeModel::mechanicalMod(float scrape, BiquadFilter &flutterF
   float capstan = fastSin(wowPhase) + 0.18f * fastSin(2.0f * wowPhase + 0.7f);
   float flutter = flutterFilter.process(fastSin(flutterPhase) + 0.35f * scrape);
 
-  float flutterAmp = smoothedDelaySamples * (currentParams.flutterDepth * 0.001f);
-  float wowAmp = smoothedDelaySamples * (currentParams.wowDepth * 0.001f);
+  // Keep wow/flutter modulation perceptually consistent between saturator and
+  // delay modes by using the same reference tape distance when delay is off.
+  float modulationBaseSamples = currentParams.delayActive ? smoothedDelaySamples : 200.0f;
+  float flutterAmp = modulationBaseSamples * (currentParams.flutterDepth * 0.001f);
+  float wowAmp = modulationBaseSamples * (currentParams.wowDepth * 0.001f);
   return (wowAmp * capstan) + (flutterAmp * flutter) +
-         (hydra::dsp::kScrapeModAmount * smoothedDelaySamples * scrape);
+         (hydra::dsp::kScrapeModAmount * modulationBaseSamples * scrape);
 }
 
 AUDIO_INLINE float TapeModel::readTapeAt(float delaySamples, float *buffer) {

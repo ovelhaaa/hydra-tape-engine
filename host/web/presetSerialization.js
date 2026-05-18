@@ -3,9 +3,9 @@ export const CURRENT_PRESET_VERSION = 2;
 // Define valid ranges, defaults, and types for all 28 architecture variables
 export const DEFAULT_CONTROL_STATE = {
   // Tape mechanics
-  flutterDepth: 20,
-  wowDepth: 15,
-  dropoutSeverity: 8,
+  flutterDepth: 14,
+  wowDepth: 10,
+  dropoutSeverity: 5,
   drive: 40,
   noise: 30,
   tapeSpeed: 50,
@@ -39,9 +39,9 @@ export const DEFAULT_CONTROL_STATE = {
 
 const RANGE_BY_PARAM = {
   // Tape mechanics
-  flutterDepth: { min: 0, max: 100 },
-  wowDepth: { min: 0, max: 100 },
-  dropoutSeverity: { min: 0, max: 100 },
+  flutterDepth: { min: 0, max: 45 },
+  wowDepth: { min: 0, max: 35 },
+  dropoutSeverity: { min: 0, max: 40 },
   drive: { min: 0, max: 100 },
   noise: { min: 0, max: 100 },
   tapeSpeed: { min: 0, max: 100 },

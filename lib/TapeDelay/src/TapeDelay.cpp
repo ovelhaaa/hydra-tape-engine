@@ -9,6 +9,8 @@ TapeModel::TapeModel(float fs, float maxDelayTimeMs)
   tanhLUT.init();
   magneticsL.lut = &tanhLUT;
   magneticsR.lut = &tanhLUT;
+  feedbackTapeSaturation.lut = &tanhLUT;
+  feedbackTapeSaturationR.lut = &tanhLUT;
   // Safe buffer calculation
   bufferSize = (int32_t)(fs * (maxDelayTimeMs / 1000.0f));
   delayBufferCapacity = bufferSize + TAPE_BUFFER_GUARD;
@@ -157,17 +159,16 @@ void TapeModel::updateFilters() {
     inputLPFR.setLowpass(sampleRate, 20000.0f, 0.707f);
   }
 
-  // 1. Head Bump (Low frequencies) - Adds "body" to the sound
-  // 1. Head Bump (Low frequencies) - Adds "body" to the sound
-  // TUNED: Stymon-style "Punch" (100-200Hz) instead of "Rumble" (60Hz)
-  // TUNED: Stymon-style "Punch" (100-200Hz) instead of "Rumble" (60Hz)
-  // TUNED: Fixed at 100Hz (Classic Tape Echo Bump)
+  // 1. Playback head bump (low frequencies) - adds body to the wet output.
   float bumpFreq = 100.0f;
-  // HeadBumpAmount is 0-100. We want max ~12dB.
-  // 100 * 0.05 = 5dB (Safe for feedback loop).
   float bumpGain = currentParams.headBumpAmount * 0.05f;
   headBump.setLowShelf(sampleRate, bumpFreq, 0.7f, bumpGain);
   headBumpR.setLowShelf(sampleRate, bumpFreq, 0.7f, bumpGain);
+
+  // Feedback uses a lighter head bump than the wet output (0-2 dB).
+  float feedbackHeadBumpGain = constrain(currentParams.headBumpAmount * 0.02f, 0.0f, 2.0f);
+  feedbackHeadBump.setLowShelf(sampleRate, bumpFreq, 0.7f, feedbackHeadBumpGain);
+  feedbackHeadBumpR.setLowShelf(sampleRate, bumpFreq, 0.7f, feedbackHeadBumpGain);
 
   // --- DARK MODE FILTER ---
 
@@ -216,26 +217,25 @@ void TapeModel::updateFilters() {
   dropoutLPF.setCutoff(sampleRate, finalCutoff);
   dropoutLPFR.setCutoff(sampleRate, finalCutoff);
 
-  // --- FEEDBACK FILTERS (Authentic tape degradation per repeat) ---
-  // 1. LPF: More aggressive high cut for vintage darkness
-  // --- FEEDBACK FILTERS (Authentic tape degradation per repeat) ---
-  // --- FEEDBACK FILTERS (Authentic tape degradation per repeat) ---
-  // 1. LPF: Brighter repeated (1.5kHz - 12kHz)
-  float fbCutoff = 1500.0f + (speedMod * 10500.0f);
-  // slow tape = ~1.5kHz, fast = ~12kHz
-  feedbackLPF.setLowpass(sampleRate, fbCutoff, 0.5f);
-  feedbackLPFR.setLowpass(sampleRate, fbCutoff, 0.5f);
-  
-  // 2. HPF: Remove mud accumulation (tape heads lose low frequencies too)
-  // 2. HPF: Aggressive mud removal (was 200Hz)
-  // TUNED: Increased to 300Hz to fix "absurdly grave" feedback
+  // --- FEEDBACK FILTERS (light physical tape degradation per repeat) ---
+  // Progressive high loss follows tape age, but avoids reusing the wet output LPF.
+  float feedbackWearAmount = ageMod;
+  float fbCutoff = (9000.0f + (speedMod * 7000.0f)) * (1.0f - feedbackWearAmount * 0.65f);
+  if (fbCutoff < 1600.0f)
+    fbCutoff = 1600.0f;
+  feedbackGapLoss.setLowpass(sampleRate, fbCutoff, 0.5f);
+  feedbackGapLossR.setLowpass(sampleRate, fbCutoff, 0.5f);
+
+  // Remove mud accumulation (tape heads lose low frequencies too).
   feedbackHPF.setHighpass(sampleRate, 300.0f, 0.5f);
   feedbackHPFR.setHighpass(sampleRate, 300.0f, 0.5f);
-  
-  // 3. Allpass: Phase smearing for vintage character (head gap simulation)
-  float allpassCoeff = 0.3f + ageMod * 0.4f;  // More aged = more smear
-  feedbackAllpass.setCoeff(allpassCoeff);
-  feedbackAllpassR.setCoeff(allpassCoeff);
+
+  // Phase smearing for vintage character (head gap simulation).
+  float allpassCoeff = 0.3f + feedbackWearAmount * 0.4f;
+  feedbackPhase.setCoeff(allpassCoeff);
+  feedbackPhaseR.setCoeff(allpassCoeff);
+  feedbackTapeSaturation.updateParams(sampleRate, currentParams);
+  feedbackTapeSaturationR.updateParams(sampleRate, currentParams);
 
   float flutterCutoff = currentParams.flutterRate * 1.6f;
   if (flutterCutoff < 4.0f) flutterCutoff = 4.0f;
@@ -268,6 +268,8 @@ void TapeModel::updateParams(const TapeParams &newParams) {
     dcBlockerR = DCBlocker();
     magneticsL.reset();
     magneticsR.reset();
+    feedbackTapeSaturation.reset();
+    feedbackTapeSaturationR.reset();
 
     // CLEAR BUFFERS to prevent garbage feedback
     if (delayLine)
@@ -533,45 +535,34 @@ IRAM_ATTR float TapeModel::process(float input) {
   tapeSignal = tapeRolloff.process(tapeSignal);
   tapeSignal = outputLPF.process(tapeSignal);
 
-  // --- FEEDBACK & DRIVE (ENHANCED TAPE DEGRADATION) ---
+  // --- FEEDBACK & DRIVE (light physical tape degradation) ---
   float feedSig = 0.0f;
+  float condInput = inputLPF.process(inputHPF.process(input));
+
   if (p->delayActive) {
-    // Start from pre-shelf signal
-    feedSig = signalForFeedback;
+    feedSig = feedbackHPF.process(signalForFeedback);
 
-    // === AUTHENTIC TAPE DEGRADATION CHAIN ===
-    // 1. LPF: Aggressive high cut (darkens each repeat)
-    feedSig = feedbackLPF.process(feedSig);
-    
-    // 2. HPF: Remove mud accumulation (tape heads lose lows too)
-    feedSig = feedbackHPF.process(feedSig);
-    
-    // 3. Allpass: Phase smearing (head gap simulation)
-    feedSig = feedbackAllpass.process(feedSig);
-    
-    // 4. Progressive saturation (accumulates per repeat)
-    feedSig = tanhLUT.process(feedSig * 1.3f) / 1.3f;
-
-    // 5. Clamp user feedback to safe limit internally
-    // 5. Clamp user feedback to safe limit internally
-    // Scale 0-100 -> 0.0-1.0
     float safeFeedback = p->feedback * 0.01f;
-    if (safeFeedback > 0.85f)
-      safeFeedback = 0.85f;
+    if (safeFeedback > 0.88f)
+      safeFeedback = 0.88f;
 
+    const float feedbackWearAmount = p->tapeAge * 0.01f;
+    float feedbackDrive = 1.0f + (safeFeedback * 0.35f) +
+                          constrain(fabsf(condInput) * 0.20f, 0.0f, 0.25f) +
+                          (feedbackWearAmount * 0.10f);
+    feedSig *= feedbackDrive;
+    feedSig = feedbackHeadBump.process(feedSig);
+    feedSig = feedbackGapLoss.process(feedSig);
+    feedSig = feedbackPhase.process(feedSig);
+    feedSig = feedbackTapeSaturation.process(feedSig);
     feedSig *= safeFeedback;
 
-    // 6. Apply Ramp
-    feedSig *= delayEnableRamp;
-
-    // 7. Constrain feedback energy prevents explosion
+    // Stability is enforced after the physical feedback block.
     feedSig = constrain(feedSig, -1.2f, 1.2f);
+    feedSig *= delayEnableRamp;
   }
 
-  // 4. Drive first, then add limited feedback
-  // 4. Drive first, then add limited feedback
-  // Scale Drive: 0-100 -> 0.0-5.0 Gain
-  float inDriven = input * (p->drive * 0.05f);
+  float inDriven = condInput * (p->drive * 0.05f);
   float recSig = inDriven + feedSig;
 
   // DC Block processed here (Record Path) instead of feedback path
@@ -669,18 +660,19 @@ IRAM_ATTR void TapeModel::processStereo(float inL, float inR, float *outL,
                             BiquadFilter &tr, BiquadFilter &outLPF,
                             OnePoleLP &dropoutFilter, DropoutFrame dropoutValue,
                             AllpassFilter &az, DCBlocker &dc, TapeMagnetics &mag, BiquadFilter &iHP,
-                            BiquadFilter &iLP, BiquadFilter &fbLPF, 
-                            BiquadFilter &fbHPF, AllpassFilter &fbAllpass,
+                            BiquadFilter &iLP, BiquadFilter &feedbackHeadBump,
+                            BiquadFilter &feedbackGapLoss, BiquadFilter &fbHPF,
+                            AllpassFilter &feedbackPhase, TapeMagnetics &feedbackTapeSaturation,
                             float channelMod) -> float {
-    // INPUT CONDITIONING
+    // --- input conditioning ---
     float condInput = input;
     condInput = iHP.process(condInput);
     condInput = iLP.process(condInput);
 
+    // --- delay read ---
     float tapeSig = 0.0f;
     float headGainSum = 0.0f;
 
-    // READ (with REVERSE support)
     if (!p->delayActive) {
       tapeSig = readTapeAt(200.0f + channelMod, buffer);
     } else {
@@ -702,12 +694,10 @@ IRAM_ATTR void TapeModel::processStereo(float inL, float inR, float *outL,
       d2 += channelMod * 0.66f;
       d3 += channelMod;
 
-      // === REVERSE MODE: Use readTapeReverse ===
       if (p->reverse) {
         tapeSig = readTapeReverse(d3, buffer);
         headGainSum = 1.0f;
       } else {
-        // Normal multi-head reading
         if (p->activeHeads & 1) {
           tapeSig += readTapeAt(d1, buffer) * 1.0f;
           headGainSum += 1.0f;
@@ -726,7 +716,7 @@ IRAM_ATTR void TapeModel::processStereo(float inL, float inR, float *outL,
         tapeSig /= headGainSum;
     }
 
-    // DEGRADE
+    // --- dropout/gap loss ---
     if (dropoutValue.hfLoss < 0.9995f || dropoutValue.ampGain < 0.9995f) {
       float dynamicDropoutCutoff = (6000.0f + (p->tapeSpeed * 100.0f)) *
                                    (0.35f + 0.65f * dropoutValue.hfLoss);
@@ -737,26 +727,38 @@ IRAM_ATTR void TapeModel::processStereo(float inL, float inR, float *outL,
     if (useAzimuth)
       tapeSig = az.process(tapeSig);
 
-    float preColorationTape = tapeSig;
+    // --- playback head EQ ---
+    const float feedbackWearAmount = p->tapeAge * 0.01f;
+    const float signalForFeedback = tapeSig;
     tapeSig = hb.process(tapeSig);
     tapeSig = tr.process(tapeSig);
     tapeSig = outLPF.process(tapeSig);
 
-    // --- FEEDBACK & DRIVE (ENHANCED TAPE DEGRADATION) ---
+    // --- feedback return ---
     float feedSig = 0.0f;
     if (p->delayActive) {
-      // TAP FROM PRE-COLORATION TO AVOID DOUBLE DARKENING
-      feedSig = fbLPF.process(preColorationTape);
+      feedSig = signalForFeedback;
       feedSig = fbHPF.process(feedSig);
-      feedSig = fbAllpass.process(feedSig);
-      feedSig = tanhLUT.process(feedSig * 1.3f) / 1.3f;
 
       float safeFeedback = p->feedback * 0.01f;
       if (safeFeedback > 0.88f)
         safeFeedback = 0.88f;
+
+      // Light physical chain inside the loop: lower gains than the wet output,
+      // progressive wear, phase smear, and feedback/input-dependent drive.
+      float feedbackDrive = 1.0f + (safeFeedback * 0.35f) +
+                            constrain(fabsf(condInput) * 0.20f, 0.0f, 0.25f) +
+                            (feedbackWearAmount * 0.10f);
+      feedSig *= feedbackDrive;
+      feedSig = feedbackHeadBump.process(feedSig);
+      feedSig = feedbackGapLoss.process(feedSig);
+      feedSig = feedbackPhase.process(feedSig);
+      feedSig = feedbackTapeSaturation.process(feedSig);
       feedSig *= safeFeedback;
 
+      // Limit total feedback energy after the physical block, not before it.
       feedSig = feedbackCompressor(feedSig);
+      feedSig = constrain(feedSig, -1.2f, 1.2f);
       feedSig *= delayEnableRamp;
 
       if (fabsf(input) < 1e-6f && fabsf(feedSig) < 1e-4f) {
@@ -764,8 +766,8 @@ IRAM_ATTR void TapeModel::processStereo(float inL, float inR, float *outL,
       }
     }
 
-    // Summing
-    float inDriven = input * (p->drive * 0.05f);
+    // --- record amplifier ---
+    float inDriven = condInput * (p->drive * 0.05f);
     float recSig = inDriven + feedSig;
 
     recSig = dc.process(recSig);
@@ -775,6 +777,7 @@ IRAM_ATTR void TapeModel::processStereo(float inL, float inR, float *outL,
     else if (recSig < -4.0f)
       recSig = -4.0f;
 
+    // --- magnetic saturation/write ---
     if (!p->freeze) {
       buffer[writeHead] = mag.process(recSig);
     }
@@ -786,13 +789,13 @@ IRAM_ATTR void TapeModel::processStereo(float inL, float inR, float *outL,
   // PROCESS LEFT
   *outL =
       processChannel(inL, delayLine, headBump, tapeRolloff, outputLPF,
-                     dropoutLPF, dropoutL, azimuthFilter, dcBlocker, magneticsL, inputHPF, inputLPF, feedbackLPF,
-                     feedbackHPF, feedbackAllpass, modL);
+                     dropoutLPF, dropoutL, azimuthFilter, dcBlocker, magneticsL, inputHPF, inputLPF, feedbackHeadBump,
+                     feedbackGapLoss, feedbackHPF, feedbackPhase, feedbackTapeSaturation, modL);
 
   // PROCESS RIGHT
   *outR = processChannel(inR, delayLineR, headBumpR, tapeRolloffR, outputLPFR,
                          dropoutLPFR, dropoutR, azimuthFilterR, dcBlockerR, magneticsR, inputHPFR, inputLPFR,
-                         feedbackLPFR, feedbackHPFR, feedbackAllpassR, modR);
+                         feedbackHeadBumpR, feedbackGapLossR, feedbackHPFR, feedbackPhaseR, feedbackTapeSaturationR, modR);
 
   // Inject Noise here (Post-Filter, Pre-Reverb)
   if (p->noise > 0.001f) {

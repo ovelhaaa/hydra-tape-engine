@@ -161,6 +161,7 @@ public:
   explicit TapeNoiseGenerator(float fs, uint32_t seedVal=123456789u){reset(fs,seedVal);} 
   void reset(float fs, uint32_t seedVal=123456789u){
     pink1=pink2=pink3=0.0f; seed=seedVal;
+    hissHPF.reset(); hissLPF.reset(); hissTilt.reset();
     hissHPF.setHighpass(fs,130.0f,0.707f);
     hissLPF.setLowpass(fs,9000.0f,0.707f);
     hissTilt.setHighShelf(fs,2400.0f,0.65f,3.0f);

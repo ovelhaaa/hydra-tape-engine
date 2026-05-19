@@ -156,7 +156,32 @@ private:
   } common, local[2];
   float severity=0.5f; DropoutFrame frame;
 };
-class TapeNoiseGenerator { public: explicit TapeNoiseGenerator(float fs, uint32_t seedVal=123456789u){reset(fs,seedVal);} void reset(float fs, uint32_t seedVal=123456789u){state[0]=state[1]=state[2]=0; seed=seedVal; hissShaper.setHighShelf(fs,3000,0.7f,6);} float next(){ uint32_t r=fast_rand(); if(r&1)state[0]=white(); else if(r&2)state[1]=white(); else state[2]=white(); return hissShaper.process((state[0]+state[1]+state[2])*0.33f);} private: uint32_t fast_rand(){seed=seed*1664525u+1013904223u; return seed;} float white(){uint32_t r=fast_rand(); return ((float)(r&0xFFFF)/32768.f)-1.f;} float state[3]{}; uint32_t seed=1; BiquadFilter hissShaper; };
+class TapeNoiseGenerator {
+public:
+  explicit TapeNoiseGenerator(float fs, uint32_t seedVal=123456789u){reset(fs,seedVal);} 
+  void reset(float fs, uint32_t seedVal=123456789u){
+    pink1=pink2=pink3=0.0f; seed=seedVal;
+    hissHPF.reset(); hissLPF.reset(); hissTilt.reset();
+    hissHPF.setHighpass(fs,130.0f,0.707f);
+    hissLPF.setLowpass(fs,9000.0f,0.707f);
+    hissTilt.setHighShelf(fs,2400.0f,0.65f,3.0f);
+  }
+  float next(){
+    const float w=white();
+    pink1 += 0.0211f*(w-pink1);
+    pink2 += 0.0717f*(w-pink2);
+    pink3 += 0.1836f*(w-pink3);
+    float pink=(0.55f*pink1)+(0.30f*pink2)+(0.15f*pink3);
+    float band=hissTilt.process(hissLPF.process(hissHPF.process(pink)));
+    return fastSatRational(band*0.9f);
+  }
+private:
+  uint32_t fast_rand(){seed=seed*1664525u+1013904223u; return seed;}
+  float white(){uint32_t r=fast_rand(); return ((float)(r&0xFFFF)/32768.f)-1.f;}
+  float pink1=0.0f,pink2=0.0f,pink3=0.0f;
+  uint32_t seed=1;
+  BiquadFilter hissHPF,hissLPF,hissTilt;
+};
 
 class DelayAllpass { public: ~DelayAllpass(){delete[] buffer;} void init(int len){delete[] buffer; size=len; buffer=new(std::nothrow) float[size]{}; idx=0;} void clear(){if(buffer&&size>0) std::memset(buffer,0,sizeof(float)*size); idx=0;} void setCoeff(float f){feedback=f;} float process(float in){ if(!buffer) return in; float bo=buffer[idx]; float node=in+feedback*bo; if(std::fabs(node)<1e-15f) node=0; float out=bo-feedback*node; buffer[idx]=node; idx=(idx+1)%size; return out;} private: float* buffer=nullptr; int size=0,idx=0; float feedback=0.5f; };
 }
@@ -310,9 +335,14 @@ void TapeCore::processStereo(float inL,float inR,float* outL,float* outR){
     if(std::fabs(impl_->inEnvR)<1e-20f) impl_->inEnvR=0.0f;
     float duckL=clampf(1.0f-(impl_->noiseDuckStrength*impl_->inEnvL),impl_->noiseMinDuckGain,1.0f);
     float duckR=clampf(1.0f-(impl_->noiseDuckStrength*impl_->inEnvR),impl_->noiseMinDuckGain,1.0f);
-    float noiseMult = impl_->noiseBaseGain*(1+(2*(1-dropoutAvg)));
-    hissL=impl_->noiseGen.next()*noiseMult*duckL;
-    hissR=impl_->noiseGenR.next()*noiseMult*duckR;
+    float dropoutLift=clampf((1.0f-dropoutAvg)*0.65f,0.0f,0.65f);
+    float noiseMult=clampf(impl_->noiseBaseGain*(1.0f+dropoutLift),0.0f,impl_->noiseBaseGain*1.8f);
+    float hissGainL=noiseMult*(1.0f+0.10f*clampf(scrapeL,-1.0f,1.0f));
+    float hissGainR=noiseMult*(1.0f+0.10f*clampf(scrapeR,-1.0f,1.0f));
+    hissGainL=clampf(hissGainL,0.0f,impl_->noiseBaseGain*2.0f);
+    hissGainR=clampf(hissGainR,0.0f,impl_->noiseBaseGain*2.0f);
+    hissL=impl_->noiseGen.next()*hissGainL*duckL;
+    hissR=impl_->noiseGenR.next()*hissGainR*duckR;
   }
   if(impl_->delayActive){impl_->delayEnableRamp+=impl_->delayRampInc;if(impl_->delayEnableRamp>1)impl_->delayEnableRamp=1;} else impl_->delayEnableRamp=0;
 

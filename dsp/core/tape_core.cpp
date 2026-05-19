@@ -196,38 +196,24 @@ struct TapeCore::Impl {
   void mirrorDelayGuard(float* b){ if(!b||bufferSize<=0)return; for(int i=0;i<TAPE_BUFFER_GUARD;i++) b[bufferSize+i]=b[i]; }
   inline uint32_t nextLCG(uint32_t& seed){ seed=seed*1664525u+1013904223u; return seed; }
   inline float randSignedLCG(uint32_t& seed){ return (float((nextLCG(seed)>>8)&0x00FFFFFFu)*(1.0f/8388607.5f))-1.0f; }
-  float mechanicalMod(float scrape,BiquadFilter& flutterFilter,bool right){
-    float& wowDrift=right?wowDriftR:wowDriftL;
-    float& wowState=right?wowStateR:wowStateL;
-    float& flutterJitter=right?flutterJitterR:flutterJitterL;
-    float& flutterHP=right?flutterHpStateR:flutterHpStateL;
-    uint32_t& wowSeed=right?wowSeedR:wowSeedL;
-    uint32_t& flutterSeed=right?flutterSeedR:flutterSeedL;
+  struct MechanicalState {
+    float wowDrift=0,wowState=0;
+    float flutterJitter=0,flutterHpState=0;
+    uint32_t wowSeed=0x13579BDFu,flutterSeed=0x10293847u;
+  };
+  float mechanicalMod(float scrape,BiquadFilter& flutterFilter,MechanicalState& state,float residual){
+    state.wowDrift=wowLeakCoeff*state.wowDrift+wowStepCoeff*randSignedLCG(state.wowSeed);
+    state.wowDrift=clampf(state.wowDrift,-0.9f,0.9f);
+    state.wowState += wowLpAlpha*(state.wowDrift-state.wowState);
+    float wow=clampf(state.wowState-(0.16f*state.wowState*state.wowState*state.wowState),-1.0f,1.0f);
 
-    float wowRateNorm=clampf(currentParams.wowRate*0.01f,0.0f,1.0f);
-    float flutterRateNorm=clampf(currentParams.flutterRate*0.01f,0.0f,1.0f);
+    float white=randSignedLCG(state.flutterSeed);
+    state.flutterHpState += flutterHpAlpha*(white-state.flutterHpState);
+    float hp=white-state.flutterHpState;
+    state.flutterJitter += flutterLpAlpha*(hp-state.flutterJitter);
+    float flutter=clampf(flutterFilter.process(state.flutterJitter),-1.0f,1.0f);
 
-    float wowLeak=0.9996f+0.00035f*wowRateNorm;
-    float wowStep=0.00003f+0.00018f*wowRateNorm;
-    wowDrift=wowLeak*wowDrift+wowStep*randSignedLCG(wowSeed);
-    wowDrift=clampf(wowDrift,-0.9f,0.9f);
-    float wowLpAlpha=0.00008f+0.0012f*wowRateNorm;
-    wowState += wowLpAlpha*(wowDrift-wowState);
-    float wow=clampf(wowState-(0.16f*wowState*wowState*wowState),-1.0f,1.0f);
-
-    float white=randSignedLCG(flutterSeed);
-    float hpAlpha=0.0025f+0.02f*flutterRateNorm;
-    flutterHP += hpAlpha*(white-flutterHP);
-    float hp=white-flutterHP;
-    float lpAlpha=0.015f+0.11f*flutterRateNorm;
-    flutterJitter += lpAlpha*(hp-flutterJitter);
-    float flutter=clampf(flutterFilter.process(flutterJitter),-1.0f,1.0f);
-
-    float residual=0.03f*fast_sin(wowPhase)+0.01f*fast_sin(flutterPhase+0.31f);
-    float wowDepthSamples=smoothedDelaySamples*(0.00025f*clampf(currentParams.wowDepth,0.0f,100.0f));
-    float flutterDepthSamples=smoothedDelaySamples*(0.00010f*clampf(currentParams.flutterDepth,0.0f,100.0f));
-    float scrapeTerm=kScrapeModAmount*0.18f*smoothedDelaySamples*scrape;
-    float mod=wowDepthSamples*wow+flutterDepthSamples*flutter+scrapeTerm+residual;
+    float mod=(wowDepthScale*smoothedDelaySamples)*wow+(flutterDepthScale*smoothedDelaySamples)*flutter+(scrapeDepthScale*smoothedDelaySamples)*scrape+residual;
     return clampf(mod,-0.25f*smoothedDelaySamples,0.25f*smoothedDelaySamples);
   }
   float readTapeAt(float d,float* b){ if(!b||bufferSize==0) return 0; d=clampf(d,2,(float)bufferSize-4); float rp=(float)writeHead-d; if(rp<0)rp+=bufferSize; int32_t r=(int32_t)rp; float f=rp-r; int32_t prev=(r>0)?r-1:bufferSize-1; return hermite4(b[prev],b[r],b[r+1],b[r+2],f); }
@@ -237,9 +223,11 @@ struct TapeCore::Impl {
   void updateFilters();
   FastTanhLUT tanhLUT; TapeMagnetics magneticsL,magneticsR; float sampleRate; TapeParams currentParams{}; float flutterPhase=0,wowPhase=0,azimuthPhase=0; float flutterInc=0,wowInc=0,azimuthInc=0,delaySmoothAlpha=0,delayRampInc=0,mechNoiseSlowAlpha=0,mechNoiseFastAlpha=0;
   float driveGain=0,dryGain=0.5f,wetGain=0.5f,safeFeedback=0,feedbackWearAmount=0;
-  float wowDriftL=0,wowDriftR=0,wowStateL=0,wowStateR=0;
-  float flutterJitterL=0,flutterJitterR=0,flutterHpStateL=0,flutterHpStateR=0;
-  uint32_t wowSeedL=0x13579BDFu,wowSeedR=0x2468ACE1u,flutterSeedL=0x10293847u,flutterSeedR=0x56473829u;
+  MechanicalState mechStateL{};
+  MechanicalState mechStateR{0,0,0,0,0x2468ACE1u,0x56473829u};
+  float wowLeakCoeff=0.9996f,wowStepCoeff=0.00003f,wowLpAlpha=0.00008f;
+  float flutterHpAlpha=0.0025f,flutterLpAlpha=0.015f;
+  float wowDepthScale=0,flutterDepthScale=0,scrapeDepthScale=0;
   float inEnvL=0,inEnvR=0,duckAttackCoeff=0,duckReleaseCoeff=0,noiseBaseGain=0,noiseMinDuckGain=kHissNoiseMinDuckGain,noiseDuckStrength=10.0f;
   float tapeSpeedNorm=0.5f,tapeAgeNorm=0.4f,toneNorm=0.5f,azimuthErrorNorm=0;
   float musicalHeadDelay1=0,musicalHeadDelay2=0,musicalHeadDelay3=0,springFeedbackGain=0,springWetGain=0.5f;
@@ -285,6 +273,17 @@ void TapeCore::Impl::updateFilters(){
   magneticsL.updateParams(sampleRate,currentParams); magneticsR.updateParams(sampleRate,currentParams);
   flutterInc = TWO_PI * currentParams.flutterRate / sampleRate;
   wowInc = TWO_PI * currentParams.wowRate / sampleRate;
+  float srScale=48000.0f/std::max(1.0f,sampleRate);
+  float wowRateNorm=clampf((currentParams.wowRate-0.1f)/(5.0f-0.1f),0.0f,1.0f);
+  float flutterRateNorm=clampf((currentParams.flutterRate-0.1f)/(20.0f-0.1f),0.0f,1.0f);
+  wowLeakCoeff=clampf(1.0f-((0.0004f-0.00035f*wowRateNorm)*srScale),0.0f,0.999999f);
+  wowStepCoeff=(0.00003f+0.00018f*wowRateNorm)*srScale;
+  wowLpAlpha=clampf((0.00008f+0.0012f*wowRateNorm)*srScale,0.0f,1.0f);
+  flutterHpAlpha=clampf((0.0025f+0.02f*flutterRateNorm)*srScale,0.0f,1.0f);
+  flutterLpAlpha=clampf((0.015f+0.11f*flutterRateNorm)*srScale,0.0f,1.0f);
+  wowDepthScale=0.00025f*clampf(currentParams.wowDepth,0.0f,100.0f);
+  flutterDepthScale=0.00010f*clampf(currentParams.flutterDepth,0.0f,100.0f);
+  scrapeDepthScale=kScrapeModAmount*0.18f;
   float speedMod=tapeSpeedNorm,ageMod=tapeAgeNorm,toneMod=toneNorm;
   if(currentParams.guitarFocus){inputHPF.setHighpass(sampleRate,150.f,0.707f);inputHPFR.setHighpass(sampleRate,150.f,0.707f);inputLPF.setLowpass(sampleRate,5000.f,0.707f);inputLPFR.setLowpass(sampleRate,5000.f,0.707f);}else{inputHPF.setHighpass(sampleRate,20.f,0.707f);inputHPFR.setHighpass(sampleRate,20.f,0.707f);inputLPF.setLowpass(sampleRate,20000.f,0.707f);inputLPFR.setLowpass(sampleRate,20000.f,0.707f);}
   float bumpFreq=60.f+(speedMod*140.f);
@@ -311,9 +310,8 @@ void TapeCore::reset(){
   std::memset(impl_->delayLineR,0,sizeof(float)*impl_->bufferCapacity);
   impl_->writeHead=0; impl_->reverseCounter=0; impl_->reverseWindowSize=0; impl_->inEnvL=0; impl_->inEnvR=0;
   impl_->flutterPhase=impl_->wowPhase=impl_->azimuthPhase=0;
-  impl_->wowDriftL=impl_->wowDriftR=impl_->wowStateL=impl_->wowStateR=0;
-  impl_->flutterJitterL=impl_->flutterJitterR=0; impl_->flutterHpStateL=impl_->flutterHpStateR=0;
-  impl_->wowSeedL=0x13579BDFu; impl_->wowSeedR=0x2468ACE1u; impl_->flutterSeedL=0x10293847u; impl_->flutterSeedR=0x56473829u;
+  impl_->mechStateL=Impl::MechanicalState{};
+  impl_->mechStateR=Impl::MechanicalState{0,0,0,0,0x2468ACE1u,0x56473829u};
   impl_->freezeFade=0; impl_->delayEnableRamp=0; impl_->smoothedDelaySamples=0; impl_->smoothedAzCoeff=0; impl_->springFB_L=impl_->springFB_R=0;
   impl_->dcBlocker.clear(); impl_->dcBlockerR.clear(); impl_->magneticsL.reset(); impl_->magneticsR.reset(); impl_->dropout.reset(); impl_->noiseGen.reset(impl_->sampleRate, 123456789u); impl_->noiseGenR.reset(impl_->sampleRate, 987654321u); impl_->mechNoiseL.reset(); impl_->mechNoiseR.reset();
   impl_->flutterLPF.reset(); impl_->flutterLPFR.reset(); impl_->reproHeadBump.reset(); impl_->reproHeadBumpR.reset(); impl_->tapeRolloff.reset(); impl_->tapeRolloffR.reset(); impl_->gapLossLPF.reset(); impl_->gapLossLPFR.reset(); impl_->dropoutLPF.reset(); impl_->dropoutLPFR.reset();
@@ -348,8 +346,9 @@ void TapeCore::processStereo(float inL,float inR,float* outL,float* outR){
 
   float scrapeL=impl_->mechNoiseL.lowRate(impl_->mechNoiseSlowAlpha,impl_->mechNoiseFastAlpha);
   float scrapeR=impl_->mechNoiseR.lowRate(impl_->mechNoiseSlowAlpha,impl_->mechNoiseFastAlpha);
-  float modL=impl_->mechanicalMod(scrapeL,impl_->flutterLPF,false);
-  float modR=impl_->mechanicalMod(scrapeR,impl_->flutterLPFR,true);
+  float residual=0.03f*fast_sin(impl_->wowPhase)+0.01f*fast_sin(impl_->flutterPhase+0.31f);
+  float modL=impl_->mechanicalMod(scrapeL,impl_->flutterLPF,impl_->mechStateL,residual);
+  float modR=impl_->mechanicalMod(scrapeR,impl_->flutterLPFR,impl_->mechStateR,residual);
 
   impl_->azimuthPhase += impl_->azimuthInc; if(impl_->azimuthPhase>1) impl_->azimuthPhase=0;
   float tri=(impl_->azimuthPhase<0.5f)?(impl_->azimuthPhase*2):(2-impl_->azimuthPhase*2); float azimuthMod=0.5f+(tri*1.5f);

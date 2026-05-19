@@ -16,6 +16,9 @@ namespace {
 constexpr float PI = 3.14159265359f;
 constexpr float TWO_PI = 6.28318530718f;
 constexpr int TAPE_BUFFER_GUARD = 4;
+constexpr float kHissDuckAttackTimeSeconds = 0.002f;
+constexpr float kHissDuckReleaseTimeSeconds = 0.080f;
+constexpr float kHissNoiseMinDuckGain = 0.22f;
 inline float clampf(float v, float lo, float hi) { return std::max(lo, std::min(v, hi)); }
 inline float fastSatRational(float x) {
   x = clampf(x, -4.0f, 4.0f);
@@ -169,12 +172,12 @@ struct TapeCore::Impl {
   float mechanicalMod(float scrape,BiquadFilter& flutterFilter){ float capstan=fast_sin(wowPhase)+0.18f*fast_sin(2.f*wowPhase+0.7f); float flutter=flutterFilter.process(fast_sin(flutterPhase)+0.35f*scrape); float flutterAmp=smoothedDelaySamples*(currentParams.flutterDepth*0.001f),wowAmp=smoothedDelaySamples*(currentParams.wowDepth*0.001f); return wowAmp*capstan+flutterAmp*flutter+kScrapeModAmount*smoothedDelaySamples*scrape; }
   float readTapeAt(float d,float* b){ if(!b||bufferSize==0) return 0; d=clampf(d,2,(float)bufferSize-4); float rp=(float)writeHead-d; if(rp<0)rp+=bufferSize; int32_t r=(int32_t)rp; float f=rp-r; int32_t prev=(r>0)?r-1:bufferSize-1; return hermite4(b[prev],b[r],b[r+1],b[r+2],f); }
   float readTapeReverse(float d,float* b){ if(!b||bufferSize<=0)return 0; d=clampf(d,2,(float)bufferSize-4); int32_t di=(int32_t)d; if(std::abs(di-reverseWindowSize)>1000){reverseCounter=0;reverseWindowSize=di;} reverseCounter++; if(reverseCounter>=std::max(1,di))reverseCounter=0; float rp=(float)writeHead-d+(float)reverseCounter; int32_t r=((int32_t)rp%bufferSize+bufferSize)%bufferSize; float f=rp-std::floor(rp); int32_t i1=r,i0=(r>0)?r-1:bufferSize-1,i2=(r<bufferSize-1)?r+1:0,i3=(i2<bufferSize-1)?i2+1:0; float d1=b[i1],d0=b[i0],d2=b[i2],d3=b[i3]; float c0=d1,c1=0.5f*(d0-d2),c2=d2-2.5f*d1+2.f*d0-0.5f*d3,c3=0.5f*(d3-d1)+1.5f*(d1-d0); return ((c3*f+c2)*f+c1)*f+c0; }
-  void updateSampleRateConstants(){ const float fs=std::max(1.0f,sampleRate); delaySmoothAlpha=1.f-std::exp(-1.f/(0.200f*fs)); delayRampInc=1.f/(0.250f*fs); azimuthInc=0.2f/fs; mechNoiseSlowAlpha=mechNoiseOnePoleAlpha(fs,kMechNoiseSlowTimeSeconds); mechNoiseFastAlpha=mechNoiseOnePoleAlpha(fs,kMechNoiseFastTimeSeconds); duckAttackCoeff=1.f-std::exp(-1.f/(0.002f*fs)); duckReleaseCoeff=1.f-std::exp(-1.f/(0.080f*fs)); }
+  void updateSampleRateConstants(){ const float fs=std::max(1.0f,sampleRate); delaySmoothAlpha=1.f-std::exp(-1.f/(0.200f*fs)); delayRampInc=1.f/(0.250f*fs); azimuthInc=0.2f/fs; mechNoiseSlowAlpha=mechNoiseOnePoleAlpha(fs,kMechNoiseSlowTimeSeconds); mechNoiseFastAlpha=mechNoiseOnePoleAlpha(fs,kMechNoiseFastTimeSeconds); duckAttackCoeff=1.f-std::exp(-1.f/(kHissDuckAttackTimeSeconds*fs)); duckReleaseCoeff=1.f-std::exp(-1.f/(kHissDuckReleaseTimeSeconds*fs)); }
   void updateCachedParams();
   void updateFilters();
   FastTanhLUT tanhLUT; TapeMagnetics magneticsL,magneticsR; float sampleRate; TapeParams currentParams{}; float flutterPhase=0,wowPhase=0,azimuthPhase=0; float flutterInc=0,wowInc=0,azimuthInc=0,delaySmoothAlpha=0,delayRampInc=0,mechNoiseSlowAlpha=0,mechNoiseFastAlpha=0;
   float driveGain=0,dryGain=0.5f,wetGain=0.5f,safeFeedback=0,feedbackWearAmount=0;
-  float inEnvL=0,inEnvR=0,duckAttackCoeff=0,duckReleaseCoeff=0,noiseBaseGain=0,noiseMinDuckGain=0.25f,noiseDuckStrength=10.0f;
+  float inEnvL=0,inEnvR=0,duckAttackCoeff=0,duckReleaseCoeff=0,noiseBaseGain=0,noiseMinDuckGain=kHissNoiseMinDuckGain,noiseDuckStrength=10.0f;
   float tapeSpeedNorm=0.5f,tapeAgeNorm=0.4f,toneNorm=0.5f,azimuthErrorNorm=0;
   float musicalHeadDelay1=0,musicalHeadDelay2=0,musicalHeadDelay3=0,springFeedbackGain=0,springWetGain=0.5f;
   int springStages=3;
@@ -210,7 +213,7 @@ void TapeCore::Impl::updateCachedParams(){
   spring=currentParams.spring;
   useAzimuth=azimuthErrorNorm>0.0001f;
   noiseBaseGain=currentParams.noise*0.001f;
-  noiseMinDuckGain=0.22f;
+  noiseMinDuckGain=kHissNoiseMinDuckGain;
   noiseDuckStrength=10.0f;
 }
 
@@ -302,7 +305,9 @@ void TapeCore::processStereo(float inL,float inR,float* outL,float* outR){
     float aL=(absInL>impl_->inEnvL)?impl_->duckAttackCoeff:impl_->duckReleaseCoeff;
     float aR=(absInR>impl_->inEnvR)?impl_->duckAttackCoeff:impl_->duckReleaseCoeff;
     impl_->inEnvL += aL*(absInL-impl_->inEnvL);
+    if(std::fabs(impl_->inEnvL)<1e-20f) impl_->inEnvL=0.0f;
     impl_->inEnvR += aR*(absInR-impl_->inEnvR);
+    if(std::fabs(impl_->inEnvR)<1e-20f) impl_->inEnvR=0.0f;
     float duckL=clampf(1.0f-(impl_->noiseDuckStrength*impl_->inEnvL),impl_->noiseMinDuckGain,1.0f);
     float duckR=clampf(1.0f-(impl_->noiseDuckStrength*impl_->inEnvR),impl_->noiseMinDuckGain,1.0f);
     float noiseMult = impl_->noiseBaseGain*(1+(2*(1-dropoutAvg)));

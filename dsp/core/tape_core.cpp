@@ -412,7 +412,34 @@ void TapeCore::processStereo(float inL,float inR,float* outL,float* outR){
     float signalForFeedback=tapeSig;
     tapeSig=outputGapLossFilter.process(reproHeadBumpFilter.process(tr.process(tapeSig)));
     // --- feedback return ---
-    float feedSig=0; if(impl_->delayActive){ feedSig=fbHPF.process(signalForFeedback); float feedbackDrive=1.0f+(impl_->safeFeedback*0.35f)+clampf(std::fabs(cond)*0.20f,0.f,0.25f)+(impl_->feedbackWearAmount*0.10f); feedSig*=feedbackDrive; feedSig=feedbackHeadBumpFilter.process(feedSig); feedSig=feedbackGapLossFilter.process(feedSig); feedSig=feedbackPhaseFilter.process(feedSig); feedSig=fastSatRational(feedSig*1.3f)/1.3f; feedSig *= impl_->safeFeedback; feedSig = impl_->feedbackCompressor(feedSig); feedSig=clampf(feedSig,-1.2f,1.2f); feedSig *= impl_->delayEnableRamp; }
+    float feedSig=0; if(impl_->delayActive){
+      feedSig=fbHPF.process(signalForFeedback);
+      float feedbackDrive=1.0f+(impl_->safeFeedback*0.30f)+clampf(std::fabs(cond)*0.18f,0.f,0.22f)+(impl_->feedbackWearAmount*0.10f);
+      feedSig*=feedbackDrive;
+      feedSig=feedbackHeadBumpFilter.process(feedSig);
+      feedSig=feedbackGapLossFilter.process(feedSig);
+      feedSig=feedbackPhaseFilter.process(feedSig);
+
+      // subtle pre-emphasis (HP+tilt proxy) before staged saturation
+      float speedNorm=clampf(p->tapeSpeed*0.01f,0.0f,1.0f);
+      float ageNorm=clampf(p->tapeAge*0.01f,0.0f,1.0f);
+      float preEmph=1.0f+(0.06f+0.10f*(1.0f-speedNorm)+0.06f*ageNorm);
+      float satIn=feedSig*preEmph;
+
+      // two light saturation stages with trim between them (less harsh than single heavy drive)
+      satIn=fastSatRational(satIn*1.10f);
+      satIn *= 0.82f;
+      satIn=fastSatRational(satIn*1.08f);
+
+      // complementary de-emphasis to restore tonal balance and keep repeats smooth
+      feedSig=satIn/preEmph;
+
+      feedSig *= impl_->safeFeedback;
+      feedSig=clampf(feedSig,-1.35f,1.35f);
+      feedSig=impl_->feedbackCompressor(feedSig);
+      feedSig=clampf(feedSig,-1.2f,1.2f);
+      feedSig *= impl_->delayEnableRamp;
+    }
     // --- record amplifier ---
     float recSig=dc.process((cond*impl_->driveGain)+feedSig); recSig=clampf(recSig,-4,4);
     // --- magnetic saturation/write ---

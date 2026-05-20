@@ -230,6 +230,7 @@ struct TapeCore::Impl {
   float wowDepthScale=0,flutterDepthScale=0,scrapeDepthScale=0;
   float inEnvL=0,inEnvR=0,duckAttackCoeff=0,duckReleaseCoeff=0,noiseBaseGain=0,noiseMinDuckGain=kHissNoiseMinDuckGain,noiseDuckStrength=10.0f;
   float tapeSpeedNorm=0.5f,tapeAgeNorm=0.4f,toneNorm=0.5f,azimuthErrorNorm=0;
+  float feedbackPreEmph=1.12f,feedbackDeEmph=1.0f/1.12f;
   float musicalHeadDelay1=0,musicalHeadDelay2=0,musicalHeadDelay3=0,springFeedbackGain=0,springWetGain=0.5f;
   int springStages=3;
   uint8_t activeHeadMask=4;
@@ -285,6 +286,8 @@ void TapeCore::Impl::updateFilters(){
   flutterDepthScale=0.00010f*clampf(currentParams.flutterDepth,0.0f,100.0f);
   scrapeDepthScale=kScrapeModAmount*0.18f;
   float speedMod=tapeSpeedNorm,ageMod=tapeAgeNorm,toneMod=toneNorm;
+  feedbackPreEmph=1.0f+(0.06f+0.10f*(1.0f-speedMod)+0.06f*ageMod);
+  feedbackDeEmph=1.0f/feedbackPreEmph;
   if(currentParams.guitarFocus){inputHPF.setHighpass(sampleRate,150.f,0.707f);inputHPFR.setHighpass(sampleRate,150.f,0.707f);inputLPF.setLowpass(sampleRate,5000.f,0.707f);inputLPFR.setLowpass(sampleRate,5000.f,0.707f);}else{inputHPF.setHighpass(sampleRate,20.f,0.707f);inputHPFR.setHighpass(sampleRate,20.f,0.707f);inputLPF.setLowpass(sampleRate,20000.f,0.707f);inputLPFR.setLowpass(sampleRate,20000.f,0.707f);}
   float bumpFreq=60.f+(speedMod*140.f);
   float reproBumpGain=clampf(currentParams.headBumpAmount*0.06f,0.f,6.f);
@@ -364,15 +367,16 @@ void TapeCore::processStereo(float inL,float inR,float* outL,float* outR){
   DropoutFrame dropoutL=impl_->dropout.value(0,impl_->sampleRate);
   DropoutFrame dropoutR=impl_->dropout.value(1,impl_->sampleRate);
   float dropoutAvg=0.5f*(dropoutL.ampGain+dropoutR.ampGain);
+  float absInL=std::fabs(inL), absInR=std::fabs(inR);
+  float aL=(absInL>impl_->inEnvL)?impl_->duckAttackCoeff:impl_->duckReleaseCoeff;
+  float aR=(absInR>impl_->inEnvR)?impl_->duckAttackCoeff:impl_->duckReleaseCoeff;
+  impl_->inEnvL += aL*(absInL-impl_->inEnvL);
+  if(std::fabs(impl_->inEnvL)<1e-20f) impl_->inEnvL=0.0f;
+  impl_->inEnvR += aR*(absInR-impl_->inEnvR);
+  if(std::fabs(impl_->inEnvR)<1e-20f) impl_->inEnvR=0.0f;
+
   float hissL=0, hissR=0;
   if(impl_->noiseBaseGain>0.000001f) {
-    float absInL=std::fabs(inL), absInR=std::fabs(inR);
-    float aL=(absInL>impl_->inEnvL)?impl_->duckAttackCoeff:impl_->duckReleaseCoeff;
-    float aR=(absInR>impl_->inEnvR)?impl_->duckAttackCoeff:impl_->duckReleaseCoeff;
-    impl_->inEnvL += aL*(absInL-impl_->inEnvL);
-    if(std::fabs(impl_->inEnvL)<1e-20f) impl_->inEnvL=0.0f;
-    impl_->inEnvR += aR*(absInR-impl_->inEnvR);
-    if(std::fabs(impl_->inEnvR)<1e-20f) impl_->inEnvR=0.0f;
     float duckL=clampf(1.0f-(impl_->noiseDuckStrength*impl_->inEnvL),impl_->noiseMinDuckGain,1.0f);
     float duckR=clampf(1.0f-(impl_->noiseDuckStrength*impl_->inEnvR),impl_->noiseMinDuckGain,1.0f);
     float dropoutLift=clampf((1.0f-dropoutAvg)*0.65f,0.0f,0.65f);
@@ -386,7 +390,7 @@ void TapeCore::processStereo(float inL,float inR,float* outL,float* outR){
   }
   if(impl_->delayActive){impl_->delayEnableRamp+=impl_->delayRampInc;if(impl_->delayEnableRamp>1)impl_->delayEnableRamp=1;} else impl_->delayEnableRamp=0;
 
-  auto processCh=[&](float input,float noiseInjected,float* buffer,BiquadFilter& reproHeadBumpFilter,BiquadFilter& tr,BiquadFilter& outputGapLossFilter,AllpassFilter& az,DCBlocker& dc,TapeMagnetics& mag,BiquadFilter&iHP,BiquadFilter&iLP,OnePoleLP&feedbackGapLossFilter,BiquadFilter&fbHPF,BiquadFilter&feedbackHeadBumpFilter,AllpassFilter&feedbackPhaseFilter,OnePoleLP&dropoutFilter,DropoutFrame drop,float mod){
+  auto processCh=[&](float input,float noiseInjected,float* buffer,BiquadFilter& reproHeadBumpFilter,BiquadFilter& tr,BiquadFilter& outputGapLossFilter,AllpassFilter& az,DCBlocker& dc,TapeMagnetics& mag,BiquadFilter&iHP,BiquadFilter&iLP,OnePoleLP&feedbackGapLossFilter,BiquadFilter&fbHPF,BiquadFilter&feedbackHeadBumpFilter,AllpassFilter&feedbackPhaseFilter,OnePoleLP&dropoutFilter,DropoutFrame drop,float mod,float inputEnv){
     // --- input conditioning ---
     float cond=iLP.process(iHP.process(input));
     // --- delay read ---
@@ -412,7 +416,29 @@ void TapeCore::processStereo(float inL,float inR,float* outL,float* outR){
     float signalForFeedback=tapeSig;
     tapeSig=outputGapLossFilter.process(reproHeadBumpFilter.process(tr.process(tapeSig)));
     // --- feedback return ---
-    float feedSig=0; if(impl_->delayActive){ feedSig=fbHPF.process(signalForFeedback); float feedbackDrive=1.0f+(impl_->safeFeedback*0.35f)+clampf(std::fabs(cond)*0.20f,0.f,0.25f)+(impl_->feedbackWearAmount*0.10f); feedSig*=feedbackDrive; feedSig=feedbackHeadBumpFilter.process(feedSig); feedSig=feedbackGapLossFilter.process(feedSig); feedSig=feedbackPhaseFilter.process(feedSig); feedSig=fastSatRational(feedSig*1.3f)/1.3f; feedSig *= impl_->safeFeedback; feedSig = impl_->feedbackCompressor(feedSig); feedSig=clampf(feedSig,-1.2f,1.2f); feedSig *= impl_->delayEnableRamp; }
+    float feedSig=0; if(impl_->delayActive){
+      feedSig=fbHPF.process(signalForFeedback);
+      float feedbackDrive=1.0f+(impl_->safeFeedback*0.30f)+clampf(inputEnv*0.18f,0.f,0.22f)+(impl_->feedbackWearAmount*0.10f);
+      feedSig*=feedbackDrive;
+      feedSig=feedbackHeadBumpFilter.process(feedSig);
+      feedSig=feedbackGapLossFilter.process(feedSig);
+      feedSig=feedbackPhaseFilter.process(feedSig);
+
+      // subtle pre-emphasis before staged saturation
+      float satIn=feedSig*impl_->feedbackPreEmph;
+
+      // two light saturation stages with trim between them (less harsh than single heavy drive)
+      satIn=fastSatRational(satIn*1.10f);
+      satIn *= 0.82f;
+      satIn=fastSatRational(satIn*1.08f);
+
+      // complementary de-emphasis via cached reciprocal to avoid per-sample division
+      feedSig=satIn*impl_->feedbackDeEmph;
+
+      feedSig *= impl_->safeFeedback;
+      feedSig=impl_->feedbackCompressor(feedSig);
+      feedSig *= impl_->delayEnableRamp;
+    }
     // --- record amplifier ---
     float recSig=dc.process((cond*impl_->driveGain)+feedSig); recSig=clampf(recSig,-4,4);
     // --- magnetic saturation/write ---
@@ -420,8 +446,8 @@ void TapeCore::processStereo(float inL,float inR,float* outL,float* outR){
     return impl_->outputLimiter((input*impl_->dryGain)+(tapeSig*impl_->wetGain));
   };
 
-  *outL=processCh(inL,hissL,impl_->delayLine,impl_->reproHeadBump,impl_->tapeRolloff,impl_->gapLossLPF,impl_->azimuthFilter,impl_->dcBlocker,impl_->magneticsL,impl_->inputHPF,impl_->inputLPF,impl_->feedbackGapLoss,impl_->feedbackHPF,impl_->feedbackHeadBump,impl_->feedbackPhase,impl_->dropoutLPF,dropoutL,modL);
-  *outR=processCh(inR,hissR,impl_->delayLineR,impl_->reproHeadBumpR,impl_->tapeRolloffR,impl_->gapLossLPFR,impl_->azimuthFilterR,impl_->dcBlockerR,impl_->magneticsR,impl_->inputHPFR,impl_->inputLPFR,impl_->feedbackGapLossR,impl_->feedbackHPFR,impl_->feedbackHeadBumpR,impl_->feedbackPhaseR,impl_->dropoutLPFR,dropoutR,modR);
+  *outL=processCh(inL,hissL,impl_->delayLine,impl_->reproHeadBump,impl_->tapeRolloff,impl_->gapLossLPF,impl_->azimuthFilter,impl_->dcBlocker,impl_->magneticsL,impl_->inputHPF,impl_->inputLPF,impl_->feedbackGapLoss,impl_->feedbackHPF,impl_->feedbackHeadBump,impl_->feedbackPhase,impl_->dropoutLPF,dropoutL,modL,impl_->inEnvL);
+  *outR=processCh(inR,hissR,impl_->delayLineR,impl_->reproHeadBumpR,impl_->tapeRolloffR,impl_->gapLossLPFR,impl_->azimuthFilterR,impl_->dcBlockerR,impl_->magneticsR,impl_->inputHPFR,impl_->inputLPFR,impl_->feedbackGapLossR,impl_->feedbackHPFR,impl_->feedbackHeadBumpR,impl_->feedbackPhaseR,impl_->dropoutLPFR,dropoutR,modR,impl_->inEnvR);
   if(impl_->reverseSmear && impl_->reverse){ for(int i=0;i<4;i++){ *outL=impl_->reverseAP_L[i].process(*outL); *outR=impl_->reverseAP_R[i].process(*outR);} }
   if(impl_->spring){
     float dryL=*outL,dryR=*outR;

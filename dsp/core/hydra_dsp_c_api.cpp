@@ -27,6 +27,7 @@ static const hydra_dsp_param_spec kParamSpecs[HYDRA_DSP_PARAM_COUNT] = {
     {HYDRA_DSP_PARAM_DELAY_MS, "delayTimeMs", 10.0f, 2000.0f, 500.0f, HYDRA_DSP_SMOOTHING_PER_SAMPLE_INTERNAL, HYDRA_DSP_PARAM_SPEC_FLAG_RUNTIME_MAX},
     {HYDRA_DSP_PARAM_FEEDBACK, "feedback", 0.0f, 100.0f, 40.0f, HYDRA_DSP_SMOOTHING_BLOCK_EDGE, HYDRA_DSP_PARAM_SPEC_FLAG_NONE},
     {HYDRA_DSP_PARAM_DRY_WET, "dryWet", 0.0f, 100.0f, 50.0f, HYDRA_DSP_SMOOTHING_BLOCK_EDGE, HYDRA_DSP_PARAM_SPEC_FLAG_NONE},
+    {HYDRA_DSP_PARAM_DELAY_WET, "delayWet", 0.0f, 100.0f, 50.0f, HYDRA_DSP_SMOOTHING_BLOCK_EDGE, HYDRA_DSP_PARAM_SPEC_FLAG_NONE},
     {HYDRA_DSP_PARAM_ACTIVE_HEADS, "activeHeads", 1.0f, 7.0f, 4.0f, HYDRA_DSP_SMOOTHING_NONE, HYDRA_DSP_PARAM_SPEC_FLAG_NONE},
     {HYDRA_DSP_PARAM_BPM, "bpm", 30.0f, 300.0f, 120.0f, HYDRA_DSP_SMOOTHING_BLOCK_EDGE, HYDRA_DSP_PARAM_SPEC_FLAG_NONE},
     {HYDRA_DSP_PARAM_HEADS_MUSICAL, "headsMusical", 0.0f, 1.0f, 0.0f, HYDRA_DSP_SMOOTHING_NONE, HYDRA_DSP_PARAM_SPEC_FLAG_NONE},
@@ -68,6 +69,7 @@ static void from_c(const hydra_dsp_params& in, hydra::dsp::TapeParams* out) {
   out->delayTimeMs = in.delayTimeMs;
   out->feedback = in.feedback;
   out->dryWet = in.dryWet;
+  out->delayWet = in.delayWet;
   out->activeHeads = (int)in.activeHeads;
   out->bpm = in.bpm;
   out->headsMusical = in.headsMusical > 0.5f;
@@ -100,6 +102,7 @@ static int set_param(hydra_dsp_handle* h, hydra_dsp_param_id id, float v) {
     case HYDRA_DSP_PARAM_DELAY_MS: h->params.delayTimeMs = v; break;
     case HYDRA_DSP_PARAM_FEEDBACK: h->params.feedback = v; break;
     case HYDRA_DSP_PARAM_DRY_WET: h->params.dryWet = v; break;
+    case HYDRA_DSP_PARAM_DELAY_WET: h->params.delayWet = v; break;
     case HYDRA_DSP_PARAM_ACTIVE_HEADS: h->params.activeHeads = (int)v; break;
     case HYDRA_DSP_PARAM_BPM: h->params.bpm = v; break;
     case HYDRA_DSP_PARAM_HEADS_MUSICAL: h->params.headsMusical = v > 0.5f; break;
@@ -198,6 +201,7 @@ int hydra_dsp_get_parameter(hydra_dsp_handle* handle, hydra_dsp_param_id param_i
     case HYDRA_DSP_PARAM_DELAY_MS: *out_value = handle->params.delayTimeMs; break;
     case HYDRA_DSP_PARAM_FEEDBACK: *out_value = handle->params.feedback; break;
     case HYDRA_DSP_PARAM_DRY_WET: *out_value = handle->params.dryWet; break;
+    case HYDRA_DSP_PARAM_DELAY_WET: *out_value = handle->params.delayWet; break;
     case HYDRA_DSP_PARAM_ACTIVE_HEADS: *out_value = (float)handle->params.activeHeads; break;
     case HYDRA_DSP_PARAM_BPM: *out_value = handle->params.bpm; break;
     case HYDRA_DSP_PARAM_HEADS_MUSICAL: *out_value = handle->params.headsMusical ? 1.0f : 0.0f; break;

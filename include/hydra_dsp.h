@@ -24,7 +24,7 @@ typedef struct hydra_dsp_params {
   float flutterDepth, wowDepth, dropoutSeverity, drive, noise;
   float tapeSpeed, tapeAge, headBumpAmount, azimuthError;
   float flutterRate, wowRate;
-  float delayActive, delayTimeMs, feedback, dryWet;
+  float delayActive, delayTimeMs, feedback, dryWet, delayWet;
   float activeHeads, bpm, headsMusical, guitarFocus, tone;
   float pingPong, freeze, reverse, reverseSmear, spring;
   float springDecay, springDamping, springMix;
@@ -46,21 +46,22 @@ typedef enum hydra_dsp_param_id {
   HYDRA_DSP_PARAM_DELAY_MS = 12,
   HYDRA_DSP_PARAM_FEEDBACK = 13,
   HYDRA_DSP_PARAM_DRY_WET = 14,
-  HYDRA_DSP_PARAM_ACTIVE_HEADS = 15,
-  HYDRA_DSP_PARAM_BPM = 16,
-  HYDRA_DSP_PARAM_HEADS_MUSICAL = 17,
-  HYDRA_DSP_PARAM_GUITAR_FOCUS = 18,
-  HYDRA_DSP_PARAM_TONE = 19,
-  HYDRA_DSP_PARAM_PING_PONG = 20,
-  HYDRA_DSP_PARAM_FREEZE = 21,
-  HYDRA_DSP_PARAM_REVERSE = 22,
-  HYDRA_DSP_PARAM_REVERSE_SMEAR = 23,
-  HYDRA_DSP_PARAM_SPRING = 24,
-  HYDRA_DSP_PARAM_SPRING_DECAY = 25,
-  HYDRA_DSP_PARAM_SPRING_DAMPING = 26,
-  HYDRA_DSP_PARAM_SPRING_MIX = 27,
-  HYDRA_DSP_PARAM_RESET = 28,
-  HYDRA_DSP_PARAM_COUNT = 29
+  HYDRA_DSP_PARAM_DELAY_WET = 15,
+  HYDRA_DSP_PARAM_ACTIVE_HEADS = 16,
+  HYDRA_DSP_PARAM_BPM = 17,
+  HYDRA_DSP_PARAM_HEADS_MUSICAL = 18,
+  HYDRA_DSP_PARAM_GUITAR_FOCUS = 19,
+  HYDRA_DSP_PARAM_TONE = 20,
+  HYDRA_DSP_PARAM_PING_PONG = 21,
+  HYDRA_DSP_PARAM_FREEZE = 22,
+  HYDRA_DSP_PARAM_REVERSE = 23,
+  HYDRA_DSP_PARAM_REVERSE_SMEAR = 24,
+  HYDRA_DSP_PARAM_SPRING = 25,
+  HYDRA_DSP_PARAM_SPRING_DECAY = 26,
+  HYDRA_DSP_PARAM_SPRING_DAMPING = 27,
+  HYDRA_DSP_PARAM_SPRING_MIX = 28,
+  HYDRA_DSP_PARAM_RESET = 29,
+  HYDRA_DSP_PARAM_COUNT = 30
 } hydra_dsp_param_id;
 
 typedef enum hydra_dsp_smoothing_policy {

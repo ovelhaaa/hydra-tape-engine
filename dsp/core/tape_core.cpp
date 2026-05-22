@@ -395,7 +395,7 @@ void TapeCore::processStereo(float inL,float inR,float* outL,float* outR){
     // --- input conditioning ---
     float cond=iLP.process(iHP.process(input));
     // --- delay read ---
-    float textureSig=impl_->readTapeAt(200.f+mod,buffer);
+    float textureSig=(impl_->textureWetGain>0.0f)?impl_->readTapeAt(200.f+mod,buffer):0.0f;
     float delaySig=0,headGainSum=0,base=impl_->smoothedDelaySamples;
     float d1,d2,d3; if(impl_->headsMusical){ d1=impl_->musicalHeadDelay1; d2=impl_->musicalHeadDelay2; d3=impl_->musicalHeadDelay3;} else {d1=base*0.33f; d2=base*0.66f; d3=base;}
     d1 += mod * 0.33f; d2 += mod * 0.66f; d3 += mod;

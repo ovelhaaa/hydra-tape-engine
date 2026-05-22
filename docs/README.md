@@ -195,6 +195,22 @@ The initial documented tolerance for native-vs-wasm output equivalence is:
 
 ### Exact build/test commands
 
+
+### Quick check: wow/flutter/hiss are active
+
+If `ctest` in `build-web` was generated on another machine, it may point to invalid absolute paths for `node`/`python`. In that case, run the core regression binary directly:
+
+```bash
+node build-web/hydra_core_regression.js
+```
+
+Expected output:
+
+```text
+regression_core: ok
+```
+
+This regression run exercises the tape-core render path with modulation and noise code paths compiled in (wow/flutter/noise parameters available in the DSP API).
 #### Native (Linux/macOS)
 
 ```bash

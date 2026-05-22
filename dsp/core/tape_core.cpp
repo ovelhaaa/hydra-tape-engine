@@ -395,7 +395,7 @@ void TapeCore::processStereo(float inL,float inR,float* outL,float* outR){
     // --- input conditioning ---
     float cond=iLP.process(iHP.process(input));
     // --- delay read ---
-    float textureSig=cond;
+    float textureSig=impl_->readTapeAt(200.f+mod,buffer);
     float delaySig=0,headGainSum=0,base=impl_->smoothedDelaySamples;
     float d1,d2,d3; if(impl_->headsMusical){ d1=impl_->musicalHeadDelay1; d2=impl_->musicalHeadDelay2; d3=impl_->musicalHeadDelay3;} else {d1=base*0.33f; d2=base*0.66f; d3=base;}
     d1 += mod * 0.33f; d2 += mod * 0.66f; d3 += mod;
@@ -407,7 +407,7 @@ void TapeCore::processStereo(float inL,float inR,float* outL,float* outR){
         if(headGainSum>0) delaySig/=headGainSum;
       }
     }
-    float tapeSig = textureSig + (delaySig * impl_->delayWetGain);
+    float tapeSig = (textureSig * impl_->textureWetGain) + (delaySig * impl_->delayWetGain);
     // --- dropout/gap loss ---
     if(drop.hfLoss<0.9995f||drop.ampGain<0.9995f){
       float dynamicCutoff=(6000.f+(p->tapeSpeed*100.f))*(0.35f+0.65f*drop.hfLoss);
@@ -448,7 +448,7 @@ void TapeCore::processStereo(float inL,float inR,float* outL,float* outR){
     float recSig=dc.process((cond*impl_->driveGain)+feedSig); recSig=clampf(recSig,-4,4);
     // --- magnetic saturation/write ---
     if(!impl_->freeze) buffer[impl_->writeHead]=mag.process(recSig);
-    return impl_->outputLimiter((input*impl_->dryGain)+(tapeSig*impl_->textureWetGain));
+    return impl_->outputLimiter((input*impl_->dryGain)+tapeSig);
   };
 
   *outL=processCh(inL,hissL,impl_->delayLine,impl_->reproHeadBump,impl_->tapeRolloff,impl_->gapLossLPF,impl_->azimuthFilter,impl_->dcBlocker,impl_->magneticsL,impl_->inputHPF,impl_->inputLPF,impl_->feedbackGapLoss,impl_->feedbackHPF,impl_->feedbackHeadBump,impl_->feedbackPhase,impl_->dropoutLPF,dropoutL,modL,impl_->inEnvL);

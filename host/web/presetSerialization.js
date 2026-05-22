@@ -175,6 +175,7 @@ function migrateV1ToV2(v1Preset) {
     delayTimeMs: v1FxParams.delayTimeMs ?? v1Engine.delayTimeMs,
     feedback: v1FxParams.feedback ?? v1Engine.feedback,
     dryWet: v1FxParams.dryWet ?? v1Engine.dryWet,
+    delayWet: v1FxParams.dryWet ?? v1Engine.dryWet,
     delayActive: v1Fx.enabled === undefined ? v1Engine.delayActive : (v1Fx.enabled ? 1 : 0)
   });
 

@@ -20,6 +20,7 @@ struct TapeParams {
   float delayTimeMs = 500.0f;
   float feedback = 40.0f;
   float dryWet = 50.0f;
+  float delayWet = 50.0f;
   int activeHeads = 4;
   float bpm = 120.0f;
   bool headsMusical = false;

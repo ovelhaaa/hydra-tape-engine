@@ -36,6 +36,9 @@ void HydraDspEsp32Adapter::updateParams(const TapeParams& params) {
   p.delayTimeMs = params.delayTimeMs;
   p.feedback = params.feedback;
   p.dryWet = params.dryWet;
+  // ESP32 UI currently exposes only one mix control; mirror it into delayWet
+  // so the split-mix DSP path remains fully driven on embedded hosts.
+  p.delayWet = params.dryWet;
   p.activeHeads = (float)params.activeHeads;
   p.bpm = params.bpm;
   p.headsMusical = params.headsMusical ? 1.0f : 0.0f;

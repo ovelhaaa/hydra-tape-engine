@@ -19,20 +19,21 @@ const PARAM = {
   delayTimeMs: 12,
   feedback: 13,
   dryWet: 14,
-  activeHeads: 15,
-  bpm: 16,
-  headsMusical: 17,
-  guitarFocus: 18,
-  tone: 19,
-  pingPong: 20,
-  freeze: 21,
-  reverse: 22,
-  reverseSmear: 23,
-  spring: 24,
-  springDecay: 25,
-  springDamping: 26,
-  springMix: 27,
-  reset: 28
+  delayWet: 15,
+  activeHeads: 16,
+  bpm: 17,
+  headsMusical: 18,
+  guitarFocus: 19,
+  tone: 20,
+  pingPong: 21,
+  freeze: 22,
+  reverse: 23,
+  reverseSmear: 24,
+  spring: 25,
+  springDecay: 26,
+  springDamping: 27,
+  springMix: 28,
+  reset: 29
 };
 
 const ALL_PARAM_IDS = Object.keys(PARAM).filter(id => id !== 'reset');
@@ -40,7 +41,7 @@ const ALL_PARAM_IDS = Object.keys(PARAM).filter(id => id !== 'reset');
 const CONTINUOUS_PARAM_IDS = new Set([
   'flutterDepth', 'wowDepth', 'dropoutSeverity', 'drive', 'noise',
   'tapeSpeed', 'tapeAge', 'headBumpAmount', 'azimuthError',
-  'flutterRate', 'wowRate', 'delayTimeMs', 'feedback', 'dryWet',
+  'flutterRate', 'wowRate', 'delayTimeMs', 'feedback', 'dryWet', 'delayWet',
   'bpm', 'tone', 'springDecay', 'springDamping', 'springMix'
 ]);
 
@@ -60,6 +61,7 @@ const PARAM_METADATA = {
   delayTimeMs: { group: 'Time Domain', engineParamId: PARAM.delayTimeMs, layer: 'AudioParam (Live Smooth)' },
   feedback: { group: 'Feedback Loop', engineParamId: PARAM.feedback, layer: 'AudioParam (Smooth)' },
   dryWet: { group: 'Mix', engineParamId: PARAM.dryWet, layer: 'AudioParam (Smooth)' },
+  delayWet: { group: 'Mix', engineParamId: PARAM.delayWet, layer: 'AudioParam (Smooth)' },
   activeHeads: { group: 'Multitap Configuration', engineParamId: PARAM.activeHeads, layer: 'MessagePort (Int Enum)' },
   bpm: { group: 'Tempo Sync', engineParamId: PARAM.bpm, layer: 'AudioParam (Smooth)' },
   headsMusical: { group: 'Time Mode', engineParamId: PARAM.headsMusical, layer: 'MessagePort (Toggle)' },

@@ -47,11 +47,12 @@ const CONTINUOUS_PARAM_SPECS = [
   { name: 'p_12', defaultValue: 500, minValue: 10, maxValue: 2000 }, // delayTimeMs
   { name: 'p_13', defaultValue: 40, minValue: 0, maxValue: 100 },  // feedback
   { name: 'p_14', defaultValue: 50, minValue: 0, maxValue: 100 },  // dryWet
-  { name: 'p_16', defaultValue: 120, minValue: 30, maxValue: 300 }, // bpm
-  { name: 'p_19', defaultValue: 50, minValue: 0, maxValue: 100 },  // tone
-  { name: 'p_25', defaultValue: 60, minValue: 0, maxValue: 100 },  // springDecay
-  { name: 'p_26', defaultValue: 45, minValue: 0, maxValue: 100 },  // springDamping
-  { name: 'p_27', defaultValue: 50, minValue: 0, maxValue: 100 }   // springMix
+  { name: 'p_15', defaultValue: 50, minValue: 0, maxValue: 100 },  // delayWet
+  { name: 'p_17', defaultValue: 120, minValue: 30, maxValue: 300 }, // bpm
+  { name: 'p_20', defaultValue: 50, minValue: 0, maxValue: 100 },  // tone
+  { name: 'p_26', defaultValue: 60, minValue: 0, maxValue: 100 },  // springDecay
+  { name: 'p_27', defaultValue: 45, minValue: 0, maxValue: 100 },  // springDamping
+  { name: 'p_28', defaultValue: 50, minValue: 0, maxValue: 100 }   // springMix
 ];
 
 class HydraProcessor extends AudioWorkletProcessor {
@@ -213,14 +214,14 @@ class HydraProcessor extends AudioWorkletProcessor {
       // Map discrete string commands to their C++ engine enum IDs
       const commandMap = {
         delayActive: 11,
-        activeHeads: 15,
-        headsMusical: 17,
-        guitarFocus: 18,
-        pingPong: 20,
-        freeze: 21,
-        reverse: 22,
-        reverseSmear: 23,
-        spring: 24
+        activeHeads: 16,
+        headsMusical: 18,
+        guitarFocus: 19,
+        pingPong: 21,
+        freeze: 22,
+        reverse: 23,
+        reverseSmear: 24,
+        spring: 25
       };
 
       const paramId = commandMap[command];

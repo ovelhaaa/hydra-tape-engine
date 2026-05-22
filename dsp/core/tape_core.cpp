@@ -222,7 +222,7 @@ struct TapeCore::Impl {
   void updateCachedParams();
   void updateFilters();
   FastTanhLUT tanhLUT; TapeMagnetics magneticsL,magneticsR; float sampleRate; TapeParams currentParams{}; float flutterPhase=0,wowPhase=0,azimuthPhase=0; float flutterInc=0,wowInc=0,azimuthInc=0,delaySmoothAlpha=0,delayRampInc=0,mechNoiseSlowAlpha=0,mechNoiseFastAlpha=0;
-  float driveGain=0,dryGain=0.5f,wetGain=0.5f,safeFeedback=0,feedbackWearAmount=0;
+  float driveGain=0,dryGain=0.5f,textureWetGain=0.5f,delayWetGain=0.5f,safeFeedback=0,feedbackWearAmount=0;
   MechanicalState mechStateL{};
   MechanicalState mechStateR{0,0,0,0,0x2468ACE1u,0x56473829u};
   float wowLeakCoeff=0.9996f,wowStepCoeff=0.00003f,wowLpAlpha=0.00008f;
@@ -240,8 +240,9 @@ struct TapeCore::Impl {
 
 void TapeCore::Impl::updateCachedParams(){
   driveGain=currentParams.drive*0.05f;
-  wetGain=clampf(currentParams.dryWet*0.01f,0.f,1.f);
-  dryGain=1.f-wetGain;
+  textureWetGain=clampf(currentParams.dryWet*0.01f,0.f,1.f);
+  delayWetGain=clampf(currentParams.delayWet*0.01f,0.f,1.f);
+  dryGain=1.f-textureWetGain;
   safeFeedback=std::min(currentParams.feedback*0.01f,0.88f);
   feedbackWearAmount=currentParams.tapeAge*0.01f;
   tapeSpeedNorm=currentParams.tapeSpeed*0.01f;
@@ -394,15 +395,19 @@ void TapeCore::processStereo(float inL,float inR,float* outL,float* outR){
     // --- input conditioning ---
     float cond=iLP.process(iHP.process(input));
     // --- delay read ---
-    float tapeSig=0,headGainSum=0,base=impl_->smoothedDelaySamples;
+    float textureSig=(impl_->textureWetGain>0.0f)?impl_->readTapeAt(200.f+mod,buffer):0.0f;
+    float delaySig=0,headGainSum=0,base=impl_->smoothedDelaySamples;
     float d1,d2,d3; if(impl_->headsMusical){ d1=impl_->musicalHeadDelay1; d2=impl_->musicalHeadDelay2; d3=impl_->musicalHeadDelay3;} else {d1=base*0.33f; d2=base*0.66f; d3=base;}
     d1 += mod * 0.33f; d2 += mod * 0.66f; d3 += mod;
-    if(!impl_->delayActive){ tapeSig = impl_->readTapeAt(200.f+mod,buffer);} else if(impl_->reverse){ tapeSig = impl_->readTapeReverse(d3,buffer); headGainSum=1.f;} else {
-      if(impl_->activeHeadMask & 1){ tapeSig += impl_->readTapeAt(d1,buffer)*1.0f; headGainSum += 1.0f; }
-      if(impl_->activeHeadMask & 2){ tapeSig += impl_->readTapeAt(d2,buffer)*0.75f; headGainSum += 0.75f; }
-      if(impl_->activeHeadMask & 4){ tapeSig += impl_->readTapeAt(d3,buffer)*0.55f; headGainSum += 0.55f; }
-      if(headGainSum>0) tapeSig/=headGainSum;
+    if(impl_->delayActive){
+      if(impl_->reverse){ delaySig = impl_->readTapeReverse(d3,buffer); headGainSum=1.f;} else {
+        if(impl_->activeHeadMask & 1){ delaySig += impl_->readTapeAt(d1,buffer)*1.0f; headGainSum += 1.0f; }
+        if(impl_->activeHeadMask & 2){ delaySig += impl_->readTapeAt(d2,buffer)*0.75f; headGainSum += 0.75f; }
+        if(impl_->activeHeadMask & 4){ delaySig += impl_->readTapeAt(d3,buffer)*0.55f; headGainSum += 0.55f; }
+        if(headGainSum>0) delaySig/=headGainSum;
+      }
     }
+    float tapeSig = (textureSig * impl_->textureWetGain) + (delaySig * impl_->delayWetGain);
     // --- dropout/gap loss ---
     if(drop.hfLoss<0.9995f||drop.ampGain<0.9995f){
       float dynamicCutoff=(6000.f+(p->tapeSpeed*100.f))*(0.35f+0.65f*drop.hfLoss);
@@ -443,7 +448,7 @@ void TapeCore::processStereo(float inL,float inR,float* outL,float* outR){
     float recSig=dc.process((cond*impl_->driveGain)+feedSig); recSig=clampf(recSig,-4,4);
     // --- magnetic saturation/write ---
     if(!impl_->freeze) buffer[impl_->writeHead]=mag.process(recSig);
-    return impl_->outputLimiter((input*impl_->dryGain)+(tapeSig*impl_->wetGain));
+    return impl_->outputLimiter((input*impl_->dryGain)+tapeSig);
   };
 
   *outL=processCh(inL,hissL,impl_->delayLine,impl_->reproHeadBump,impl_->tapeRolloff,impl_->gapLossLPF,impl_->azimuthFilter,impl_->dcBlocker,impl_->magneticsL,impl_->inputHPF,impl_->inputLPF,impl_->feedbackGapLoss,impl_->feedbackHPF,impl_->feedbackHeadBump,impl_->feedbackPhase,impl_->dropoutLPF,dropoutL,modL,impl_->inEnvL);

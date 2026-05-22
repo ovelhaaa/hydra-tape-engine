@@ -25,6 +25,7 @@ export const DEFAULT_CONTROL_STATE = {
   delayTimeMs: 500,
   feedback: 40,
   dryWet: 50,
+  delayWet: 50,
   bpm: 120,
   tone: 50,
   // Heads
@@ -61,6 +62,7 @@ const RANGE_BY_PARAM = {
   delayTimeMs: { min: 10, max: 2000 },
   feedback: { min: 0, max: 100 },
   dryWet: { min: 0, max: 100 },
+  delayWet: { min: 0, max: 100 },
   bpm: { min: 30, max: 300 },
   tone: { min: 0, max: 100 },
   // Multitap Heads
@@ -173,6 +175,7 @@ function migrateV1ToV2(v1Preset) {
     delayTimeMs: v1FxParams.delayTimeMs ?? v1Engine.delayTimeMs,
     feedback: v1FxParams.feedback ?? v1Engine.feedback,
     dryWet: v1FxParams.dryWet ?? v1Engine.dryWet,
+    delayWet: v1FxParams.dryWet ?? v1Engine.dryWet,
     delayActive: v1Fx.enabled === undefined ? v1Engine.delayActive : (v1Fx.enabled ? 1 : 0)
   });
 

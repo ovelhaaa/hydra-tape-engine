@@ -5,7 +5,7 @@
 
 int main() {
   assert(hydra_dsp_get_api_version() == HYDRA_DSP_API_VERSION);
-  assert(HYDRA_DSP_API_VERSION_MINOR == 1);
+  assert(HYDRA_DSP_API_VERSION_MINOR == 2);
   assert(hydra_dsp_get_param_count() == HYDRA_DSP_PARAM_COUNT);
 
   hydra_dsp_param_spec spec{};

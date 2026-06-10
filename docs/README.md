@@ -41,7 +41,7 @@ The device generates audio automatically. You can control parameters via the Ser
 The device is controlled via a Serial Command Line Interface (CLI) at **115200 baud**.
 Commands are generally 3 letters followed by a value. Example: `vol 80` (Sets volume to 80%).
 
-**IMPORTANT:** Most parameters now accept values from **0 to 100**. This makes it easier to type quickly without floating points.
+**IMPORTANT:** Most parameters now accept values from **0 to 100**. This makes it easier to type quickly without floating points. Wow/flutter/dropout depth commands (`wwd`, `ftd`, `dps`) are user-facing percentages; the firmware maps them to the DSP core ranges (`0..35`, `0..45`, `0..40`). Rate commands (`wwr`, `ftr`) use real Hz.
 
 #### Mixer & System
 
@@ -61,16 +61,16 @@ Commands are generally 3 letters followed by a value. Example: `vol 80` (Sets vo
 | Command | Argument    | Description                                                             |
 | :------ | :---------- | :---------------------------------------------------------------------- |
 | **dly** | `10 - 2000` | Delay Time in milliseconds                                              |
-| **fbk** | `0 - 100`   | Feedback amount (Inputs >100 may self-oscillate)                        |
+| **fbk** | `0 - 100`   | Feedback amount                                                         |
 | **hds** | `1 - 7`     | Active Heads Bitmask (1=Head1, 2=Head2, 4=Head3). Sum for combinations. |
 | **mus** | `0` or `1`  | Head Mode (0=Free, 1=Musical/Rhythmic spacing)                          |
 | **mod** | `0` or `1`  | Engine Mode (0=Saturator/Preamp only, 1=Tape Delay)                     |
 | **tps** | `0 - 100`   | Tape Speed / Varispeed (0=Stop, 50=Normal, 100=Double)                  |
 | **tpa** | `0 - 100`   | Tape Age / Degradation (0=New, 100=Old/Dark)                            |
-| **drv** | `0 - 100`   | Drive / Saturation (Mapped to internal gain 1x-10x)                     |
+| **drv** | `0 - 100`   | Drive / Saturation in the modern DSP scale                              |
 | **nlv** | `0 - 100`   | Noise Level / Hiss                                                      |
 | **hbp** | `0 - 100`   | Head Bump (Low end resonance intensity)                                 |
-| **azm** | `0 - 100`   | Azimuth alignment error (50 = Center/Perfect)                           |
+| **azm** | `0 - 100`   | Azimuth alignment error amount                                           |
 | **ngt** | `0 - 100`   | Noise Gate Threshold (Sensitivity)                                      |
 | **red** | `0 - 100`   | Gate Reduction Amount (0=None, 100=Full Silence)                        |
 
@@ -79,9 +79,9 @@ Commands are generally 3 letters followed by a value. Example: `vol 80` (Sets vo
 | Command | Argument  | Description                           |
 | :------ | :-------- | :------------------------------------ |
 | **ftd** | `0 - 100` | Flutter Depth (Fast wobble intensity) |
-| **ftr** | `0 - 100` | Flutter Rate (Mapped to 0.1Hz - 20Hz) |
+| **ftr** | `0.1 - 20` | Flutter Rate in Hz |
 | **wwd** | `0 - 100` | Wow Depth (Slow wobble intensity)     |
-| **wwr** | `0 - 100` | Wow Rate (Mapped to 0.1Hz - 5Hz)      |
+| **wwr** | `0.1 - 5`  | Wow Rate in Hz                        |
 | **dps** | `0 - 100` | Dropout Severity                      |
 
 #### Color & Tone
@@ -123,6 +123,23 @@ Pressing the Boot button (GPIO 0) toggles the effect bypass.
   - Core 0: Audio processing task (High priority).
   - Core 1: Control loop and Serial communication.
 
+
+### ESP32 quick check: wow/flutter/hiss
+
+On hardware, use the serial monitor to verify the modern control scale is audible:
+
+```text
+mod 1
+mix 70
+nlv 60
+ftd 80
+wwd 80
+ftr 6
+wwr 0.8
+```
+
+`nlv 0` should remove generated hiss, while `ftd 0` and `wwd 0` should remove the pitch jitter/drift contribution. The ESP32-S3 firmware currently runs its I2S path at 44.1 kHz; the web host and native/WASM regression tests typically run at 48 kHz.
+
 ## Web build (Emscripten)
 
 This repository now supports a browser host that reuses the same C++ core (`dsp/core`) via the C ABI (`include/hydra_dsp.h`) and WebAssembly.
@@ -136,7 +153,7 @@ emcmake cmake -S . -B build-web -DBUILD_WEB=ON
 cmake --build build-web --target hydra_dsp_web
 ```
 
-Build outputs:
+Build outputs (generated artifacts; do not treat checked-out `build-web/web` contents as source of truth):
 
 - `build-web/web/hydra_dsp.js` (Emscripten JS bindings/runtime)
 - `build-web/web/hydra_dsp.wasm` (DSP core)

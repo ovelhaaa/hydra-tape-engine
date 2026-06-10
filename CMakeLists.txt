@@ -31,6 +31,15 @@ if(BUILD_TESTING)
   target_link_libraries(hydra_core_regression PRIVATE hydra_dsp_core)
   add_test(NAME core_regression COMMAND hydra_core_regression)
 
+  add_executable(hydra_audible_controls tests/core/audible_controls.cpp)
+  target_link_libraries(hydra_audible_controls PRIVATE hydra_dsp_core)
+  add_test(NAME core_audible_controls COMMAND hydra_audible_controls)
+
+  add_test(
+    NAME web_param_ids
+    COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/tests/core/web_param_ids_check.py
+  )
+
   add_test(
     NAME core_abi_symbols
     COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/tests/core/abi_symbols_check.py

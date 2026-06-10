@@ -213,8 +213,11 @@ struct TapeCore::Impl {
     state.flutterJitter += flutterLpAlpha*(hp-state.flutterJitter);
     float flutter=clampf(flutterFilter.process(state.flutterJitter),-1.0f,1.0f);
 
-    float mod=(wowDepthScale*smoothedDelaySamples)*wow+(flutterDepthScale*smoothedDelaySamples)*flutter+(scrapeDepthScale*smoothedDelaySamples)*scrape+residual;
-    return clampf(mod,-0.25f*smoothedDelaySamples,0.25f*smoothedDelaySamples);
+    const float textureBaseSamples = sampleRate * 0.012f;
+    const float modBaseSamples = delayActive ? smoothedDelaySamples
+                                             : std::max(smoothedDelaySamples, textureBaseSamples);
+    float mod=(wowDepthScale*modBaseSamples)*wow+(flutterDepthScale*modBaseSamples)*flutter+(scrapeDepthScale*modBaseSamples)*scrape+residual;
+    return clampf(mod,-0.25f*modBaseSamples,0.25f*modBaseSamples);
   }
   float readTapeAt(float d,float* b){ if(!b||bufferSize==0) return 0; d=clampf(d,2,(float)bufferSize-4); float rp=(float)writeHead-d; if(rp<0)rp+=bufferSize; int32_t r=(int32_t)rp; float f=rp-r; int32_t prev=(r>0)?r-1:bufferSize-1; return hermite4(b[prev],b[r],b[r+1],b[r+2],f); }
   float readTapeReverse(float d,float* b){ if(!b||bufferSize<=0)return 0; d=clampf(d,2,(float)bufferSize-4); int32_t di=(int32_t)d; if(std::abs(di-reverseWindowSize)>1000){reverseCounter=0;reverseWindowSize=di;} reverseCounter++; if(reverseCounter>=std::max(1,di))reverseCounter=0; float rp=(float)writeHead-d+(float)reverseCounter; int32_t r=((int32_t)rp%bufferSize+bufferSize)%bufferSize; float f=rp-std::floor(rp); int32_t i1=r,i0=(r>0)?r-1:bufferSize-1,i2=(r<bufferSize-1)?r+1:0,i3=(i2<bufferSize-1)?i2+1:0; float d1=b[i1],d0=b[i0],d2=b[i2],d3=b[i3]; float c0=d1,c1=0.5f*(d0-d2),c2=d2-2.5f*d1+2.f*d0-0.5f*d3,c3=0.5f*(d3-d1)+1.5f*(d1-d0); return ((c3*f+c2)*f+c1)*f+c0; }
@@ -330,7 +333,13 @@ void TapeCore::updateParams(const TapeParams& newParams){
   if(!isValid()) return;
   if(!impl_->currentParams.delayActive && newParams.delayActive){
     impl_->delayEnableRamp=0; impl_->dcBlocker.clear(); impl_->dcBlockerR.clear(); impl_->magneticsL.reset(); impl_->magneticsR.reset();
+    impl_->reproHeadBump.reset(); impl_->reproHeadBumpR.reset(); impl_->tapeRolloff.reset(); impl_->tapeRolloffR.reset();
+    impl_->gapLossLPF.reset(); impl_->gapLossLPFR.reset(); impl_->dropoutLPF.reset(); impl_->dropoutLPFR.reset();
+    impl_->azimuthFilter.reset(); impl_->azimuthFilterR.reset(); impl_->feedbackGapLoss.reset(); impl_->feedbackGapLossR.reset();
+    impl_->feedbackHeadBump.reset(); impl_->feedbackHeadBumpR.reset(); impl_->feedbackHPF.reset(); impl_->feedbackHPFR.reset();
+    impl_->feedbackPhase.reset(); impl_->feedbackPhaseR.reset();
     std::memset(impl_->delayLine,0,sizeof(float)*impl_->bufferCapacity); std::memset(impl_->delayLineR,0,sizeof(float)*impl_->bufferCapacity);
+    impl_->writeHead=0; impl_->reverseCounter=0; impl_->reverseWindowSize=0;
     impl_->smoothedDelaySamples = newParams.delayTimeMs * impl_->sampleRate * 0.001f;
   }
   impl_->currentParams=newParams;

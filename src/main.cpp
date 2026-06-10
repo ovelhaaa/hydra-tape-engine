@@ -34,7 +34,7 @@
 // ============================================
 // AUDIO CONFIG
 // ============================================
-#define SAMPLE_RATE 44100
+#define SAMPLE_RATE 44100  // Hardware path runs at 44.1 kHz; web/WASM uses the browser AudioContext rate (normally 48 kHz).
 #define AUDIO_CHUNK_SIZE 128
 #define I2S_DMA_BUF_LEN 512
 #define I2S_DMA_BUF_COUNT 4
@@ -399,8 +399,8 @@ void audioTask(void *parameter) {
   melody = new MelodyGen(SAMPLE_RATE);
   if (melody) {
     melody->setBPM(p_bpm);
-    melody->setMood(p_mood);
-    melody->setRhythm(p_rhythm);
+    melody->setMood(p_mood / 100.0f);
+    melody->setRhythm(p_rhythm / 100.0f);
     Serial.println("Audio Task: MelodyGen allocated");
   } else {
     Serial.println("Audio Task: MelodyGen allocation FAILED");
@@ -435,8 +435,8 @@ void audioTask(void *parameter) {
       }
       if (melody) {
         melody->setBPM(localParams.bpm);
-        melody->setMood(p_mood);
-        melody->setRhythm(p_rhythm);
+        melody->setMood(p_mood / 100.0f);
+        melody->setRhythm(p_rhythm / 100.0f);
       }
       if (gate) {
         gate->setThreshold(localGateThresh);
@@ -644,46 +644,52 @@ void loadPreset(String name) {
   dualPrintf("\n>>> LOADING PRESET: %s <<<\n", name.c_str());
   if (name == "clean") {
     // Tape Deck in good condition
-    p_tapeSpeed = 0.5f;
-    p_tapeAge = 0.1f;
-    p_headBump = 2.0f;
-    p_drive = 1.0f; // Reduced drive
-    p_noise = 0.05f;
+    p_tapeSpeed = 70.0f;
+    p_tapeAge = 10.0f;
+    p_headBump = 10.0f;
+    p_drive = 20.0f;
+    p_noise = 3.0f;
     p_dropoutSeverity = 0.0f;
-    p_flutterDepth = 0.05f;
-    p_wowDepth = 0.05f;
-    p_tone = 0.4f; // Darker
+    p_flutterDepth = 2.0f;
+    p_wowDepth = 1.5f;
+    p_tone = 65.0f;
     p_guitarFocus = true;
   } else if (name == "lofi") {
     // Worn, slow, noisy but usable
-    p_tapeSpeed = 0.3f;
-    p_tapeAge = 0.6f;
-    p_headBump = 4.0f;
-    p_drive = 2.0f; // Reduced drive
-    p_noise = 0.15f;
-    p_dropoutSeverity = 0.1f;
-    p_flutterDepth = 0.4f;
-    p_wowDepth = 0.3f;
-    p_tone = 0.3f; // Darker
+    p_tapeSpeed = 35.0f;
+    p_tapeAge = 65.0f;
+    p_headBump = 45.0f;
+    p_drive = 45.0f;
+    p_noise = 25.0f;
+    p_dropoutSeverity = 12.0f;
+    p_flutterDepth = 18.0f;
+    p_wowDepth = 15.0f;
+    p_tone = 35.0f;
   } else if (name == "dub") {
     // Space Echo style: High feed, dark
-    p_tapeSpeed = 0.6f;
-    p_tapeAge = 0.4f;
-    p_feedback = 0.65f;
+    p_tapeSpeed = 50.0f;
+    p_tapeAge = 45.0f;
+    p_feedback = 65.0f;
     p_activeHeads = 6; // Heads 2 & 3
     p_delayActive = true;
-    p_tone = 0.25f; // Even darker
-    p_drive = 4.0f; // Reduced from 5
+    p_tone = 30.0f;
+    p_drive = 45.0f;
+    p_noise = 12.0f;
+    p_flutterDepth = 8.0f;
+    p_wowDepth = 12.0f;
+    p_headBump = 45.0f;
     p_guitarFocus = true;
   } else if (name == "broken") {
     // Bad motor, bad tape (Extreme but musical)
     p_flutterRate = 8.0f;
-    p_flutterDepth = 0.8f;
+    p_flutterDepth = 40.0f;
     p_wowRate = 3.0f;
-    p_wowDepth = 0.6f;
-    p_dropoutSeverity = 0.4f;
-    p_noise = 0.25f;
-    p_tapeAge = 0.9f;
+    p_wowDepth = 30.0f;
+    p_dropoutSeverity = 35.0f;
+    p_noise = 45.0f;
+    p_tapeAge = 90.0f;
+    p_tapeSpeed = 25.0f;
+    p_tone = 25.0f;
   } else {
     dualPrintln("Unknown preset. Try: clean, lofi, dub, broken");
     return;
@@ -716,8 +722,10 @@ void printHelp() {
   dualPrintln("  ton <0-100> : Tone Control");
   dualPrintln(" [MODULATION]");
   dualPrintln("  dps <0-100> : Dropouts");
-  dualPrintln("  ftd/ftr     : Flutter Depth/Rate");
-  dualPrintln("  wwd/wwr     : Wow Depth/Rate");
+  dualPrintln("  ftd <0-100> : Flutter Depth % (maps to 0-45 core range)");
+  dualPrintln("  ftr <0.1-20>: Flutter Rate in Hz");
+  dualPrintln("  wwd <0-100> : Wow Depth % (maps to 0-35 core range)");
+  dualPrintln("  wwr <0.1-5> : Wow Rate in Hz");
   dualPrintln(" [MELODY GEN]");
   dualPrintln("  wvf <0-3>   : Waveform (Sine, Saw, Tri, Sqr)");
   dualPrintln("  scl <0-4>   : Scale");
@@ -729,6 +737,7 @@ void printHelp() {
   dualPrintln("  rev <0/1>   : Reverse Delay");
   dualPrintln("  rvb <0/1>   : Reverse Reverb");
   dualPrintln("  spr <0/1>   : Spring Reverb");
+  dualPrintln("  spm <0-100> : Spring Mix");
   dualPrintln("  spd <0-100> : Spring Decay");
   dualPrintln("  spf <0-100> : Spring Damping");
   dualPrintln("");
@@ -743,7 +752,7 @@ void printStatus() {
   // MIXER SECTION
   dualPrintln(" [ MIXER ]");
   printBar(" Volume", masterVolume);
-  printBar(" Dry/Wet", p_mix);
+  printBar(" Dry/Wet", p_mix / 100.0f);
   dualPrintf(" Source      : %s\n", (p_source == 0)   ? "MP3"
                                     : (p_source == 1) ? "SYNTH"
                                                       : "I2S");
@@ -754,25 +763,25 @@ void printStatus() {
   char dBuf[32];
   sprintf(dBuf, "%.0f ms", p_delayTime);
   dualPrintf(" Delay Time  : %-12s ", dBuf);
-  printBar("Feedback", p_feedback);
-  printBar(" Speed", p_tapeSpeed); // Normalized
-  printBar(" Age", p_tapeAge);
+  printBar("Feedback", p_feedback / 100.0f);
+  printBar(" Speed", p_tapeSpeed / 100.0f);
+  printBar(" Age", p_tapeAge / 100.0f);
   dualPrintf(" Heads       : %d (%s)\n", p_activeHeads,
              p_headsMusical ? "Musical" : "Free");
 
   // COLOR SECTION
   dualPrintln("\n [ COLOR & TONE ]");
-  printBar(" Drive", (p_drive - 1.0f) / 9.0f); // Normalize 1-10 -> 0-1
-  printBar(" Tone", p_tone);
-  printBar(" Noise", p_noise * 2.0f); // Max 0.5 -> 1.0
+  printBar(" Drive", p_drive / 100.0f);
+  printBar(" Tone", p_tone / 100.0f);
+  printBar(" Noise", p_noise / 100.0f);
   dualPrintf(" Guitar Mode : %s\n",
              p_guitarFocus ? "ON (Filtered)" : "OFF (Full Range)");
 
   // MODULATION SECTION
   dualPrintln("\n [ MODULATION ]");
-  printBar(" Wow", p_wowDepth / 2.0f);
-  printBar(" Flutter", p_flutterDepth / 2.0f);
-  printBar(" Dropouts", p_dropoutSeverity);
+  printBar(" Wow", p_wowDepth / 35.0f);
+  printBar(" Flutter", p_flutterDepth / 45.0f);
+  printBar(" Dropouts", p_dropoutSeverity / 40.0f);
 
   dualPrintln("=======================================================");
 }
@@ -803,7 +812,7 @@ void executeCommand(String line) {
     if (cmd == "vol")
       masterVolume = map100(val, 0.0f, 1.0f);
     else if (cmd == "mix")
-      p_mix = map100(val, 0.0f, 1.0f);
+      p_mix = constrain(val, 0.0f, 100.0f);
     else if (cmd == "byp") {
       isBypassed = (val > 0);
       dualPrintf("Bypass: %s\n", isBypassed ? "ON" : "OFF");
@@ -816,23 +825,23 @@ void executeCommand(String line) {
     else if (cmd == "dly")
       p_delayTime = constrain(val, 10.0f, 2000.0f);
     else if (cmd == "fbk")
-      p_feedback = map100(val, 0.0f, 1.1f);
+      p_feedback = constrain(val, 0.0f, 100.0f);
     else if (cmd == "hds")
       p_activeHeads = constrain((int)val, 1, 7);
     else if (cmd == "tps")
-      p_tapeSpeed = map100(val, 0.0f, 1.0f);
+      p_tapeSpeed = constrain(val, 0.0f, 100.0f);
     else if (cmd == "tpa")
-      p_tapeAge = map100(val, 0.0f, 1.0f);
+      p_tapeAge = constrain(val, 0.0f, 100.0f);
     else if (cmd == "drv")
-      p_drive = map100(val, 1.0f, 10.0f);
+      p_drive = constrain(val, 0.0f, 100.0f);
     else if (cmd == "nlv")
-      p_noise = map100(val, 0.0f, 0.08f); // Max 0.08 (-22dB) for subtle hiss
+      p_noise = constrain(val, 0.0f, 100.0f);
     else if (cmd == "ngt")
       p_gateThreshold = map100(val, 0.0f, 0.1f);
     else if (cmd == "hbp")
-      p_headBump = map100(val, 0.0f, 10.0f);
+      p_headBump = constrain(val, 0.0f, 100.0f);
     else if (cmd == "azm")
-      p_azimuth = map100(val, -1.0f, 1.0f);
+      p_azimuth = constrain(val, 0.0f, 100.0f);
     else if (cmd == "red") {
       // 0-100 where 100 = Full Silence (0.0 atten), 0 = No Reduction (1.0
       // atten) User likely wants "Reduction Amount". Let's map 0-100 to
@@ -856,19 +865,19 @@ void executeCommand(String line) {
     else if (cmd == "gfc")
       p_guitarFocus = (val > 0);
     else if (cmd == "ton")
-      p_tone = map100(val, 0.0f, 1.0f);
+      p_tone = constrain(val, 0.0f, 100.0f);
 
     // --- MODULATION ---
     else if (cmd == "dps")
-      p_dropoutSeverity = map100(val, 0.0f, 1.0f);
+      p_dropoutSeverity = map100(val, 0.0f, 40.0f);
     else if (cmd == "ftd")
-      p_flutterDepth = map100(val, 0.0f, 2.0f);
+      p_flutterDepth = map100(val, 0.0f, 45.0f);
     else if (cmd == "ftr")
-      p_flutterRate = map100(val, 0.1f, 20.0f);
+      p_flutterRate = constrain(val, 0.1f, 20.0f);
     else if (cmd == "wwd")
-      p_wowDepth = map100(val, 0.0f, 2.0f);
+      p_wowDepth = map100(val, 0.0f, 35.0f);
     else if (cmd == "wwr")
-      p_wowRate = map100(val, 0.1f, 5.0f);
+      p_wowRate = constrain(val, 0.1f, 5.0f);
 
     // --- NEW EFFECT MODES ---
     else if (cmd == "frz") {
@@ -920,13 +929,17 @@ void executeCommand(String line) {
       p_spring = (val > 0);
       dualPrintf("Spring Reverb: %s\n", p_spring ? "ON" : "OFF");
     }
+    else if (cmd == "spm") {
+      p_springMix = constrain(val, 0.0f, 100.0f);
+      printBar("Spring Mix", p_springMix / 100.0f);
+    }
     else if (cmd == "spd") {
-      p_springDecay = map100(val, 0.0f, 1.0f);
-      printBar("Spring Decay", p_springDecay);
+      p_springDecay = constrain(val, 0.0f, 100.0f);
+      printBar("Spring Decay", p_springDecay / 100.0f);
     }
     else if (cmd == "spf") {
-      p_springDamping = map100(val, 0.0f, 1.0f);
-      printBar("Spring Damp", p_springDamping);
+      p_springDamping = constrain(val, 0.0f, 100.0f);
+      printBar("Spring Damp", p_springDamping / 100.0f);
     }
 
     // --- SYSTEM ---
@@ -951,19 +964,19 @@ void executeCommand(String line) {
         melody->setScale((ScaleType)constrain((int)val, 0, 4));
         dualPrintf("Scale: %d\n", (int)val);
       } else if (cmd == "moo") { // Mood 0-100
-        p_mood = map100(val, 0.0f, 1.0f);
-        melody->setMood(p_mood);
+        p_mood = constrain(val, 0.0f, 100.0f);
+        melody->setMood(p_mood / 100.0f);
       } else if (cmd == "rtm") { // Rhythm 0-100
-        p_rhythm = map100(val, 0.0f, 1.0f);
-        melody->setRhythm(p_rhythm);
+        p_rhythm = constrain(val, 0.0f, 100.0f);
+        melody->setRhythm(p_rhythm / 100.0f);
       } else if (cmd == "eno") { // ENO MODE
         bool isEno = (val > 0.5f);
         melody->setMode(isEno ? MODE_ENO : MODE_NORMAL);
         if (isEno) {
-          p_feedback = 0.85f;
+          p_feedback = 85.0f;
           p_delayTime = 800.0f;
-          p_mix = 0.60f;
-          p_tapeAge = 0.7f; // Darker
+          p_mix = 60.0f;
+          p_tapeAge = 70.0f; // Darker
           dualPrintln("Mode: ENO ACTIVATED");
         } else {
           dualPrintln("Mode: NORMAL");
@@ -1000,6 +1013,7 @@ void executeCommand(String line) {
     globalParams.spring = p_spring;
     globalParams.springDecay = p_springDecay;
     globalParams.springDamping = p_springDamping;
+    globalParams.springMix = p_springMix;
 
     xSemaphoreGive(paramMutex);
 
@@ -1009,17 +1023,25 @@ void executeCommand(String line) {
       if (cmd == "vol")
         printBar("Volume", masterVolume);
       else if (cmd == "mix")
-        printBar("Mix", p_mix);
+        printBar("Mix", p_mix / 100.0f);
       else if (cmd == "fbk")
-        printBar("Feedback", p_feedback);
+        printBar("Feedback", p_feedback / 100.0f);
       else if (cmd == "tps")
-        printBar("Speed", p_tapeSpeed);
+        printBar("Speed", p_tapeSpeed / 100.0f);
       else if (cmd == "tpa")
-        printBar("Age", p_tapeAge);
+        printBar("Age", p_tapeAge / 100.0f);
       else if (cmd == "ton")
-        printBar("Tone", p_tone);
+        printBar("Tone", p_tone / 100.0f);
       else if (cmd == "drv")
-        printBar("Drive", (p_drive - 1.0f) / 9.0f);
+        printBar("Drive", p_drive / 100.0f);
+      else if (cmd == "nlv")
+        printBar("Noise", p_noise / 100.0f);
+      else if (cmd == "ftd")
+        printBar("Flutter", p_flutterDepth / 45.0f);
+      else if (cmd == "wwd")
+        printBar("Wow", p_wowDepth / 35.0f);
+      else if (cmd == "dps")
+        printBar("Dropouts", p_dropoutSeverity / 40.0f);
       else if (cmd == "dly")
         dualPrintf("Delay: %.0f ms\n", p_delayTime);
       else

@@ -16,7 +16,7 @@ const int DELAY_PARAMS_COUNT = 4;
 
 // TONE GROUP (9 params)
 ParamDef TONE_PARAMS[] = {
-    {"Speed",      "tps", PARAM_FLOAT, 1.0f, 100.0f, 1.0f, nullptr, "%"},
+    {"Speed",      "tps", PARAM_FLOAT, 0.0f, 100.0f, 1.0f, nullptr, "%"},
     {"Age",        "tpa", PARAM_FLOAT, 1.0f, 100.0f, 1.0f, nullptr, "%"},
     {"Drive",      "drv", PARAM_FLOAT, 0.0f, 100.0f, 1.0f, nullptr, "%"},
     {"Noise",      "nlv", PARAM_FLOAT, 0.0f, 100.0f, 1.0f, nullptr, "%"},
@@ -31,9 +31,9 @@ const int TONE_PARAMS_COUNT = 9;
 // MODULATION GROUP (4 params)
 ParamDef MOD_PARAMS[] = {
     {"Flutter D", "ftd", PARAM_FLOAT,    0.0f, 100.0f, 1.0f,  nullptr, "%"},
-    {"Flutter R", "ftr", PARAM_FLOAT_HZ, 3.0f, 15.0f,  0.5f,  nullptr, "Hz"},  // Real Hz range
+    {"Flutter R", "ftr", PARAM_FLOAT_HZ, 0.1f, 20.0f,  0.1f,  nullptr, "Hz"},  // Real Hz range
     {"Wow Depth", "wwd", PARAM_FLOAT,    0.0f, 100.0f, 1.0f,  nullptr, "%"},
-    {"Wow Rate",  "wwr", PARAM_FLOAT_HZ, 0.3f, 3.0f,   0.1f,  nullptr, "Hz"},  // Real Hz range
+    {"Wow Rate",  "wwr", PARAM_FLOAT_HZ, 0.1f, 5.0f,   0.05f,  nullptr, "Hz"},  // Real Hz range
 };
 const int MOD_PARAMS_COUNT = 4;
 
@@ -216,8 +216,15 @@ float readParamValue(ParamDef* param) {
         case PARAM_FLOAT:
         case PARAM_FLOAT_MS:
         case PARAM_FLOAT_HZ:
-        case PARAM_FLOAT_BPM:
-            return *((float*)param->valuePtr);
+        case PARAM_FLOAT_BPM: {
+            float storedValue = *((float*)param->valuePtr);
+            // OLED presents depth controls as friendly 0-100% values, matching
+            // the serial CLI, while the DSP core stores bounded musical ranges.
+            if (strcmp(param->cli, "dps") == 0) return storedValue * (100.0f / 40.0f);
+            if (strcmp(param->cli, "ftd") == 0) return storedValue * (100.0f / 45.0f);
+            if (strcmp(param->cli, "wwd") == 0) return storedValue * (100.0f / 35.0f);
+            return storedValue;
+        }
         case PARAM_INT:
         case PARAM_ENUM:
             return (float)*((int*)param->valuePtr);
@@ -242,6 +249,11 @@ void writeParamValue(ParamDef* param, float value) {
         case PARAM_FLOAT_MS:
         case PARAM_FLOAT_HZ:
         case PARAM_FLOAT_BPM:
+            // Keep OLED depth controls in the same 0-100% user scale as the
+            // serial CLI, then store the core's musical internal range.
+            if (strcmp(param->cli, "dps") == 0) value = value * (40.0f / 100.0f);
+            else if (strcmp(param->cli, "ftd") == 0) value = value * (45.0f / 100.0f);
+            else if (strcmp(param->cli, "wwd") == 0) value = value * (35.0f / 100.0f);
             *((float*)param->valuePtr) = value;
             break;
         case PARAM_INT:

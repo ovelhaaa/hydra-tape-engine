@@ -152,11 +152,44 @@ void test_wow_flutter_affect_delay_and_texture_paths() {
   verify(1.0f, 2.0e-4f);
   verify(0.0f, 1.0e-4f);
 }
+
+void test_dropout_depth_remains_continuous() {
+  std::vector<float> inL(kFrames * 3), inR(kFrames * 3), midL, midR, highL, highR;
+  for (uint32_t i = 0; i < inL.size(); ++i) {
+    const float s = 0.35f * std::sin(2.0f * 3.14159265358979323846f * 330.0f * float(i) / kSampleRate);
+    inL[i] = s;
+    inR[i] = s;
+  }
+
+  hydra_dsp_handle* hMid = make_handle();
+  auto pMid = base_params();
+  pMid.delayActive = 1.0f;
+  pMid.dropoutSeverity = 20.0f;
+  set_params(hMid, pMid);
+  render(hMid, inL, inR, &midL, &midR);
+  hydra_dsp_destroy(hMid);
+
+  hydra_dsp_handle* hHigh = make_handle();
+  auto pHigh = base_params();
+  pHigh.delayActive = 1.0f;
+  pHigh.dropoutSeverity = 40.0f;
+  set_params(hHigh, pHigh);
+  render(hHigh, inL, inR, &highL, &highR);
+  hydra_dsp_destroy(hHigh);
+
+  const float diff = 0.5f * (rms_diff(midL, highL) + rms_diff(midR, highR));
+  if (diff <= 1.0e-4f) {
+    std::cerr << "dropout midpoint/full-scale diff too small: " << diff << "\n";
+  }
+  assert(diff > 1.0e-4f);
+}
+
 }  // namespace
 
 int main() {
   test_noise_gain_and_stereo_decorrelation();
   test_wow_flutter_affect_delay_and_texture_paths();
+  test_dropout_depth_remains_continuous();
   std::cout << "audible_controls: ok\n";
   return 0;
 }

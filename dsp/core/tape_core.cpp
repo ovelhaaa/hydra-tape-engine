@@ -343,7 +343,7 @@ void TapeCore::updateParams(const TapeParams& newParams){
     impl_->smoothedDelaySamples = newParams.delayTimeMs * impl_->sampleRate * 0.001f;
   }
   impl_->currentParams=newParams;
-  impl_->dropout.setSeverity(newParams.dropoutSeverity);
+  impl_->dropout.setSeverity(clampf(newParams.dropoutSeverity * 0.01f, 0.0f, 1.0f));
   impl_->updateFilters();
 }
 

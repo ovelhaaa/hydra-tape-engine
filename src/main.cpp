@@ -429,14 +429,16 @@ void audioTask(void *parameter) {
     if (xSemaphoreTake(paramMutex, 0) == pdTRUE) {
       TapeParams localParams = globalParams;
       float localGateThresh = p_gateThreshold;
+      float localMood = p_mood;
+      float localRhythm = p_rhythm;
       xSemaphoreGive(paramMutex);
       if (tape) {
         tape->updateParams(localParams);
       }
       if (melody) {
         melody->setBPM(localParams.bpm);
-        melody->setMood(p_mood / 100.0f);
-        melody->setRhythm(p_rhythm / 100.0f);
+        melody->setMood(localMood / 100.0f);
+        melody->setRhythm(localRhythm / 100.0f);
       }
       if (gate) {
         gate->setThreshold(localGateThresh);

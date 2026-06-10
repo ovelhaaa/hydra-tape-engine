@@ -220,9 +220,11 @@ float readParamValue(ParamDef* param) {
             float storedValue = *((float*)param->valuePtr);
             // OLED presents depth controls as friendly 0-100% values, matching
             // the serial CLI, while the DSP core stores bounded musical ranges.
-            if (strcmp(param->cli, "dps") == 0) return storedValue * (100.0f / 40.0f);
-            if (strcmp(param->cli, "ftd") == 0) return storedValue * (100.0f / 45.0f);
-            if (strcmp(param->cli, "wwd") == 0) return storedValue * (100.0f / 35.0f);
+            if (param->cli != nullptr) {
+                if (strcmp(param->cli, "dps") == 0) return storedValue * (100.0f / 40.0f);
+                if (strcmp(param->cli, "ftd") == 0) return storedValue * (100.0f / 45.0f);
+                if (strcmp(param->cli, "wwd") == 0) return storedValue * (100.0f / 35.0f);
+            }
             return storedValue;
         }
         case PARAM_INT:
@@ -251,9 +253,11 @@ void writeParamValue(ParamDef* param, float value) {
         case PARAM_FLOAT_BPM:
             // Keep OLED depth controls in the same 0-100% user scale as the
             // serial CLI, then store the core's musical internal range.
-            if (strcmp(param->cli, "dps") == 0) value = value * (40.0f / 100.0f);
-            else if (strcmp(param->cli, "ftd") == 0) value = value * (45.0f / 100.0f);
-            else if (strcmp(param->cli, "wwd") == 0) value = value * (35.0f / 100.0f);
+            if (param->cli != nullptr) {
+                if (strcmp(param->cli, "dps") == 0) value = value * (40.0f / 100.0f);
+                else if (strcmp(param->cli, "ftd") == 0) value = value * (45.0f / 100.0f);
+                else if (strcmp(param->cli, "wwd") == 0) value = value * (35.0f / 100.0f);
+            }
             *((float*)param->valuePtr) = value;
             break;
         case PARAM_INT:

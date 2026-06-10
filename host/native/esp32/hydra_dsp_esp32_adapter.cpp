@@ -60,9 +60,6 @@ bool HydraDspEsp32Adapter::applyParams(const TapeParams& params, bool force) {
   if (!handle_) return false;
   if (!force && paramsInitialized_ && sameParams(params_, params)) return false;
 
-  params_ = params;
-  paramsInitialized_ = true;
-
   hydra_dsp_params p{};
   p.flutterDepth = params.flutterDepth;
   p.wowDepth = params.wowDepth;
@@ -95,8 +92,13 @@ bool HydraDspEsp32Adapter::applyParams(const TapeParams& params, bool force) {
   p.springDecay = params.springDecay;
   p.springDamping = params.springDamping;
   p.springMix = params.springMix;
-  hydra_dsp_set_params(handle_, &p);
-  hydra_dsp_commit(handle_);
+  const int setResult = hydra_dsp_set_params(handle_, &p);
+  if (setResult != 0) return false;
+  const int commitResult = hydra_dsp_commit(handle_);
+  if (commitResult != 0) return false;
+
+  params_ = params;
+  paramsInitialized_ = true;
   return true;
 }
 

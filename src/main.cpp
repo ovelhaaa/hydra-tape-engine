@@ -432,26 +432,22 @@ void audioTask(void *parameter) {
     // esp_task_wdt_reset();
 
     if (dspParamsDirty && xSemaphoreTake(paramMutex, 0) == pdTRUE) {
-      if (dspParamsDirty) {
-        TapeParams localParams = globalParams;
-        float localGateThresh = p_gateThreshold;
-        float localMood = p_mood;
-        float localRhythm = p_rhythm;
-        dspParamsDirty = false;
-        xSemaphoreGive(paramMutex);
-        if (tape) {
-          tape->updateParams(localParams);
-        }
-        if (melody) {
-          melody->setBPM(localParams.bpm);
-          melody->setMood(localMood / 100.0f);
-          melody->setRhythm(localRhythm / 100.0f);
-        }
-        if (gate) {
-          gate->setThreshold(localGateThresh);
-        }
-      } else {
-        xSemaphoreGive(paramMutex);
+      TapeParams localParams = globalParams;
+      float localGateThresh = p_gateThreshold;
+      float localMood = p_mood;
+      float localRhythm = p_rhythm;
+      dspParamsDirty = false;
+      xSemaphoreGive(paramMutex);
+      if (tape) {
+        tape->updateParams(localParams);
+      }
+      if (melody) {
+        melody->setBPM(localParams.bpm);
+        melody->setMood(localMood / 100.0f);
+        melody->setRhythm(localRhythm / 100.0f);
+      }
+      if (gate) {
+        gate->setThreshold(localGateThresh);
       }
     }
 

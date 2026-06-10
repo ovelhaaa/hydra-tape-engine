@@ -70,6 +70,7 @@ bool p_freeze = false;
 bool p_reverse = false;
 bool p_reverseSmear = false;
 bool p_spring = false;
+bool p_pingPong = false;
 float p_springMix = 50.0f;       // 50% - balanced mix
 float p_springDecay = 60.0f;     // 60% - medium-long decay
 float p_springDamping = 45.0f;   // 45% - balanced damping
@@ -94,6 +95,8 @@ int p_activeHeads = 4;
 volatile bool p_triggerPlay = false;
 bool p_delayUnitBpm = false;     // false=ms, true=BPM
 
+volatile bool dspParamsDirty = true;
+
 TapeParams globalParams = {
     p_flutterDepth, p_wowDepth, p_dropoutSeverity,
     p_drive,        p_noise,    p_tapeSpeed,
@@ -103,7 +106,7 @@ TapeParams globalParams = {
     p_activeHeads,  p_bpm,      p_headsMusical,
     p_guitarFocus,  p_tone,
     // New effect modes
-    false,  // pingPong (not implemented yet)
+    p_pingPong,
     p_freeze, p_reverse, p_reverseSmear,
     p_spring, p_springDecay, p_springDamping, p_springMix
 };
@@ -201,6 +204,7 @@ void syncGlobalParams() {
         globalParams.headsMusical = p_headsMusical;
         globalParams.guitarFocus = p_guitarFocus;
         globalParams.tone = p_tone;
+        globalParams.pingPong = p_pingPong;
         globalParams.freeze = p_freeze;
         globalParams.reverse = p_reverse;
         globalParams.reverseSmear = p_reverseSmear;
@@ -241,6 +245,7 @@ void syncGlobalParams() {
         // masterVolume is global variable used in audioTask.
         // It is atomic float read/write usually, but let's update it here.
         masterVolume = p_masterVol * 0.01f;
+        dspParamsDirty = true;
         
         xSemaphoreGive(paramMutex);
     }
@@ -426,11 +431,12 @@ void audioTask(void *parameter) {
     // Watchdog Reset Manual - REMOVED (Invalid context)
     // esp_task_wdt_reset();
 
-    if (xSemaphoreTake(paramMutex, 0) == pdTRUE) {
+    if (dspParamsDirty && xSemaphoreTake(paramMutex, 0) == pdTRUE) {
       TapeParams localParams = globalParams;
       float localGateThresh = p_gateThreshold;
       float localMood = p_mood;
       float localRhythm = p_rhythm;
+      dspParamsDirty = false;
       xSemaphoreGive(paramMutex);
       if (tape) {
         tape->updateParams(localParams);
@@ -882,6 +888,10 @@ void executeCommand(String line) {
       p_wowRate = constrain(val, 0.1f, 5.0f);
 
     // --- NEW EFFECT MODES ---
+    else if (cmd == "ppg") {
+      p_pingPong = (val > 0);
+      dualPrintf("Ping-Pong: %s\n", p_pingPong ? "ON" : "OFF");
+    }
     else if (cmd == "frz") {
       p_freeze = (val > 0);
       dualPrintf("Freeze: %s\n", p_freeze ? "ON" : "OFF");
@@ -1009,6 +1019,7 @@ void executeCommand(String line) {
     globalParams.tone = p_tone;
     
     // New effect modes
+    globalParams.pingPong = p_pingPong;
     globalParams.freeze = p_freeze;
     globalParams.reverse = p_reverse;
     globalParams.reverseSmear = p_reverseSmear;
@@ -1016,6 +1027,7 @@ void executeCommand(String line) {
     globalParams.springDecay = p_springDecay;
     globalParams.springDamping = p_springDamping;
     globalParams.springMix = p_springMix;
+    dspParamsDirty = true;
 
     xSemaphoreGive(paramMutex);
 

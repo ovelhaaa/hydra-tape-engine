@@ -13,8 +13,16 @@ public:
   void updateFilters();
   float process(float input);
   void processStereo(float inL, float inR, float* outL, float* outR);
+  int processStereoBlock(const float* inL,
+                         const float* inR,
+                         float* outL,
+                         float* outR,
+                         uint32_t frames);
 
 private:
+  bool applyParams(const TapeParams& params, bool force);
+
   hydra_dsp_handle* handle_ = nullptr;
   TapeParams params_{};
+  bool paramsInitialized_ = false;
 };

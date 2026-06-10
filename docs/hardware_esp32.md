@@ -117,4 +117,4 @@ Na web, teste noise/wow/flutter com os sliders `Hiss Floor`, `Wow Depth`, `Wow R
 
 - O caminho de hardware ESP32-S3 usa `SAMPLE_RATE 44100` em `src/main.cpp` para reduzir carga de CPU/DMA no firmware atual.
 - A web normalmente roda a 48 kHz porque usa o `AudioContext` do navegador; os testes nativos também usam 48 kHz para equivalência com WASM.
-- Ping-pong existe na API/web, mas a implementação musical completa de cross-feedback L/R ainda é TODO.
+- Ping-pong usa cross-feedback L/R no core DSP; no firmware ESP32, o comando serial `ppg 1` ativa o modo e `ppg 0` desativa.

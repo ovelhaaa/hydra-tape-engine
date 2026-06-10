@@ -104,6 +104,69 @@ float process_peak(hydra_dsp_handle* h, const std::vector<float>& inL, const std
   return peak;
 }
 
+
+void configure_ping_pong_delay(hydra_dsp_handle* h, bool pingPong) {
+  hydra_dsp_params p{};
+  p.flutterDepth = 0.0f;
+  p.wowDepth = 0.0f;
+  p.dropoutSeverity = 0.0f;
+  p.drive = 40.0f;
+  p.noise = 0.0f;
+  p.tapeSpeed = 50.0f;
+  p.tapeAge = 0.0f;
+  p.headBumpAmount = 0.0f;
+  p.azimuthError = 0.0f;
+  p.flutterRate = 0.1f;
+  p.wowRate = 0.1f;
+  p.delayActive = 1.0f;
+  p.delayTimeMs = 10.0f;
+  p.feedback = 75.0f;
+  p.dryWet = 100.0f;
+  p.delayWet = 100.0f;
+  p.activeHeads = 4.0f;
+  p.bpm = 120.0f;
+  p.headsMusical = 0.0f;
+  p.guitarFocus = 0.0f;
+  p.tone = 100.0f;
+  p.pingPong = pingPong ? 1.0f : 0.0f;
+  p.freeze = 0.0f;
+  p.reverse = 0.0f;
+  p.reverseSmear = 0.0f;
+  p.spring = 0.0f;
+  p.springDecay = 0.0f;
+  p.springDamping = 0.0f;
+  p.springMix = 0.0f;
+  assert(hydra_dsp_set_params(h, &p) == 0);
+  assert(hydra_dsp_commit(h) == 0);
+}
+
+float channel_energy(const std::vector<float>& v, size_t begin, size_t end) {
+  float energy = 0.0f;
+  end = std::min(end, v.size());
+  for (size_t i = begin; i < end; ++i) energy += v[i] * v[i];
+  return energy;
+}
+
+void test_ping_pong_cross_feedback_moves_repeat_to_opposite_channel() {
+  hydra_dsp_handle* h = make_handle();
+  configure_ping_pong_delay(h, true);
+
+  std::vector<float> inL(1600, 0.0f), inR(1600, 0.0f), outL(1600), outR(1600);
+  inL[0] = 1.0f;
+  assert(hydra_dsp_process(h, inL.data(), inR.data(), outL.data(), outR.data(), inL.size()) == 0);
+
+  const float firstEchoL = channel_energy(outL, 430, 540);
+  const float firstEchoR = channel_energy(outR, 430, 540);
+  const float secondEchoL = channel_energy(outL, 900, 1040);
+  const float secondEchoR = channel_energy(outR, 900, 1040);
+
+  assert(firstEchoL > firstEchoR * 100.0f);
+  assert(secondEchoR > firstEchoR * 5.0f);
+  assert(secondEchoR > 1e-5f);
+
+  hydra_dsp_destroy(h);
+}
+
 void test_known_buffer() {
   hydra_dsp_handle* h = make_handle();
   configure_deterministic(h);
@@ -232,6 +295,7 @@ int main() {
   test_parameter_automation();
   test_silent_wet_delay_does_not_record_bias();
   test_reenabled_delay_clears_magnetic_state();
+  test_ping_pong_cross_feedback_moves_repeat_to_opposite_channel();
   std::cout << "regression_core: ok\n";
   return 0;
 }

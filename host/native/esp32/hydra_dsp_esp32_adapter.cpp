@@ -1,5 +1,40 @@
 #include "hydra_dsp_esp32_adapter.h"
 
+namespace {
+
+bool sameParams(const TapeParams& a, const TapeParams& b) {
+  return a.flutterDepth == b.flutterDepth &&
+         a.wowDepth == b.wowDepth &&
+         a.dropoutSeverity == b.dropoutSeverity &&
+         a.drive == b.drive &&
+         a.noise == b.noise &&
+         a.tapeSpeed == b.tapeSpeed &&
+         a.tapeAge == b.tapeAge &&
+         a.headBumpAmount == b.headBumpAmount &&
+         a.azimuthError == b.azimuthError &&
+         a.flutterRate == b.flutterRate &&
+         a.wowRate == b.wowRate &&
+         a.delayActive == b.delayActive &&
+         a.delayTimeMs == b.delayTimeMs &&
+         a.feedback == b.feedback &&
+         a.dryWet == b.dryWet &&
+         a.activeHeads == b.activeHeads &&
+         a.bpm == b.bpm &&
+         a.headsMusical == b.headsMusical &&
+         a.guitarFocus == b.guitarFocus &&
+         a.tone == b.tone &&
+         a.pingPong == b.pingPong &&
+         a.freeze == b.freeze &&
+         a.reverse == b.reverse &&
+         a.reverseSmear == b.reverseSmear &&
+         a.spring == b.spring &&
+         a.springDecay == b.springDecay &&
+         a.springDamping == b.springDamping &&
+         a.springMix == b.springMix;
+}
+
+}  // namespace
+
 HydraDspEsp32Adapter::HydraDspEsp32Adapter(float sampleRate, float maxDelayMs) {
   if (hydra_dsp_create(sampleRate, maxDelayMs, &handle_) == 0) {
     if (hydra_dsp_prepare(handle_, 128, HYDRA_DSP_CHANNELS_STEREO) != 0) {
@@ -18,8 +53,16 @@ bool HydraDspEsp32Adapter::isValid() const {
 }
 
 void HydraDspEsp32Adapter::updateParams(const TapeParams& params) {
-  if (!handle_) return;
+  applyParams(params, false);
+}
+
+bool HydraDspEsp32Adapter::applyParams(const TapeParams& params, bool force) {
+  if (!handle_) return false;
+  if (!force && paramsInitialized_ && sameParams(params_, params)) return false;
+
   params_ = params;
+  paramsInitialized_ = true;
+
   hydra_dsp_params p{};
   p.flutterDepth = params.flutterDepth;
   p.wowDepth = params.wowDepth;
@@ -54,17 +97,18 @@ void HydraDspEsp32Adapter::updateParams(const TapeParams& params) {
   p.springMix = params.springMix;
   hydra_dsp_set_params(handle_, &p);
   hydra_dsp_commit(handle_);
+  return true;
 }
 
 void HydraDspEsp32Adapter::updateFilters() {
-  updateParams(params_);
+  applyParams(params_, true);
 }
 
 float HydraDspEsp32Adapter::process(float input) {
   if (!handle_) return input;
   float outL = input;
   float outR = input;
-  if (hydra_dsp_process(handle_, &input, &input, &outL, &outR, 1) != 0) {
+  if (processStereoBlock(&input, &input, &outL, &outR, 1) != 0) {
     return input;
   }
   return outL;
@@ -72,8 +116,17 @@ float HydraDspEsp32Adapter::process(float input) {
 
 void HydraDspEsp32Adapter::processStereo(float inL, float inR, float* outL, float* outR) {
   if (!outL || !outR) return;
-  if (!handle_ || hydra_dsp_process(handle_, &inL, &inR, outL, outR, 1) != 0) {
+  if (processStereoBlock(&inL, &inR, outL, outR, 1) != 0) {
     *outL = inL;
     *outR = inR;
   }
+}
+
+int HydraDspEsp32Adapter::processStereoBlock(const float* inL,
+                                             const float* inR,
+                                             float* outL,
+                                             float* outR,
+                                             uint32_t frames) {
+  if (!handle_ || !inL || !inR || !outL || !outR) return -1;
+  return hydra_dsp_process(handle_, inL, inR, outL, outR, frames);
 }

@@ -50,6 +50,19 @@ if(BUILD_TESTING)
   add_executable(hydra_render_trace_native tests/core/render_trace.cpp)
   target_link_libraries(hydra_render_trace_native PRIVATE hydra_dsp_core)
 
+  # Desktop-only adapter used by the reproducible core-vs-firmware A/B tool.
+  # The Arduino/ESP allocation and clock APIs are supplied by narrow test stubs.
+  add_executable(hydra_core_vs_firmware_runner
+    tests/core/core_vs_firmware_runner.cpp
+    lib/TapeDelay/src/TapeDelay.cpp
+  )
+  target_include_directories(hydra_core_vs_firmware_runner PRIVATE
+    ${CMAKE_SOURCE_DIR}/tests/core/firmware_stubs
+    ${CMAKE_SOURCE_DIR}/lib/TapeDelay/include
+    ${CMAKE_SOURCE_DIR}/include
+  )
+  target_link_libraries(hydra_core_vs_firmware_runner PRIVATE hydra_dsp_core)
+
   add_executable(hydra_golden_regression_native tests/core/golden_regression.cpp)
   target_link_libraries(hydra_golden_regression_native PRIVATE hydra_dsp_core)
   add_test(

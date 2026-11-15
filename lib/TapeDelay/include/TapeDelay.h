@@ -4,6 +4,7 @@
 #include "esp_heap_caps.h"
 #include "hydra_mech_noise.hpp"
 #include <Arduino.h>
+#include <cstring>
 #include <math.h>
 
 // ============================================================================

@@ -97,19 +97,42 @@ bool p_delayUnitBpm = false;     // false=ms, true=BPM
 
 volatile bool dspParamsDirty = true;
 
-TapeParams globalParams = {
-    p_flutterDepth, p_wowDepth, p_dropoutSeverity,
-    p_drive,        p_noise,    p_tapeSpeed,
-    p_tapeAge,      p_headBump, p_azimuth,
-    p_flutterRate,  p_wowRate,  p_delayActive,
-    p_delayTime,    p_feedback, p_mix,
-    p_activeHeads,  p_bpm,      p_headsMusical,
-    p_guitarFocus,  p_tone,
-    // New effect modes
-    p_pingPong,
-    p_freeze, p_reverse, p_reverseSmear,
-    p_spring, p_springDecay, p_springDamping, p_springMix
-};
+static hydra_dsp_params makeTapeParams() {
+  hydra_dsp_params params{};
+  params.flutterDepth = p_flutterDepth;
+  params.wowDepth = p_wowDepth;
+  params.dropoutSeverity = p_dropoutSeverity;
+  params.drive = p_drive;
+  params.noise = p_noise;
+  params.tapeSpeed = p_tapeSpeed;
+  params.tapeAge = p_tapeAge;
+  params.headBumpAmount = p_headBump;
+  params.azimuthError = p_azimuth;
+  params.flutterRate = p_flutterRate;
+  params.wowRate = p_wowRate;
+  params.delayActive = p_delayActive;
+  params.delayTimeMs = p_delayTime;
+  params.feedback = p_feedback;
+  params.dryWet = p_mix;
+  // The ESP32 UI uses one control for both mix parameters.
+  params.delayWet = p_mix;
+  params.activeHeads = p_activeHeads;
+  params.bpm = p_bpm;
+  params.headsMusical = p_headsMusical;
+  params.guitarFocus = p_guitarFocus;
+  params.tone = p_tone;
+  params.pingPong = p_pingPong;
+  params.freeze = p_freeze;
+  params.reverse = p_reverse;
+  params.reverseSmear = p_reverseSmear;
+  params.spring = p_spring;
+  params.springDecay = p_springDecay;
+  params.springDamping = p_springDamping;
+  params.springMix = p_springMix;
+  return params;
+}
+
+hydra_dsp_params globalParams = makeTapeParams();
 // Setup params
 float p_masterVol = 30.0f;
 
@@ -122,7 +145,7 @@ MelodyGen *melody = nullptr;
 DisplayUI *displayUI = nullptr;  // OLED Display Interface
 FrippEngine *fripp = nullptr;    // Frippertronics/Eno Engine
 
-// Frippertronics mode flag (when true, use FrippEngine instead of TapeModel)
+// Frippertronics mode flag (when true, route audio through FrippEngine)
 bool p_frippMode = false;
 
 // Global Frippertronics parameters
@@ -184,34 +207,7 @@ void dualPrintf(const char *format, ...);
 // Sync p_ variables to globalParams (call after changing any p_ variable)
 void syncGlobalParams() {
     if (xSemaphoreTake(paramMutex, pdMS_TO_TICKS(10)) == pdTRUE) {
-        globalParams.flutterDepth = p_flutterDepth;
-        globalParams.wowDepth = p_wowDepth;
-        globalParams.dropoutSeverity = p_dropoutSeverity;
-        globalParams.drive = p_drive;
-        globalParams.noise = p_noise;
-        globalParams.tapeSpeed = p_tapeSpeed;
-        globalParams.tapeAge = p_tapeAge;
-        globalParams.headBumpAmount = p_headBump;
-        globalParams.azimuthError = p_azimuth;
-        globalParams.flutterRate = p_flutterRate;
-        globalParams.wowRate = p_wowRate;
-        globalParams.delayActive = p_delayActive;
-        globalParams.delayTimeMs = p_delayTime;
-        globalParams.feedback = p_feedback;
-        globalParams.dryWet = p_mix;
-        globalParams.activeHeads = p_activeHeads;
-        globalParams.bpm = p_bpm;
-        globalParams.headsMusical = p_headsMusical;
-        globalParams.guitarFocus = p_guitarFocus;
-        globalParams.tone = p_tone;
-        globalParams.pingPong = p_pingPong;
-        globalParams.freeze = p_freeze;
-        globalParams.reverse = p_reverse;
-        globalParams.reverseSmear = p_reverseSmear;
-        globalParams.spring = p_spring;
-        globalParams.springDecay = p_springDecay;
-        globalParams.springDamping = p_springDamping;
-        globalParams.springMix = p_springMix;
+        globalParams = makeTapeParams();
         
         // Sync MelodyGen parameters
         if (melody) {
@@ -432,7 +428,7 @@ void audioTask(void *parameter) {
     // esp_task_wdt_reset();
 
     if (dspParamsDirty && xSemaphoreTake(paramMutex, 0) == pdTRUE) {
-      TapeParams localParams = globalParams;
+      hydra_dsp_params localParams = globalParams;
       float localGateThresh = p_gateThreshold;
       float localMood = p_mood;
       float localRhythm = p_rhythm;
@@ -996,37 +992,7 @@ void executeCommand(String line) {
       }
     }
 
-    // Update global params
-    globalParams.flutterDepth = p_flutterDepth;
-    globalParams.wowDepth = p_wowDepth;
-    globalParams.dropoutSeverity = p_dropoutSeverity;
-    globalParams.drive = p_drive;
-    globalParams.noise = p_noise;
-    globalParams.tapeSpeed = p_tapeSpeed;
-    globalParams.tapeAge = p_tapeAge;
-    globalParams.headBumpAmount = p_headBump;
-    globalParams.azimuthError = p_azimuth;
-    globalParams.flutterRate = p_flutterRate;
-    globalParams.wowRate = p_wowRate;
-    globalParams.delayActive = p_delayActive;
-    globalParams.delayTimeMs = p_delayTime;
-    globalParams.feedback = p_feedback;
-    globalParams.dryWet = p_mix;
-    globalParams.activeHeads = p_activeHeads;
-    globalParams.bpm = p_bpm;
-    globalParams.headsMusical = p_headsMusical;
-    globalParams.guitarFocus = p_guitarFocus;
-    globalParams.tone = p_tone;
-    
-    // New effect modes
-    globalParams.pingPong = p_pingPong;
-    globalParams.freeze = p_freeze;
-    globalParams.reverse = p_reverse;
-    globalParams.reverseSmear = p_reverseSmear;
-    globalParams.spring = p_spring;
-    globalParams.springDecay = p_springDecay;
-    globalParams.springDamping = p_springDamping;
-    globalParams.springMix = p_springMix;
+    globalParams = makeTapeParams();
     dspParamsDirty = true;
 
     xSemaphoreGive(paramMutex);

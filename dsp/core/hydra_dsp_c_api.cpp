@@ -259,7 +259,12 @@ int hydra_dsp_set_params_sized(hydra_dsp_handle* handle, const void* params, siz
   local.warpFeedback = 0.0f;
   local.warpMode = 0.0f;
 
-  size_t copy_size = std::min(struct_size, sizeof(hydra_dsp_params));
+  static_assert(sizeof(hydra_dsp_params_v1_2) == HYDRA_DSP_PARAMS_SIZE_V1_2);
+  static_assert(sizeof(hydra_dsp_params) == HYDRA_DSP_PARAMS_SIZE_V1_3);
+  static_assert(offsetof(hydra_dsp_params, warpActive) == HYDRA_DSP_PARAMS_SIZE_V1_2);
+  const size_t copy_size = struct_size >= HYDRA_DSP_PARAMS_SIZE_V1_3
+      ? HYDRA_DSP_PARAMS_SIZE_V1_3
+      : HYDRA_DSP_PARAMS_SIZE_V1_2;
   std::memcpy(&local, params, copy_size);
 
   from_c(local, &handle->params);
@@ -267,12 +272,16 @@ int hydra_dsp_set_params_sized(hydra_dsp_handle* handle, const void* params, siz
   return 0;
 }
 
-int hydra_dsp_set_params(hydra_dsp_handle* handle, const hydra_dsp_params* params) {
+int hydra_dsp_set_params(hydra_dsp_handle* handle, const hydra_dsp_params_v1_2* params) {
+  return hydra_dsp_set_params_sized(handle, params, sizeof(hydra_dsp_params_v1_2));
+}
+
+int hydra_dsp_set_params_v1_3(hydra_dsp_handle* handle, const hydra_dsp_params* params) {
   return hydra_dsp_set_params_sized(handle, params, sizeof(hydra_dsp_params));
 }
 
 int hydra_dsp_set_params_v1_2(hydra_dsp_handle* handle, const hydra_dsp_params_v1_2* params) {
-  return hydra_dsp_set_params_sized(handle, params, sizeof(hydra_dsp_params_v1_2));
+  return hydra_dsp_set_params(handle, params);
 }
 
 int hydra_dsp_commit(hydra_dsp_handle* handle) {

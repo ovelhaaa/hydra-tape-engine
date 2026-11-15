@@ -56,7 +56,12 @@ jobs:
           test -f build-web/web/hydra-processor.js
           test -f build-web/web/main.js
 
-      - name: Run web host unit tests
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Run web host tests with the built WASM
+        env:
+          HYDRA_WEB_BUILD: build-web/web
         run: node --test host/web/tests/*.test.mjs
 
       - name: Add .nojekyll

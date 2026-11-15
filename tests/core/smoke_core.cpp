@@ -37,7 +37,7 @@ int main() {
   params.activeHeads = 7.0f;
   params.headsMusical = 1.0f;
   params.bpm = 120.0f;
-  CHECK(hydra_dsp_set_params(h, &params) == 0);
+  CHECK(hydra_dsp_set_params_v1_3(h, &params) == 0);
   CHECK(hydra_dsp_commit(h) == 0);
 
   std::vector<float> inL(8, 0.1f), inR(8, -0.1f), outL(8), outR(8);

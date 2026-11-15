@@ -1,36 +1,39 @@
 #!/usr/bin/env python3
-"""
-Accidental Warp V1.2 — Multi-Engine Sonic Fidelity & A/B Validation Suite.
+"""Render synchronized Accidental Warp stimuli and report independent validation results."""
 
-Executes a tri-engine comparison:
-  Engine A: Original JavaScript AudioWorklet extracted dynamically from
-            docs/simulators/accidental_warp_simulator.html (via Node.js runner)
-  Engine B: Python Reference Model (SimulatorReferenceDSP)
-  Engine C: Native C++ TapeCore DSP Engine (hydra_listen_native.exe)
-
-Runs the 12 mandatory validation scenarios, computes objective metrics
-(FFT dominant frequency, RMS, peak, L/R decorrelation, cross-engine RMS error,
-stability, NaN/Inf checks), generates comparative 24-bit 48kHz WAV audio files,
-and records an authoritative manifest.json.
-"""
-
+import argparse
+import hashlib
+import itertools
 import json
 import math
 import os
-import struct
+import shutil
 import subprocess
 import sys
+import tempfile
 import wave
+from array import array
 from datetime import datetime, timezone
 from pathlib import Path
 
-import numpy as np
-from scipy.fft import rfft, rfftfreq
+dependency_error = None
+try:
+    import numpy as np
+    from scipy.signal import correlate, correlation_lags
+except ImportError as error:
+    dependency_error = str(error)
 
 ROOT = Path(__file__).resolve().parents[1]
-OUTPUT_DIR = ROOT / "tests" / "output" / "warp_ab_validation"
-LISTEN_EXE = ROOT / "build-native" / "hydra_listen_native.exe"
-NODE_RUNNER = ROOT / "scripts" / "run_simulator_worklet.js"
+HTML = ROOT / "docs/simulators/accidental_warp_simulator.html"
+REFERENCE_SHA256 = "0e448e03bce714f92c72941208252acf7aa403d1bf3d4aa7d15a0a3aa0c829c9"
+NODE_RUNNER = ROOT / "scripts/run_simulator_worklet.js"
+FS = 48000  # Fixed by hydra_listen.
+BLOCK = 128
+WARP_IDS = {"active": 30, "speed": 31, "grainMs": 32, "stereo": 33, "feedback": 34, "mode": 35}
+WARP_DEFAULTS = dict(active=1, speed=1.0, grainMs=80.0, stereo=0.0, feedback=0.0, mode=0)
+# Disable stochastic tape effects when measuring stereo spread and impulse decay.
+# The record/playback chain and its magnetic coloration remain enabled.
+NATIVE_SETTINGS = {0: 0, 1: 0, 2: 0, 3: 20, 4: 0, 8: 0, 11: 1, 12: 100, 13: 0, 14: 100, 15: 100}
 
 TWO_PI = 6.28318530717958647692
 
@@ -95,7 +98,7 @@ class ReferenceBiquad:
 class ReferenceDelayLine:
     def __init__(self, size):
         self.size = size
-        self.buffer = [0.0] * size
+        self.buffer = array("f", [0.0]) * size
         self.write_idx = 0
 
     def read_hermite(self, delay, active_size):
@@ -158,13 +161,13 @@ class ReferenceAccidentalWarpDSP:
         self.mode = mode
         self.fb_drive = 1.60
 
-        self.d_samples = max(64, int(grain_ms * 0.001 * fs))
+        self.d_samples = max(64, int(fs * (grain_ms * 0.001)))
         self.d_size = self.d_samples if (mode == 0 or mode == 3) else (self.d_samples + 1000)
         self.write_pos = 0.0
 
     def set_grain_ms(self, grain_ms):
         self.grain_ms = grain_ms
-        self.d_samples = max(64, int(grain_ms * 0.001 * self.fs))
+        self.d_samples = max(64, int(self.fs * (grain_ms * 0.001)))
         self.d_size = self.d_samples if (self.mode == 0 or self.mode == 3) else (self.d_samples + 1000)
         if self.write_pos >= self.d_size: self.write_pos = 0.0
         if self.delay_l.write_idx >= self.d_size: self.delay_l.write_idx = 0
@@ -197,8 +200,8 @@ class ReferenceAccidentalWarpDSP:
                 wet_l = self.delay_l.read_hermite(rel_d, d_size) * env
                 wet_r = self.delay_r.read_hermite(rel_d, d_size) * env
 
-            proc_l = self.fb_lpf_l.process(self.fb_hpf_l.process(wet_l))
-            proc_r = self.fb_lpf_r.process(self.fb_hpf_r.process(wet_r))
+            proc_l = self.fb_lpf_l.process(wet_l)
+            proc_r = self.fb_lpf_r.process(wet_r)
             fb_l = proc_l * fb
             fb_r = proc_r * fb
         else:
@@ -251,383 +254,362 @@ class ReferenceAccidentalWarpDSP:
 
         return wet_l, wet_r
 
-# ==============================================================================
-# File I/O & Runners
-# ==============================================================================
 
-def write_wav(path, signal_stereo, fs=48000):
-    path.parent.mkdir(parents=True, exist_ok=True)
-    with wave.open(str(path), 'wb') as wav:
-        wav.setnchannels(2)
-        wav.setsampwidth(3) # 24-bit PCM
-        wav.setframerate(fs)
-        frames = bytearray()
-        for l, r in signal_stereo:
-            clamped_l = max(-1.0, min(1.0, float(l)))
-            clamped_r = max(-1.0, min(1.0, float(r)))
-            val_l = int(clamped_l * 8388607.0)
-            val_r = int(clamped_r * 8388607.0)
-            frames += struct.pack('<i', val_l)[:3]
-            frames += struct.pack('<i', val_r)[:3]
-        wav.writeframes(frames)
-
-
-def run_engine_a_worklet(input_stereo, params_dict, fs=48000):
-    """Engine A: Node.js worker evaluating exact original AudioWorklet from HTML."""
-    in_raw_path = OUTPUT_DIR / "temp_in_a.f32"
-    out_raw_path = OUTPUT_DIR / "temp_out_a.f32"
-    params_json_path = OUTPUT_DIR / "temp_params_a.json"
-    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
-
-    with open(in_raw_path, "wb") as f:
-        for l, r in input_stereo:
-            f.write(struct.pack("<ff", float(l), float(r)))
-
-    p_worklet = {
-        "sampleRate": fs,
-        "speed": params_dict.get("warpSpeed", 1.0),
-        "grainMs": params_dict.get("warpGrainMs", 80.0),
-        "stereo": params_dict.get("warpStereo", 0.5),
-        "feedback": params_dict.get("warpFeedback", 0.0),
-        "mode": params_dict.get("warpMode", 0)
-    }
-    with open(params_json_path, "w") as f:
-        json.dump(p_worklet, f)
-
-    cmd = ["node", str(NODE_RUNNER), str(in_raw_path), str(params_json_path), str(out_raw_path)]
-    res = subprocess.run(cmd, capture_output=True, text=True)
-    if res.returncode != 0:
-        raise RuntimeError(f"Engine A (Node AudioWorklet) failed: {res.stderr}\n{res.stdout}")
-
-    out_stereo = []
-    with open(out_raw_path, "rb") as f:
-        raw = f.read()
-        num_floats = len(raw) // 4
-        floats = struct.unpack(f"<{num_floats}f", raw)
-        for i in range(0, len(floats), 2):
-            out_stereo.append((floats[i], floats[i+1]))
-
-    for p in [in_raw_path, out_raw_path, params_json_path]:
-        if p.exists(): p.unlink()
-
-    return out_stereo
+def run_python(stimulus, params, events):
+    model = ReferenceAccidentalWarpDSP(
+        FS, params["grainMs"], params["speed"], params["stereo"], params["feedback"], params["mode"]
+    )
+    changes = {event["frame"]: event for event in events}
+    output = np.empty_like(stimulus)
+    for frame, (left, right) in enumerate(stimulus):
+        if frame in changes:
+            change = changes[frame]
+            if change["parameter"] == "grainMs":
+                model.set_grain_ms(change["value"])
+            elif change["parameter"] == "speed":
+                model.speed = change["value"]
+            else:
+                raise ValueError(f"Unsupported Python automation: {change}")
+        output[frame] = model.process_frame(float(left), float(right))
+    return output
 
 
-def run_engine_c_native(input_stereo, params_dict, automation_events=None, fs=48000):
-    """Engine C: Compiled C++ TapeCore binary (hydra_listen_native.exe)."""
-    in_raw_path = OUTPUT_DIR / "temp_in_c.f32"
-    out_raw_path = OUTPUT_DIR / "temp_out_c.f32"
-    auto_path = OUTPUT_DIR / "temp_auto_c.txt"
-    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
-
-    with open(in_raw_path, "wb") as f:
-        for l, r in input_stereo:
-            f.write(struct.pack("<ff", float(l), float(r)))
-
-    # Base parameters at frame 0
-    base_params = {
-        3: 20.0,   # drive
-        11: 1.0,   # delayActive
-        12: 100.0, # delayTimeMs
-        13: 0.0,   # feedback (tape)
-        14: 100.0, # dryWet
-        15: 100.0, # delayWet
-        30: float(params_dict.get("warpActive", 1.0)),
-        31: float(params_dict.get("warpSpeed", 1.0)),
-        32: float(params_dict.get("warpGrainMs", 80.0)),
-        33: float(params_dict.get("warpStereo", 0.5)),
-        34: float(params_dict.get("warpFeedback", 0.0)),
-        35: float(params_dict.get("warpMode", 0.0)),
-    }
-
-    with open(auto_path, "w") as f:
-        for pid, val in sorted(base_params.items()):
-            f.write(f"0 {pid} {val}\n")
-        if automation_events:
-            sorted_events = sorted(automation_events, key=lambda e: (int(e[0]) // 128) * 128)
-            for frame, pid, val in sorted_events:
-                aligned_frame = (int(frame) // 128) * 128
-                if aligned_frame > 0:
-                    f.write(f"{aligned_frame} {pid} {val}\n")
-
-    res = subprocess.run([str(LISTEN_EXE), str(in_raw_path), str(auto_path), str(out_raw_path)],
-                         capture_output=True, text=True)
-    if res.returncode != 0:
-        raise RuntimeError(f"Engine C (Native C++ TapeCore) failed: {res.stderr}")
-
-    out_stereo = []
-    with open(out_raw_path, "rb") as f:
-        raw = f.read()
-        num_floats = len(raw) // 4
-        floats = struct.unpack(f"<{num_floats}f", raw)
-        for i in range(0, len(floats), 2):
-            out_stereo.append((floats[i], floats[i+1]))
-
-    for p in [in_raw_path, out_raw_path, auto_path]:
-        if p.exists(): p.unlink()
-
-    return out_stereo
-
-# ==============================================================================
-# Objective Metrics Calculation
-# ==============================================================================
-
-def analyze_audio(signal_stereo, fs=48000, start_sec=0.2, end_sec=None):
-    """Computes comprehensive audio metrics."""
-    ch_l = np.array([s[0] for s in signal_stereo], dtype=np.float64)
-    ch_r = np.array([s[1] for s in signal_stereo], dtype=np.float64)
-
-    start_idx = int(start_sec * fs)
-    end_idx = int(end_sec * fs) if end_sec is not None else len(ch_l)
-    slice_l = ch_l[start_idx:end_idx]
-    slice_r = ch_r[start_idx:end_idx]
-
-    rms_l = float(np.sqrt(np.mean(slice_l**2))) if len(slice_l) > 0 else 0.0
-    rms_r = float(np.sqrt(np.mean(slice_r**2))) if len(slice_r) > 0 else 0.0
-    peak_l = float(np.max(np.abs(slice_l))) if len(slice_l) > 0 else 0.0
-    peak_r = float(np.max(np.abs(slice_r))) if len(slice_r) > 0 else 0.0
-    decorrelation = float(np.mean(np.abs(slice_l - slice_r))) if len(slice_l) > 0 else 0.0
-
-    # FFT dominant peak
-    if len(slice_l) >= 1024:
-        fft_vals = np.abs(rfft(slice_l * np.hanning(len(slice_l))))
-        fft_freqs = rfftfreq(len(slice_l), 1.0 / fs)
-        # Look above 50 Hz to ignore DC
-        valid_idx = np.where(fft_freqs >= 50.0)[0]
-        if len(valid_idx) > 0:
-            peak_idx = valid_idx[np.argmax(fft_vals[valid_idx])]
-            dom_freq = float(fft_freqs[peak_idx])
-        else:
-            dom_freq = 0.0
+def run_external(engine, executable, input_path, params, events, scratch, shape):
+    output_path = scratch / "output.f32"
+    output_path.unlink(missing_ok=True)
+    if engine == "worklet":
+        settings = scratch / "params.json"
+        settings.write_text(json.dumps(dict(params, sampleRate=FS, events=events)), encoding="utf-8")
+        command = [executable, NODE_RUNNER, input_path, settings, output_path]
     else:
-        dom_freq = 0.0
+        settings = scratch / "automation.txt"
+        initial = NATIVE_SETTINGS | {WARP_IDS[key]: value for key, value in params.items()}
+        rows = [(0, key, value) for key, value in initial.items()]
+        rows += [(e["frame"], WARP_IDS[e["parameter"]], e["value"]) for e in events]
+        settings.write_text("".join(f"{frame} {key} {value}\n" for frame, key, value in rows))
+        command = [executable, input_path, settings, output_path]
+    result = subprocess.run(command, cwd=ROOT, capture_output=True, text=True, timeout=120)
+    if result.returncode:
+        raise RuntimeError(f"Exit {result.returncode}: {result.stderr.strip()} {result.stdout.strip()}")
+    return np.fromfile(output_path, dtype="<f4").reshape(shape)
 
-    has_nan = bool(np.isnan(ch_l).any() or np.isnan(ch_r).any())
-    has_inf = bool(np.isinf(ch_l).any() or np.isinf(ch_r).any())
-    max_step = float(np.max(np.abs(np.diff(slice_l)))) if len(slice_l) > 1 else 0.0
 
+def write_wav(path, audio):
+    packed = (np.clip(audio, -1.0, 1.0) * 8388607).astype("<i4")
+    with wave.open(str(path), "wb") as wav:
+        wav.setparams((2, 3, FS, 0, "NONE", "not compressed"))
+        wav.writeframes(packed.view(np.uint8).reshape(-1, 4)[:, :3].tobytes())
+
+
+def rms(audio, axis=None):
+    return np.sqrt(np.mean(np.square(audio, dtype=np.float64), axis=axis))
+
+
+def dominant_hz(audio):
+    spectrum = np.abs(np.fft.rfft(audio * np.hanning(len(audio))))
+    freqs = np.fft.rfftfreq(len(audio), 1 / FS)
+    lo = np.searchsorted(freqs, 50)
+    return float(freqs[lo + np.argmax(spectrum[lo:])])
+
+
+def window_energy(audio):
+    frames = FS // 10
+    return [rms(audio[start:start + frames], axis=0).tolist() for start in range(0, len(audio), frames)]
+
+
+def analyze(audio, target, tail_start, events):
+    # 6 dB of numerical headroom above normalized PCM is a runaway guard.
+    # For stationary tones allow one grain modulation sideband plus one FFT bin.
+    peak_limit = 2.0
+    metrics = {
+        "nan_count": int(np.isnan(audio).sum()),
+        "inf_count": int(np.isinf(audio).sum()),
+    }
+    checks = {"finite": not (metrics["nan_count"] or metrics["inf_count"])}
+    criteria = {"finite": "Zero NaN/Inf", "peak": "Non-silent, at most 2.0 FS over the full render"}
+    if checks["finite"]:
+        peak = float(np.max(np.abs(audio)))
+        steady = audio[FS // 5:]
+        metrics.update(
+            peak=peak,
+            rms_by_channel=rms(audio, axis=0).tolist(),
+            peak_step_by_channel=np.max(np.abs(np.diff(audio, axis=0)), axis=0).tolist(),
+            lr_rms=float(rms(steady[:, 0] - steady[:, 1])),
+            dominant_hz=dominant_hz(steady[:, 0]),
+        )
+        checks["peak"] = 0 < peak <= peak_limit
+        if target:
+            target_hz, grain_ms = target
+            tolerance = 1000 / grain_ms + FS / len(steady)
+            criteria["pitch"] = {"target_hz": target_hz, "max_error_hz": tolerance,
+                                 "reason": "One grain-rate sideband plus one FFT bin"}
+            metrics["pitch_ratio"] = metrics["dominant_hz"] / 440
+            checks["pitch"] = abs(metrics["dominant_hz"] - target_hz) <= tolerance
+        if tail_start:
+            start = round(tail_start * FS)
+            early = rms(audio[:start])
+            tail = rms(audio[start:])
+            metrics.update(tail_rms=float(tail), tail_to_early_rms=float(tail / early) if early else None)
+            criteria["tail_decay"] = "RMS after the settling interval is below the early RMS"
+            checks["tail_decay"] = bool(tail < early)
+    if checks["finite"] and events and events[0]["parameter"] in ("speed", "active"):
+        frames = [0] + [e["frame"] for e in events] + [len(audio)]
+        targets = ([440] + [440 * (1 + e["value"]) for e in events]
+                   if events[0]["parameter"] == "speed" else [880, 440, 880])
+        # Discard 1.5 grains after every event for startup and native settling.
+        sections = [audio[start + round(.12 * FS):end, 0] for start, end in zip(frames, frames[1:])]
+        freqs = [dominant_hz(section) for section in sections]
+        errors = [1000 / WARP_DEFAULTS["grainMs"] + FS / len(section) for section in sections]
+        metrics["automation_pitch_hz"] = freqs
+        criteria["automation_pitch"] = {"targets_hz": targets, "max_error_hz": errors,
+                                        "reason": "One grain-rate sideband plus one FFT bin per segment"}
+        checks["automation_pitch"] = all(abs(f - target) <= error for f, target, error in zip(freqs, targets, errors))
+    return {"status": "PASS" if all(checks.values()) else "FAIL",
+            "checks": checks, "criteria": criteria, "metrics": metrics}
+
+
+def compare(a, b, reference_pair):
+    a, b = a.astype(np.float64), b.astype(np.float64)
+    error = a - b
+    # Estimate relative lag from the waveform and report the raw zero-lag errors.
+    # Bounded search avoids matching a different repetition in a long feedback tail.
+    def lag(x, y):
+        lags = correlation_lags(len(x), len(y))
+        valid = np.abs(lags) <= FS // 4
+        return int(lags[valid][np.argmax(correlate(y, x, method="fft")[valid])])
+
+    window = np.hanning(len(a))[:, None]
+    spectrum_a = np.abs(np.fft.rfft(a * window, axis=0))
+    spectrum_b = np.abs(np.fft.rfft(b * window, axis=0))
+    metrics = {
+        "rms_error_by_channel": rms(error, axis=0).tolist(),
+        "max_abs_error_by_channel": np.max(np.abs(error), axis=0).tolist(),
+        "best_lag_frames_by_channel": [lag(a[:, ch], b[:, ch]) for ch in range(2)],
+        "zero_lag_correlation_by_channel": [
+            float(np.corrcoef(x, y)[0, 1]) if np.std(x) and np.std(y) else None for x, y in zip(a.T, b.T)
+        ],
+        "relative_magnitude_spectrum_l2_by_channel": (
+            np.linalg.norm(spectrum_a - spectrum_b, axis=0) /
+            np.maximum(np.linalg.norm(spectrum_a, axis=0), np.finfo(float).tiny)
+        ).tolist(),
+        "rms_windows_100ms": {"first": window_energy(a), "second": window_energy(b)},
+        "lr_difference_rms_error": float(rms(error[:, 0] - error[:, 1])),
+    }
+    if reference_pair:
+        # Float32 PCM should agree to near its rounding precision for two ports of
+        # the same signal path. Allow small accumulated biquad/libm rounding error.
+        criteria = {"rms_error_max": 1e-6, "max_abs_error_max": 1e-5, "lag_frames": 0}
+        passed = (max(metrics["rms_error_by_channel"]) <= criteria["rms_error_max"] and
+                  max(metrics["max_abs_error_by_channel"]) <= criteria["max_abs_error_max"] and
+                  metrics["best_lag_frames_by_channel"] == [0, 0])
+        return {"status": "PASS" if passed else "FAIL", "criteria": criteria, "metrics": metrics}
     return {
-        "rms_l": rms_l,
-        "rms_r": rms_r,
-        "peak_l": peak_l,
-        "peak_r": peak_r,
-        "decorrelation_lr": decorrelation,
-        "dominant_freq_hz": dom_freq,
-        "max_step_delta": max_step,
-        "has_nan": has_nan,
-        "has_inf": has_inf,
-        "is_stable": not (has_nan or has_inf or peak_l > 2.0 or peak_r > 2.0)
+        "status": "NOT COMPARABLE", "metrics": metrics,
+        "criteria": "Descriptive full-chain A/B; waveform equivalence requires matched signal paths",
+        "reason": "TapeCore uses magnetic record/playback coloration and a separate phase/read implementation, "
+                  "including grain smoothing and different single-tap timing. These measurements include all stages.",
     }
 
 
-def compare_signals(sig1, sig2):
-    """Computes cross-engine RMS error and correlation."""
-    min_len = min(len(sig1), len(sig2))
-    a = np.array([sig1[i][0] for i in range(min_len)], dtype=np.float64)
-    b = np.array([sig2[i][0] for i in range(min_len)], dtype=np.float64)
-    diff = a - b
-    rms_err = float(np.sqrt(np.mean(diff**2)))
-    return rms_err
+def scenarios():
+    def sine(hz, duration):
+        return 0.5 * np.sin(TWO_PI * hz * np.arange(round(duration * FS)) / FS)
 
-# ==============================================================================
-# 12 Validation Scenarios Execution
-# ==============================================================================
+    impulse = np.zeros(round(1.5 * FS))
+    impulse[0] = 0.8
+    melody = np.zeros(15 * FS)
+    note_frames = np.arange(FS // 5)
+    for index, hz in enumerate((220, 277.18, 329.63, 440, 554.37)):
+        start = index * FS // 4
+        melody[start:start + len(note_frames)] = (
+            0.4 * np.exp(-note_frames / (0.08 * FS)) * np.sin(TWO_PI * hz * note_frames / FS)
+        )
+    controls = sine(440, 1.2)
+    tone = sine(330, 0.8)
+    return [
+        ("01_octave_up", sine(440, 0.8), [{}], [], (880, 80), None),
+        ("02_fifth_up", sine(440, 0.8), [dict(speed=0.5)], [], (660, 80), None),
+        ("03_dual_tap_hermite", tone, [dict(mode=0, stereo=0.2)], [], None, None),
+        ("04_single_tap_hermite", tone, [dict(mode=1)], [], None, None),
+        ("05_single_tap_raw", tone, [dict(mode=2)], [], None, None),
+        ("06_dual_tap_raw", tone, [dict(mode=3, stereo=0.4)], [], None, None),
+        ("07_stereo", tone, [dict(stereo=s) for s in (0, 0.5, 1)], [], None, None),
+        ("08_feedback", impulse, [dict(speed=0.5, feedback=f) for f in (0, 50, 80, 95)], [], None, 0.5),
+        ("09_grain", controls, [dict(grainMs=40)], [(.3, "grainMs", 120), (.6, "grainMs", 180),
+                                                    (.9, "grainMs", 240)], None, None),
+        ("10_speed", controls, [dict(speed=0)], [(.3, "speed", .5), (.6, "speed", 1),
+                                                  (.9, "speed", 1.5)], None, None),
+        ("11_toggle", controls, [{}], [(.4, "active", 0), (.8, "active", 1)], None, None),
+        ("12_cascade", melody, [dict(grainMs=90, stereo=.4, feedback=65)], [], None, 2),
+    ]
+
+
+def render_scenario(scenario, args, provenance, scratch):
+    name, mono, variants, changes, pitch, tail_start = scenario
+    folder = args.output_dir / name
+    folder.mkdir(exist_ok=True)
+    stimulus = np.repeat(mono[:, None], 2, axis=1).astype("<f4")
+    input_path = folder / "input.f32"
+    stimulus.tofile(input_path)
+    write_wav(folder / "input.wav", stimulus)
+    events = [
+        {"requested_seconds": time, "frame": round(time * FS) // BLOCK * BLOCK,
+         "parameter": key, "value": value}
+        for time, key, value in changes
+    ]
+    record = dict(provenance, id=name, input_pcm=f"{name}/input.f32", input_wav=f"{name}/input.wav",
+                  sample_rate_hz=FS, frames=len(stimulus), duration_sec=len(stimulus) / FS,
+                  event_quantum_frames=BLOCK, automation=events, variants=[],
+                  perceptual={"status": "NOT RUN", "criteria": [
+                      "Level-matched A/B", "Rhythmic artifacts", "Granular texture",
+                      "Brightness", "Saturation", "Repeat decay", "Cascade musicality"
+                  ]})
+    for index, overrides in enumerate(variants):
+        params = WARP_DEFAULTS | overrides
+        variant = {"warp_parameters": params, "tape_core_initial_parameters_by_id": NATIVE_SETTINGS,
+                   "engines": {}, "similarity": {}}
+        record["variants"].append(variant)
+        signals = {}
+        for engine in ("worklet", "python", "native"):
+            run = dict(provenance["engine_versions"][engine])
+            variant["engines"][engine] = run
+            if name == "11_toggle" and engine != "native":
+                run.update(status="NOT COMPARABLE", reason="The prototype has no equivalent Warp enable/disable transition.")
+                continue
+            try:
+                audio = (run_python(stimulus, params, events) if engine == "python" else
+                         run_external(engine, args.node if engine == "worklet" else args.listen,
+                                      input_path, params, events, scratch, stimulus.shape))
+                run["dsp"] = analyze(audio, pitch, tail_start, events)
+                if name == "09_grain" and run["dsp"]["status"] == "PASS":
+                    baseline = (run_python(stimulus, params, []) if engine == "python" else
+                                run_external(engine, args.node if engine == "worklet" else args.listen,
+                                             input_path, params, [], scratch, stimulus.shape))
+                    delta = audio.astype(np.float64) - baseline
+                    edge = events[0]["frame"]
+                    before, after = float(rms(delta[:edge])), float(rms(delta[edge:]))
+                    run["dsp"]["metrics"].update(grain_delta_before_first_event=before,
+                                                 grain_delta_after_first_event=after)
+                    run["dsp"]["criteria"]["grain_response"] = (
+                        "Identical to the static control before the first event; difference above -60 dBFS afterward"
+                    )
+                    passed = before == 0 and after > 1e-3
+                    run["dsp"]["checks"]["grain_response"] = passed
+                    if not passed:
+                        run["dsp"]["status"] = "FAIL"
+                run["status"] = run["dsp"]["status"]
+                if np.isfinite(audio).all():
+                    signals[engine] = audio
+                    wav = folder / f"{index + 1:02d}_{engine}.wav"
+                    write_wav(wav, audio)
+                    run["output_wav"] = wav.relative_to(args.output_dir).as_posix()
+            except (OSError, RuntimeError, ValueError, subprocess.TimeoutExpired) as error:
+                run.update(status="FAIL", reason=str(error))
+        for first, second in itertools.combinations(variant["engines"], 2):
+            pair = f"{first}_vs_{second}"
+            variant["similarity"][pair] = (
+                compare(signals[first], signals[second], second == "python")
+                if first in signals and second in signals else
+                {"status": "NOT COMPARABLE", "reason": "At least one render is unavailable or non-finite."}
+            )
+    record["execution_scope"] = "NOT COMPARABLE" if name == "11_toggle" else "three engines"
+    if name in ("07_stereo", "08_feedback"):
+        record["cross_variant_dsp"] = {}
+        for engine in ("worklet", "python", "native"):
+            runs = [v["engines"][engine] for v in record["variants"]]
+            if any("dsp" not in r or "rms_by_channel" not in r["dsp"]["metrics"] for r in runs):
+                continue
+            metrics = [r["dsp"]["metrics"] for r in runs]
+            if name == "07_stereo":
+                values = [m["lr_rms"] for m in metrics]
+                passed = values[0] < 1e-5 and min(values[1:]) > 1e-3
+                criterion = "Mono baseline within float32 tolerance; stereo difference over -60 dBFS"
+            else:
+                values = [m["tail_rms"] for m in metrics]
+                passed = values[0] < min(values[1:])
+                criterion = "Every feedback setting sustains more tail energy than the zero-feedback impulse"
+            record["cross_variant_dsp"][engine] = {
+                "status": "PASS" if passed else "FAIL", "criteria": criterion, "values": values
+            }
+    return record
+
+
+def digest(path):
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
 
 def main():
-    print("=" * 80)
-    print("ACCIDENTAL WARP V1.2 — TRI-ENGINE MULTI-SCENARIO VALIDATION SUITE")
-    print("Engines: [A] Original JS AudioWorklet  [B] Python Model  [C] C++ TapeCore")
-    print("=" * 80)
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--listen", type=Path, default=ROOT / "build-native" /
+                        ("hydra_listen_native.exe" if os.name == "nt" else "hydra_listen_native"))
+    parser.add_argument("--node", default="node")
+    parser.add_argument("--output-dir", type=Path, default=ROOT / "artifacts/warp-ab")
+    args = parser.parse_args()
+    args.output_dir = args.output_dir.resolve()
+    args.listen = args.listen.resolve()
+    args.output_dir.mkdir(parents=True, exist_ok=True)
+    manifest_path = args.output_dir / "manifest.json"
+    manifest = {"suite": "Accidental Warp V1.3", "utc": datetime.now(timezone.utc).isoformat(),
+                "complete": False, "scenarios": []}
 
-    fs = 48000
-    manifest = {
-        "suite": "Accidental Warp V1.2 Sonic Fidelity Validation",
-        "timestamp_utc": datetime.now(timezone.utc).isoformat(),
-        "sample_rate_hz": fs,
-        "engines": {
-            "engine_a": "Original JS AudioWorklet (docs/simulators/accidental_warp_simulator.html)",
-            "engine_b": "Python Reference Model (scripts/validate_warp_prototype.py)",
-            "engine_c": "Native C++ TapeCore (build-native/hydra_listen_native.exe)"
-        },
-        "scenarios": []
-    }
+    def save():
+        manifest_path.write_text(json.dumps(manifest, indent=2, allow_nan=False) + "\n", encoding="utf-8")
 
-    # Helper stimuli
-    def make_sine(freq=440.0, dur_sec=0.8, amp=0.5):
-        n = int(fs * dur_sec)
-        return [(amp * math.sin(TWO_PI * freq * i / fs), amp * math.sin(TWO_PI * freq * i / fs)) for i in range(n)]
+    save()
+    try:
+        if dependency_error:
+            raise ValueError(f"Install validation dependencies with python -m pip install numpy scipy: {dependency_error}")
+        normalized = hashlib.sha256(HTML.read_bytes().replace(b"\r\n", b"\n")).hexdigest()
+        if normalized != REFERENCE_SHA256:
+            raise ValueError(f"Simulator HTML SHA-256 mismatch (LF canonical): {normalized}")
+        if not args.listen.is_file():
+            raise ValueError(f"Native runner missing at {args.listen}; build hydra_listen_native or pass --listen.")
+        node = shutil.which(args.node)
+        if node is None:
+            raise ValueError(f"Node.js missing: {args.node}; install Node.js or pass --node.")
+        args.node = node
 
-    def make_impulse(dur_sec=2.0, amp=0.9):
-        n = int(fs * dur_sec)
-        return [(amp, amp)] + [(0.0, 0.0)] * (n - 1)
+        def command_output(command):
+            return subprocess.check_output(command, cwd=ROOT, text=True).strip()
 
-    def make_melody_burst(dur_sec=15.0):
-        n = int(fs * dur_sec)
-        buf = [(0.0, 0.0)] * n
-        notes = [220.0, 277.18, 329.63, 440.0, 554.37]
-        for idx, f in enumerate(notes):
-            offset = int(idx * 0.25 * fs)
-            for i in range(int(0.20 * fs)):
-                if offset + i < n:
-                    env = math.exp(-i / (0.08 * fs))
-                    val = 0.4 * env * math.sin(TWO_PI * f * i / fs)
-                    buf[offset + i] = (val, val)
-        return buf
+        provenance = {
+            "git_commit": command_output(["git", "rev-parse", "HEAD"]),
+            "tracked_worktree_dirty": bool(command_output(["git", "status", "--porcelain", "--untracked-files=no"])),
+            "reference_sha256_lf": normalized, "reference_sha256_file": digest(HTML),
+            "worklet_runner_sha256": digest(NODE_RUNNER),
+            "engine_versions": {
+                "worklet": {"version": normalized, "node_version": command_output([node, "--version"])},
+                "python": {"version": digest(Path(__file__)), "python_version": sys.version.split()[0]},
+                "native": {"version": command_output([args.listen, "--version"]), "binary_sha256": digest(args.listen)},
+            },
+        }
+        with tempfile.TemporaryDirectory(prefix="hydra-warp-") as scratch:
+            for scenario in scenarios():
+                record = render_scenario(scenario, args, provenance, Path(scratch))
+                manifest["scenarios"].append(record)
+                print(f"Rendered {record['id']}", flush=True)
+                save()
+        manifest["complete"] = True
+        save()
+    except (ValueError, OSError, subprocess.SubprocessError) as error:
+        manifest["status"] = "NOT RUN" if not manifest["scenarios"] else "FAIL"
+        manifest["reason"] = str(error)
+        save()
+        parser.exit(2, f"{error}\n")
 
-    # 1. Octave-Up Transposition (speed=1.0)
-    print("\n[Scenario 1/12] Octave-Up Transposition (+12 st, speed=1.0, 440Hz -> 880Hz)")
-    stim1 = make_sine(440.0, 0.8)
-    p1 = {"warpSpeed": 1.0, "warpGrainMs": 80.0, "warpStereo": 0.0, "warpFeedback": 0.0, "warpMode": 0}
-    out_a1 = run_engine_a_worklet(stim1, p1, fs)
-    out_b1 = [ReferenceAccidentalWarpDSP(fs, 80.0, 1.0, 0.0, 0.0, 0).process_frame(l, r) for l, r in stim1]
-    out_c1 = run_engine_c_native(stim1, p1, fs=fs)
-    m_a1 = analyze_audio(out_a1, fs); m_b1 = analyze_audio(out_b1, fs); m_c1 = analyze_audio(out_c1, fs)
-    rms_err_ac1 = compare_signals(out_a1, out_c1)
-    print(f"  Dominant Frequency: A={m_a1['dominant_freq_hz']:.1f}Hz | B={m_b1['dominant_freq_hz']:.1f}Hz | C={m_c1['dominant_freq_hz']:.1f}Hz")
-    print(f"  Cross-Engine RMS Error (A vs C): {rms_err_ac1:.5f}")
-    write_wav(OUTPUT_DIR / "warp_octave_up.wav", out_c1, fs)
-    manifest["scenarios"].append({
-        "id": "scenario_01_octave_up", "name": "Octave-Up Transposition",
-        "target_hz": 880.0, "measured_hz_native": m_c1['dominant_freq_hz'],
-        "rms_error_worklet_vs_native": rms_err_ac1,
-        "pass": abs(m_c1['dominant_freq_hz'] - 880.0) < 25.0 and m_c1['is_stable']
-    })
-
-    # 2. Perfect Fifth Transposition (speed=0.5)
-    print("\n[Scenario 2/12] Perfect Fifth Transposition (+7 st, speed=0.5, 440Hz -> 660Hz)")
-    stim2 = make_sine(440.0, 0.8)
-    p2 = {"warpSpeed": 0.5, "warpGrainMs": 80.0, "warpStereo": 0.0, "warpFeedback": 0.0, "warpMode": 0}
-    out_a2 = run_engine_a_worklet(stim2, p2, fs)
-    out_b2 = [ReferenceAccidentalWarpDSP(fs, 80.0, 0.5, 0.0, 0.0, 0).process_frame(l, r) for l, r in stim2]
-    out_c2 = run_engine_c_native(stim2, p2, fs=fs)
-    m_c2 = analyze_audio(out_c2, fs)
-    print(f"  Dominant Frequency C: {m_c2['dominant_freq_hz']:.1f}Hz (Target ~660Hz)")
-    write_wav(OUTPUT_DIR / "warp_fifth_up.wav", out_c2, fs)
-    manifest["scenarios"].append({
-        "id": "scenario_02_fifth_up", "name": "Perfect Fifth Transposition",
-        "target_hz": 660.0, "measured_hz_native": m_c2['dominant_freq_hz'],
-        "pass": abs(m_c2['dominant_freq_hz'] - 660.0) < 25.0 and m_c2['is_stable']
-    })
-
-    # 3. Mode 0: 2-Tap Musical Hermite
-    print("\n[Scenario 3/12] Mode 0 (2-Tap Musical Hermite)")
-    stim3 = make_sine(330.0, 0.8)
-    p3 = {"warpSpeed": 1.0, "warpGrainMs": 80.0, "warpStereo": 0.2, "warpFeedback": 0.0, "warpMode": 0}
-    out_c3 = run_engine_c_native(stim3, p3, fs=fs)
-    m_c3 = analyze_audio(out_c3, fs)
-    write_wav(OUTPUT_DIR / "warp_mode0_musical.wav", out_c3, fs)
-    manifest["scenarios"].append({"id": "scenario_03_mode0_hermite", "name": "Mode 0 2-Tap Hermite", "metrics": m_c3, "pass": m_c3['is_stable']})
-
-    # 4. Mode 1: 1-Tap Solo Hermite
-    print("\n[Scenario 4/12] Mode 1 (1-Tap Solo Hermite)")
-    p4 = {"warpSpeed": 1.0, "warpGrainMs": 80.0, "warpStereo": 0.0, "warpFeedback": 0.0, "warpMode": 1}
-    out_c4 = run_engine_c_native(stim3, p4, fs=fs)
-    m_c4 = analyze_audio(out_c4, fs)
-    write_wav(OUTPUT_DIR / "warp_mode1_solo_hermite.wav", out_c4, fs)
-    manifest["scenarios"].append({"id": "scenario_04_mode1_solo_hermite", "name": "Mode 1 Solo Hermite", "metrics": m_c4, "pass": m_c4['is_stable']})
-
-    # 5. Mode 2: 1-Tap Raw Int
-    print("\n[Scenario 5/12] Mode 2 (1-Tap Raw Int - Experimental Crunch)")
-    p5 = {"warpSpeed": 1.0, "warpGrainMs": 80.0, "warpStereo": 0.0, "warpFeedback": 0.0, "warpMode": 2}
-    out_c5 = run_engine_c_native(stim3, p5, fs=fs)
-    m_c5 = analyze_audio(out_c5, fs)
-    write_wav(OUTPUT_DIR / "warp_mode2_raw_int.wav", out_c5, fs)
-    manifest["scenarios"].append({"id": "scenario_05_mode2_raw_int", "name": "Mode 2 Raw Int", "metrics": m_c5, "pass": m_c5['is_stable']})
-
-    # 6. Mode 3: 2-Tap Raw Int
-    print("\n[Scenario 6/12] Mode 3 (2-Tap Raw Int - Crossfaded Crunch)")
-    p6 = {"warpSpeed": 1.0, "warpGrainMs": 80.0, "warpStereo": 0.4, "warpFeedback": 0.0, "warpMode": 3}
-    out_c6 = run_engine_c_native(stim3, p6, fs=fs)
-    m_c6 = analyze_audio(out_c6, fs)
-    write_wav(OUTPUT_DIR / "warp_mode3_raw_int_crossfade.wav", out_c6, fs)
-    manifest["scenarios"].append({"id": "scenario_06_mode3_raw_int", "name": "Mode 3 Raw Int Crossfade", "metrics": m_c6, "pass": m_c6['is_stable']})
-
-    # 7. Stereo Warp Variations (0.0, 0.5, 1.0)
-    print("\n[Scenario 7/12] Stereo Phase Offset (0.0 vs 0.5 vs 1.0)")
-    stim7 = make_sine(440.0, 0.6)
-    out_s0 = run_engine_c_native(stim7, {"warpSpeed": 1.0, "warpGrainMs": 80.0, "warpStereo": 0.0, "warpMode": 0}, fs=fs)
-    out_s5 = run_engine_c_native(stim7, {"warpSpeed": 1.0, "warpGrainMs": 80.0, "warpStereo": 0.5, "warpMode": 0}, fs=fs)
-    out_s1 = run_engine_c_native(stim7, {"warpSpeed": 1.0, "warpGrainMs": 80.0, "warpStereo": 1.0, "warpMode": 0}, fs=fs)
-    m_s0 = analyze_audio(out_s0, fs); m_s5 = analyze_audio(out_s5, fs); m_s1 = analyze_audio(out_s1, fs)
-    print(f"  Stereo Decorrelation: s=0.0 -> {m_s0['decorrelation_lr']:.5f} | s=0.5 -> {m_s5['decorrelation_lr']:.5f} | s=1.0 -> {m_s1['decorrelation_lr']:.5f}")
-    write_wav(OUTPUT_DIR / "warp_stereo_wide.wav", out_s1, fs)
-    manifest["scenarios"].append({
-        "id": "scenario_07_stereo_spread", "name": "Stereo Spread Range",
-        "decorr_0_0": m_s0['decorrelation_lr'], "decorr_0_5": m_s5['decorrelation_lr'], "decorr_1_0": m_s1['decorrelation_lr'],
-        "pass": (m_s0['decorrelation_lr'] < 0.005) and (m_s5['decorrelation_lr'] > 0.05) and (m_s1['decorrelation_lr'] > 0.05)
-    })
-
-    # 8. Feedback Range & Gain Stability (0%, 50%, 80%, 95%)
-    print("\n[Scenario 8/12] Feedback Levels (0%, 50%, 80%, 95%) Stability & Tail")
-    impulse = make_impulse(dur_sec=1.5, amp=0.8)
-    fb_levels = [0.0, 50.0, 80.0, 95.0]
-    fb_results = {}
-    for fb in fb_levels:
-        out_fb = run_engine_c_native(impulse, {"warpSpeed": 0.5, "warpGrainMs": 80.0, "warpFeedback": fb, "warpMode": 0}, fs=fs)
-        m_fb = analyze_audio(out_fb, fs, start_sec=0.5)
-        fb_results[fb] = m_fb
-        print(f"  FB {fb:4.1f}% -> Tail RMS: {m_fb['rms_l']:.5f} | Stable: {m_fb['is_stable']}")
-    write_wav(OUTPUT_DIR / "warp_high_feedback_95.wav", out_fb, fs)
-    manifest["scenarios"].append({
-        "id": "scenario_08_feedback_stability", "name": "Feedback Stability Range",
-        "results": {f"{k}%": v['rms_l'] for k, v in fb_results.items()},
-        "pass": all(v['is_stable'] for v in fb_results.values()) and (fb_results[80.0]['rms_l'] > fb_results[0.0]['rms_l'])
-    })
-
-    # 9. Dynamic Grain Window Automation
-    print("\n[Scenario 9/12] Dynamic Grain Window Automation (40ms -> 240ms)")
-    stim9 = make_sine(440.0, 1.2)
-    events9 = [(int(0.3 * fs), 32, 120.0), (int(0.6 * fs), 32, 180.0), (int(0.9 * fs), 32, 240.0)]
-    out_c9 = run_engine_c_native(stim9, {"warpSpeed": 1.0, "warpGrainMs": 40.0, "warpMode": 0}, automation_events=events9, fs=fs)
-    m_c9 = analyze_audio(out_c9, fs)
-    write_wav(OUTPUT_DIR / "warp_grain_automation.wav", out_c9, fs)
-    manifest["scenarios"].append({"id": "scenario_09_grain_automation", "name": "Grain Automation", "metrics": m_c9, "pass": m_c9['is_stable'] and m_c9['max_step_delta'] < 1.0})
-
-    # 10. Dynamic Speed Multiplier Automation
-    print("\n[Scenario 10/12] Dynamic Speed Multiplier Automation (0.0 -> 0.5 -> 1.0 -> 1.5)")
-    events10 = [(int(0.3 * fs), 31, 0.5), (int(0.6 * fs), 31, 1.0), (int(0.9 * fs), 31, 1.5)]
-    out_c10 = run_engine_c_native(stim9, {"warpSpeed": 0.0, "warpGrainMs": 80.0, "warpMode": 0}, automation_events=events10, fs=fs)
-    m_c10 = analyze_audio(out_c10, fs)
-    write_wav(OUTPUT_DIR / "warp_speed_automation.wav", out_c10, fs)
-    manifest["scenarios"].append({"id": "scenario_10_speed_automation", "name": "Speed Automation", "metrics": m_c10, "pass": m_c10['is_stable'] and m_c10['max_step_delta'] < 1.0})
-
-    # 11. Live Audio Buffer Toggle
-    print("\n[Scenario 11/12] Live Audio Buffer Toggle (Warp Active 1 -> 0 -> 1)")
-    events11 = [(int(0.4 * fs), 30, 0.0), (int(0.8 * fs), 30, 1.0)]
-    out_c11 = run_engine_c_native(stim9, {"warpActive": 1.0, "warpSpeed": 1.0, "warpGrainMs": 80.0, "warpMode": 0}, automation_events=events11, fs=fs)
-    m_c11 = analyze_audio(out_c11, fs)
-    write_wav(OUTPUT_DIR / "warp_toggle_transition.wav", out_c11, fs)
-    manifest["scenarios"].append({"id": "scenario_11_live_toggle", "name": "Live Buffer Toggle", "metrics": m_c11, "pass": m_c11['is_stable'] and m_c11['max_step_delta'] < 1.0})
-
-    # 12. Extended Feedback Cascade (15 seconds)
-    print("\n[Scenario 12/12] Extended Upward Feedback Cascade (15.0 seconds, feedback=65%)")
-    stim12 = make_melody_burst(dur_sec=15.0)
-    p12 = {"warpSpeed": 1.0, "warpGrainMs": 90.0, "warpStereo": 0.4, "warpFeedback": 65.0, "warpMode": 0}
-    out_c12 = run_engine_c_native(stim12, p12, fs=fs)
-    m_c12 = analyze_audio(out_c12, fs, start_sec=2.0)
-    print(f"  15s Cascade Peak: {m_c12['peak_l']:.4f} | Late Tail RMS (2s-15s): {m_c12['rms_l']:.5f} | Stable: {m_c12['is_stable']}")
-    write_wav(OUTPUT_DIR / "warp_feedback_cascade_15s.wav", out_c12, fs)
-    manifest["scenarios"].append({
-        "id": "scenario_12_extended_cascade_15s", "name": "15s Feedback Cascade",
-        "duration_sec": 15.0, "metrics": m_c12,
-        "pass": m_c12['is_stable'] and (m_c12['peak_l'] < 1.8) and (m_c12['rms_l'] > 0.001)
-    })
-
-    # Save Authoritative Manifest
-    all_passed = all(s.get("pass", False) for s in manifest["scenarios"])
-    manifest["all_passed"] = all_passed
-    manifest_path = OUTPUT_DIR / "manifest.json"
-    with open(manifest_path, "w", encoding="utf-8") as f:
-        json.dump(manifest, f, indent=2)
-
-    print("\n" + "=" * 80)
-    print(f"VALIDATION FINISHED: {'ALL 12 SCENARIOS PASSED' if all_passed else 'SOME SCENARIOS FAILED'}")
-    print(f"Manifest written to: {manifest_path}")
-    print("=" * 80)
-
-    if not all_passed:
-        sys.exit(1)
+    print(manifest_path)
+    statuses = [
+        result["status"]
+        for scenario in manifest["scenarios"]
+        for variant in scenario["variants"]
+        for group in ("engines", "similarity")
+        for result in variant[group].values()
+    ] + [
+        result["status"] for scenario in manifest["scenarios"]
+        for result in scenario.get("cross_variant_dsp", {}).values()
+    ]
+    return int("FAIL" in statuses)
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

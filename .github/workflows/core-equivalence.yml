@@ -88,6 +88,44 @@ jobs:
           name: native-core-test-reports
           path: ci-reports/native
 
+  validate_warp:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install validation dependencies
+        run: python -m pip install numpy scipy
+      - name: Build native runner
+        run: |
+          cmake -S . -B build-native -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=ON
+          cmake --build build-native -j --target hydra_listen_native
+      - name: Check persistent Python state
+        run: python scripts/test_validate_warp_prototype.py
+      - name: Render and validate Warp scenarios
+        run: python scripts/validate_warp_prototype.py --listen build-native/hydra_listen_native --output-dir artifacts/warp-ab
+      - name: Upload Warp A/B renders and manifest
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: accidental-warp-ab
+          path: artifacts/warp-ab
+      - name: Verify ABI against frozen C 1.2 consumer with AddressSanitizer
+        if: ${{ !cancelled() }}
+        run: |
+          cmake -S . -B build/abi-asan -DCMAKE_BUILD_TYPE=RelWithDebInfo -DBUILD_TESTING=ON \
+            -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ \
+            -DCMAKE_C_FLAGS="-fsanitize=address -fno-omit-frame-pointer" \
+            -DCMAKE_CXX_FLAGS="-fsanitize=address -fno-omit-frame-pointer"
+          cmake --build build/abi-asan -j --target hydra_abi_legacy_consumer hydra_warp_core_test
+          ctest --test-dir build/abi-asan --output-on-failure -R '^(core_abi_legacy_consumer|core_warp_test)$'
+
   build_wasm_core:
     runs-on: ubuntu-latest
     steps:

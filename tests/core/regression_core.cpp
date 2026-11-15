@@ -52,7 +52,7 @@ void configure_deterministic(hydra_dsp_handle* h) {
   p.springDecay = 60.0f;
   p.springDamping = 45.0f;
   p.springMix = 0.0f;
-  CHECK(hydra_dsp_set_params(h, &p) == 0);
+  CHECK(hydra_dsp_set_params_v1_3(h, &p) == 0);
   CHECK(hydra_dsp_commit(h) == 0);
 }
 
@@ -87,7 +87,7 @@ void configure_silent_wet_delay(hydra_dsp_handle* h, float drive = 0.0f) {
   p.springDecay = 0.0f;
   p.springDamping = 0.0f;
   p.springMix = 0.0f;
-  CHECK(hydra_dsp_set_params(h, &p) == 0);
+  CHECK(hydra_dsp_set_params_v1_3(h, &p) == 0);
   CHECK(hydra_dsp_commit(h) == 0);
 }
 
@@ -136,7 +136,7 @@ void configure_ping_pong_delay(hydra_dsp_handle* h, bool pingPong) {
   p.springDecay = 0.0f;
   p.springDamping = 0.0f;
   p.springMix = 0.0f;
-  CHECK(hydra_dsp_set_params(h, &p) == 0);
+  CHECK(hydra_dsp_set_params_v1_3(h, &p) == 0);
   CHECK(hydra_dsp_commit(h) == 0);
 }
 
@@ -382,7 +382,7 @@ void test_reenabled_delay_clears_magnetic_state() {
   disabled.delayTimeMs = 10.0f;
   disabled.activeHeads = 4.0f;
   disabled.tone = 100.0f;
-  CHECK(hydra_dsp_set_params(h, &disabled) == 0);
+  CHECK(hydra_dsp_set_params_v1_3(h, &disabled) == 0);
   CHECK(hydra_dsp_commit(h) == 0);
 
   configure_silent_wet_delay(h);

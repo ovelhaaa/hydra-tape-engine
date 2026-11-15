@@ -55,25 +55,22 @@ proc.melody.enabled = false;
 proc.dryWet = 1.0;
 proc.masterVolume = 1.0;
 
-const mode = Number(params.mode !== undefined ? params.mode : 0);
-const speed = Number(params.speed !== undefined ? params.speed : 1.0);
-const grainMs = Number(params.grainMs !== undefined ? params.grainMs : 80.0);
-const stereo = Number(params.stereo !== undefined ? params.stereo : 0.5);
-const feedback = Number(params.feedback !== undefined ? params.feedback : 0.0);
+function setParam(key, value) {
+  proc.port.onmessage({ data: { type: 'param', key, value } });
+}
+function setGrain(ms) {
+  setParam('subdiv', ms * 0.001);
+}
 
-proc.isMusical2Tap = (mode === 0 || mode === 3);
-proc.rawIntCast = (mode === 2 || mode === 3);
-proc.speedMultiplier = speed;
-proc.stereoWarp = stereo;
-proc.feedback = feedback * 0.01;
+setParam('bpm', 60);
+setParam('isMusical2Tap', params.mode === 0 || params.mode === 3);
+setParam('rawIntCast', params.mode === 2 || params.mode === 3);
+setParam('speedMultiplier', params.speed);
+setParam('stereoWarp', params.stereo);
+setParam('feedback', params.feedback * 0.01);
+setGrain(params.grainMs);
 
-// Grain window timing
-const beatSamples = (grainMs * 0.001) * sampleRate;
-proc.delaySamples = Math.max(64, Math.floor(beatSamples));
-proc.delaySize = proc.isMusical2Tap ? proc.delaySamples : (proc.delaySamples + 1000);
-proc.writePos = 0.0;
-if (proc.delayL.writeIdx >= proc.delaySize) proc.delayL.writeIdx = 0;
-if (proc.delayR.writeIdx >= proc.delaySize) proc.delayR.writeIdx = 0;
+const events = new Map(params.events.map(event => [event.frame, event]));
 
 // Read input raw floats (interleaved stereo L, R)
 const inBuf = fs.readFileSync(inPath);
@@ -90,6 +87,11 @@ const outL = new Float32Array(BLOCK);
 const outR = new Float32Array(BLOCK);
 
 for (let frame = 0; frame < totalFrames; frame += BLOCK) {
+  const event = events.get(frame);
+  if (event?.parameter === 'grainMs') setGrain(event.value);
+  else if (event?.parameter === 'speed') setParam('speedMultiplier', event.value);
+  else if (event) throw new Error(`Unsupported Worklet automation: ${event.parameter}`);
+
   const curFrames = Math.min(BLOCK, totalFrames - frame);
   for (let i = 0; i < curFrames; i++) {
     inL[i] = inFloats[(frame + i) * 2];

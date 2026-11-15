@@ -34,27 +34,12 @@ flowchart LR
 
 ---
 
-### FASE 1 — Accidental Warp V1.2 (Sonic Fidelity, ABI Safety, Multi-Engine Validation & Release Candidate)
-- **Status:** CONCLUÍDO (Release Candidate Pronto para PR).
-- **Objetivos:**
-  - Implementar o leitor Dual-Tap Warp em `dsp/core/tape_core.cpp` sobre o buffer de fita compartilhado.
-  - Defasagem de $180^\circ$ entre leitores com envoltórias triangulares complementares ($\text{gain}_1 + \text{gain}_2 = 1.0$).
-  - Transposição estritamente **ASCENDENTE** calibrada ($v_{eff} \approx 1 + \text{speedMultiplier}$).
-  - 4 modos completos: 2-Taps Hermite (0), 1-Tap Hermite (1), 1-Tap Raw Int (2), 2-Taps Raw Int (3).
-  - Laço de feedback com HPF (120 Hz), LPF anti-aliasing (2.2 kHz), soft saturation e controle de ganho (0-95%).
-  - Deslocamento de fase estéreo (`stereoWarp`).
-  - Suíte de validação tri-engine (JS AudioWorklet original do simulador, Python e C++ TapeCore) com 12 cenários e `manifest.json`.
-  - Extensão backward-compatible e segura da API C (`HYDRA_DSP_PARAM_WARP_*`, `hydra_dsp_set_params_v1_2`, `hydra_dsp_set_params_sized`).
-  - Interface Web AudioWorklet totalmente integrada com controles de UI e presets.
-  - Firmware ESP32-S3 instrumentado com medição de microssegundos via `esp_timer_get_time()`, comandos CLI `wrp`, `wsp`, `wgr`, `wst`, `wfb`, `wmd`, `perf`.
-- **Entregáveis:**
-  - `dsp/core/tape_core.hpp` e `dsp/core/tape_core.cpp` com motor `WarpReader` unificado.
-  - `include/hydra_dsp.h` e `dsp/core/hydra_dsp_c_api.cpp` com ABI v1.2 segura e metadados sincronizados.
-  - Teste unitário e de transição contínua (`tests/core/warp_core_test.cpp`).
-  - Teste de integração Web UI (`host/web/tests/webUiWarpIntegration.test.mjs`).
-  - Suíte de validação acústica A/B tri-engine (`scripts/validate_warp_prototype.py`).
-  - Firmware ESP32-S3 com instrumentação e CLI atualizado (`src/main.cpp`).
-- **Critério de Saída:** 100% dos testes CTest nativos (10/10), 100% dos testes Web (21/21), 12/12 cenários acústicos aprovados no `manifest.json`, build ESP32-S3 PlatformIO bem-sucedido.
+### FASE 1 — Accidental Warp V1.3
+- **Status:** Em revisão para integração na `main`.
+- Leitor granular ascendente sobre o buffer de fita, com modos Hermite e Raw Integer, janelas dual-tap, fase estéreo e retorno Warp separado.
+- Contrato legado de 116 bytes preservado e API expandida com setter versionado. Integração web exercitada com WASM real. O firmware expõe tempo DSP, overruns de orçamento e falhas de escrita I2S separadamente.
+- A bancada offline renderiza Worklet, Python persistente e TapeCore em 11 cenários comuns, com toggle nativo adicional. Consulte os limites e as evidências em [Validação de áudio](HYDRA_2_AUDIO_VALIDATION.md).
+- **Critério de saída:** Confira a CI no HEAD da PR, registre a divergência histórica Native/WASM e conclua a escuta A/B conforme o [checklist de release](RELEASE_CHECKLIST.md).
 
 ---
 

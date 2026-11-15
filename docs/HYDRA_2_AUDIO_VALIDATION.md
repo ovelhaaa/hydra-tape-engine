@@ -1,111 +1,55 @@
-# HYDRA TAPE ENGINE 2.0 — AUDIO VALIDATION & EQUIVALENCE PROTOCOL
+# Hydra 2.0 — Validação de áudio do Accidental Warp V1.3
 
-## 1. Metodologia de Validação e Filosofia de Testes
+## Reprodução
 
-Para garantir que o Hydra 2.0 mantenha rigor acústico e estabilidade em tempo real sem degradar funcionalidades consagradas, a suíte de validação é estruturada em três camadas complementares:
+Compile `hydra_listen_native` em Release e instale NumPy e SciPy. A bancada requer Node.js e Git. Ela detecta a extensão do executável, aceita caminhos explícitos e cria um manifesto novo a cada execução.
 
-```text
-+--------------------------------------------------------------------------+
-|                         CAMADAS DE TESTE DO HYDRA                        |
-+--------------------------------------------------------------------------+
-| 1. TESTES DE CORREÇÃO MATEMÁTICA (Unitários rápidos, execução em CI)     |
-|    - Razão de frequência e transposição tonal (+12 semitons a 2.0x).     |
-|    - Complementaridade de ganhos triangulares (Gain1 + Gain2 == 1.0).    |
-|    - Defasagem angular estrita de 180° entre leitores Dual-Tap.          |
-|    - Ausência de NaN / Inf e integridade de limites sob estresse.        |
-+--------------------------------------------------------------------------+
-| 2. TESTES DE REGRESSÃO E EQUIVALÊNCIA (Bit-accurate e tolerância fina)   |
-|    - Comparação determinística contra Golden CSVs para modos Forward.    |
-|    - Equivalência numérica cruzada entre Nativo (GCC/Clang) e WASM.      |
-|    - Validação de estabilidade de ABI e paridade de IDs de parâmetros.   |
-+--------------------------------------------------------------------------+
-| 3. TESTES AUDITIVOS E RENDERS LONGOS (Análise espectral e escuta)        |
-|    - Renders em áudio WAV de longa duração (A/B comparativo contra protótipo). |
-|    - Estímulos variados: impulsos Dirac, senoides puras e acordes.       |
-|    - Comparação A/B entre 2-Taps (Musical) e 1-Tap (Bug Cru).            |
-|    - Análise espectral de aliasing sob transposição 2.5x.                |
-+--------------------------------------------------------------------------+
+```sh
+cmake -S . -B build-native -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=ON
+cmake --build build-native --config Release --target hydra_listen_native
+python -m pip install numpy scipy
+python scripts/test_validate_warp_prototype.py
+python scripts/validate_warp_prototype.py --output-dir artifacts/warp-ab
 ```
 
----
+Use `--listen` para informar o executável, inclusive se o gerador CMake colocar o binário em `Release/`. Use `--node` para selecionar o Node. A execução verifica o SHA-256 do HTML original com quebras de linha normalizadas para LF e registra também o hash dos bytes no disco. O manifesto identifica o commit, alterações locais, versões dos motores, arquivos, parâmetros e critérios. A CI publica `accidental-warp-ab` com o manifesto e os WAVs para escuta. Os WAVs usam PCM estéreo de 24 bits e as métricas usam os dados float32 anteriores à conversão.
 
-## 2. Testes de Correção Matemática e DSP
+## Correção DSP
 
-### 2.1. Teste de Transposição Ascendente (Pitch-Up Verification)
-- **Estímulo:** Senoide pura contínua de 440.0 Hz (Lá 4).
-- **Configuração:** `speedMultiplier = 1.0`, grão = 80 ms, `dryWet = 100%`, `warpFeedback = 0.0`.
-- **Critério de Aceitação:** A frequência fundamental dominante da saída deve ser de aproximadamente **880.0 Hz (Lá 5)**, comprovando transposição tonal ascendente de $+12\text{ semitons}$ ($2.0\times$).
-- **Resultado Medido:** **890.0 Hz** tanto no protótipo original HTML quanto no C++ TapeCore (paridade exata até a casa decimal).
+A bancada envia a mesma entrada float32 a 48 kHz e os mesmos eventos nos limites de 128 frames. O Worklet recebe mensagens de parâmetros. O modelo Python mantém uma instância por render e o TapeCore usa sua suavização interna de Grain. A comparação usa TapeCore sem hiss ou modulações estocásticas para medir estéreo e decaimento. O circuito magnético permanece ativo.
 
-### 2.2. Teste de Transposição de Quinta (+7 semitons)
-- **Estímulo:** Senoide pura de 440.0 Hz.
-- **Configuração:** `speedMultiplier = 0.5` ($v_{eff} = 1.5\times$), grão = 80 ms.
-- **Resultado Medido:** **665.0 Hz** no protótipo e **665.0 Hz** no C++ TapeCore (alvo teórico $440 \times 1.5 = 660\text{ Hz}$, paridade de 100%).
+| Cenário | Critério e evidência |
+| --- | --- |
+| 1. Oitava | Alvo 880 Hz, pico dominante de 890 Hz nos três motores. |
+| 2. Quinta | Alvo 660 Hz, pico de 665 Hz nos três motores. |
+| 3–6. Quatro modos | Saída não silenciosa, pico monitorado sobre o render completo e zero NaN/Inf. O leitor single-tap do TapeCore usa período de fase baseado em Grain e alcance de leitura Grain + 1000 amostras. O protótipo usa Grain + 1000 para ambos. |
+| 7. Estéreo | Entrada mono a 0, 0,5 e 1. Diferença L/R abaixo de `1e-5` no primeiro caso e acima de −60 dBFS nos demais. |
+| 8. Feedback | Impulso a 0%, 50%, 80% e 95%. A cauda perde energia com o fim do estímulo e 0% produz a menor energia tardia. |
+| 9. Grain | 40 → 120 → 180 → 240 ms. A saída coincide com o controle de Grain estático até o primeiro evento e diverge depois dele. |
+| 10. Speed | 0 → 0,5 → 1 → 1,5. A frequência é verificada após a acomodação em cada segmento. |
+| 11. Toggle | Ativo → inativo → ativo. Só o nativo tem a transição de volta para o modo de delay convencional. Worklet e Python ficam como `NOT COMPARABLE`. |
+| 12. Cascata | Frase de cinco notas, feedback de 65% e render de 15 s. Finidade, pico e decaimento são medidos em toda a gravação. |
 
-### 2.3. Teste de Complementaridade da Envoltória Dual-Tap
-- **Critério Matemático:**
-  $$\forall \text{phase}_1 \in [0.0, 1.0]: \quad \text{gain}_1(\text{phase}_1) + \text{gain}_2(\text{phase}_2) = 1.000000$$
-  $$\text{onde } \text{phase}_2 = \text{fmod}(\text{phase}_1 + 0.5, 1.0)$$
-- **Tolerância Numérica:** Erro absoluto máximo $< 1.0 \times 10^{-6}$ (Aprovado).
+Para sinais estacionários, o erro de pitch permitido acomoda uma banda lateral à taxa de Grain mais um bin da FFT. O limite de 2 FS detecta crescimento acima da margem de 6 dB sobre PCM normalizado. Os testes do core cobrem as janelas complementares e transições. O teste Python verifica a evolução e o wrap da fase, persistência da memória dos filtros, retenção do impulso em buffer e a leitura esperada no frame 16 de uma janela de 64 frames.
 
-### 2.4. Teste de Defasagem Estéreo (Stereo Warp Offset)
-- **Configuração:** `warpStereo = 0.8` (offset de $0.20$ no ciclo de grão).
-- **Critério:** Diferença temporal entre canais L e R sem alteração de afinação entre eles.
-- **Resultado Medido:** Soma de decorrelação L/R de 2008.43 no protótipo e 1411.96 no C++ TapeCore.
+O teste de impulso revelou um tom residual de aproximadamente 3 kHz que permaneceu por 15 s no TapeCore a Speed 0,5. Com 95% de feedback, a janela de 0,5 a 1,5 s tinha RMS de `6,97e-3`. Permitir que só a entrada nova abra o gate de bias no modo Warp reduziu esse RMS para `2,77e-8`. A realimentação continua passando pela saturação magnética. O cenário 8 detecta a regressão com o critério de decaimento.
 
-### 2.5. Teste de Níveis de Feedback e Ausência de Realimentação Fantasma
-- **`warpFeedback = 0.0%`:** Injeção de impulso de Dirac seguido de silêncio. A energia tardia após o decaimento do grão é $< 10^{-15}$ (silêncio absoluto), comprovando que `warpFeedback = 0` não herda silenciosamente o feedback tradicional de fita.
-- **`warpFeedback = 50.0%` e `80.0%`:** Recirculação sustentada com energia tardia $> 0.01$, demonstrando cascatas ascendentes de pitch.
-- **`warpFeedback = 95.0%`:** Teste de estresse contínuo de 5 segundos (240.000 amostras) com pico de impulso de 0.95:
-  - Amplitude máxima estritamente contida em $[-1.0, +1.0]$.
-  - Zero ocorrências de `NaN` ou `Infinity`.
+## Similaridade entre motores
 
----
+O par Worklet/Python usa limites de RMS de `1e-6`, desvio máximo `1e-5` e alinhamento de zero frames. Ambos implementam o mesmo caminho de referência, com buffer float32. Esses limites acomodam arredondamento de ponto flutuante. A bancada registra, para todos os pares renderizados, erros RMS e máximos por canal, lag da correlação, diferença espectral, energia a cada 100 ms e diferença L/R.
 
-## 3. Protocolo de Validação no ESP32-S3 Hardware
+O TapeCore inclui saturação magnética, EQ, interpolação sobre outro anel, fase de leitura inicial e suavização próprias. Os pares com TapeCore têm métricas descritivas e status `NOT COMPARABLE` para equivalência de forma de onda. Na oitava, os três picos foram 890 Hz, mas o erro Worklet/TapeCore ficou em 0,106 RMS por canal nesta configuração. Nos modos single-tap, a diferença é também de temporização do leitor. Esta bancada mede a cadeia completa e não quantifica a contribuição isolada de cada estágio.
 
-Para atestar o comportamento em hardware físico (ESP32-S3 DevKitC-1 N16R8):
+## Avaliação perceptual
 
-1. **Compilação e Uso de Memória (Build PlatformIO Verificado):**
-   - **RAM Utilizada:** 25.688 bytes de 327.680 bytes (**7.8%**).
-   - **Flash Utilizada:** 551.523 bytes de 16.777.216 bytes (**3.3%**).
-   - Compilador: `xtensa-esp-elf-gcc 14.2.0`, Framework Arduino-ESP32 3.3.6 / IDF 5.5.
-   - Ambientes validados: `esp32-s3-devkitc-1` com PSRAM Octal habilitada.
-2. **Tempo de Execução por Bloco e Instrumentação em Tempo Real:**
-   - Tamanho de bloco no ESP32: `AUDIO_CHUNK_SIZE = 128` frames a 44.1 kHz.
-   - Orçamento temporal por bloco: $T_{budget} = \frac{128}{44100} \times 10^6 \approx 2902.5\,\mu\text{s}$.
-   - Telemetria de DSP em tempo real implementada no loop principal via `esp_timer_get_time()`:
-     - `g_dsp_last_block_us`: tempo de processamento do bloco mais recente em microssegundos.
-     - `g_dsp_total_block_us` e `g_dsp_block_count`: cálculo da média real de execução.
-     - `g_dsp_max_block_us`: medição do pico de latência máxima sem descontinuidade.
-     - `g_dsp_cpu_load_pct`: percentual instantâneo da CPU suavizado por média móvel exponencial.
-     - `g_dsp_overrun_count`: contador de blocos que excederam o orçamento de $2902\,\mu\text{s}$.
-     - Comando Serial CLI `perf`: exibe o relatório de performance, carga de CPU, heap interno livre (`heap_caps_get_free_size(MALLOC_CAP_INTERNAL)`) e PSRAM livre (`heap_caps_get_free_size(MALLOC_CAP_SPIRAM)`).
-3. **PSRAM e Estabilidade:**
-   - Buffers de delay estéreo alocados em PSRAM Octal SPIRAM (`MALLOC_CAP_SPIRAM`), sem alocações dinâmicas durante o processamento de áudio.
+A escuta A/B está pendente. Use os WAVs do mesmo cenário, variante e entrada, com níveis ajustados para comparação. Registre diferenças de ritmo, textura granular, brilho, saturação, degradação das repetições e musicalidade da cascata. A verificação de pico, decaimento e NaN/Inf cobre propriedades numéricas.
 
----
+## Web e ESP32-S3
 
-## 4. Matriz de Resultados Tri-Engine: AudioWorklet Original vs. Modelo Python vs. C++ TapeCore
+O teste funcional web executa o AudioWorklet de produção em Node com o binário WASM gerado. Ele envia ativação e modo pelo MessagePort e Speed e Feedback por AudioParams, lê os valores da API C e mede mudança de pitch, forma de onda e energia da cauda. Os testes estáticos cobrem a ligação dos controles ao host. O teste funcional usa uma simulação de host de Worklet e não mede o agendamento de um navegador.
 
-A suíte executável `scripts/validate_warp_prototype.py` cobre 12 cenários de teste exaustivos, gerando os áudios e registrando o arquivo oficial `tests/output/warp_ab_validation/manifest.json`:
+Para testar o firmware, execute `pio run -e esp32-s3-devkitc-1`. Em serial a 115200, `perf` mede geração, processamento e formatação PCM do bloco por `esp_timer_get_time()`, fora das chamadas de I2S. Com 128 frames a 44,1 kHz, o orçamento é `128 / 44100 ≈ 2.902,5 µs`. `DSP Budget Overruns` conta blocos acima desse limite. `I2S TX Write Failures` conta escritas que retornam erro ou quantidade incompleta de bytes. O contador de TX não mede continuidade física do sinal no conversor.
 
-| Cenário de Teste | Estímulo & Duração | Configuração | Métrica Worklet JS (A) | Métrica C++ TapeCore (C) | Parecer & Status |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| **1. Octave-Up (+12 st)** | Senoide 440 Hz (0.8s) | `speed=1.0, grain=80ms` | 890.0 Hz | 890.0 Hz | **100% Equivalência de Frequência** (RMS Err: 0.14) |
-| **2. Fifth-Up (+7 st)** | Senoide 440 Hz (0.8s) | `speed=0.5, grain=80ms` | 665.0 Hz | 665.0 Hz | **100% Equivalência de Frequência** |
-| **3. Mode 0 (2-Tap Hermite)** | Senoide 330 Hz (0.8s) | `speed=1.0, stereo=0.2` | Transposição pura | Transposição pura | **Aprovado** (RMS 0.245, Estável) |
-| **4. Mode 1 (1-Tap Hermite)** | Senoide 330 Hz (0.8s) | `speed=1.0, declick=0.05` | Single-pointer bug | Single-pointer bug | **Aprovado** (Quirk de +1000 amostras) |
-| **5. Mode 2 (1-Tap Raw Int)** | Senoide 330 Hz (0.8s) | `speed=1.0, rawInt=true` | Truncamento inteiro | Truncamento inteiro | **Aprovado** (Crunch digital preservado) |
-| **6. Mode 3 (2-Tap Raw Int)** | Senoide 330 Hz (0.8s) | `speed=1.0, 2-tap + raw` | Crossfade + Truncamento | Crossfade + Truncamento | **Aprovado** (Textura de clock imperfeito) |
-| **7. Stereo Phase Offset** | Senoide 440 Hz (0.6s) | `stereo = 0.0, 0.5, 1.0` | Decorrelação L/R | Decorrelação L/R | **Aprovado** ($s=0$: mono, $s>0$: estéreo) |
-| **8. Feedback Levels (0-95%)**| Impulso Dirac (1.5s) | `fb = 0%, 50%, 80%, 95%` | Decaimento / Cascade | Decaimento / Cascade | **Estável** (Zero NaN/Inf, pico < 1.0) |
-| **9. Grain Window Modulation**| Senoide 440 Hz (1.2s) | `grain: 40 -> 240 ms` | Contínuo sem estalos | Contínuo sem estalos | **Aprovado** ($\Delta < 0.13$) |
-| **10. Speed Modulation** | Senoide 440 Hz (1.2s) | `speed: 0.0 -> 1.5` | Glissando contínuo | Glissando contínuo | **Aprovado** ($\Delta < 0.08$) |
-| **11. Live Buffer Toggle** | Senoide 440 Hz (1.2s) | `warp: 1 -> 0 -> 1` | Bypass suave | Bypass suave | **Aprovado** (Sem cliques ou pops) |
-| **12. Cascade Longa (15s)** | Burst melódico (15.0s)| `fb=65%, grain=90ms` | Cascata ascendente | Cascata ascendente | **Estável** (Pico 0.015, sem acúmulo de DC) |
+## Native ↔ WASM
 
-### 4.1. Diferenças Identificadas e Justificativas Técnicas
-
-1. **Separação de Textura Tradicional:** No motor unificado, a leitura fixa de textura magnética (offset de 200 amostras) foi isolada durante `warpActive == true`, evitando que o sinal de 440 Hz não transposto contaminasse o sinal de pitch ascendente.
-2. **Saturação do Laço de Feedback:** O protótipo utilizava `Math.tanh(x * 1.6) / 1.6`, enquanto o C++ TapeCore utiliza `fastSatRational(x * 1.6) * (1.0 / 1.6)`. A função racional produz resposta sonora virtualmente idêntica com custo de CPU 4 vezes menor no ESP32-S3 (eliminando operações transcendentais no laço crítico).
+O teste de equivalência usa `max_abs <= 1e-5` e `RMSE <= 1e-6`. A execução local em Release mediu `max_abs = 7,436e-6` e `RMSE = 2,49805e-6` tanto na branch quanto no baseline `main` (`e4cae43`), com o mesmo toolchain. Os resultados do GitHub Actions devem ser verificados no HEAD da PR separadamente.

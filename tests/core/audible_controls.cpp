@@ -56,7 +56,7 @@ hydra_dsp_params base_params() {
 }
 
 void set_params(hydra_dsp_handle* h, const hydra_dsp_params& p) {
-  CHECK(hydra_dsp_set_params(h, &p) == 0);
+  CHECK(hydra_dsp_set_params_v1_3(h, &p) == 0);
   CHECK(hydra_dsp_commit(h) == 0);
 }
 

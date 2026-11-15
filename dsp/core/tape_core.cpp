@@ -102,13 +102,13 @@ struct TapeMagnetics {
     satNorm = 1.0f / std::max(0.55f, 0.82f + 0.18f * remanence);
   }
 
-  inline float process(float x) {
+  inline float process(float x, bool allowBias) {
     if (!lut) return x;
     biasPhase += biasHz / fs;
     biasPhase -= std::floor(biasPhase);
     float tri = 4.0f * std::fabs(biasPhase - 0.5f) - 1.0f;
 
-    float biasGate = (std::fabs(x) > 1e-7f) ? 1.0f : 0.0f;
+    float biasGate = (allowBias && std::fabs(x) > 1e-7f) ? 1.0f : 0.0f;
     float xb = x * drive + (biasAmount * biasGate * tri);
     float h = xb + coercivity * m;
     float y = lut->process(h);
@@ -581,9 +581,12 @@ void TapeCore::processStereo(float inL,float inR,float* outL,float* outR){
 
   auto writeCh=[&](float input,float dryTapeOutput,const ChannelFrame& frame,float feedbackInput,float* buffer,DCBlocker& dc,TapeMagnetics& mag){
     // --- record amplifier ---
-    float recSig=dc.process((frame.conditionedInput*impl_->driveGain)+feedbackInput); recSig=clampf(recSig,-4,4);
+    const float freshInput = frame.conditionedInput * impl_->driveGain;
+    float recSig=dc.process(freshInput + feedbackInput); recSig=clampf(recSig,-4,4);
+    // A Warp repeat must decay without repeatedly opening the record bias gate.
+    const bool allowBias = !impl_->warpActive || std::fabs(freshInput) > 1e-7f;
     // --- magnetic saturation/write ---
-    if(!impl_->freeze) buffer[impl_->writeHead]=mag.process(recSig);
+    if(!impl_->freeze) buffer[impl_->writeHead]=mag.process(recSig, allowBias);
     return impl_->outputLimiter((input*impl_->dryGain)+dryTapeOutput);
   };
 

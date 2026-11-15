@@ -1,4 +1,4 @@
-# ACCIDENTAL WARP V1.2 — DSP MATHEMATICAL & SONIC SPECIFICATION
+# ACCIDENTAL WARP V1.3 — DSP MATHEMATICAL & SONIC SPECIFICATION
 
 ## 1. Identidade Sonora e Princípio Físico
 
@@ -111,7 +111,7 @@ Para obter imagem estéreo expansiva sem introduzir desafinação entre os canai
    - Recircula exclusivamente o sinal processado pelo Accidental Warp.
    - Se `warpFeedback == 0.0f`, a realimentação é estritamente **zero** (não há fallback silencioso para o feedback de fita).
    - Cada recirculação sofre nova transposição ascendente, gerando cascatas tonais crescentes.
-   - Níveis calibrados de 0% a 95% com estabilização por compressor de pico, garantindo ausência de NaN, Inf e estouro de amplitude.
+   - Ganho de retorno limitado a 95%, com saturação e compressor. Durante Warp, só a entrada nova abre o gate de bias magnético, para que o retorno abaixo do limiar não sustente a portadora por conta própria.
 3. **Spiral Feedback (Hydra 2.5 Roadmap):**
    - Matriz de roteamento cruzado entre cabeças de fita convencionais e cabeça Warp, permitindo realimentações entrelaçadas em proporções controladas.
 
@@ -123,14 +123,16 @@ No protótipo original:
   $$\text{Warp Return} \longrightarrow \text{HPF (120 Hz)} \longrightarrow \text{LPF (2.2 kHz)} \longrightarrow \text{Soft Drive (tanh/rational)} \longrightarrow \text{warpFeedback} \longrightarrow \text{Compressor}$$
   - **HPF (120 Hz, Q=0.707):** Elimina o acúmulo de sub-graves e offsets DC que desestabilizariam o laço.
   - **LPF (2200 Hz, Q=0.707):** Amortece o acúmulo descontrolado de harmônicos ultra-altos em cada ciclo de pitch-up.
-  - **Soft Saturation:** Compressão suave que confere compressão de fita analógica e estabilidade estrita.
+  - **Soft Saturation:** Compressão suave que confere compressão de fita analógica no retorno.
 
 ---
 
 ## 7. Compatibilidade de API e Segurança de Memória
 
-A estrutura `hydra_dsp_params` foi expandida na API 1.3 de 29 campos (116 bytes) para 35 campos (140 bytes). Para proteger clientes antigos contra leituras fora dos limites (out-of-bounds reads):
-- Introdução de `hydra_dsp_set_params_sized(handle, params, struct_size)`.
-- Se `struct_size == HYDRA_DSP_PARAMS_SIZE_V1_2` (116 bytes), os parâmetros do Warp são inicializados automaticamente com valores seguros (`warpActive = 0`, `warpSpeed = 1.0`, etc.) sem acessar memória além do buffer do cliente.
-- Tamanhos menores que 116 bytes são rejeitados com código de erro `-2`.
-- A função padrão `hydra_dsp_set_params` encaminha com `sizeof(hydra_dsp_params)`, mantendo compatibilidade total de ABI.
+A API 1.3 distingue a estrutura legada de 116 bytes da estrutura expandida de 140 bytes.
+
+- O símbolo histórico `hydra_dsp_set_params` lê 116 bytes, assim como `hydra_dsp_set_params_v1_2`. Ambos aplicam os defaults do Warp.
+- Para fornecer os campos Warp na estrutura `hydra_dsp_params`, use `hydra_dsp_set_params_v1_3` ou `hydra_dsp_set_params_sized` com `sizeof(params)`.
+- O setter com tamanho aplica a estrutura legada a partir de 116 bytes e a revisão expandida completa a partir de 140 bytes. Ele retorna `-1` para ponteiro nulo e `-2` para tamanho abaixo de 116 bytes.
+- Um cliente compilado durante a prévia que enviava 140 bytes pelo símbolo histórico deve migrar para o setter versionado para continuar aplicando os campos Warp. Os demais campos mantêm o layout original.
+- O teste `core_abi_legacy_consumer` compila em C apenas com o header original da API 1.2 e executa o consumidor com a biblioteca compartilhada atual. A CI roda esse teste também sob AddressSanitizer.

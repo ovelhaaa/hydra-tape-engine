@@ -77,7 +77,7 @@ void test_warp_ascending_pitch_shift() {
   p.warpFeedback = 0.0f;
   p.warpMode = 0.0f;      // 2-Taps Musical
 
-  CHECK(hydra_dsp_set_params(h, &p) == 0);
+  CHECK(hydra_dsp_set_params_v1_3(h, &p) == 0);
   CHECK(hydra_dsp_commit(h) == 0);
 
   // Estímulo de entrada: senoide pura de 440 Hz
@@ -135,7 +135,7 @@ void test_warp_stereo_phase_offset() {
   p.warpGrainMs = 80.0f;
   p.warpStereo = 0.0f; // Mono centrado
 
-  CHECK(hydra_dsp_set_params(h, &p) == 0);
+  CHECK(hydra_dsp_set_params_v1_3(h, &p) == 0);
   CHECK(hydra_dsp_commit(h) == 0);
 
   constexpr uint32_t kN = 2048;
@@ -153,7 +153,7 @@ void test_warp_stereo_phase_offset() {
   // Com stereoWarp = 1.0f, canais L e R devem se diferenciar
   hydra_dsp_handle* h2 = create_test_handle();
   p.warpStereo = 1.0f;
-  CHECK(hydra_dsp_set_params(h2, &p) == 0);
+  CHECK(hydra_dsp_set_params_v1_3(h2, &p) == 0);
   CHECK(hydra_dsp_commit(h2) == 0);
 
   std::vector<float> outL_stereo(kN), outR_stereo(kN);
@@ -187,7 +187,7 @@ void test_warp_feedback_levels() {
     p.warpGrainMs = 60.0f;   // ~2880 amostras
     p.warpFeedback = 0.0f;   // WARP FEEDBACK É ZERO!
 
-    CHECK(hydra_dsp_set_params(h, &p) == 0);
+    CHECK(hydra_dsp_set_params_v1_3(h, &p) == 0);
     CHECK(hydra_dsp_commit(h) == 0);
 
     // Injetar Dirac no início
@@ -227,7 +227,7 @@ void test_warp_feedback_levels() {
     p.warpGrainMs = 60.0f;
     p.warpFeedback = fbVal;
 
-    CHECK(hydra_dsp_set_params(h, &p) == 0);
+    CHECK(hydra_dsp_set_params_v1_3(h, &p) == 0);
     CHECK(hydra_dsp_commit(h) == 0);
 
     constexpr uint32_t kFrames = 24000;
@@ -265,7 +265,7 @@ void test_warp_feedback_levels() {
     p.warpGrainMs = 70.0f;
     p.warpFeedback = 95.0f; // 95% de realimentação
 
-    CHECK(hydra_dsp_set_params(h, &p) == 0);
+    CHECK(hydra_dsp_set_params_v1_3(h, &p) == 0);
     CHECK(hydra_dsp_commit(h) == 0);
 
     // 5 segundos = 240.000 amostras
@@ -307,7 +307,7 @@ void test_warp_all_modes() {
     p.warpFeedback = 40.0f;
     p.warpMode = static_cast<float>(m);
 
-    CHECK(hydra_dsp_set_params(h, &p) == 0);
+    CHECK(hydra_dsp_set_params_v1_3(h, &p) == 0);
     CHECK(hydra_dsp_commit(h) == 0);
 
     constexpr uint32_t kN = 4096;
@@ -346,7 +346,7 @@ void test_warp_all_modes() {
     p.warpSpeed = 0.5f;
     p.warpGrainMs = 80.0f;
     p.warpMode = 0.0f;
-    CHECK(hydra_dsp_set_params(h, &p) == 0);
+    CHECK(hydra_dsp_set_params_v1_3(h, &p) == 0);
     CHECK(hydra_dsp_commit(h) == 0);
 
     constexpr uint32_t kBlock = 64;
@@ -381,7 +381,7 @@ void test_warp_grain_phase_continuity() {
   p.warpSpeed = 1.0f;
   p.warpGrainMs = 40.0f;
 
-  CHECK(hydra_dsp_set_params(h, &p) == 0);
+  CHECK(hydra_dsp_set_params_v1_3(h, &p) == 0);
   CHECK(hydra_dsp_commit(h) == 0);
 
   constexpr uint32_t kBlock = 64;
@@ -428,7 +428,7 @@ void test_warp_toggle_with_audio_in_buffer() {
   p.delayWet = 100.0f;
   p.warpActive = 0.0f; // Inicia em Delay tradicional
 
-  CHECK(hydra_dsp_set_params(h, &p) == 0);
+  CHECK(hydra_dsp_set_params_v1_3(h, &p) == 0);
   CHECK(hydra_dsp_commit(h) == 0);
 
   constexpr uint32_t kN = 2048;
@@ -474,7 +474,7 @@ void test_warp_abrupt_speed_and_stereo_changes() {
   p.warpSpeed = 1.0f;
   p.warpStereo = 0.0f;
 
-  CHECK(hydra_dsp_set_params(h, &p) == 0);
+  CHECK(hydra_dsp_set_params_v1_3(h, &p) == 0);
   CHECK(hydra_dsp_commit(h) == 0);
 
   constexpr uint32_t kBlock = 64;
@@ -501,76 +501,92 @@ void test_warp_abrupt_speed_and_stereo_changes() {
   hydra_dsp_destroy(h);
 }
 
-// 9. Validar compatibilidade binária e proteção contra buffer overrun na API C
 void test_api_backward_compatibility() {
   hydra_dsp_handle* h = create_test_handle();
+  CHECK(hydra_dsp_get_param_count() == 36);
 
-  // Testar chamada direta com tipo hydra_dsp_params_v1_2
-  hydra_dsp_params_v1_2 v12{};
-  v12.drive = 45.0f;
-  v12.delayActive = 1.0f;
-  v12.delayTimeMs = 250.0f;
-  CHECK(hydra_dsp_set_params_v1_2(h, &v12) == 0);
-  CHECK(hydra_dsp_commit(h) == 0);
+  for (int i = 0; i < HYDRA_DSP_PARAM_COUNT; ++i) {
+    const auto id = static_cast<hydra_dsp_param_id>(i);
+    hydra_dsp_param_spec spec{};
+    CHECK(hydra_dsp_get_param_spec_for_handle(h, id, &spec) == 0);
+    CHECK(spec.id == id);
+    CHECK(spec.name && spec.name[0]);
+    float value = -1.0f;
+    CHECK(hydra_dsp_get_parameter(h, id, &value) == 0);
+    CHECK(value == spec.default_value);
+    CHECK(hydra_dsp_set_parameter(h, id, spec.max_value) == 0);
+    CHECK(hydra_dsp_get_parameter(h, id, &value) == 0);
+    CHECK(value == (id == HYDRA_DSP_PARAM_RESET ? 0.0f : spec.max_value));
+    CHECK(hydra_dsp_set_parameter(h, id, spec.default_value) == 0);
+  }
 
-  // Testar chamada com tamanho da estrutura v1.2 (116 bytes)
-  std::vector<uint8_t> legacyBuffer(HYDRA_DSP_PARAMS_SIZE_V1_2, 0);
-  auto* legacyParams = reinterpret_cast<hydra_dsp_params*>(legacyBuffer.data());
-  legacyParams->drive = 50.0f;
-  legacyParams->delayActive = 1.0f;
-  legacyParams->delayTimeMs = 300.0f;
-
-  CHECK(hydra_dsp_set_params_sized(h, legacyBuffer.data(), HYDRA_DSP_PARAMS_SIZE_V1_2) == 0);
-  CHECK(hydra_dsp_commit(h) == 0);
-
-  // Verificar que warpActive permaneceu seguro (0.0f) mesmo recebendo buffer legado sem os campos do Warp
-  float v = -1.0f;
-  CHECK(hydra_dsp_get_parameter(h, HYDRA_DSP_PARAM_WARP_ACTIVE, &v) == 0);
-  CHECK(v == 0.0f);
-
-  // Verificar rejeição de tamanho truncado inválido (< 116 bytes)
-  CHECK(hydra_dsp_set_params_sized(h, legacyBuffer.data(), 64) == -2);
-
-  // Validar especificação do parâmetro HYDRA_DSP_PARAM_WARP_MODE (0 a 3)
   hydra_dsp_param_spec modeSpec{};
   CHECK(hydra_dsp_get_param_spec(HYDRA_DSP_PARAM_WARP_MODE, &modeSpec) == 0);
-  CHECK(modeSpec.id == HYDRA_DSP_PARAM_WARP_MODE);
-  CHECK(modeSpec.min_value == 0.0f);
-  CHECK(modeSpec.max_value == 3.0f);
+  CHECK(modeSpec.min_value == 0.0f && modeSpec.max_value == 3.0f);
   CHECK(modeSpec.default_value == 0.0f);
 
-  // Testar Get / Set de parâmetros C API para todos os IDs de 30 a 35
-  CHECK(hydra_dsp_set_parameter(h, HYDRA_DSP_PARAM_WARP_ACTIVE, 1.0f) == 0);
-  CHECK(hydra_dsp_get_parameter(h, HYDRA_DSP_PARAM_WARP_ACTIVE, &v) == 0);
-  CHECK(v == 1.0f);
+  hydra_dsp_params_v1_2 legacy{};
+  legacy.drive = 45.0f;
+  legacy.springMix = 31.0f;
+  hydra_dsp_params full{};
+  full.drive = 55.0f;
+  full.warpActive = 1.0f;
+  full.warpSpeed = 1.5f;
+  full.warpGrainMs = 120.0f;
+  full.warpStereo = 0.8f;
+  full.warpFeedback = 75.0f;
+  full.warpMode = 3.0f;
 
-  CHECK(hydra_dsp_set_parameter(h, HYDRA_DSP_PARAM_WARP_SPEED, 1.5f) == 0);
-  CHECK(hydra_dsp_get_parameter(h, HYDRA_DSP_PARAM_WARP_SPEED, &v) == 0);
-  CHECK(std::fabs(v - 1.5f) < 1e-5f);
+  auto expect = [&](hydra_dsp_param_id id, float expected) {
+    float value = -1.0f;
+    CHECK(hydra_dsp_get_parameter(h, id, &value) == 0);
+    CHECK(value == expected);
+  };
+  auto expectWarpDefaults = [&] {
+    for (int i = HYDRA_DSP_PARAM_WARP_ACTIVE; i < HYDRA_DSP_PARAM_COUNT; ++i) {
+      const auto id = static_cast<hydra_dsp_param_id>(i);
+      hydra_dsp_param_spec spec{};
+      CHECK(hydra_dsp_get_param_spec(id, &spec) == 0);
+      expect(id, spec.default_value);
+    }
+  };
 
-  CHECK(hydra_dsp_set_parameter(h, HYDRA_DSP_PARAM_WARP_GRAIN_MS, 120.0f) == 0);
-  CHECK(hydra_dsp_get_parameter(h, HYDRA_DSP_PARAM_WARP_GRAIN_MS, &v) == 0);
-  CHECK(std::fabs(v - 120.0f) < 1e-5f);
+  CHECK(hydra_dsp_set_params_v1_3(h, &full) == 0);
+  expect(HYDRA_DSP_PARAM_DRIVE, 55.0f);
+  expect(HYDRA_DSP_PARAM_WARP_ACTIVE, 1.0f);
+  expect(HYDRA_DSP_PARAM_WARP_MODE, 3.0f);
+  CHECK(hydra_dsp_set_params(h, &legacy) == 0);
+  expect(HYDRA_DSP_PARAM_DRIVE, 45.0f);
+  expect(HYDRA_DSP_PARAM_SPRING_MIX, 31.0f);
+  expectWarpDefaults();
 
-  CHECK(hydra_dsp_set_parameter(h, HYDRA_DSP_PARAM_WARP_STEREO, 0.8f) == 0);
-  CHECK(hydra_dsp_get_parameter(h, HYDRA_DSP_PARAM_WARP_STEREO, &v) == 0);
-  CHECK(std::fabs(v - 0.8f) < 1e-5f);
+  CHECK(hydra_dsp_set_params_sized(h, &full, sizeof(full)) == 0);
+  expect(HYDRA_DSP_PARAM_WARP_SPEED, 1.5f);
+  expect(HYDRA_DSP_PARAM_WARP_GRAIN_MS, 120.0f);
+  expect(HYDRA_DSP_PARAM_WARP_STEREO, 0.8f);
+  expect(HYDRA_DSP_PARAM_WARP_FEEDBACK, 75.0f);
+  CHECK(hydra_dsp_set_params_v1_2(h, &legacy) == 0);
+  expectWarpDefaults();
 
-  CHECK(hydra_dsp_set_parameter(h, HYDRA_DSP_PARAM_WARP_FEEDBACK, 75.0f) == 0);
-  CHECK(hydra_dsp_get_parameter(h, HYDRA_DSP_PARAM_WARP_FEEDBACK, &v) == 0);
-  CHECK(std::fabs(v - 75.0f) < 1e-5f);
-
-  CHECK(hydra_dsp_set_parameter(h, HYDRA_DSP_PARAM_WARP_MODE, 3.0f) == 0);
-  CHECK(hydra_dsp_get_parameter(h, HYDRA_DSP_PARAM_WARP_MODE, &v) == 0);
-  CHECK(v == 3.0f);
-
+  CHECK(hydra_dsp_set_params_sized(h, &full, sizeof(full) - 1) == 0);
+  expectWarpDefaults();
+  CHECK(hydra_dsp_set_params_sized(h, &legacy, sizeof(legacy)) == 0);
+  expect(HYDRA_DSP_PARAM_DRIVE, 45.0f);
+  CHECK(hydra_dsp_set_params_sized(h, &legacy, sizeof(legacy) - 1) == -2);
+  CHECK(hydra_dsp_set_params_sized(nullptr, &legacy, sizeof(legacy)) == -1);
+  CHECK(hydra_dsp_set_params_sized(h, nullptr, sizeof(full)) == -1);
+  CHECK(hydra_dsp_set_params(h, nullptr) == -1);
+  CHECK(hydra_dsp_set_params_v1_2(nullptr, &legacy) == -1);
+  CHECK(hydra_dsp_set_params_v1_3(h, nullptr) == -1);
+  expect(HYDRA_DSP_PARAM_DRIVE, 45.0f);
+  CHECK(hydra_dsp_commit(h) == 0);
   hydra_dsp_destroy(h);
 }
 
 } // namespace
 
 int main() {
-  std::cout << "Running Accidental Warp V1.1 Comprehensive DSP Test Suite...\n";
+  std::cout << "Running Accidental Warp V1.3 Comprehensive DSP Test Suite...\n";
   test_dual_tap_window_complementarity();
   test_warp_ascending_pitch_shift();
   test_warp_stereo_phase_offset();
@@ -580,6 +596,6 @@ int main() {
   test_warp_toggle_with_audio_in_buffer();
   test_warp_abrupt_speed_and_stereo_changes();
   test_api_backward_compatibility();
-  std::cout << "All Accidental Warp V1.1 Tests PASSED successfully!\n";
+  std::cout << "All Accidental Warp V1.3 Tests PASSED successfully!\n";
   return 0;
 }

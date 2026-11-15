@@ -85,12 +85,18 @@ float p_warpFeedback = 0.0f;     // 0% feedback (pure single pass)
 int p_warpMode = 0;              // 0 = 2-Taps Musical Hermite
 
 // === DSP PERFORMANCE TELEMETRY ===
-volatile uint32_t g_dsp_block_count = 0;
-volatile int64_t g_dsp_total_block_us = 0;
-volatile int64_t g_dsp_last_block_us = 0;
-volatile int64_t g_dsp_max_block_us = 0;
-volatile uint32_t g_dsp_overrun_count = 0;
-volatile float g_dsp_cpu_load_pct = 0.0f;
+constexpr double kDspBlockBudgetUs = 1000000.0 * AUDIO_CHUNK_SIZE / SAMPLE_RATE;
+struct DspPerformance {
+  uint32_t blocks = 0;
+  int64_t totalUs = 0;
+  int64_t lastUs = 0;
+  int64_t peakUs = 0;
+  uint32_t overruns = 0;
+  uint32_t i2sWriteFailures = 0;
+  float budgetLoadEma = 0.0f;
+};
+DspPerformance g_dsp_perf;
+portMUX_TYPE g_dsp_perf_mux = portMUX_INITIALIZER_UNLOCKED;
 
 // Gate
 float p_gateThreshold = 0.001f; // Default threshold
@@ -472,7 +478,7 @@ void audioTask(void *parameter) {
 
     // Simple synth processing only for now
     int32_t synthBuf[AUDIO_CHUNK_SIZE * 2];
-    size_t bytesWritten;
+    size_t bytesWritten = 0;
     // Prepare input buffer for I2S
     int32_t rxBuf[AUDIO_CHUNK_SIZE * 2];
     // Initialize with zeros to avoid noise if read fails or is partial
@@ -566,19 +572,17 @@ void audioTask(void *parameter) {
       }
     } // end loop
 
-    // Telemetry: measure chunk DSP time (budget = 2902.5 us for 128 frames @ 44.1 kHz)
-    int64_t block_dur_us = esp_timer_get_time() - block_start_us;
-    g_dsp_last_block_us = block_dur_us;
-    g_dsp_total_block_us += block_dur_us;
-    g_dsp_block_count = g_dsp_block_count + 1;
-    if (block_dur_us > g_dsp_max_block_us) {
-      g_dsp_max_block_us = block_dur_us;
-    }
-    if (block_dur_us > 2902) {
-      g_dsp_overrun_count = g_dsp_overrun_count + 1;
-    }
-    float current_load = ((float)block_dur_us / 2902.5f) * 100.0f;
-    g_dsp_cpu_load_pct = 0.95f * g_dsp_cpu_load_pct + 0.05f * current_load;
+    // Includes generation/DSP and PCM packing, with I2S calls outside the timer.
+    const int64_t durationUs = esp_timer_get_time() - block_start_us;
+    const float budgetLoad = 100.0f * durationUs / kDspBlockBudgetUs;
+    portENTER_CRITICAL(&g_dsp_perf_mux);
+    g_dsp_perf.lastUs = durationUs;
+    g_dsp_perf.totalUs += durationUs;
+    ++g_dsp_perf.blocks;
+    if (durationUs > g_dsp_perf.peakUs) g_dsp_perf.peakUs = durationUs;
+    if (durationUs > kDspBlockBudgetUs) ++g_dsp_perf.overruns;
+    g_dsp_perf.budgetLoadEma = 0.95f * g_dsp_perf.budgetLoadEma + 0.05f * budgetLoad;
+    portEXIT_CRITICAL(&g_dsp_perf_mux);
 
     // Write block to I2S
     // Use a longer timeout (e.g., 100ms) to ensure we block if buffer is full.
@@ -588,7 +592,10 @@ void audioTask(void *parameter) {
 
     // Safety check: if we are somehow running too fast or I2S fails, yield
     // But normally i2s_write blocks.
-    if (wErr != ESP_OK || bytesWritten < sizeof(synthBuf)) {
+    if (wErr != ESP_OK || bytesWritten != sizeof(synthBuf)) {
+      portENTER_CRITICAL(&g_dsp_perf_mux);
+      ++g_dsp_perf.i2sWriteFailures;
+      portEXIT_CRITICAL(&g_dsp_perf_mux);
       // If we failed to write full buffer, yield to avoid WDT starvation
       vTaskDelay(1);
     }
@@ -820,14 +827,18 @@ void printDspPerformanceStats() {
   dualPrintln("\n=== HYDRA DSP PERFORMANCE TELEMETRY ===");
   dualPrintf("Block Size          : %d frames\n", AUDIO_CHUNK_SIZE);
   dualPrintf("Sample Rate         : %d Hz\n", SAMPLE_RATE);
-  dualPrintf("Block Time Budget   : 2902.5 us\n");
-  dualPrintf("Blocks Processed    : %u\n", g_dsp_block_count);
-  int64_t avg_us = g_dsp_block_count > 0 ? (g_dsp_total_block_us / g_dsp_block_count) : 0;
-  dualPrintf("Avg DSP Block Time  : %lld us\n", avg_us);
-  dualPrintf("Last DSP Block Time : %lld us\n", g_dsp_last_block_us);
-  dualPrintf("Peak DSP Block Time : %lld us\n", g_dsp_max_block_us);
-  dualPrintf("DSP CPU Load (EMA)  : %.1f %%\n", g_dsp_cpu_load_pct);
-  dualPrintf("Buffer Overruns     : %u\n", g_dsp_overrun_count);
+  portENTER_CRITICAL(&g_dsp_perf_mux);
+  const DspPerformance perf = g_dsp_perf;
+  portEXIT_CRITICAL(&g_dsp_perf_mux);
+  dualPrintf("Block Time Budget   : %.1f us\n", kDspBlockBudgetUs);
+  dualPrintf("Blocks Processed    : %u\n", perf.blocks);
+  const int64_t avgUs = perf.blocks ? perf.totalUs / perf.blocks : 0;
+  dualPrintf("Avg DSP Block Time  : %lld us\n", avgUs);
+  dualPrintf("Last DSP Block Time : %lld us\n", perf.lastUs);
+  dualPrintf("Peak DSP Block Time : %lld us\n", perf.peakUs);
+  dualPrintf("DSP Budget Use (EMA): %.1f %%\n", perf.budgetLoadEma);
+  dualPrintf("DSP Budget Overruns : %u\n", perf.overruns);
+  dualPrintf("I2S TX Write Failures: %u\n", perf.i2sWriteFailures);
   dualPrintf("Internal Free Heap  : %u bytes\n", heap_caps_get_free_size(MALLOC_CAP_INTERNAL));
   dualPrintf("SPIRAM (PSRAM) Free : %u bytes\n", heap_caps_get_free_size(MALLOC_CAP_SPIRAM));
   dualPrintf("Warp Active         : %s\n", p_warpActive ? "YES" : "NO");

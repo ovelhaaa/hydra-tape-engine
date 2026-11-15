@@ -61,7 +61,7 @@ bool HydraDspEsp32Adapter::applyParams(const hydra_dsp_params& params, bool forc
   if (!handle_) return false;
   if (!force && paramsInitialized_ && sameParams(params_, params)) return false;
 
-  const int setResult = hydra_dsp_set_params(handle_, &params);
+  const int setResult = hydra_dsp_set_params_v1_3(handle_, &params);
   if (setResult != 0) return false;
   const int commitResult = hydra_dsp_commit(handle_);
   if (commitResult != 0) return false;

@@ -52,6 +52,17 @@ if(BUILD_TESTING)
   )
 
   if(NOT EMSCRIPTEN)
+    # Build the consumer against the frozen header, then link it to the current shared library.
+    add_library(hydra_abi_test_library SHARED
+      dsp/core/tape_core.cpp
+      dsp/core/hydra_dsp_c_api.cpp
+    )
+    target_include_directories(hydra_abi_test_library PRIVATE include dsp/core)
+    set_target_properties(hydra_abi_test_library PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS ON)
+    add_executable(hydra_abi_legacy_consumer tests/core/abi_v1_2/consumer.c)
+    target_link_libraries(hydra_abi_legacy_consumer PRIVATE hydra_abi_test_library)
+    add_test(NAME core_abi_legacy_consumer COMMAND hydra_abi_legacy_consumer)
+
     add_executable(hydra_listen_native tests/core/listen.cpp)
     target_link_libraries(hydra_listen_native PRIVATE hydra_dsp_core)
     add_test(
@@ -125,7 +136,7 @@ if(BUILD_WEB)
     # runs the generated ES module as web-compatible JS, not via a separate
     # `worklet` ENVIRONMENT token.
     "SHELL:-sENVIRONMENT=web,worker"
-    "SHELL:-sEXPORTED_FUNCTIONS=['_hydra_dsp_get_api_version','_hydra_dsp_get_param_count','_hydra_dsp_get_param_specs','_hydra_dsp_get_param_spec','_hydra_dsp_get_param_spec_for_handle','_hydra_dsp_create','_hydra_dsp_destroy','_hydra_dsp_prepare','_hydra_dsp_reset','_hydra_dsp_set_parameter','_hydra_dsp_get_parameter','_hydra_dsp_set_params','_hydra_dsp_commit','_hydra_dsp_process','_malloc','_free']"
+    "SHELL:-sEXPORTED_FUNCTIONS=['_hydra_dsp_get_api_version','_hydra_dsp_get_param_count','_hydra_dsp_get_param_specs','_hydra_dsp_get_param_spec','_hydra_dsp_get_param_spec_for_handle','_hydra_dsp_create','_hydra_dsp_destroy','_hydra_dsp_prepare','_hydra_dsp_reset','_hydra_dsp_set_parameter','_hydra_dsp_get_parameter','_hydra_dsp_set_params','_hydra_dsp_set_params_v1_2','_hydra_dsp_set_params_v1_3','_hydra_dsp_set_params_sized','_hydra_dsp_commit','_hydra_dsp_process','_malloc','_free']"
     "SHELL:-sEXPORTED_RUNTIME_METHODS=['cwrap','HEAP32','HEAPF32']"
   )
 

@@ -4,6 +4,7 @@
 #include <array>
 #include <fstream>
 #include <iostream>
+#include <string_view>
 
 namespace {
 constexpr uint32_t kBlock = 128;
@@ -17,6 +18,12 @@ struct Event {
 }
 
 int main(int argc, char** argv) {
+  if (argc == 2 && std::string_view(argv[1]) == "--version") {
+    const auto version = hydra_dsp_get_api_version();
+    std::cout << "TapeCore C API " << (version >> 16) << '.'
+              << ((version >> 8) & 0xff) << '.' << (version & 0xff) << '\n';
+    return 0;
+  }
   if (argc != 4) {
     std::cerr << "usage: hydra_listen input.f32 automation.txt output.f32\n";
     return 2;

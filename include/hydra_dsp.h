@@ -121,15 +121,11 @@ int hydra_dsp_prepare(hydra_dsp_handle* handle, uint32_t max_frames, uint32_t ch
 void hydra_dsp_reset(hydra_dsp_handle* handle);
 int hydra_dsp_set_parameter(hydra_dsp_handle* handle, hydra_dsp_param_id param_id, float value);
 int hydra_dsp_get_parameter(hydra_dsp_handle* handle, hydra_dsp_param_id param_id, float* out_value);
-/**
- * @brief Sets DSP parameters from full API 1.3 parameter structure (140 bytes).
- *
- * NOTE: Callers compiled against earlier API revisions (e.g. 1.2 with 116 bytes)
- * MUST NOT call this function across dynamic link boundaries without recompilation,
- * as C does not pass runtime struct sizes. Use hydra_dsp_set_params_v1_2() or
- * hydra_dsp_set_params_sized() instead for guaranteed ABI safety.
- */
-int hydra_dsp_set_params(hydra_dsp_handle* handle, const hydra_dsp_params* params);
+/* Legacy ABI: reads the 116-byte API 1.2 structure and resets Warp to defaults. */
+int hydra_dsp_set_params(hydra_dsp_handle* handle, const hydra_dsp_params_v1_2* params);
+
+/* Full 140-byte API 1.3 structure, including Warp. */
+int hydra_dsp_set_params_v1_3(hydra_dsp_handle* handle, const hydra_dsp_params* params);
 
 /**
  * @brief Sets DSP parameters for callers using legacy API 1.2 structure (116 bytes).
@@ -142,7 +138,7 @@ int hydra_dsp_set_params_v1_2(hydra_dsp_handle* handle, const hydra_dsp_params_v
 /**
  * @brief Sets DSP parameters with explicit struct size for backward and forward ABI safety.
  *
- * If struct_size is HYDRA_DSP_PARAMS_SIZE_V1_2 (116 bytes), parameters introduced
+ * If struct_size is less than HYDRA_DSP_PARAMS_SIZE_V1_3 (140 bytes), parameters introduced
  * in API 1.3 (such as warp parameters) safely default without out-of-bounds reads.
  *
  * @param handle Handle to DSP instance

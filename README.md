@@ -1,6 +1,9 @@
 # Hydra Tape Engine
 
-Projeto de DSP compartilhado (native + web) para um emulador de tape delay multi-head, com API C estável para integração com hosts.
+O tape delay multi-head usa `dsp/core/tape_core.cpp` no ESP32-S3, no host
+nativo e no navegador. O firmware integra pela API C e mantém Fripp,
+Bubbles e Freeverb como efeitos embarcados. O mapa de dependências e os
+resultados da consolidação estão na [auditoria DSP](docs/DSP_ARCHITECTURE_AUDIT.md).
 
 ## API pública estável (`include/hydra_dsp.h`)
 
@@ -30,23 +33,33 @@ O contrato de compatibilidade é:
 
 As instruções de integração física (requisitos, pinout e comandos serial CLI) foram preservadas em:
 
-- `docs/hardware_esp32.md`
+- [Integração física do ESP32-S3](docs/hardware_esp32.md)
+
+```bash
+pio run -e esp32-s3-devkitc-1
+```
 
 ---
 
 ## Build native
 
 ```bash
-cmake -S . -B build -DBUILD_TESTING=ON
+cmake -S . -B build -DBUILD_TESTING=ON -DCMAKE_BUILD_TYPE=Release
 cmake --build build -j
 ```
 
 ## Build web (Emscripten)
 
 ```bash
-emcmake cmake -S . -B build-web -DBUILD_WEB=ON -DBUILD_TESTING=ON
+emcmake cmake -S . -B build-web -DBUILD_WEB=ON -DBUILD_TESTING=ON -DCMAKE_BUILD_TYPE=Release \
+  -DHYDRA_NATIVE_TRACE_RUNNER="$PWD/build/hydra_render_trace_native"
 cmake --build build-web -j
 ```
+
+Para habilitar a equivalência, compile primeiro o runner native acima.
+Em Windows, indique o caminho do executável `.exe`. Quando
+`HYDRA_NATIVE_TRACE_RUNNER` é omitido, CTest executa os testes do backend WASM.
+O diretório `build-web/` é gerado localmente pelo CMake.
 
 Artefatos principais (web):
 
@@ -69,7 +82,7 @@ ctest --test-dir build --output-on-failure
 Inclui:
 
 - `core_smoke`
-- `core_regression`
+- `core_regression` (freeze, reverse estéreo, buffer circular, feedback e automação)
 - `core_abi_symbols` (sanity check de símbolos ABI esperados)
 - golden regressions
 

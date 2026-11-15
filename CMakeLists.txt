@@ -48,6 +48,16 @@ if(BUILD_TESTING)
   )
 
   if(NOT EMSCRIPTEN)
+    add_executable(hydra_listen_native tests/core/listen.cpp)
+    target_link_libraries(hydra_listen_native PRIVATE hydra_dsp_core)
+    add_test(
+      NAME core_transition_characterization
+      COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/tests/core/listening_review.py
+              --native $<TARGET_FILE:hydra_listen_native>
+              --characterize-only
+              --output-dir ${CMAKE_BINARY_DIR}/transition_review
+    )
+
     add_executable(hydra_render_trace_native tests/core/render_trace.cpp)
     target_link_libraries(hydra_render_trace_native PRIVATE hydra_dsp_core)
 
@@ -132,6 +142,15 @@ if(BUILD_WEB)
   )
 
   if(BUILD_TESTING)
+    add_executable(hydra_listen_wasm tests/core/listen.cpp)
+    target_link_libraries(hydra_listen_wasm PRIVATE hydra_dsp_core)
+    set_target_properties(hydra_listen_wasm PROPERTIES
+      OUTPUT_NAME "hydra_listen"
+      SUFFIX ".js"
+      RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/wasm-tests"
+    )
+    target_link_options(hydra_listen_wasm PRIVATE "SHELL:-sENVIRONMENT=node" "SHELL:-sNODERAWFS=1")
+
     add_executable(hydra_render_trace_wasm
       dsp/core/tape_core.cpp
       dsp/core/hydra_dsp_c_api.cpp

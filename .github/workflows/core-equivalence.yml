@@ -166,13 +166,26 @@ jobs:
       - name: Configure and build native trace runner
         run: |
           cmake -S . -B build-native -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} -DBUILD_TESTING=ON
-          cmake --build build-native --config ${CMAKE_BUILD_TYPE} -j --target hydra_render_trace_native
+          cmake --build build-native --config ${CMAKE_BUILD_TYPE} -j --target hydra_render_trace_native hydra_listen_native
 
       - name: Configure and build wasm trace runner
         run: |
           rm -rf build-wasm
           emcmake cmake -S . -B build-wasm -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} -DBUILD_WEB=ON -DBUILD_TESTING=ON
-          cmake --build build-wasm --config ${CMAKE_BUILD_TYPE} -j --target hydra_render_trace_wasm
+          cmake --build build-wasm --config ${CMAKE_BUILD_TYPE} -j --target hydra_render_trace_wasm hydra_listen_wasm
+
+      - name: Build listening and transition renders
+        run: |
+          python3 tests/core/listening_review.py \
+            --native build-native/hydra_listen_native \
+            --wasm-js build-wasm/wasm-tests/hydra_listen.js \
+            --output-dir ci-reports/listening
+
+      - name: Upload listening renders
+        uses: actions/upload-artifact@v4
+        with:
+          name: listening-review
+          path: ci-reports/listening
 
       - name: Run native vs wasm equivalence
         run: |

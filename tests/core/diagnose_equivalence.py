@@ -125,6 +125,9 @@ def main():
     args = parser.parse_args()
     compilers = [shlex.split(args.native_cxx), shlex.split(args.wasm_cxx)]
     result = {"compilers": [run(c + ["--version"]).stdout for c in compilers]}
+    macros = subprocess.run(compilers[0] + ["-dM", "-E", "-x", "c++", "-"],
+                            input="", text=True, capture_output=True, check=True).stdout
+    result["native_fma_macro"] = any(line.startswith("#define __FMA__ ") for line in macros.splitlines())
     with tempfile.TemporaryDirectory() as directory:
         work = Path(directory)
         for name, revision in (("base", args.base), ("head", args.head)):
@@ -140,7 +143,8 @@ def main():
             if name == "head":
                 configurations += [("instrumented", True, False, False),
                                    ("shared_input", True, True, False),
-                                   ("contraction_off", False, False, True)]
+                                   ("contraction_off", False, False, True),
+                                   ("shared_input_contraction_off", True, True, True)]
             result[name] = {}
             for variant, instrument, shared, no_contract in configurations:
                 (work / "tape_core.cpp").write_text(instrument_core(core) if instrument else core, encoding="utf-8")
@@ -172,9 +176,15 @@ def main():
                 result[name][variant] = metrics
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
+    print(f'native target defines __FMA__: {result["native_fma_macro"]}')
     for name in ("base", "head"):
         for variant, data in result[name].items():
             print(f'{name}/{variant}: max_abs={data["max_abs"]:.12g} rmse={data["rmse"]:.12g}')
+            for stage in ("stimulus", "inputHPF", "conditionedInput", "HighShelf.a2", "tapeOutput"):
+                difference = data.get("operations", {}).get(stage)
+                if difference:
+                    print(f'  {stage}: first={difference["first"]["frame"]} '
+                          f'peak={difference["peak"]["abs_error"]:.9g}')
 
 
 if __name__ == "__main__":

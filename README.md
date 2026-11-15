@@ -144,15 +144,22 @@ Por isso a validação usa equivalência com tolerâncias, não igualdade bit-a-
 ---
 
 
-## Suíte A/B offline (percepção auditiva sem ESP32)
+## Renders A/B de escuta
 
-Para gerar pacote de revisão com pares WAV (`native` vs `wasm`) e null-test:
+Com os builds native e WASM acima, gere pares de 12 s com entrada comum:
 
 ```bash
-python3 tests/core/build_ab_review_package.py   --native build/hydra_render_trace_native   --wasm-js build-web/wasm-tests/hydra_render_trace.js   --output-dir artifacts/ab_review
+python3 tests/core/listening_review.py \
+  --native build/hydra_listen_native \
+  --wasm-js build-web/wasm-tests/hydra_listen.js \
+  --output-dir artifacts/listening
 ```
 
-O pacote inclui, por cenário, `native.wav`, `wasm.wav`, `diff.wav`, `summary.json` e `null_test.txt`.
+O pacote inclui `dry.wav`, `native.wav`, `wasm.wav` e um relatório com cenários
+e métricas de transição. O diagnóstico numérico curto continua disponível em
+`tests/core/compare_native_wasm.py` e `tests/core/build_ab_review_package.py`.
+As instruções para reproduzir a investigação estão na
+[auditoria DSP](docs/DSP_ARCHITECTURE_AUDIT.md#validação-complementar-da-pr-46).
 
 Checklist de release e critério de aceite: `docs/RELEASE_CHECKLIST.md`.
 Template para rastrear mudanças sonoras: `RELEASE_NOTES_TEMPLATE.md`.

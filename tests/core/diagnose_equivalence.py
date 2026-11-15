@@ -44,6 +44,9 @@ static int audit_frame = -1;
         core = replace_once(core, match[0], match[0][:-1] + probes + " }")
     for anchor, probe in [
         ("  impl_->flutterPhase += impl_->flutterInc;", "  ++audit_frame;"),
+        ("      table[i] = std::tanh(x);", '      AUDIT("LUT.tanh",std::tanh(x));'),
+        ("    float y = lut->process(h);", '    AUDIT("magLutInput",h);'),
+        ("    m = remanence * m + (1.0f - remanence) * y;", '    AUDIT("magLutOutput",y);'),
         ("    frame.conditionedInput=iLP.process(iHP.process(input));",
          '    const float highpass=iHP.process(input); AUDIT("inputHPF",highpass);'),
         ("    // --- delay read ---",
@@ -157,7 +160,8 @@ def main():
                 configurations += [("instrumented", True, False, False),
                                    ("shared_input", True, True, False),
                                    ("contraction_off", True, False, True),
-                                   ("shared_input_contraction_off", True, True, True)]
+                                   ("shared_input_contraction_off", True, True, True),
+                                   ("native_tanh_table", True, True, True)]
             result[name] = {}
             for variant, instrument, shared, no_contract in configurations:
                 (work / "tape_core.cpp").write_text(instrument_core(core) if instrument else core, encoding="utf-8")
@@ -170,6 +174,16 @@ def main():
                     flags.append("-ffp-contract=off")
                 samples = []
                 for compiler, wasm in zip(compilers, (False, True), strict=True):
+                    if wasm and variant == "native_tanh_table":
+                        table = read_probes(samples[0].stderr)["LUT.tanh"]
+                        if len(table) != 1025:
+                            raise ValueError("expected one complete tanh lookup table")
+                        traced_core = instrument_core(core)
+                        traced_core = replace_once(traced_core, "table[i] = std::tanh(x);",
+                                                   "table[i] = audit_tanh[i];")
+                        table_definition = "static constexpr float audit_tanh[] = {" + ",\n".join(
+                            value.hex() + "f" for _, value, _ in table) + "};\n"
+                        (work / "tape_core.cpp").write_text(table_definition + traced_core, encoding="utf-8")
                     binary = work / ("trace.js" if wasm else "trace.exe")
                     cmd = compiler + flags + ["tape_core.cpp", "hydra_dsp_c_api.cpp", "render_trace.cpp",
                                               "-o", str(binary)]
@@ -202,7 +216,7 @@ def main():
             print(f'{name}/{variant}: max_abs={data["max_abs"]:.12g} rmse={data["rmse"]:.12g}')
             for stage in ("angle220", "angle330", "sinf220", "sinf330", "stimulus", "inputHPF",
                           "conditionedInput", "HighShelf.a2", "readModulation",
-                          "recordedSample", "texture", "tapeOutput"):
+                          "LUT.tanh", "magLutInput", "magLutOutput", "recordedSample", "texture", "tapeOutput"):
                 difference = data.get("operations", {}).get(stage)
                 if difference:
                     print(f'  {stage}: first={difference["first"]["frame"]} '

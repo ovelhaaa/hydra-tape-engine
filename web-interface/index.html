@@ -120,6 +120,93 @@
             font-family: monospace;
             color: var(--accent);
         }
+
+        /* TAP TEMPO */
+        .tap-tempo-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 15px;
+        }
+
+        .tap-tempo-btn {
+            position: relative;
+            flex: 1;
+            height: 56px;
+            background: linear-gradient(135deg, #1a3a2a 0%, #0d2218 100%);
+            border: 2px solid #00ff8866;
+            border-radius: 8px;
+            color: var(--accent);
+            font-size: 0.85em;
+            font-weight: bold;
+            letter-spacing: 1px;
+            cursor: pointer;
+            overflow: hidden;
+            transition: border-color 0.15s, box-shadow 0.15s;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        .tap-tempo-btn:hover {
+            border-color: var(--accent);
+            box-shadow: 0 0 12px #00ff8833;
+        }
+
+        .tap-tempo-btn.flash {
+            background: linear-gradient(135deg, #003322 0%, #00ff8822 100%);
+            border-color: var(--accent);
+            box-shadow: 0 0 20px #00ff8866;
+        }
+
+        .tap-tempo-btn .tap-label {
+            display: block;
+            font-size: 0.7em;
+            opacity: 0.6;
+            margin-bottom: 2px;
+        }
+
+        .tap-tempo-btn .tap-bpm {
+            display: block;
+            font-size: 1.4em;
+            font-family: monospace;
+            color: var(--accent);
+        }
+
+        /* Pulsing ring synced to beat */
+        .tap-tempo-btn::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 6px;
+            border: 2px solid var(--accent);
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .tap-tempo-btn.pulse::after {
+            animation: tapPulse 0.4s ease-out forwards;
+        }
+
+        @keyframes tapPulse {
+            0%   { opacity: 0.9; transform: scale(1); }
+            100% { opacity: 0;   transform: scale(1.04); }
+        }
+
+        .tap-bpm-display {
+            text-align: center;
+            min-width: 60px;
+            font-family: monospace;
+            font-size: 0.8em;
+            color: #888;
+            line-height: 1.4;
+        }
+
+        .tap-bpm-display .bpm-value {
+            display: block;
+            font-size: 1.5em;
+            color: var(--accent);
+            font-weight: bold;
+        }
     </style>
 </head>
 
@@ -212,8 +299,20 @@
             </div>
             <div class="control-group">
                 <label>Time <span id="val-time" class="value-display">500ms</span></label>
-                <input type="range" min="0" max="127" value="32"
+                <input type="range" id="slider-delay-time" min="0" max="127" value="32"
                     oninput="sendCC(3, this.value); updateDisplayMap('val-time', this.value, 10, 2000, 'ms')">
+            </div>
+
+            <!-- TAP TEMPO -->
+            <div class="tap-tempo-wrapper">
+                <button id="btn-tap-tempo" class="tap-tempo-btn" onclick="onTapTempo()" title="Toque no ritmo para definir o tempo">
+                    <span class="tap-label">TAP TEMPO</span>
+                    <span class="tap-bpm" id="tap-bpm-label">— BPM</span>
+                </button>
+                <div class="tap-bpm-display">
+                    <span class="bpm-value" id="tap-bpm-value">—</span>
+                    <span>BPM</span>
+                </div>
             </div>
             <div class="control-group">
                 <label>Feedback <span id="val-fb" class="value-display">30%</span></label>
@@ -292,6 +391,81 @@
 
     <script>
         let midiOutput = null;
+
+        // ============================================================
+        // TAP TEMPO
+        // ============================================================
+        const TAP_MAX_INTERVAL_MS = 3000; // Reset if gap > 3s
+        const TAP_HISTORY_SIZE    = 6;    // Average over N taps
+        let tapTimes = [];
+        let tapBpm   = null;
+        let tapBeatTimer = null;
+
+        function onTapTempo() {
+            const now = performance.now();
+            const btn = document.getElementById('btn-tap-tempo');
+
+            // Reset if last tap was too long ago
+            if (tapTimes.length > 0 && (now - tapTimes[tapTimes.length - 1]) > TAP_MAX_INTERVAL_MS) {
+                tapTimes = [];
+            }
+
+            tapTimes.push(now);
+            if (tapTimes.length > TAP_HISTORY_SIZE) tapTimes.shift();
+
+            // Flash animation
+            btn.classList.remove('flash', 'pulse');
+            // Force reflow to restart animation
+            void btn.offsetWidth;
+            btn.classList.add('flash', 'pulse');
+            setTimeout(() => btn.classList.remove('flash'), 180);
+
+            if (tapTimes.length < 2) {
+                document.getElementById('tap-bpm-label').textContent = 'Tap...';
+                return;
+            }
+
+            // Calculate average BPM from intervals
+            let intervals = [];
+            for (let i = 1; i < tapTimes.length; i++) {
+                intervals.push(tapTimes[i] - tapTimes[i - 1]);
+            }
+            const avgIntervalMs = intervals.reduce((a, b) => a + b, 0) / intervals.length;
+            tapBpm = Math.round(60000 / avgIntervalMs);
+            tapBpm = Math.max(20, Math.min(300, tapBpm)); // Clamp 20–300 BPM
+
+            // Update display
+            document.getElementById('tap-bpm-label').textContent = tapBpm + ' BPM';
+            document.getElementById('tap-bpm-value').textContent = tapBpm;
+
+            // Apply to delay time (quarter note in ms)
+            applyTapTempoToDelay(tapBpm);
+
+            // Restart visual beat pulse timer
+            clearInterval(tapBeatTimer);
+            tapBeatTimer = setInterval(() => {
+                btn.classList.remove('pulse');
+                void btn.offsetWidth;
+                btn.classList.add('pulse');
+            }, avgIntervalMs);
+        }
+
+        function applyTapTempoToDelay(bpm) {
+            const quarterNoteMs = 60000 / bpm; // Quarter note duration
+            // Map ms (10–2000) to CC value (0–127)
+            const ccVal = Math.round(((quarterNoteMs - 10) / (2000 - 10)) * 127);
+            const clamped = Math.max(0, Math.min(127, ccVal));
+
+            // Update slider and display
+            const slider = document.getElementById('slider-delay-time');
+            if (slider) {
+                slider.value = clamped;
+                updateDisplayMap('val-time', clamped, 10, 2000, 'ms');
+            }
+
+            // Send MIDI CC3 = Delay Time
+            sendCC(3, clamped);
+        }
 
         // Mapping Helpers
         function updateDisplay(id, val, unit, div, offset = 0) {

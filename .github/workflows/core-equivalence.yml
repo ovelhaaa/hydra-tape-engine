@@ -192,7 +192,7 @@ jobs:
             --render-wav-dir ci-reports/native-vs-wasm/audio
 
       - name: Diagnose Release equivalence
-        if: always()
+        if: ${{ always() && github.event_name == 'workflow_dispatch' }}
         run: |
           git fetch --no-tags --depth=1 origin 528ebb87281d29331f7df19b0a375f7892d7fd2d
           python3 tests/core/diagnose_equivalence.py \

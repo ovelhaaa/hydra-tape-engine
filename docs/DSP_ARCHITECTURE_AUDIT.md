@@ -112,10 +112,10 @@ foi aplicado ao firmware ou aos builds de produção.
 
 | Ponto de observação | Primeira diferença | Resultado |
 |---|---:|---|
-| Estímulo do trace, com seno calculado por backend | 10 | Pico de `5.96e-8` no estímulo, com diferença na saída seca no mesmo frame. |
+| Estímulo do trace, com seno calculado por backend | 10 | Pico de `5.96e-8` na soma ponderada. Com ângulos idênticos, `sinf` já diverge nos frames 58 (330 Hz) e 87 (220 Hz). Sem contração, a primeira divergência da soma passa para o frame 87. |
 | Saída do passa-altas de entrada, com estímulo comum | 3 | Pico de `3.69e-4`. O biquad usa recorrências com produtos e somas sobre `z1` e `z2`. O desvio deixa de aparecer nesse estágio quando a contração também é desativada. |
 | Coeficiente `a2` do high shelf, flags padrão | Inicialização | Diferença de um ULP. A sonda mede retornos de trigonometria e coeficientes separadamente. |
-| Leitura da textura, estímulo comum e contração desativada | 201, canal R | O erro de `9.31e-10` passa pelas etapas de playback e realimentação. A maior diferença residual na saída ocorre no frame 1979, canal L. |
+| Magnetização e textura, estímulo comum e contração desativada | 1 na escrita, 201 na textura (R) | `tanhf` difere em até `5.96e-8` na LUT inicial. O erro aparece no valor interpolado da magnetização antes de surgir na leitura de textura. A maior diferença residual na saída ocorre no frame 1979, L. |
 | Saída Release original, sem instrumentação | 10, L/R | Maior erro L no frame 1078 (`3.4746e-5`), R no 1272 (`3.1859e-5`). Os frames são contados a partir de zero. |
 
 | Perfil de diagnóstico | max_abs | RMSE |
@@ -124,11 +124,14 @@ foi aplicado ao firmware ou aos builds de produção.
 | Estímulo comum float32 | 3.6508e-5 | 1.52561e-5 |
 | Contração desativada nos dois compiladores | 3.7298e-5 | 1.39484e-5 |
 | Estímulo comum e `-ffp-contract=off` | 8.285e-6 | 2.25515e-6 |
+| Perfil anterior com a LUT Native reproduzida na cópia WASM | 0 | 0 |
 
-O controle combinado elimina o desvio no condicionamento de entrada nesse
-cenário, mas o RMSE residual ainda excede `1e-6`. A medição delimita o efeito
-da contração e da geração do estímulo. Ela ainda não isola cada contribuição
-numérica na escrita, na interpolação e nos filtros de reprodução.
+O controle combinado elimina o desvio no condicionamento de entrada.
+Reproduzir a LUT nativa na cópia WASM elimina o resíduo restante nesse
+trace. Esses controles isolam efeitos da contração, do seno calculado
+por cada backend e da tabela de magnetização para o cenário medido.
+O perfil experimental usa estímulo e LUT compartilhados. O gate Release
+continua comparando a geração e o processamento reais de cada backend.
 
 O script gera cópias instrumentadas via `git show`. Em um ambiente com os
 mesmos compiladores e Node, execute:
@@ -141,8 +144,9 @@ python3 tests/core/diagnose_equivalence.py \
 ```
 
 O JSON registra flags, versões, hashes de traces, valores float em hexadecimal
-e primeiro frame e pico por canal e estágio instrumentado.
-[Execução diagnóstica no runner hospedado](https://github.com/ovelhaaa/hydra-tape-engine/actions/runs/43678985420/job/132705413617)
+e primeiro frame e pico por canal e estágio instrumentado. A etapa de sonda
+roda em acionamentos manuais do workflow Core Equivalence CI.
+[Execução diagnóstica no runner hospedado](https://github.com/ovelhaaa/hydra-tape-engine/actions/runs/43679577331/job/132707236424)
 
 **Critério proposto para revisão futura.** Manter o relatório absoluto atual com
 limites `1e-5` e `1e-6`. Se for adotado um gate adicional por plataforma, usar
@@ -200,7 +204,10 @@ caracterização do comportamento atual para refinamento sonoro.
 
 CMake native Release passou 9/9. O backend WASM passou seus oito testes de
 Release, incluindo goldens. Os 16 testes do host web passaram. O build
-PlatformIO ESP32-S3 voltou a passar e a imagem incremental manteve o mesmo
-SHA-256. A equivalência estrita e o pacote curto de comparação cruzada local
+PlatformIO ESP32-S3 passou também em diretório limpo, com 25.616 bytes de
+RAM estática e 543.455 bytes de flash reportados. A imagem incremental
+manteve o SHA-256 anterior. Entre essa imagem e a compilação limpa, os
+70 bytes diferentes ficaram no horário de compilação, nos campos de
+digest e na verificação de integridade da imagem. A equivalência estrita e o pacote curto de comparação cruzada local
 seguem fora dos limites. A escuta humana, o simulador PlatformIO native
 e a execução em placa ficaram fora desta rodada.

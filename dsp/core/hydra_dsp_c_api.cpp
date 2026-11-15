@@ -42,6 +42,12 @@ static const hydra_dsp_param_spec kParamSpecs[HYDRA_DSP_PARAM_COUNT] = {
     {HYDRA_DSP_PARAM_SPRING_DAMPING, "springDamping", 0.0f, 100.0f, 45.0f, HYDRA_DSP_SMOOTHING_BLOCK_EDGE, HYDRA_DSP_PARAM_SPEC_FLAG_NONE},
     {HYDRA_DSP_PARAM_SPRING_MIX, "springMix", 0.0f, 100.0f, 50.0f, HYDRA_DSP_SMOOTHING_BLOCK_EDGE, HYDRA_DSP_PARAM_SPEC_FLAG_NONE},
     {HYDRA_DSP_PARAM_RESET, "reset", 0.0f, 1.0f, 0.0f, HYDRA_DSP_SMOOTHING_NONE, HYDRA_DSP_PARAM_SPEC_FLAG_NONE},
+    {HYDRA_DSP_PARAM_WARP_ACTIVE, "warpActive", 0.0f, 1.0f, 0.0f, HYDRA_DSP_SMOOTHING_NONE, HYDRA_DSP_PARAM_SPEC_FLAG_NONE},
+    {HYDRA_DSP_PARAM_WARP_SPEED, "warpSpeed", 0.0f, 2.0f, 1.0f, HYDRA_DSP_SMOOTHING_BLOCK_EDGE, HYDRA_DSP_PARAM_SPEC_FLAG_NONE},
+    {HYDRA_DSP_PARAM_WARP_GRAIN_MS, "warpGrainMs", 20.0f, 400.0f, 80.0f, HYDRA_DSP_SMOOTHING_BLOCK_EDGE, HYDRA_DSP_PARAM_SPEC_FLAG_NONE},
+    {HYDRA_DSP_PARAM_WARP_STEREO, "warpStereo", 0.0f, 1.0f, 0.5f, HYDRA_DSP_SMOOTHING_BLOCK_EDGE, HYDRA_DSP_PARAM_SPEC_FLAG_NONE},
+    {HYDRA_DSP_PARAM_WARP_FEEDBACK, "warpFeedback", 0.0f, 100.0f, 0.0f, HYDRA_DSP_SMOOTHING_BLOCK_EDGE, HYDRA_DSP_PARAM_SPEC_FLAG_NONE},
+    {HYDRA_DSP_PARAM_WARP_MODE, "warpMode", 0.0f, 1.0f, 0.0f, HYDRA_DSP_SMOOTHING_NONE, HYDRA_DSP_PARAM_SPEC_FLAG_NONE},
 };
 
 static hydra_dsp_param_spec resolve_runtime_spec(const hydra_dsp_handle* handle, hydra_dsp_param_id param_id) {
@@ -83,6 +89,12 @@ static void from_c(const hydra_dsp_params& in, hydra::dsp::TapeParams* out) {
   out->springDecay = in.springDecay;
   out->springDamping = in.springDamping;
   out->springMix = in.springMix;
+  out->warpActive = in.warpActive > 0.5f;
+  out->warpSpeed = in.warpSpeed;
+  out->warpGrainMs = in.warpGrainMs;
+  out->warpStereo = in.warpStereo;
+  out->warpFeedback = in.warpFeedback;
+  out->warpMode = (int)in.warpMode;
 }
 
 static int set_param(hydra_dsp_handle* h, hydra_dsp_param_id id, float v) {
@@ -116,6 +128,12 @@ static int set_param(hydra_dsp_handle* h, hydra_dsp_param_id id, float v) {
     case HYDRA_DSP_PARAM_SPRING_DECAY: h->params.springDecay = v; break;
     case HYDRA_DSP_PARAM_SPRING_DAMPING: h->params.springDamping = v; break;
     case HYDRA_DSP_PARAM_SPRING_MIX: h->params.springMix = v; break;
+    case HYDRA_DSP_PARAM_WARP_ACTIVE: h->params.warpActive = v > 0.5f; break;
+    case HYDRA_DSP_PARAM_WARP_SPEED: h->params.warpSpeed = v; break;
+    case HYDRA_DSP_PARAM_WARP_GRAIN_MS: h->params.warpGrainMs = v; break;
+    case HYDRA_DSP_PARAM_WARP_STEREO: h->params.warpStereo = v; break;
+    case HYDRA_DSP_PARAM_WARP_FEEDBACK: h->params.warpFeedback = v; break;
+    case HYDRA_DSP_PARAM_WARP_MODE: h->params.warpMode = (int)v; break;
     default: return -2;
   }
   h->dirty = true;
@@ -216,6 +234,12 @@ int hydra_dsp_get_parameter(hydra_dsp_handle* handle, hydra_dsp_param_id param_i
     case HYDRA_DSP_PARAM_SPRING_DAMPING: *out_value = handle->params.springDamping; break;
     case HYDRA_DSP_PARAM_SPRING_MIX: *out_value = handle->params.springMix; break;
     case HYDRA_DSP_PARAM_RESET: *out_value = 0.0f; break;
+    case HYDRA_DSP_PARAM_WARP_ACTIVE: *out_value = handle->params.warpActive ? 1.0f : 0.0f; break;
+    case HYDRA_DSP_PARAM_WARP_SPEED: *out_value = handle->params.warpSpeed; break;
+    case HYDRA_DSP_PARAM_WARP_GRAIN_MS: *out_value = handle->params.warpGrainMs; break;
+    case HYDRA_DSP_PARAM_WARP_STEREO: *out_value = handle->params.warpStereo; break;
+    case HYDRA_DSP_PARAM_WARP_FEEDBACK: *out_value = handle->params.warpFeedback; break;
+    case HYDRA_DSP_PARAM_WARP_MODE: *out_value = (float)handle->params.warpMode; break;
     default: return -2;
   }
   return 0;

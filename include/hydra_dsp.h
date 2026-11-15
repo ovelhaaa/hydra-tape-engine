@@ -12,7 +12,7 @@ enum { HYDRA_DSP_CHANNELS_STEREO = 2 };
 
 enum {
   HYDRA_DSP_API_VERSION_MAJOR = 1,
-  HYDRA_DSP_API_VERSION_MINOR = 2,
+  HYDRA_DSP_API_VERSION_MINOR = 3,
   HYDRA_DSP_API_VERSION_PATCH = 0,
   HYDRA_DSP_API_VERSION =
       (HYDRA_DSP_API_VERSION_MAJOR << 16) |
@@ -28,6 +28,7 @@ typedef struct hydra_dsp_params {
   float activeHeads, bpm, headsMusical, guitarFocus, tone;
   float pingPong, freeze, reverse, reverseSmear, spring;
   float springDecay, springDamping, springMix;
+  float warpActive, warpSpeed, warpGrainMs, warpStereo, warpFeedback, warpMode;
 } hydra_dsp_params;
 
 typedef enum hydra_dsp_param_id {
@@ -61,7 +62,13 @@ typedef enum hydra_dsp_param_id {
   HYDRA_DSP_PARAM_SPRING_DAMPING = 27,
   HYDRA_DSP_PARAM_SPRING_MIX = 28,
   HYDRA_DSP_PARAM_RESET = 29,
-  HYDRA_DSP_PARAM_COUNT = 30
+  HYDRA_DSP_PARAM_WARP_ACTIVE = 30,
+  HYDRA_DSP_PARAM_WARP_SPEED = 31,
+  HYDRA_DSP_PARAM_WARP_GRAIN_MS = 32,
+  HYDRA_DSP_PARAM_WARP_STEREO = 33,
+  HYDRA_DSP_PARAM_WARP_FEEDBACK = 34,
+  HYDRA_DSP_PARAM_WARP_MODE = 35,
+  HYDRA_DSP_PARAM_COUNT = 36
 } hydra_dsp_param_id;
 
 typedef enum hydra_dsp_smoothing_policy {

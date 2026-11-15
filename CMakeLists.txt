@@ -35,6 +35,10 @@ if(BUILD_TESTING)
   target_link_libraries(hydra_audible_controls PRIVATE hydra_dsp_core)
   add_test(NAME core_audible_controls COMMAND hydra_audible_controls)
 
+  add_executable(hydra_warp_core_test tests/core/warp_core_test.cpp)
+  target_link_libraries(hydra_warp_core_test PRIVATE hydra_dsp_core)
+  add_test(NAME core_warp_test COMMAND hydra_warp_core_test)
+
   add_test(
     NAME web_param_ids
     COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/tests/core/web_param_ids_check.py

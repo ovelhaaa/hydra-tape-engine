@@ -39,6 +39,12 @@ name_map = {
     'SPRING_DAMPING': 'springDamping',
     'SPRING_MIX': 'springMix',
     'RESET': 'reset',
+    'WARP_ACTIVE': 'warpActive',
+    'WARP_SPEED': 'warpSpeed',
+    'WARP_GRAIN_MS': 'warpGrainMs',
+    'WARP_STEREO': 'warpStereo',
+    'WARP_FEEDBACK': 'warpFeedback',
+    'WARP_MODE': 'warpMode',
 }
 
 enum_pairs = re.findall(r'HYDRA_DSP_PARAM_([A-Z_]+)\s*=\s*(\d+)', header)
@@ -52,7 +58,7 @@ errors = []
 for name, value in sorted(expected.items(), key=lambda item: item[1]):
     if actual.get(name) != value:
         errors.append(f'{name}: header={value} host/web/main.js={actual.get(name)}')
-    if name != 'reset' and f'p_{value}' not in processor_js and name not in ('activeHeads', 'delayActive', 'headsMusical', 'guitarFocus', 'pingPong', 'freeze', 'reverse', 'reverseSmear', 'spring'):
+    if name != 'reset' and f'p_{value}' not in processor_js and name not in ('activeHeads', 'delayActive', 'headsMusical', 'guitarFocus', 'pingPong', 'freeze', 'reverse', 'reverseSmear', 'spring', 'warpActive', 'warpMode'):
         errors.append(f'{name}: p_{value} missing from hydra-processor.js AudioParam descriptors')
 
 if errors:

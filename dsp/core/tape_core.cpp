@@ -187,7 +187,7 @@ class DelayAllpass { public: ~DelayAllpass(){delete[] buffer;} void init(int len
 }
 
 struct TapeCore::Impl {
-  explicit Impl(float fs,float maxDelayMs):sampleRate(fs),noiseGen(fs,123456789u),noiseGenR(fs,987654321u){ tanhLUT.init(); magneticsL.lut=&tanhLUT; magneticsR.lut=&tanhLUT; updateSampleRateConstants(); magneticsL.updateParams(fs,currentParams); magneticsR.updateParams(fs,currentParams); bufferSize=(int32_t)(fs*(maxDelayMs/1000.f)); bufferCapacity=bufferSize+TAPE_BUFFER_GUARD; delayLine=allocateDelayBuffer(bufferCapacity); delayLineR=allocateDelayBuffer(bufferCapacity); if(!delayLine||!delayLineR){freeDelayBuffer(delayLine);freeDelayBuffer(delayLineR);delayLine=delayLineR=nullptr;bufferSize=0;return;} static const float sc[6]={0.7f,0.65f,0.6f,0.6f,0.5f,0.5f}; static const int st[6]={223,367,491,647,821,1039}; for(int i=0;i<6;i++){springAP_L[i].init(st[i]);springAP_R[i].init(st[i]+23);springAP_L[i].setCoeff(sc[i]);springAP_R[i].setCoeff(sc[i]);springLPF_L[i].setLowpass(fs,2500,0.5f);springLPF_R[i].setLowpass(fs,2500,0.5f);} static const float rc[4]={0.6f,0.55f,0.5f,0.45f}; static const int rt[4]={151,313,569,797}; for(int i=0;i<4;i++){reverseAP_L[i].init(rt[i]);reverseAP_R[i].init(rt[i]+17);reverseAP_L[i].setCoeff(rc[i]);reverseAP_R[i].setCoeff(rc[i]);} updateFilters(); flutterLPF.setLowpass(fs,15,0.707f); flutterLPFR.setLowpass(fs,15,0.707f);}
+  explicit Impl(float fs,float maxDelayMs):sampleRate(fs),noiseGen(fs,123456789u),noiseGenR(fs,987654321u){ tanhLUT.init(); magneticsL.lut=&tanhLUT; magneticsR.lut=&tanhLUT; updateSampleRateConstants(); magneticsL.updateParams(fs,currentParams); magneticsR.updateParams(fs,currentParams); bufferSize=(int32_t)(fs*(maxDelayMs/1000.f)); bufferCapacity=bufferSize+TAPE_BUFFER_GUARD; delayLine=allocateDelayBuffer(bufferCapacity); delayLineR=allocateDelayBuffer(bufferCapacity); if(!delayLine||!delayLineR){freeDelayBuffer(delayLine);freeDelayBuffer(delayLineR);delayLine=delayLineR=nullptr;bufferSize=0;return;} static const float sc[6]={0.7f,0.65f,0.6f,0.6f,0.5f,0.5f}; static const int st[6]={223,367,491,647,821,1039}; for(int i=0;i<6;i++){springAP_L[i].init(st[i]);springAP_R[i].init(st[i]+23);springAP_L[i].setCoeff(sc[i]);springAP_R[i].setCoeff(sc[i]);springLPF_L[i].setLowpass(fs,2500,0.5f);springLPF_R[i].setLowpass(fs,2500,0.5f);} static const float rc[4]={0.6f,0.55f,0.5f,0.45f}; static const int rt[4]={151,313,569,797}; for(int i=0;i<4;i++){reverseAP_L[i].init(rt[i]);reverseAP_R[i].init(rt[i]+17);reverseAP_L[i].setCoeff(rc[i]);reverseAP_R[i].setCoeff(rc[i]);} updateFilters(); flutterLPF.setLowpass(fs,15,0.707f); flutterLPFR.setLowpass(fs,15,0.707f); warpHPF_L.setHighpass(fs,120.0f,0.707f); warpHPF_R.setHighpass(fs,120.0f,0.707f); warpLPF_L.setLowpass(fs,7500.0f,0.707f); warpLPF_R.setLowpass(fs,7500.0f,0.707f);}
   ~Impl(){freeDelayBuffer(delayLine);freeDelayBuffer(delayLineR);}
   bool valid() const {return delayLine&&delayLineR&&bufferSize>0;}
   float feedbackCompressor(float x){ const float t=0.6f,r=1.5f,k=0.2f; float a=std::fabs(x); if(a<=t-k*0.5f)return x; if(a>=t+k*0.5f)return std::copysign(t+(a-t)/r,x); float kx=(a-(t-k*0.5f))/k; float ratio=1.f+(1.f/r-1.f)*kx*kx; return std::copysign(a*ratio,x);}
@@ -237,7 +237,9 @@ struct TapeCore::Impl {
   float musicalHeadDelay1=0,musicalHeadDelay2=0,musicalHeadDelay3=0,springFeedbackGain=0,springWetGain=0.5f;
   int springStages=3;
   uint8_t activeHeadMask=4;
-  bool delayActive=false,headsMusical=false,pingPong=false,reverse=false,freeze=false,reverseSmear=false,spring=false,useAzimuth=false;
+  bool delayActive=false,headsMusical=false,pingPong=false,reverse=false,freeze=false,reverseSmear=false,spring=false,useAzimuth=false,warpActive=false;
+  float warpVirtualPos=0.0f;
+  BiquadFilter warpHPF_L,warpHPF_R,warpLPF_L,warpLPF_R;
   BiquadFilter flutterLPF,flutterLPFR; MechNoise mechNoiseL{22222u},mechNoiseR{33333u}; DropoutGenerator dropout; TapeNoiseGenerator noiseGen, noiseGenR; BiquadFilter reproHeadBump,tapeRolloff,gapLossLPF; OnePoleLP dropoutLPF,dropoutLPFR; AllpassFilter azimuthFilter; DCBlocker dcBlocker; BiquadFilter inputHPF,inputLPF; BiquadFilter reproHeadBumpR,tapeRolloffR,gapLossLPFR; AllpassFilter azimuthFilterR; DCBlocker dcBlockerR; BiquadFilter inputHPFR,inputLPFR; OnePoleLP feedbackGapLoss,feedbackGapLossR; BiquadFilter feedbackHPF,feedbackHPFR,feedbackHeadBump,feedbackHeadBumpR; AllpassFilter feedbackPhase,feedbackPhaseR;  DelayAllpass springAP_L[6],springAP_R[6],reverseAP_L[4],reverseAP_R[4]; BiquadFilter springLPF_L[6],springLPF_R[6]; float springFB_L=0,springFB_R=0; float freezeFade=0; float delayEnableRamp=0,smoothedDelaySamples=0,smoothedAzCoeff=0; float* delayLine=nullptr; float* delayLineR=nullptr; int32_t bufferSize=0,bufferCapacity=0,writeHead=0,reverseCounter=0,reverseWindowSize=0;
 };
 
@@ -268,6 +270,7 @@ void TapeCore::Impl::updateCachedParams(){
   freeze=currentParams.freeze;
   reverseSmear=currentParams.reverseSmear;
   spring=currentParams.spring;
+  warpActive=currentParams.warpActive;
   useAzimuth=azimuthErrorNorm>0.0001f;
   noiseBaseGain=currentParams.noise*0.001f;
   noiseMinDuckGain=kHissNoiseMinDuckGain;
@@ -316,13 +319,13 @@ void TapeCore::reset(){
   if(!isValid()) return;
   std::memset(impl_->delayLine,0,sizeof(float)*impl_->bufferCapacity);
   std::memset(impl_->delayLineR,0,sizeof(float)*impl_->bufferCapacity);
-  impl_->writeHead=0; impl_->reverseCounter=0; impl_->reverseWindowSize=0; impl_->inEnvL=0; impl_->inEnvR=0;
+  impl_->writeHead=0; impl_->reverseCounter=0; impl_->reverseWindowSize=0; impl_->warpVirtualPos=0; impl_->inEnvL=0; impl_->inEnvR=0;
   impl_->flutterPhase=impl_->wowPhase=impl_->azimuthPhase=0;
   impl_->mechStateL=Impl::MechanicalState{};
   impl_->mechStateR=Impl::MechanicalState{0,0,0,0,0x2468ACE1u,0x56473829u};
   impl_->freezeFade=0; impl_->delayEnableRamp=0; impl_->smoothedDelaySamples=0; impl_->smoothedAzCoeff=0; impl_->springFB_L=impl_->springFB_R=0;
   impl_->dcBlocker.clear(); impl_->dcBlockerR.clear(); impl_->magneticsL.reset(); impl_->magneticsR.reset(); impl_->dropout.reset(); impl_->noiseGen.reset(impl_->sampleRate, 123456789u); impl_->noiseGenR.reset(impl_->sampleRate, 987654321u); impl_->mechNoiseL.reset(); impl_->mechNoiseR.reset();
-  impl_->flutterLPF.reset(); impl_->flutterLPFR.reset(); impl_->reproHeadBump.reset(); impl_->reproHeadBumpR.reset(); impl_->tapeRolloff.reset(); impl_->tapeRolloffR.reset(); impl_->gapLossLPF.reset(); impl_->gapLossLPFR.reset(); impl_->dropoutLPF.reset(); impl_->dropoutLPFR.reset();
+  impl_->flutterLPF.reset(); impl_->flutterLPFR.reset(); impl_->warpHPF_L.reset(); impl_->warpHPF_R.reset(); impl_->warpLPF_L.reset(); impl_->warpLPF_R.reset(); impl_->reproHeadBump.reset(); impl_->reproHeadBumpR.reset(); impl_->tapeRolloff.reset(); impl_->tapeRolloffR.reset(); impl_->gapLossLPF.reset(); impl_->gapLossLPFR.reset(); impl_->dropoutLPF.reset(); impl_->dropoutLPFR.reset();
   impl_->inputHPF.reset(); impl_->inputHPFR.reset(); impl_->inputLPF.reset(); impl_->inputLPFR.reset(); impl_->feedbackGapLoss.reset(); impl_->feedbackGapLossR.reset(); impl_->feedbackHeadBump.reset(); impl_->feedbackHeadBumpR.reset(); impl_->feedbackHPF.reset(); impl_->feedbackHPFR.reset();
   impl_->azimuthFilter.reset(); impl_->azimuthFilterR.reset(); impl_->feedbackPhase.reset(); impl_->feedbackPhaseR.reset();
   for(int i=0;i<6;i++){ impl_->springAP_L[i].clear(); impl_->springAP_R[i].clear(); impl_->springLPF_L[i].reset(); impl_->springLPF_R[i].reset(); }
@@ -339,9 +342,15 @@ void TapeCore::updateParams(const TapeParams& newParams){
     impl_->azimuthFilter.reset(); impl_->azimuthFilterR.reset(); impl_->feedbackGapLoss.reset(); impl_->feedbackGapLossR.reset();
     impl_->feedbackHeadBump.reset(); impl_->feedbackHeadBumpR.reset(); impl_->feedbackHPF.reset(); impl_->feedbackHPFR.reset();
     impl_->feedbackPhase.reset(); impl_->feedbackPhaseR.reset();
+    impl_->warpHPF_L.reset(); impl_->warpHPF_R.reset(); impl_->warpLPF_L.reset(); impl_->warpLPF_R.reset();
     std::memset(impl_->delayLine,0,sizeof(float)*impl_->bufferCapacity); std::memset(impl_->delayLineR,0,sizeof(float)*impl_->bufferCapacity);
-    impl_->writeHead=0; impl_->reverseCounter=0; impl_->reverseWindowSize=0;
+    impl_->writeHead=0; impl_->reverseCounter=0; impl_->reverseWindowSize=0; impl_->warpVirtualPos=0;
     impl_->smoothedDelaySamples = newParams.delayTimeMs * impl_->sampleRate * 0.001f;
+  }
+  if(!impl_->currentParams.warpActive && newParams.warpActive){
+    impl_->warpVirtualPos=0;
+    impl_->warpHPF_L.reset(); impl_->warpHPF_R.reset();
+    impl_->warpLPF_L.reset(); impl_->warpLPF_R.reset();
   }
   impl_->currentParams=newParams;
   impl_->dropout.setSeverity(clampf(newParams.dropoutSeverity * 0.01f, 0.0f, 1.0f));
@@ -401,13 +410,57 @@ void TapeCore::processStereo(float inL,float inR,float* outL,float* outR){
   }
   if(impl_->delayActive){impl_->delayEnableRamp+=impl_->delayRampInc;if(impl_->delayEnableRamp>1)impl_->delayEnableRamp=1;} else impl_->delayEnableRamp=0;
 
+  float warpSigL=0.0f, warpSigR=0.0f;
+  if(impl_->delayActive && impl_->warpActive){
+    const float speedMult = clampf(p->warpSpeed, 0.0f, 4.0f);
+    const float grainSamples = std::max(64.0f, p->warpGrainMs * 0.001f * impl_->sampleRate);
+
+    impl_->warpVirtualPos += speedMult;
+    if(impl_->warpVirtualPos >= grainSamples) impl_->warpVirtualPos -= grainSamples;
+    if(impl_->warpVirtualPos < 0.0f) impl_->warpVirtualPos = 0.0f;
+
+    float phaseL1 = clampf(impl_->warpVirtualPos / grainSamples, 0.0f, 1.0f);
+    float phaseL2 = phaseL1 + 0.5f;
+    if(phaseL2 >= 1.0f) phaseL2 -= 1.0f;
+
+    float stereoOffset = clampf(p->warpStereo * 0.25f, 0.0f, 0.5f);
+    float phaseR1 = phaseL1 + stereoOffset;
+    if(phaseR1 >= 1.0f) phaseR1 -= 1.0f;
+    float phaseR2 = phaseR1 + 0.5f;
+    if(phaseR2 >= 1.0f) phaseR2 -= 1.0f;
+
+    float gainL1 = 1.0f - std::fabs(2.0f * phaseL1 - 1.0f);
+    float gainL2 = 1.0f - std::fabs(2.0f * phaseL2 - 1.0f);
+    float gainR1 = 1.0f - std::fabs(2.0f * phaseR1 - 1.0f);
+    float gainR2 = 1.0f - std::fabs(2.0f * phaseR2 - 1.0f);
+
+    if(p->warpMode == 1){
+      gainL1 = 1.0f; gainL2 = 0.0f;
+      gainR1 = 1.0f; gainR2 = 0.0f;
+    }
+
+    const float baseDelay = 8.0f;
+    float delayL1 = baseDelay + (1.0f - phaseL1) * grainSamples;
+    float delayL2 = baseDelay + (1.0f - phaseL2) * grainSamples;
+    float delayR1 = baseDelay + (1.0f - phaseR1) * grainSamples;
+    float delayR2 = baseDelay + (1.0f - phaseR2) * grainSamples;
+
+    float rawL = impl_->readTapeAt(delayL1, impl_->delayLine) * gainL1 +
+                 impl_->readTapeAt(delayL2, impl_->delayLine) * gainL2;
+    float rawR = impl_->readTapeAt(delayR1, impl_->delayLineR) * gainR1 +
+                 impl_->readTapeAt(delayR2, impl_->delayLineR) * gainR2;
+
+    warpSigL = impl_->warpLPF_L.process(impl_->warpHPF_L.process(rawL));
+    warpSigR = impl_->warpLPF_R.process(impl_->warpHPF_R.process(rawR));
+  }
+
   struct ChannelFrame {
     float conditionedInput;
     float tapeOutput;
     float feedbackSource;
   };
 
-  auto readCh=[&](float input,float noiseInjected,float* buffer,BiquadFilter& reproHeadBumpFilter,BiquadFilter& tr,BiquadFilter& outputGapLossFilter,AllpassFilter& az,BiquadFilter&iHP,BiquadFilter&iLP,OnePoleLP&dropoutFilter,DropoutFrame drop,float mod){
+  auto readCh=[&](float input,float noiseInjected,float* buffer,BiquadFilter& reproHeadBumpFilter,BiquadFilter& tr,BiquadFilter& outputGapLossFilter,AllpassFilter& az,BiquadFilter&iHP,BiquadFilter&iLP,OnePoleLP&dropoutFilter,DropoutFrame drop,float mod,float warpSig){
     ChannelFrame frame{};
     // --- input conditioning ---
     frame.conditionedInput=iLP.process(iHP.process(input));
@@ -417,6 +470,7 @@ void TapeCore::processStereo(float inL,float inR,float* outL,float* outR){
     float d1,d2,d3; if(impl_->headsMusical){ d1=impl_->musicalHeadDelay1; d2=impl_->musicalHeadDelay2; d3=impl_->musicalHeadDelay3;} else {d1=base*0.33f; d2=base*0.66f; d3=base;}
     d1 += mod * 0.33f; d2 += mod * 0.66f; d3 += mod;
     if(impl_->delayActive){
+      if(impl_->warpActive){ delaySig = warpSig; headGainSum = 1.0f; } else
       if(impl_->reverse){ delaySig = impl_->readTapeReverse(d3,buffer); headGainSum=1.f;} else {
         if(impl_->activeHeadMask & 1){ delaySig += impl_->readTapeAt(d1,buffer)*1.0f; headGainSum += 1.0f; }
         if(impl_->activeHeadMask & 2){ delaySig += impl_->readTapeAt(d2,buffer)*0.75f; headGainSum += 0.75f; }
@@ -460,7 +514,11 @@ void TapeCore::processStereo(float inL,float inR,float* outL,float* outR){
       // complementary de-emphasis via cached reciprocal to avoid per-sample division
       feedSig=satIn*impl_->feedbackDeEmph;
 
-      feedSig *= impl_->safeFeedback;
+      float fbGain = impl_->safeFeedback;
+      if(impl_->warpActive && p->warpFeedback > 0.001f){
+        fbGain = std::min(p->warpFeedback * 0.01f, 0.88f);
+      }
+      feedSig *= fbGain;
       feedSig=impl_->feedbackCompressor(feedSig);
       feedSig *= impl_->delayEnableRamp;
     }
@@ -475,8 +533,8 @@ void TapeCore::processStereo(float inL,float inR,float* outL,float* outR){
     return impl_->outputLimiter((input*impl_->dryGain)+dryTapeOutput);
   };
 
-  ChannelFrame frameL=readCh(inL,hissL,impl_->delayLine,impl_->reproHeadBump,impl_->tapeRolloff,impl_->gapLossLPF,impl_->azimuthFilter,impl_->inputHPF,impl_->inputLPF,impl_->dropoutLPF,dropoutL,modL);
-  ChannelFrame frameR=readCh(inR,hissR,impl_->delayLineR,impl_->reproHeadBumpR,impl_->tapeRolloffR,impl_->gapLossLPFR,impl_->azimuthFilterR,impl_->inputHPFR,impl_->inputLPFR,impl_->dropoutLPFR,dropoutR,modR);
+  ChannelFrame frameL=readCh(inL,hissL,impl_->delayLine,impl_->reproHeadBump,impl_->tapeRolloff,impl_->gapLossLPF,impl_->azimuthFilter,impl_->inputHPF,impl_->inputLPF,impl_->dropoutLPF,dropoutL,modL,warpSigL);
+  ChannelFrame frameR=readCh(inR,hissR,impl_->delayLineR,impl_->reproHeadBumpR,impl_->tapeRolloffR,impl_->gapLossLPFR,impl_->azimuthFilterR,impl_->inputHPFR,impl_->inputLPFR,impl_->dropoutLPFR,dropoutR,modR,warpSigR);
   const float fbSourceL=impl_->pingPong?frameR.feedbackSource:frameL.feedbackSource;
   const float fbSourceR=impl_->pingPong?frameL.feedbackSource:frameR.feedbackSource;
   const float feedbackL=feedbackFrom(fbSourceL,impl_->feedbackHPF,impl_->feedbackHeadBump,impl_->feedbackGapLoss,impl_->feedbackPhase,impl_->inEnvL);

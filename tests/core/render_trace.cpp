@@ -1,7 +1,7 @@
+#include "check.h"
 #include "hydra_dsp.h"
 
 #include <array>
-#include <cassert>
 #include <cmath>
 #include <cstdint>
 #include <iomanip>
@@ -83,8 +83,8 @@ int main(int argc, char** argv) {
   constexpr uint32_t totalFrames = 2048;
 
   hydra_dsp_handle* h = nullptr;
-  assert(hydra_dsp_create(sampleRate, 2000.0f, &h) == 0);
-  assert(hydra_dsp_prepare(h, block, HYDRA_DSP_CHANNELS_STEREO) == 0);
+  CHECK(hydra_dsp_create(sampleRate, 2000.0f, &h) == 0);
+  CHECK(hydra_dsp_prepare(h, block, HYDRA_DSP_CHANNELS_STEREO) == 0);
 
   hydra_dsp_params p{};
   p.flutterDepth = scenario->flutter_depth;
@@ -116,8 +116,8 @@ int main(int argc, char** argv) {
   p.springDamping = 45.0f;
   p.springMix = 0.0f;
 
-  assert(hydra_dsp_set_params(h, &p) == 0);
-  assert(hydra_dsp_commit(h) == 0);
+  CHECK(hydra_dsp_set_params(h, &p) == 0);
+  CHECK(hydra_dsp_commit(h) == 0);
 
   std::vector<float> inL(totalFrames), inR(totalFrames), outL(totalFrames), outR(totalFrames);
   for (uint32_t i = 0; i < totalFrames; ++i) {
@@ -128,25 +128,25 @@ int main(int argc, char** argv) {
 
   for (uint32_t start = 0; start < totalFrames; start += block) {
     if (start == 512) {
-      assert(hydra_dsp_set_parameter(h, HYDRA_DSP_PARAM_DRY_WET, scenario->dry_wet + 8.0f) == 0);
-      assert(hydra_dsp_set_parameter(h, HYDRA_DSP_PARAM_FEEDBACK, scenario->feedback + 7.0f) == 0);
-      assert(hydra_dsp_commit(h) == 0);
+      CHECK(hydra_dsp_set_parameter(h, HYDRA_DSP_PARAM_DRY_WET, scenario->dry_wet + 8.0f) == 0);
+      CHECK(hydra_dsp_set_parameter(h, HYDRA_DSP_PARAM_FEEDBACK, scenario->feedback + 7.0f) == 0);
+      CHECK(hydra_dsp_commit(h) == 0);
     }
     if (start == 1024 && scenario->enable_reverse_pulse) {
-      assert(hydra_dsp_set_parameter(h, HYDRA_DSP_PARAM_REVERSE, 1.0f) == 0);
-      assert(hydra_dsp_commit(h) == 0);
+      CHECK(hydra_dsp_set_parameter(h, HYDRA_DSP_PARAM_REVERSE, 1.0f) == 0);
+      CHECK(hydra_dsp_commit(h) == 0);
     }
     if (start == 1536) {
       if (scenario->enable_reverse_pulse) {
-        assert(hydra_dsp_set_parameter(h, HYDRA_DSP_PARAM_REVERSE, 0.0f) == 0);
+        CHECK(hydra_dsp_set_parameter(h, HYDRA_DSP_PARAM_REVERSE, 0.0f) == 0);
       }
       if (scenario->enable_musical_heads_tail) {
-        assert(hydra_dsp_set_parameter(h, HYDRA_DSP_PARAM_HEADS_MUSICAL, 1.0f) == 0);
+        CHECK(hydra_dsp_set_parameter(h, HYDRA_DSP_PARAM_HEADS_MUSICAL, 1.0f) == 0);
       }
-      assert(hydra_dsp_commit(h) == 0);
+      CHECK(hydra_dsp_commit(h) == 0);
     }
 
-    assert(hydra_dsp_process(h, inL.data() + start, inR.data() + start, outL.data() + start, outR.data() + start, block) == 0);
+    CHECK(hydra_dsp_process(h, inL.data() + start, inR.data() + start, outL.data() + start, outR.data() + start, block) == 0);
   }
 
   hydra_dsp_destroy(h);

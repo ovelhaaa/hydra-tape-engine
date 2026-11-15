@@ -76,10 +76,12 @@ jobs:
 
       - name: Run native test suite
         run: |
+          set -o pipefail
           mkdir -p ci-reports/native
           ctest --test-dir build-native --output-on-failure | tee ci-reports/native/ctest_native.txt
 
       - name: Upload native test reports
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: native-core-test-reports
@@ -115,6 +117,9 @@ jobs:
         run: >-
           cmake --build build-wasm --config ${CMAKE_BUILD_TYPE} -j
           --target hydra_render_trace_wasm hydra_golden_regression_wasm
+
+      - name: Run WASM golden regressions
+        run: ctest --test-dir build-wasm --output-on-failure -R '_wasm$'
 
       - name: Upload wasm build artifacts
         uses: actions/upload-artifact@v4

@@ -159,6 +159,22 @@ def delta(a, b):
     return array.array("f", (x - y for x, y in zip(a, b, strict=True)))
 
 
+def echo_peaks(scene, audio):
+    delay_seconds = scene.settings[DELAY] / 1000
+    windows = []
+    for echo in range(1, 6):
+        center = 1 + echo * delay_seconds
+        first = int((center - 0.07) * RATE)
+        last = int((center + 0.07) * RATE)
+        windows.append([max(map(abs, audio[2 * first + channel:2 * last:2]))
+                        for channel in (0, 1)])
+    if windows[0][0] <= 1e-4 or max(windows[1]) <= 1e-4:
+        raise ValueError(f"{scene.name}: first two echoes missing")
+    if scene.name == "ping_pong" and windows[1][1] <= 1e-4:
+        raise ValueError("ping-pong produced no right-channel echo in the second delay window")
+    return windows
+
+
 def characterize(scene, values, command, input_path, work):
     left = values[::2]
     if scene.name == "reverse_stereo":
@@ -172,7 +188,12 @@ def characterize(scene, values, command, input_path, work):
             r = max(window, key=lambda i: abs(delayed[2 * i + 1]))
             if min(abs(delayed[2 * l]), abs(delayed[2 * r + 1])) < 1e-4:
                 raise ValueError("reverse marker missing")
-            offsets[str(start)] = {"left": l, "right": r, "offset_frames": r - l}
+            onset_l = next(i for i in window if abs(delayed[2 * i]) >= 1e-4)
+            onset_r = next(i for i in window if abs(delayed[2 * i + 1]) >= 1e-4)
+            offsets[str(start)] = {"left_peak_frame": l, "right_peak_frame": r,
+                                   "peak_offset_frames": r - l,
+                                   "left_onset_frame": onset_l, "right_onset_frame": onset_r,
+                                   "onset_offset_frames": onset_r - onset_l}
 
         isolation = {}
         for stimulus, silent_channel in (("reverse_left_only", 1), ("reverse_right_only", 0)):
@@ -240,6 +261,9 @@ def main():
                       "settings": BASE | scene.settings, "automation_seconds": scene.events}
             audio = {name: run_scene(cmd, scene, input_path, work, len(stimulus))
                      for name, cmd in commands.items()}
+            if scene.stimulus == "impulse":
+                record["echo_peak_windows_lr"] = {name: echo_peaks(scene, samples)
+                                                  for name, samples in audio.items()}
             if scene in TRANSITIONS:
                 record["characterization"] = {}
                 for name, cmd in commands.items():

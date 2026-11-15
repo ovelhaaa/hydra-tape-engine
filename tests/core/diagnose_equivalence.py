@@ -1,6 +1,7 @@
 """Instrument copies of the short trace and TapeCore for a native/WASM audit."""
 import argparse
 import collections
+import hashlib
 import json
 import math
 from pathlib import Path
@@ -45,7 +46,9 @@ static int audit_frame = -1;
         ("  impl_->flutterPhase += impl_->flutterInc;", "  ++audit_frame;"),
         ("    frame.conditionedInput=iLP.process(iHP.process(input));",
          '    const float highpass=iHP.process(input); AUDIT("inputHPF",highpass);'),
-        ("    // --- delay read ---", '    AUDIT("conditionedInput",frame.conditionedInput);'),
+        ("    // --- delay read ---",
+         '    AUDIT("conditionedInput",frame.conditionedInput); AUDIT("readModulation",mod);'),
+        ("    return impl_->outputLimiter", '    AUDIT("recordedSample",buffer[impl_->writeHead]);'),
         ("    // --- dropout/gap loss ---", '    AUDIT("texture",textureSig); AUDIT("delay",delaySig);'),
         ("    // --- playback head EQ ---", '    AUDIT("prePlayback",tapeSig);'),
         ("    return frame;", '    AUDIT("tapeOutput",frame.tapeOutput);'),
@@ -143,7 +146,7 @@ def main():
             if name == "head":
                 configurations += [("instrumented", True, False, False),
                                    ("shared_input", True, True, False),
-                                   ("contraction_off", False, False, True),
+                                   ("contraction_off", True, False, True),
                                    ("shared_input_contraction_off", True, True, True)]
             result[name] = {}
             for variant, instrument, shared, no_contract in configurations:
@@ -170,17 +173,25 @@ def main():
                 errors = [abs(a[1] - b[1]) for channel in native
                           for a, b in zip(native[channel], wasm[channel], strict=True)]
                 metrics = dict(max_abs=max(errors), rmse=math.sqrt(math.fsum(e * e for e in errors) / len(errors)),
-                               channels=channels, flags=flags)
+                               channels=channels, flags=flags,
+                               trace_sha256=[hashlib.sha256(sample.stdout.encode("ascii")).hexdigest()
+                                             for sample in samples])
                 if instrument:
                     metrics["operations"] = compare(read_probes(n.stderr), read_probes(w.stderr))
                 result[name][variant] = metrics
+    result["release_trace_unchanged_per_backend"] = (
+        result["base"]["release"]["trace_sha256"] == result["head"]["release"]["trace_sha256"]
+    )
+    print(f'SHA base and PR have identical Release traces per backend: '
+          f'{result["release_trace_unchanged_per_backend"]}')
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
     print(f'native target defines __FMA__: {result["native_fma_macro"]}')
     for name in ("base", "head"):
         for variant, data in result[name].items():
             print(f'{name}/{variant}: max_abs={data["max_abs"]:.12g} rmse={data["rmse"]:.12g}')
-            for stage in ("stimulus", "inputHPF", "conditionedInput", "HighShelf.a2", "tapeOutput"):
+            for stage in ("stimulus", "inputHPF", "conditionedInput", "HighShelf.a2", "readModulation",
+                          "recordedSample", "texture", "tapeOutput"):
                 difference = data.get("operations", {}).get(stage)
                 if difference:
                     print(f'  {stage}: first={difference["first"]["frame"]} '

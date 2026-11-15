@@ -7,6 +7,7 @@
 
 namespace {
 constexpr uint32_t kBlock = 128;
+static_assert(sizeof(float) == 4, "listening runner uses float32 PCM");
 
 struct Event {
   uint32_t frame;

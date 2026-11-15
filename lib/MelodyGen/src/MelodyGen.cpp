@@ -2,7 +2,8 @@
 
 // Removed LUT static ref
 
-MelodyGen::MelodyGen(float fs) : sampleRate(fs) {
+MelodyGen::MelodyGen(float fs)
+    : sampleRate(fs), invSampleRate((fs > 0.0f) ? (1.0f / fs) : (1.0f / 44100.0f)) {
   // initLUT(); // Removed
 
   // Init Recursive Oscillator
@@ -361,7 +362,7 @@ void MelodyGen::nextStereo(float *outL, float *outR) {
 
   // Triangle Integrator
   // Recalculating triInc is cheap and safe
-  triInc = (frequency * drift * 4.0f) / sampleRate;
+  triInc = (frequency * drift * 4.0f) * invSampleRate;
 
   if (oscSin >= 0)
     tri += triInc;
@@ -379,6 +380,8 @@ void MelodyGen::nextStereo(float *outL, float *outR) {
     env += envAttack * (envTarget - env);
   else
     env += envRelease * (envTarget - env);
+  if (env < 1e-20f)
+    env = 0.0f;
 
   float shapedEnv = env * env;
 
@@ -392,9 +395,11 @@ void MelodyGen::nextStereo(float *outL, float *outR) {
   // AUDIO GENERATION
   float slew = (mode == MODE_ENO) ? 0.0001f : 0.0005f;
   timbre += slew * (timbreTarget - timbre);
+  if (fabsf(timbre - timbreTarget) < 1e-20f)
+    timbre = timbreTarget;
 
   // Sawtooth Generation
-  float sInc = (frequency * drift * 2.0f) / sampleRate;
+  float sInc = (frequency * drift * 2.0f) * invSampleRate;
   saw += sInc;
   if (saw > 1.0f) saw -= 2.0f;
 
@@ -418,6 +423,8 @@ void MelodyGen::nextStereo(float *outL, float *outR) {
 
   outMono = fastSat(outMono * 1.2f);
   toneState += tone * (outMono - toneState);
+  if (fabsf(toneState) < 1e-20f)
+    toneState = 0.0f;
   outMono = toneState;
 
   float sig = outMono * shapedEnv * currentAccent * 0.6f;
@@ -434,4 +441,10 @@ void MelodyGen::nextStereo(float *outL, float *outR) {
 
   *outL = sig * panL * norm;
   *outR = sig * panR * norm;
+}
+
+void MelodyGen::nextStereoBlock(float *outL, float *outR, int frames) {
+  for (int i = 0; i < frames; ++i) {
+    nextStereo(&outL[i], &outR[i]);
+  }
 }

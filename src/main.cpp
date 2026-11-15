@@ -346,14 +346,19 @@ public:
   void setAttenuation(float a) { attenuation = a; } // 0.0 to 1.0
 
   // STEREO PROCESS (Linked Gate)
-  void processStereo(float inL, float inR, float *outL, float *outR) {
-    float absIn = fmaxf(fabsf(inL), fabsf(inR));
+  inline void processStereo(float inL, float inR, float *outL, float *outR) {
+    float absL = fabsf(inL);
+    float absR = fabsf(inR);
+    float absIn = (absL > absR) ? absL : absR;
 
     // Envelope Follower
     if (absIn > envelope) {
       envelope += attackCoeff * (absIn - envelope);
     } else {
       envelope += releaseCoeff * (absIn - envelope);
+    }
+    if (envelope < 1e-20f) {
+      envelope = 0.0f;
     }
 
     // Target Gain: If strictly open -> 1.0, else -> attenuation level
@@ -372,6 +377,12 @@ public:
 
     *outL = inL * gain;
     *outR = inR * gain;
+  }
+
+  void processBlock(float *bufL, float *bufR, int frames) {
+    for (int i = 0; i < frames; ++i) {
+      processStereo(bufL[i], bufR[i], &bufL[i], &bufR[i]);
+    }
   }
 };
 
@@ -422,6 +433,14 @@ public:
 
     buffer[index * 2] = sampleL;
     buffer[index * 2 + 1] = sampleR;
+  }
+
+  void writeStereoBlock(const float *bufL, const float *bufR, int32_t *buffer, int frames) {
+    const float scale = masterVolume * (float)(2147483647.0 * 0.90f);
+    for (int i = 0; i < frames; ++i) {
+      buffer[i * 2] = (int32_t)(bufL[i] * scale);
+      buffer[i * 2 + 1] = (int32_t)(bufR[i] * scale);
+    }
   }
 };
 
@@ -691,180 +710,139 @@ void audioTask(void *parameter) {
 
     int64_t block_start_us = esp_timer_get_time();
 
-    if (g_stage_prof.state == STAGE_WARMUP || g_stage_prof.state == STAGE_RUNNING) {
-      const uint32_t blk0 = esp_cpu_get_cycle_count();
-      uint32_t blkSrc = 0, blkDsp = 0, blkTanh = 0, blkGate = 0, blkFv = 0, blkOut = 0;
+    if (p_source == SOURCE_MP3 && mp3 && file && out) {
       for (int i = 0; i < AUDIO_CHUNK_SIZE; i++) {
-        float processedL = 0.0f;
-        float processedR = 0.0f;
-        uint32_t c0 = esp_cpu_get_cycle_count();
-        if (p_source == SOURCE_I2S_IN) {
-          processedL = (float)rxBuf[i * 2] / 2147483648.0f;
-          processedR = (float)rxBuf[i * 2 + 1] / 2147483648.0f;
-        } else if (p_source == SOURCE_SYNTH && p_genActive && melody) {
-          melody->nextStereo(&processedL, &processedR);
-        } else if (p_source == SOURCE_MP3 && mp3 && file && out) {
-          if (mp3->isRunning()) {
-            if (!mp3->loop()) {
-              mp3->stop();
-              file->seek(0, SEEK_SET);
-              mp3->begin(file, out);
-            }
+        if (mp3->isRunning()) {
+          if (!mp3->loop()) {
+            mp3->stop();
+            file->seek(0, SEEK_SET);
+            mp3->begin(file, out);
           }
-          continue;
-        }
-        uint32_t c1 = esp_cpu_get_cycle_count();
-        blkSrc += (c1 - c0);
-
-        c0 = c1;
-        float outL = processedL, outR = processedR;
-        if (!isBypassed) {
-          if (p_bubblesMode && bubbles && bubbles->isAllocated()) {
-            bubbles->processStereo(processedL, processedR, &outL, &outR);
-          } else if (p_frippMode && fripp && fripp->isAllocated()) {
-            fripp->processStereo(processedL, processedR, &outL, &outR);
-          } else if (tape) {
-            tape->processStereo(processedL, processedR, &outL, &outR);
-          }
-        }
-        c1 = esp_cpu_get_cycle_count();
-        blkDsp += (c1 - c0);
-
-        c0 = c1;
-        processedL = tanhf(outL);
-        processedR = tanhf(outR);
-        c1 = esp_cpu_get_cycle_count();
-        blkTanh += (c1 - c0);
-
-        c0 = c1;
-        if (gate) {
-          gate->processStereo(processedL, processedR, &processedL, &processedR);
-        }
-        c1 = esp_cpu_get_cycle_count();
-        blkGate += (c1 - c0);
-
-        c0 = c1;
-        if (p_freeverbEnabled && freeverb && freeverb->isAllocated()) {
-          float reverbL, reverbR;
-          freeverb->processStereo(processedL, processedR, &reverbL, &reverbR);
-          processedL = reverbL;
-          processedR = reverbR;
-        }
-        c1 = esp_cpu_get_cycle_count();
-        blkFv += (c1 - c0);
-
-        c0 = c1;
-        if (out) {
-          out->writeStereo(processedL, processedR, synthBuf, i);
-        }
-        c1 = esp_cpu_get_cycle_count();
-        blkOut += (c1 - c0);
-      }
-      const uint32_t blkTot = esp_cpu_get_cycle_count() - blk0;
-      if (g_stage_prof.state == STAGE_WARMUP) {
-        if (--g_stage_prof.warmupRemain == 0) {
-          g_stage_prof.collected = 0;
-          g_stage_prof.cycSource = 0;
-          g_stage_prof.cycDsp = 0;
-          g_stage_prof.cycExtTanh = 0;
-          g_stage_prof.cycGate = 0;
-          g_stage_prof.cycFreeverb = 0;
-          g_stage_prof.cycPcmOut = 0;
-          g_stage_prof.cycTotal = 0;
-          g_stage_prof.state = STAGE_RUNNING;
-        }
-      } else if (g_stage_prof.state == STAGE_RUNNING) {
-        g_stage_prof.cycSource += blkSrc;
-        g_stage_prof.cycDsp += blkDsp;
-        g_stage_prof.cycExtTanh += blkTanh;
-        g_stage_prof.cycGate += blkGate;
-        g_stage_prof.cycFreeverb += blkFv;
-        g_stage_prof.cycPcmOut += blkOut;
-        g_stage_prof.cycTotal += blkTot;
-        if (++g_stage_prof.collected >= g_stage_prof.targetBlocks) {
-          g_stage_prof.state = STAGE_DONE;
         }
       }
     } else {
-      for (int i = 0; i < AUDIO_CHUNK_SIZE; i++) {
-        float processedL = 0.0f;
-        float processedR = 0.0f;
+      const bool stageProfActive =
+          (g_stage_prof.state == STAGE_WARMUP || g_stage_prof.state == STAGE_RUNNING);
+      const uint32_t blk0 = stageProfActive ? esp_cpu_get_cycle_count() : 0u;
+      uint32_t c0 = 0u, c1 = 0u;
+      uint32_t blkSrc = 0u, blkDsp = 0u, blkTanh = 0u, blkGate = 0u, blkFv = 0u, blkOut = 0u;
 
-        if (p_source == SOURCE_I2S_IN) {
-          // Normalize 32-bit int to -1.0 .. 1.0 float
-          processedL = (float)rxBuf[i * 2] / 2147483648.0f;
-          processedR = (float)rxBuf[i * 2 + 1] / 2147483648.0f;
-        } else if (p_source == SOURCE_SYNTH && p_genActive && melody) {
-          melody->nextStereo(&processedL, &processedR);
-        } else if (p_source == SOURCE_MP3 && mp3 && file && out) {
-          // Process MP3 through the output interceptor
-          // MP3 handling is done via ConsumeSample callback
-          if (mp3->isRunning()) {
-            if (!mp3->loop()) {
-              mp3->stop();
-              // If looping desired, restart
-              file->seek(0, SEEK_SET);
-              mp3->begin(file, out);
-            }
-          } else {
-            // MP3 not running, output silence
-            processedL = 0.0f;
-            processedR = 0.0f;
+      float blockL[AUDIO_CHUNK_SIZE];
+      float blockR[AUDIO_CHUNK_SIZE];
+
+      // === STAGE A1: INPUT / MELODYGEN ===
+      if (stageProfActive) c0 = esp_cpu_get_cycle_count();
+      if (p_source == SOURCE_I2S_IN) {
+        constexpr float kInvInt32 = 1.0f / 2147483648.0f;
+        for (int i = 0; i < AUDIO_CHUNK_SIZE; ++i) {
+          blockL[i] = (float)rxBuf[i * 2] * kInvInt32;
+          blockR[i] = (float)rxBuf[i * 2 + 1] * kInvInt32;
+        }
+      } else if (p_source == SOURCE_SYNTH && p_genActive && melody) {
+        melody->nextStereoBlock(blockL, blockR, AUDIO_CHUNK_SIZE);
+      } else {
+        memset(blockL, 0, sizeof(blockL));
+        memset(blockR, 0, sizeof(blockR));
+      }
+      if (stageProfActive) {
+        c1 = esp_cpu_get_cycle_count();
+        blkSrc = c1 - c0;
+        c0 = c1;
+      }
+
+      // === STAGE A2: TAPECORE / DSP ENGINE ===
+      bool appliedTapeCore = false;
+      if (!isBypassed) {
+        if (p_bubblesMode && bubbles && bubbles->isAllocated()) {
+          for (int i = 0; i < AUDIO_CHUNK_SIZE; ++i) {
+            bubbles->processStereo(blockL[i], blockR[i], &blockL[i], &blockR[i]);
           }
-          // Skip direct processing - MP3 uses callback
-          continue;
-        }
-
-        // If 'gen' logic was meant to be shared, valid. But here we have
-        // branches. We need to ensure passed variables to tape->processStereo are
-        // valid. processStereo takes (inL, inR, &outL, &outR). We should pass
-        // processedL/R as input to tape loop!
-
-        if (!isBypassed) {
-          float outL, outR;
-
-          if (p_bubblesMode && bubbles && bubbles->isAllocated()) {
-            // === BUBBLES MODE (Chase Bliss-style reverse with artifacts) ===
-            bubbles->processStereo(processedL, processedR, &outL, &outR);
-            processedL = tanhf(outL);
-            processedR = tanhf(outR);
-          } else if (p_frippMode && fripp && fripp->isAllocated()) {
-            // === FRIPPERTRONICS / ENO MODE ===
-            fripp->processStereo(processedL, processedR, &outL, &outR);
-            processedL = tanhf(outL);
-            processedR = tanhf(outR);
-          } else if (tape) {
-            // === NORMAL TAPE MODE ===
-            tape->processStereo(processedL, processedR, &outL, &outR);
-            processedL = tanhf(outL);
-            processedR = tanhf(outR);
-          } else {
-            processedL = tanhf(processedL);
-            processedR = tanhf(processedR);
+        } else if (p_frippMode && fripp && fripp->isAllocated()) {
+          for (int i = 0; i < AUDIO_CHUNK_SIZE; ++i) {
+            fripp->processStereo(blockL[i], blockR[i], &blockL[i], &blockR[i]);
           }
-        } else {
-          processedL = tanhf(processedL);
-          processedR = tanhf(processedR);
+        } else if (tape) {
+          tape->processStereoBlock(blockL, blockR, blockL, blockR, AUDIO_CHUNK_SIZE);
+          appliedTapeCore = true;
         }
+      }
+      if (stageProfActive) {
+        c1 = esp_cpu_get_cycle_count();
+        blkDsp = c1 - c0;
+        c0 = c1;
+      }
 
-        // Apply Stereo Noise Gate
-        if (gate) {
-          gate->processStereo(processedL, processedR, &processedL, &processedR);
+      // === STAGE A3a: EXTERNAL TANHF (SKIP WHEN TAPECORE ALREADY SATURATES & LIMITS) ===
+      if (!appliedTapeCore) {
+        for (int i = 0; i < AUDIO_CHUNK_SIZE; ++i) {
+          blockL[i] = tanhf(blockL[i]);
+          blockR[i] = tanhf(blockR[i]);
         }
+      }
+      if (stageProfActive) {
+        c1 = esp_cpu_get_cycle_count();
+        blkTanh = c1 - c0;
+        c0 = c1;
+      }
 
-        // Apply Freeverb as post-processing (combinable with any mode)
-        if (p_freeverbEnabled && freeverb && freeverb->isAllocated()) {
+      // === STAGE A3b: STEREO NOISE GATE ===
+      if (gate) {
+        gate->processBlock(blockL, blockR, AUDIO_CHUNK_SIZE);
+      }
+      if (stageProfActive) {
+        c1 = esp_cpu_get_cycle_count();
+        blkGate = c1 - c0;
+        c0 = c1;
+      }
+
+      // === STAGE A3c: FREEVERB POST-PROCESSING ===
+      if (p_freeverbEnabled && freeverb && freeverb->isAllocated()) {
+        for (int i = 0; i < AUDIO_CHUNK_SIZE; ++i) {
           float reverbL, reverbR;
-          freeverb->processStereo(processedL, processedR, &reverbL, &reverbR);
-          processedL = reverbL;
-          processedR = reverbR;
+          freeverb->processStereo(blockL[i], blockR[i], &reverbL, &reverbR);
+          blockL[i] = reverbL;
+          blockR[i] = reverbR;
         }
+      }
+      if (stageProfActive) {
+        c1 = esp_cpu_get_cycle_count();
+        blkFv = c1 - c0;
+        c0 = c1;
+      }
 
-        // OUTPUT (I2S)
-        if (out) {
-          out->writeStereo(processedL, processedR, synthBuf, i);
+      // === STAGE A3d: PCM PACKING FOR I2S ===
+      if (out) {
+        out->writeStereoBlock(blockL, blockR, synthBuf, AUDIO_CHUNK_SIZE);
+      }
+      if (stageProfActive) {
+        c1 = esp_cpu_get_cycle_count();
+        blkOut = c1 - c0;
+        const uint32_t blkTot = c1 - blk0;
+        if (g_stage_prof.state == STAGE_WARMUP) {
+          if (--g_stage_prof.warmupRemain == 0) {
+            g_stage_prof.collected = 0;
+            g_stage_prof.cycSource = 0;
+            g_stage_prof.cycDsp = 0;
+            g_stage_prof.cycExtTanh = 0;
+            g_stage_prof.cycGate = 0;
+            g_stage_prof.cycFreeverb = 0;
+            g_stage_prof.cycPcmOut = 0;
+            g_stage_prof.cycTotal = 0;
+            g_stage_prof.state = STAGE_RUNNING;
+          }
+        } else if (g_stage_prof.state == STAGE_RUNNING) {
+          g_stage_prof.cycSource += blkSrc;
+          g_stage_prof.cycDsp += blkDsp;
+          g_stage_prof.cycExtTanh += blkTanh;
+          g_stage_prof.cycGate += blkGate;
+          g_stage_prof.cycFreeverb += blkFv;
+          g_stage_prof.cycPcmOut += blkOut;
+          g_stage_prof.cycTotal += blkTot;
+          if (++g_stage_prof.collected >= g_stage_prof.targetBlocks) {
+            g_stage_prof.state = STAGE_DONE;
+          }
         }
-      } // end loop
+      }
     }
 
     // Includes generation/DSP and PCM packing, with I2S calls outside the timer.
@@ -1692,15 +1670,15 @@ void executeCommand(String line) {
 }
 
 void processSerialInput() {
-  if (Serial.available()) {
+  while (Serial.available()) {
     String line = Serial.readStringUntil('\n');
     line.trim();
-    executeCommand(line);
+    if (line.length() > 0) executeCommand(line);
   }
-  if (Serial0.available()) {
+  while (Serial0.available()) {
     String line = Serial0.readStringUntil('\n');
     line.trim();
-    executeCommand(line);
+    if (line.length() > 0) executeCommand(line);
   }
 }
 

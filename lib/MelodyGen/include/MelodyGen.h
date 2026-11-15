@@ -33,6 +33,7 @@ private:
   float frequency;
   float targetFrequency;
   float sampleRate;
+  float invSampleRate;
   Waveform currentWaveform;
   MelodyMode mode; // Current Mode
   float frequencySmoothing;
@@ -99,6 +100,7 @@ private:
 public:
   MelodyGen(float fs);
   void nextStereo(float *outL, float *outR); // Generates Stereo Output
+  void nextStereoBlock(float *outL, float *outR, int frames);
 
   // Setters usados no main.cpp
   void setWaveform(Waveform wave);

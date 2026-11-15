@@ -72,6 +72,16 @@ def instrument_trace(trace, shared_input):
                   + 0.2 * math.sin(2 * math.pi * 330 * i / 48000) for i in range(2048)]
         trace = ("static constexpr float audit_input[] = {"
                  + ",\n".join(v.hex() + "f" for v in values) + "};\n" + trace)
+    else:
+        trace = replace_once(
+            trace, "    inR[i] = 0.9f * inL[i];",
+            '    const float angle220 = 2.0f * 3.1415926535f * 220.0f * t;\n'
+            '    const float angle330 = 2.0f * 3.1415926535f * 330.0f * t;\n'
+            '    std::fprintf(stderr, "angle220,%u,%a\\n", i, double(angle220));\n'
+            '    std::fprintf(stderr, "angle330,%u,%a\\n", i, double(angle330));\n'
+            '    std::fprintf(stderr, "sinf220,%u,%a\\n", i, double(std::sin(angle220)));\n'
+            '    std::fprintf(stderr, "sinf330,%u,%a\\n", i, double(std::sin(angle330)));\n'
+            '    inR[i] = 0.9f * inL[i];')
     return '#include <cstdio>\n' + replace_once(trace, "    inR[i] = 0.9f * inL[i];",
         '    inR[i] = 0.9f * inL[i];\n'
         '    std::fprintf(stderr, "stimulus,%u,%a\\n", i, double(inL[i]));')
@@ -190,7 +200,8 @@ def main():
     for name in ("base", "head"):
         for variant, data in result[name].items():
             print(f'{name}/{variant}: max_abs={data["max_abs"]:.12g} rmse={data["rmse"]:.12g}')
-            for stage in ("stimulus", "inputHPF", "conditionedInput", "HighShelf.a2", "readModulation",
+            for stage in ("angle220", "angle330", "sinf220", "sinf330", "stimulus", "inputHPF",
+                          "conditionedInput", "HighShelf.a2", "readModulation",
                           "recordedSample", "texture", "tapeOutput"):
                 difference = data.get("operations", {}).get(stage)
                 if difference:

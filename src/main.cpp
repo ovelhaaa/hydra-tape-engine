@@ -14,6 +14,7 @@
 #include <Arduino.h>
 #include <driver/i2s.h>
 #include <esp_task_wdt.h>
+#include <esp_timer.h>
 #include <math.h>
 
 // NEW: MP3 & Filesystem Headers
@@ -75,6 +76,22 @@ float p_springMix = 50.0f;       // 50% - balanced mix
 float p_springDecay = 60.0f;     // 60% - medium-long decay
 float p_springDamping = 45.0f;   // 45% - balanced damping
 
+// === ACCIDENTAL WARP V1.2 ===
+bool p_warpActive = false;
+float p_warpSpeed = 1.0f;        // 1.0 = octave up (+12st, v_eff = 2.0x)
+float p_warpGrainMs = 80.0f;     // 80ms default window
+float p_warpStereo = 0.5f;       // 50% stereo phase offset
+float p_warpFeedback = 0.0f;     // 0% feedback (pure single pass)
+int p_warpMode = 0;              // 0 = 2-Taps Musical Hermite
+
+// === DSP PERFORMANCE TELEMETRY ===
+volatile uint32_t g_dsp_block_count = 0;
+volatile int64_t g_dsp_total_block_us = 0;
+volatile int64_t g_dsp_last_block_us = 0;
+volatile int64_t g_dsp_max_block_us = 0;
+volatile uint32_t g_dsp_overrun_count = 0;
+volatile float g_dsp_cpu_load_pct = 0.0f;
+
 // Gate
 float p_gateThreshold = 0.001f; // Default threshold
 
@@ -129,6 +146,12 @@ static hydra_dsp_params makeTapeParams() {
   params.springDecay = p_springDecay;
   params.springDamping = p_springDamping;
   params.springMix = p_springMix;
+  params.warpActive = p_warpActive ? 1.0f : 0.0f;
+  params.warpSpeed = p_warpSpeed;
+  params.warpGrainMs = p_warpGrainMs;
+  params.warpStereo = p_warpStereo;
+  params.warpFeedback = p_warpFeedback;
+  params.warpMode = static_cast<float>(p_warpMode);
   return params;
 }
 
@@ -461,6 +484,8 @@ void audioTask(void *parameter) {
       i2s_read(I2S_PORT, rxBuf, sizeof(rxBuf), &bytesRead, pdMS_TO_TICKS(10));
     }
 
+    int64_t block_start_us = esp_timer_get_time();
+
     for (int i = 0; i < AUDIO_CHUNK_SIZE; i++) {
       float processedL = 0.0f;
       float processedR = 0.0f;
@@ -540,6 +565,20 @@ void audioTask(void *parameter) {
         out->writeStereo(processedL, processedR, synthBuf, i);
       }
     } // end loop
+
+    // Telemetry: measure chunk DSP time (budget = 2902.5 us for 128 frames @ 44.1 kHz)
+    int64_t block_dur_us = esp_timer_get_time() - block_start_us;
+    g_dsp_last_block_us = block_dur_us;
+    g_dsp_total_block_us += block_dur_us;
+    g_dsp_block_count = g_dsp_block_count + 1;
+    if (block_dur_us > g_dsp_max_block_us) {
+      g_dsp_max_block_us = block_dur_us;
+    }
+    if (block_dur_us > 2902) {
+      g_dsp_overrun_count = g_dsp_overrun_count + 1;
+    }
+    float current_load = ((float)block_dur_us / 2902.5f) * 100.0f;
+    g_dsp_cpu_load_pct = 0.95f * g_dsp_cpu_load_pct + 0.05f * current_load;
 
     // Write block to I2S
     // Use a longer timeout (e.g., 100ms) to ensure we block if buffer is full.
@@ -694,8 +733,28 @@ void loadPreset(String name) {
     p_tapeAge = 90.0f;
     p_tapeSpeed = 25.0f;
     p_tone = 25.0f;
+  } else if (name == "warp_octave") {
+    p_delayActive = true;
+    p_delayTime = 200.0f;
+    p_mix = 50.0f;
+    p_warpActive = true;
+    p_warpSpeed = 1.0f;
+    p_warpGrainMs = 80.0f;
+    p_warpStereo = 0.5f;
+    p_warpFeedback = 0.0f;
+    p_warpMode = 0;
+  } else if (name == "warp_cascade") {
+    p_delayActive = true;
+    p_delayTime = 250.0f;
+    p_mix = 60.0f;
+    p_warpActive = true;
+    p_warpSpeed = 1.0f;
+    p_warpGrainMs = 90.0f;
+    p_warpStereo = 0.5f;
+    p_warpFeedback = 60.0f;
+    p_warpMode = 0;
   } else {
-    dualPrintln("Unknown preset. Try: clean, lofi, dub, broken");
+    dualPrintln("Unknown preset. Try: clean, lofi, dub, broken, warp_octave, warp_cascade");
     return;
   }
 }
@@ -744,9 +803,42 @@ void printHelp() {
   dualPrintln("  spm <0-100> : Spring Mix");
   dualPrintln("  spd <0-100> : Spring Decay");
   dualPrintln("  spf <0-100> : Spring Damping");
+  dualPrintln(" [ACCIDENTAL WARP V1.2]");
+  dualPrintln("  wrp <0/1>   : Warp Enable/Bypass");
+  dualPrintln("  wsp <0-2.0> : Warp Speed Multiplier (1.0 = +1 Octave)");
+  dualPrintln("  wgr <10-400>: Warp Grain Window in ms");
+  dualPrintln("  wst <0-1.0> : Warp Stereo Phase Offset");
+  dualPrintln("  wfb <0-95>  : Warp Feedback %");
+  dualPrintln("  wmd <0-3>   : Warp Mode (0=2T-Herm, 1=1T-Herm, 2=1T-Raw, 3=2T-Raw)");
+  dualPrintln("  perf        : DSP Performance & Telemetry Stats");
   dualPrintln("");
-  dualPrintln("  load <preset> : clean, lofi, dub, broken");
+  dualPrintln("  load <preset> : clean, lofi, dub, broken, warp_octave, warp_cascade");
   dualPrintln("  list          : Show Dashboard");
+}
+
+void printDspPerformanceStats() {
+  dualPrintln("\n=== HYDRA DSP PERFORMANCE TELEMETRY ===");
+  dualPrintf("Block Size          : %d frames\n", AUDIO_CHUNK_SIZE);
+  dualPrintf("Sample Rate         : %d Hz\n", SAMPLE_RATE);
+  dualPrintf("Block Time Budget   : 2902.5 us\n");
+  dualPrintf("Blocks Processed    : %u\n", g_dsp_block_count);
+  int64_t avg_us = g_dsp_block_count > 0 ? (g_dsp_total_block_us / g_dsp_block_count) : 0;
+  dualPrintf("Avg DSP Block Time  : %lld us\n", avg_us);
+  dualPrintf("Last DSP Block Time : %lld us\n", g_dsp_last_block_us);
+  dualPrintf("Peak DSP Block Time : %lld us\n", g_dsp_max_block_us);
+  dualPrintf("DSP CPU Load (EMA)  : %.1f %%\n", g_dsp_cpu_load_pct);
+  dualPrintf("Buffer Overruns     : %u\n", g_dsp_overrun_count);
+  dualPrintf("Internal Free Heap  : %u bytes\n", heap_caps_get_free_size(MALLOC_CAP_INTERNAL));
+  dualPrintf("SPIRAM (PSRAM) Free : %u bytes\n", heap_caps_get_free_size(MALLOC_CAP_SPIRAM));
+  dualPrintf("Warp Active         : %s\n", p_warpActive ? "YES" : "NO");
+  if (p_warpActive) {
+    dualPrintf("  Mode              : %d\n", p_warpMode);
+    dualPrintf("  Speed Multiplier  : %.2fx (v_eff = %.2fx)\n", p_warpSpeed, 1.0f + p_warpSpeed);
+    dualPrintf("  Grain Window      : %.1f ms\n", p_warpGrainMs);
+    dualPrintf("  Stereo Offset     : %.2f\n", p_warpStereo);
+    dualPrintf("  Warp Feedback     : %.1f %%\n", p_warpFeedback);
+  }
+  dualPrintln("========================================\n");
 }
 
 // --- DASHBOARD STATUS ---
@@ -772,6 +864,20 @@ void printStatus() {
   printBar(" Age", p_tapeAge / 100.0f);
   dualPrintf(" Heads       : %d (%s)\n", p_activeHeads,
              p_headsMusical ? "Musical" : "Free");
+
+  // WARP SECTION
+  dualPrintln("\n [ ACCIDENTAL WARP ]");
+  dualPrintf(" Warp Active : %s\n", p_warpActive ? "YES" : "NO");
+  if (p_warpActive) {
+    dualPrintf(" Mode        : %d (%s)\n", p_warpMode,
+               p_warpMode == 0 ? "2-Taps Hermite" :
+               p_warpMode == 1 ? "1-Tap Hermite" :
+               p_warpMode == 2 ? "1-Tap Raw Int" : "2-Taps Raw Int");
+    dualPrintf(" Speed Mult  : %.2fx\n", p_warpSpeed);
+    dualPrintf(" Grain Size  : %.1f ms\n", p_warpGrainMs);
+    dualPrintf(" Stereo Wid  : %.2f\n", p_warpStereo);
+    printBar(" Warp FB", p_warpFeedback / 95.0f);
+  }
 
   // COLOR SECTION
   dualPrintln("\n [ COLOR & TONE ]");
@@ -950,6 +1056,35 @@ void executeCommand(String line) {
       printBar("Spring Damp", p_springDamping / 100.0f);
     }
 
+    // --- ACCIDENTAL WARP V1.2 ---
+    else if (cmd == "wrp") {
+      p_warpActive = (val > 0);
+      dualPrintf("Accidental Warp: %s\n", p_warpActive ? "ON" : "OFF");
+    }
+    else if (cmd == "wsp") {
+      p_warpSpeed = constrain(val, 0.0f, 2.0f);
+      dualPrintf("Warp Speed: %.2fx (v_eff = %.2fx)\n", p_warpSpeed, 1.0f + p_warpSpeed);
+    }
+    else if (cmd == "wgr") {
+      p_warpGrainMs = constrain(val, 10.0f, 400.0f);
+      dualPrintf("Warp Grain: %.1f ms\n", p_warpGrainMs);
+    }
+    else if (cmd == "wst") {
+      p_warpStereo = constrain(val, 0.0f, 1.0f);
+      dualPrintf("Warp Stereo Offset: %.2f\n", p_warpStereo);
+    }
+    else if (cmd == "wfb") {
+      p_warpFeedback = constrain(val, 0.0f, 95.0f);
+      dualPrintf("Warp Feedback: %.1f%%\n", p_warpFeedback);
+    }
+    else if (cmd == "wmd") {
+      p_warpMode = constrain((int)val, 0, 3);
+      dualPrintf("Warp Mode: %d\n", p_warpMode);
+    }
+    else if (cmd == "perf") {
+      printDspPerformanceStats();
+    }
+
     // --- SYSTEM ---
     else if (cmd == "bmp")
       p_bpm = constrain(val, 30.0f, 300.0f);
@@ -999,7 +1134,7 @@ void executeCommand(String line) {
 
     // Visual Feedback
     if (cmd != "?" && cmd != "stat" && cmd != "list" && cmd != "src" &&
-        cmd != "load" && cmd != "byp") {
+        cmd != "load" && cmd != "byp" && cmd != "perf") {
       if (cmd == "vol")
         printBar("Volume", masterVolume);
       else if (cmd == "mix")
@@ -1024,6 +1159,14 @@ void executeCommand(String line) {
         printBar("Dropouts", p_dropoutSeverity / 40.0f);
       else if (cmd == "dly")
         dualPrintf("Delay: %.0f ms\n", p_delayTime);
+      else if (cmd == "wsp")
+        printBar("Warp Spd", p_warpSpeed / 2.0f);
+      else if (cmd == "wgr")
+        printBar("Warp Grn", (p_warpGrainMs - 10.0f) / 390.0f);
+      else if (cmd == "wst")
+        printBar("Warp Str", p_warpStereo);
+      else if (cmd == "wfb")
+        printBar("Warp FB", p_warpFeedback / 95.0f);
       else
         dualPrintf("> %s updated\n", cmd.c_str());
     }

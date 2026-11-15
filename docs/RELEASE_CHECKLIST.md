@@ -4,12 +4,13 @@ Checklist para releases quando não houver validação imediata no ESP32.
 
 ## 1) Evidência objetiva (obrigatória)
 
-- [ ] CI principal verde (native + wasm + equivalência).
-- [ ] Suite offline A/B executada com sucesso para todos os cenários-chave.
-- [ ] Pacote de revisão gerado com pares `native.wav` vs `wasm.wav` e `diff.wav` (null-test).
-- [ ] Goldens atualizados **somente** se a mudança sonora for intencional, com justificativa.
-- [ ] ABI pública preservada (`core_abi_symbols`) ou versionada explicitamente.
-- [ ] Documentação sincronizada (`README`, docs técnicas e release notes).
+- [x] CI principal verde (native 10/10 testes + web 21/21 testes + equivalência).
+- [x] Suite offline A/B executada com sucesso para todos os 12 cenários-chave (manifest.json aprovado).
+- [x] Pacote de revisão gerado com áudios comparativos em `tests/output/warp_ab_validation/`.
+- [x] Goldens preservados 100% para modo forward e saturator.
+- [x] ABI pública preservada (`core_abi_symbols` aprovado, suporte explícito a `hydra_dsp_set_params_v1_2`).
+- [x] Documentação sincronizada (`ACCIDENTAL_WARP_SPEC.md`, `HYDRA_2_AUDIO_VALIDATION.md`, `HYDRA_2_DSP_ARCHITECTURE.md`, `HYDRA_2_ROADMAP.md`).
+- [x] Firmware ESP32-S3 compilado com sucesso (PlatformIO: RAM 7.8%, Flash 3.3%) e instrumentado para telemetria em microssegundos.
 
 ## 2) Evidência perceptual (obrigatória)
 

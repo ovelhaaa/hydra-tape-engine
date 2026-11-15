@@ -1054,11 +1054,724 @@
                     outR[i] = (dryR * (1.0 - dw) + wetR * dw) * master;
                 }
 
+                // Telemetry at ~60fps
+                this.telemetryCounter += outL.length;
+                if (this.telemetryCounter >= 750) {
+                    this.telemetryCounter = 0;
+                    const writeNorm = this.delayL.writeIdx / dSize;
+                    let r1Idx = this.delayL.writeIdx - (lastPhase1 * dSize);
+                    while (r1Idx < 0) r1Idx += dSize;
+                    let r2Idx = this.delayL.writeIdx - (lastPhase2 * dSize);
+                    while (r2Idx < 0) r2Idx += dSize;
+
+                    this.port.postMessage({
+                        type: 'telemetry',
+                        writeNorm,
+                        read1Norm: r1Idx / dSize,
+                        read2Norm: r2Idx / dSize,
+                        gain1: lastGain1,
+                        gain2: lastGain2,
+                        delaySamples: dSamples,
+                        delaySize: dSize,
+                        sampleRate: this.fs
+                    });
+                }
+
                 return true;
             }
         }
 
         registerProcessor('accidental-warp-processor', AccidentalWarpProcessor);
+    </script>
+
+    <!-- Main UI & Visualization Logic -->
+    <script>
+        let audioCtx = null;
+        let workletNode = null;
+        let analyserNode = null;
+        let fileAudioEl = null;
+        let fileSourceNode = null;
+        let micStream = null;
+        let micSourceNode = null;
+
+        let isRunning = false;
+        let synthActive = true;
+        let activeSourceTab = 'synth';
+        let isMusical2Tap = true;
+
+        let visState = {
+            writeNorm: 0,
+            read1Norm: 0.5,
+            read2Norm: 0.0,
+            gain1: 1.0,
+            gain2: 0.0,
+            delaySamples: 36000,
+            delaySize: 36000,
+            sampleRate: 48000
+        };
+
+        // DOM Elements
+        const btnAudioEngine = document.getElementById('btnAudioEngine');
+        const engineLed = document.getElementById('engineLed');
+        const engineBtnText = document.getElementById('engineBtnText');
+        const btnPanic = document.getElementById('btnPanic');
+
+        // Init AudioContext & Worklet
+        async function initAudio() {
+            if (audioCtx) {
+                if (audioCtx.state === 'suspended') {
+                    await audioCtx.resume();
+                }
+                return;
+            }
+
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const workletCode = document.getElementById('dsp-worklet-code').textContent;
+            const blob = new Blob([workletCode], { type: 'application/javascript' });
+            const url = URL.createObjectURL(blob);
+
+            await audioCtx.audioWorklet.addModule(url);
+            workletNode = new AudioWorkletNode(audioCtx, 'accidental-warp-processor', {
+                numberOfInputs: 1,
+                numberOfOutputs: 1,
+                outputChannelCount: [2]
+            });
+
+            analyserNode = audioCtx.createAnalyser();
+            analyserNode.fftSize = 2048;
+            analyserNode.smoothingTimeConstant = 0.82;
+
+            workletNode.connect(analyserNode);
+            analyserNode.connect(audioCtx.destination);
+
+            workletNode.port.onmessage = (e) => {
+                if (e.data.type === 'telemetry') {
+                    Object.assign(visState, e.data);
+                }
+            };
+
+            document.getElementById('srReadout').textContent = `FS: ${audioCtx.sampleRate} Hz`;
+            syncAllParamsToWorklet();
+            isRunning = true;
+            updateEngineButtonUI();
+        }
+
+        function updateEngineButtonUI() {
+            if (isRunning && audioCtx && audioCtx.state === 'running') {
+                btnAudioEngine.className = 'flex-1 sm:flex-none px-4 py-2.5 rounded-xl font-semibold text-sm bg-zinc-800 hover:bg-zinc-700 text-emerald-400 border border-emerald-500/40 transition-all flex items-center justify-center gap-2';
+                engineLed.className = 'w-2.5 h-2.5 rounded-full bg-emerald-400 led-glow-emerald';
+                engineBtnText.textContent = 'ÁUDIO ATIVO';
+            } else {
+                btnAudioEngine.className = 'flex-1 sm:flex-none px-4 py-2.5 rounded-xl font-semibold text-sm bg-emerald-500 hover:bg-emerald-400 text-zinc-950 transition-all flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20';
+                engineLed.className = 'w-2.5 h-2.5 rounded-full bg-zinc-950';
+                engineBtnText.textContent = 'LIGAR MOTOR DE ÁUDIO';
+            }
+        }
+
+        btnAudioEngine.addEventListener('click', async () => {
+            if (!audioCtx) {
+                await initAudio();
+            } else if (audioCtx.state === 'running') {
+                await audioCtx.suspend();
+                isRunning = false;
+                updateEngineButtonUI();
+            } else {
+                await audioCtx.resume();
+                isRunning = true;
+                updateEngineButtonUI();
+            }
+        });
+
+        btnPanic.addEventListener('click', () => {
+            if (workletNode) {
+                workletNode.port.postMessage({ type: 'clear' });
+            }
+        });
+
+        function sendParam(key, value) {
+            if (workletNode) {
+                workletNode.port.postMessage({ type: 'param', key, value });
+            }
+        }
+
+        // Parameter Controls Binding
+        const paramBpm = document.getElementById('paramBpm');
+        const paramSubdiv = document.getElementById('paramSubdiv');
+        const paramSpeed = document.getElementById('paramSpeed');
+        const paramFeedback = document.getElementById('paramFeedback');
+        const paramDryWet = document.getElementById('paramDryWet');
+        const paramHpf = document.getElementById('paramHpf');
+        const paramLpf = document.getElementById('paramLpf');
+        const paramDrive = document.getElementById('paramDrive');
+        const paramStereoWarp = document.getElementById('paramStereoWarp');
+        const paramDeclick = document.getElementById('paramDeclick');
+        const paramMaster = document.getElementById('paramMaster');
+
+        function setArchitectureMode(musical2Tap) {
+            isMusical2Tap = musical2Tap;
+            sendParam('isMusical2Tap', isMusical2Tap);
+
+            const btn1 = document.getElementById('btnArch1Tap');
+            const btn2 = document.getElementById('btnArch2Tap');
+            const boxStereo = document.getElementById('boxStereoWarp');
+            const boxDeclick = document.getElementById('boxDeclick');
+            const tap2Legend = document.getElementById('tap2Legend');
+            const archSub = document.getElementById('archSubtitle');
+            const diagBox = document.getElementById('mathInspectorBox');
+
+            if (isMusical2Tap) {
+                btn2.className = 'px-3 py-2 rounded-lg text-xs font-mono font-bold bg-cyan-500 text-zinc-950 shadow-lg shadow-cyan-500/20 transition-all';
+                btn1.className = 'px-3 py-2 rounded-lg text-xs font-mono font-bold text-zinc-400 hover:text-zinc-200 transition-all';
+                boxStereo.classList.remove('hidden');
+                boxDeclick.classList.add('hidden');
+                tap2Legend.classList.remove('hidden');
+                archSub.textContent = '2-Taps Defasados 180° + Sincronia BPM + HPF/Drive';
+                archSub.className = 'text-xs font-semibold text-cyan-300';
+                diagBox.innerHTML = `
+                    <div class="text-cyan-400">// MODO MUSICAL 2-TAPS (DUAL-TAP TRIANGULAR CROSSFADE):</div>
+                    <div><span class="text-amber-400">tap1</span> + <span class="text-cyan-400">tap2 (+180°)</span> → <span class="text-emerald-400">gain1 + gain2 = 1.00</span> (amplitude constante)</div>
+                    <div><span class="text-zinc-400">Feedback Chain:</span> HPF(<span id="diagHpf">${paramHpf.value}</span>Hz) → LPF(<span id="diagLpf">${paramLpf.value}</span>Hz) → tanhf(x * <span id="diagDrive">${parseFloat(paramDrive.value).toFixed(1)}</span>)</div>
+                    <div class="pt-1.5 text-[11px] font-sans text-zinc-400 border-t border-zinc-900 mt-1.5">
+                        Enquanto um ponteiro cruza a borda do buffer com volume zero, o outro está no centro com volume máximo. Resultado: <strong>oitava grave contínua, sem estalos e sem buracos rítmicos</strong>.
+                    </div>
+                `;
+            } else {
+                btn1.className = 'px-3 py-2 rounded-lg text-xs font-mono font-bold bg-rose-500 text-zinc-950 shadow-lg shadow-rose-500/20 transition-all';
+                btn2.className = 'px-3 py-2 rounded-lg text-xs font-mono font-bold text-zinc-400 hover:text-zinc-200 transition-all';
+                boxStereo.classList.add('hidden');
+                boxDeclick.classList.remove('hidden');
+                tap2Legend.classList.add('hidden');
+                archSub.textContent = '1-Tap Original (+1000 smp offset • Sem HPF • Janela Única)';
+                archSub.className = 'text-xs font-semibold text-rose-300';
+                diagBox.innerHTML = `
+                    <div class="text-rose-400">// MODO ORIGINAL 1-TAP (ACIDENTE DE PONTEIRO DO C++):</div>
+                    <div><span class="text-emerald-400">writeIdx</span> (+1 smp) vs <span class="text-amber-400">readIdx</span> (+<span id="mathVelocityTag">${(1 + parseFloat(paramSpeed.value)).toFixed(2)}</span> smp/ciclo)</div>
+                    <div><span class="text-zinc-400">Buffer Size:</span> delaySamples + <span class="text-rose-400">1000 samples</span> (assíncrono)</div>
+                    <div class="pt-1.5 text-[11px] font-sans text-zinc-400 border-t border-zinc-900 mt-1.5">
+                        Leitura única que atropela a gravação periodicamente. Com <strong>Declick = 0%</strong> e <strong>Cast (Int)</strong>, reproduz fielmente os estalos e a aspereza digital do código original.
+                    </div>
+                `;
+            }
+            updateReadoutsAndMath();
+        }
+
+        document.getElementById('btnArch1Tap').addEventListener('click', () => setArchitectureMode(false));
+        document.getElementById('btnArch2Tap').addEventListener('click', () => setArchitectureMode(true));
+
+        function updateReadoutsAndMath() {
+            const bpm = parseFloat(paramBpm.value);
+            const subdiv = parseFloat(paramSubdiv.value);
+            const speed = parseFloat(paramSpeed.value);
+            const fb = parseFloat(paramFeedback.value);
+            const dw = parseFloat(paramDryWet.value);
+            const hpf = parseFloat(paramHpf.value);
+            const lpf = parseFloat(paramLpf.value);
+            const drive = parseFloat(paramDrive.value);
+            const sWarp = parseFloat(paramStereoWarp.value);
+            const declick = parseFloat(paramDeclick.value);
+            const master = parseFloat(paramMaster.value);
+
+            const ms = Math.round((60000 / bpm) * subdiv);
+            const sr = audioCtx ? audioCtx.sampleRate : 48000;
+            const smp = Math.floor(((60 / bpm) * subdiv) * sr);
+            const actualBuf = isMusical2Tap ? smp : (smp + 1000);
+
+            document.getElementById('valBpm').textContent = `${bpm} BPM (${ms} ms)`;
+            document.getElementById('bufferStatsReadout').textContent = `BUFFER: ${ms}ms (${actualBuf} smp)`;
+
+            const readVel = 1.0 + speed;
+            let pitchDesc = '';
+            if (Math.abs(speed - 0.5) < 0.03) pitchDesc = 'Freeze / Stutter';
+            else if (Math.abs(speed - 1.0) < 0.03) pitchDesc = '-1 Oitava';
+            else if (Math.abs(speed - 1.5) < 0.03) pitchDesc = 'Quinta / Warp';
+            else if (speed < 1.0) pitchDesc = 'Stretch / Lento';
+            else pitchDesc = 'Warp Acelerado';
+
+            document.getElementById('valSpeed').textContent = `${speed.toFixed(2)}x (${pitchDesc})`;
+            document.getElementById('readSpeedLabel').textContent = `${readVel.toFixed(2)}x`;
+            document.getElementById('pitchShiftReadout').textContent = `Velocidade Leitura: ${readVel.toFixed(2)}x`;
+
+            const crossHz = ((speed * sr) / actualBuf).toFixed(2);
+            document.getElementById('collisionReadout').textContent = `Cruzamentos/seg: ${crossHz} Hz`;
+
+            document.getElementById('valFeedback').textContent = `${Math.round(fb * 100)}%`;
+            document.getElementById('valDryWet').textContent = `${Math.round(dw * 100)}% Wet`;
+            document.getElementById('valHpf').textContent = `${hpf} Hz`;
+            document.getElementById('valLpf').textContent = `${lpf} Hz`;
+            document.getElementById('valDrive').textContent = `${drive.toFixed(2)}x`;
+            document.getElementById('valStereoWarp').textContent = `${Math.round(sWarp * 100)}%`;
+            document.getElementById('valDeclick').textContent = `${Math.round(declick * 100)}%`;
+            document.getElementById('valMaster').textContent = `${Math.round(master * 100)}%`;
+
+            const diagHpf = document.getElementById('diagHpf');
+            const diagLpf = document.getElementById('diagLpf');
+            const diagDrive = document.getElementById('diagDrive');
+            const mathVelTag = document.getElementById('mathVelocityTag');
+            if (diagHpf) diagHpf.textContent = hpf;
+            if (diagLpf) diagLpf.textContent = lpf;
+            if (diagDrive) diagDrive.textContent = drive.toFixed(1);
+            if (mathVelTag) mathVelTag.textContent = readVel.toFixed(2);
+        }
+
+        function syncAllParamsToWorklet() {
+            sendParam('isMusical2Tap', isMusical2Tap);
+            sendParam('bpm', parseFloat(paramBpm.value));
+            sendParam('subdiv', parseFloat(paramSubdiv.value));
+            sendParam('speedMultiplier', parseFloat(paramSpeed.value));
+            sendParam('feedback', parseFloat(paramFeedback.value));
+            sendParam('dryWet', parseFloat(paramDryWet.value));
+            sendParam('hpfCutoff', parseFloat(paramHpf.value));
+            sendParam('lpfCutoff', parseFloat(paramLpf.value));
+            sendParam('fbDrive', parseFloat(paramDrive.value));
+            sendParam('stereoWarp', parseFloat(paramStereoWarp.value));
+            sendParam('declickAmount', parseFloat(paramDeclick.value));
+            sendParam('masterVolume', parseFloat(paramMaster.value));
+            sendParam('synthEnabled', synthActive && activeSourceTab === 'synth');
+            sendParam('synthScale', document.getElementById('synthScale').value);
+            sendParam('synthDensity', parseFloat(document.getElementById('synthDensity').value));
+        }
+
+        paramBpm.addEventListener('input', () => { updateReadoutsAndMath(); sendParam('bpm', parseFloat(paramBpm.value)); });
+        paramSubdiv.addEventListener('change', () => { updateReadoutsAndMath(); sendParam('subdiv', parseFloat(paramSubdiv.value)); });
+        paramSpeed.addEventListener('input', () => { updateReadoutsAndMath(); sendParam('speedMultiplier', parseFloat(paramSpeed.value)); });
+        document.getElementById('btnSnapOctave').addEventListener('click', () => {
+            paramSpeed.value = 1.00;
+            updateReadoutsAndMath();
+            sendParam('speedMultiplier', 1.00);
+        });
+        paramFeedback.addEventListener('input', () => { updateReadoutsAndMath(); sendParam('feedback', parseFloat(paramFeedback.value)); });
+        paramDryWet.addEventListener('input', () => { updateReadoutsAndMath(); sendParam('dryWet', parseFloat(paramDryWet.value)); });
+        paramHpf.addEventListener('input', () => { updateReadoutsAndMath(); sendParam('hpfCutoff', parseFloat(paramHpf.value)); });
+        paramLpf.addEventListener('input', () => { updateReadoutsAndMath(); sendParam('lpfCutoff', parseFloat(paramLpf.value)); });
+        paramDrive.addEventListener('input', () => { updateReadoutsAndMath(); sendParam('fbDrive', parseFloat(paramDrive.value)); });
+        paramStereoWarp.addEventListener('input', () => { updateReadoutsAndMath(); sendParam('stereoWarp', parseFloat(paramStereoWarp.value)); });
+        paramDeclick.addEventListener('input', () => { updateReadoutsAndMath(); sendParam('declickAmount', parseFloat(paramDeclick.value)); });
+        paramMaster.addEventListener('input', () => { updateReadoutsAndMath(); sendParam('masterVolume', parseFloat(paramMaster.value)); });
+
+        // Hermite vs Raw Int Cast Toggle
+        const btnModeHermite = document.getElementById('btnModeHermite');
+        const btnModeRawInt = document.getElementById('btnModeRawInt');
+
+        function setRawIntMode(isRaw) {
+            sendParam('rawIntCast', isRaw);
+            if (isRaw) {
+                btnModeRawInt.className = 'px-2.5 py-1 rounded-lg text-[11px] font-mono font-bold bg-rose-500 text-zinc-950 transition-all';
+                btnModeHermite.className = 'px-2.5 py-1 rounded-lg text-[11px] font-mono font-bold text-zinc-400 hover:text-zinc-200 transition-all';
+            } else {
+                btnModeHermite.className = 'px-2.5 py-1 rounded-lg text-[11px] font-mono font-bold bg-amber-500 text-zinc-950 transition-all';
+                btnModeRawInt.className = 'px-2.5 py-1 rounded-lg text-[11px] font-mono font-bold text-zinc-400 hover:text-zinc-200 transition-all';
+            }
+        }
+
+        btnModeHermite.addEventListener('click', () => setRawIntMode(false));
+        btnModeRawInt.addEventListener('click', () => setRawIntMode(true));
+
+        // Presets
+        document.querySelectorAll('.preset-btn').forEach(btn => {
+            btn.addEventListener('click', async () => {
+                await initAudio();
+                const p = btn.dataset.preset;
+                document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('border-cyan-500/50', 'border-amber-500/50'));
+                btn.classList.add('border-cyan-500/50');
+
+                if (p === 'original') {
+                    setArchitectureMode(false);
+                    paramSubdiv.value = '1.0';
+                    paramSpeed.value = 1.00;
+                    paramFeedback.value = 0.55;
+                    paramDryWet.value = 0.60;
+                    paramDeclick.value = 0.00;
+                    paramLpf.value = 2000;
+                    setRawIntMode(true);
+                } else if (p === 'octaver2tap') {
+                    setArchitectureMode(true);
+                    paramSubdiv.value = '0.5';
+                    paramSpeed.value = 1.00;
+                    paramFeedback.value = 0.45;
+                    paramDryWet.value = 0.60;
+                    paramHpf.value = 110;
+                    paramLpf.value = 2600;
+                    paramDrive.value = 1.45;
+                    paramStereoWarp.value = 0.35;
+                    setRawIntMode(false);
+                } else if (p === 'subcascade') {
+                    setArchitectureMode(true);
+                    paramSubdiv.value = '1.0';
+                    paramSpeed.value = 1.00;
+                    paramFeedback.value = 0.80;
+                    paramDryWet.value = 0.65;
+                    paramHpf.value = 135;
+                    paramLpf.value = 1750;
+                    paramDrive.value = 2.15;
+                    paramStereoWarp.value = 0.55;
+                    setRawIntMode(false);
+                } else if (p === 'stutter16') {
+                    setArchitectureMode(true);
+                    paramSubdiv.value = '0.25';
+                    paramSpeed.value = 1.00;
+                    paramFeedback.value = 0.72;
+                    paramDryWet.value = 0.65;
+                    paramHpf.value = 150;
+                    paramLpf.value = 3400;
+                    paramDrive.value = 1.60;
+                    paramStereoWarp.value = 0.65;
+                    setRawIntMode(false);
+                } else if (p === 'freeze') {
+                    setArchitectureMode(true);
+                    paramSubdiv.value = '0.5';
+                    paramSpeed.value = 0.50;
+                    paramFeedback.value = 0.88;
+                    paramDryWet.value = 0.75;
+                    paramHpf.value = 120;
+                    paramLpf.value = 2800;
+                    paramDrive.value = 1.50;
+                    paramStereoWarp.value = 0.70;
+                    setRawIntMode(false);
+                }
+                updateReadoutsAndMath();
+                syncAllParamsToWorklet();
+            });
+        });
+
+        // Sound Source Tabs
+        const sourceTabs = document.querySelectorAll('.source-tab');
+        sourceTabs.forEach(tab => {
+            tab.addEventListener('click', async () => {
+                await initAudio();
+                activeSourceTab = tab.dataset.source;
+
+                sourceTabs.forEach(t => {
+                    t.className = 'source-tab py-2 px-2 rounded-lg text-xs font-semibold text-zinc-400 hover:text-zinc-200 transition-all';
+                });
+                tab.className = 'source-tab py-2 px-2 rounded-lg text-xs font-semibold bg-zinc-800 text-white transition-all';
+
+                document.getElementById('panel-synth').classList.toggle('hidden', activeSourceTab !== 'synth');
+                document.getElementById('panel-file').classList.toggle('hidden', activeSourceTab !== 'file');
+                document.getElementById('panel-mic').classList.toggle('hidden', activeSourceTab !== 'mic');
+
+                const badgeMap = { synth: 'MELODY GEN', file: 'AUDIO FILE', mic: 'LIVE INPUT' };
+                document.getElementById('activeSourceBadge').textContent = badgeMap[activeSourceTab];
+
+                sendParam('synthEnabled', synthActive && activeSourceTab === 'synth');
+                sendParam('useExternalInput', activeSourceTab !== 'synth');
+            });
+        });
+
+        // Synth Controls
+        const btnSynthToggle = document.getElementById('btnSynthToggle');
+        const synthLed = document.getElementById('synthLed');
+        const synthToggleText = document.getElementById('synthToggleText');
+
+        btnSynthToggle.addEventListener('click', async () => {
+            await initAudio();
+            synthActive = !synthActive;
+            sendParam('synthEnabled', synthActive);
+            if (synthActive) {
+                synthLed.className = 'w-2 h-2 rounded-full bg-cyan-400 led-glow-cyan';
+                synthToggleText.textContent = 'PAUSAR MELODIA GENERATIVA';
+            } else {
+                synthLed.className = 'w-2 h-2 rounded-full bg-zinc-600';
+                synthToggleText.textContent = 'INICIAR MELODIA GENERATIVA';
+            }
+        });
+
+        document.getElementById('btnPluck').addEventListener('click', async () => {
+            await initAudio();
+            if (workletNode) workletNode.port.postMessage({ type: 'pluck' });
+        });
+
+        document.getElementById('synthScale').addEventListener('change', (e) => {
+            sendParam('synthScale', e.target.value);
+        });
+
+        const synthDensity = document.getElementById('synthDensity');
+        synthDensity.addEventListener('input', () => {
+            const val = parseFloat(synthDensity.value);
+            document.getElementById('synthDensityVal').textContent = `${Math.round(val * 100)}%`;
+            sendParam('synthDensity', val);
+        });
+
+        // File Upload & Playback
+        const audioFileInput = document.getElementById('audioFileInput');
+        const btnFilePlay = document.getElementById('btnFilePlay');
+        const chkFileLoop = document.getElementById('chkFileLoop');
+
+        audioFileInput.addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            await initAudio();
+
+            document.getElementById('fileNameDisplay').textContent = file.name;
+            if (fileAudioEl) {
+                fileAudioEl.pause();
+            }
+
+            const objUrl = URL.createObjectURL(file);
+            fileAudioEl = new Audio(objUrl);
+            fileAudioEl.loop = chkFileLoop.checked;
+            fileAudioEl.crossOrigin = 'anonymous';
+
+            if (!fileSourceNode) {
+                fileSourceNode = audioCtx.createMediaElementSource(fileAudioEl);
+                fileSourceNode.connect(workletNode);
+            }
+
+            btnFilePlay.disabled = false;
+            btnFilePlay.className = 'flex-1 py-2 rounded-xl text-xs font-bold bg-cyan-500 text-zinc-950 transition-all';
+            fileAudioEl.play();
+            btnFilePlay.textContent = 'PAUSAR ÁUDIO';
+        });
+
+        btnFilePlay.addEventListener('click', async () => {
+            if (!fileAudioEl) return;
+            await initAudio();
+            if (fileAudioEl.paused) {
+                fileAudioEl.play();
+                btnFilePlay.textContent = 'PAUSAR ÁUDIO';
+            } else {
+                fileAudioEl.pause();
+                btnFilePlay.textContent = 'REPRODUZIR ÁUDIO';
+            }
+        });
+
+        chkFileLoop.addEventListener('change', () => {
+            if (fileAudioEl) fileAudioEl.loop = chkFileLoop.checked;
+        });
+
+        // Microphone Input
+        const btnMicEnable = document.getElementById('btnMicEnable');
+        btnMicEnable.addEventListener('click', async () => {
+            await initAudio();
+            if (micStream) {
+                micStream.getTracks().forEach(t => t.stop());
+                micStream = null;
+                btnMicEnable.textContent = 'ATIVAR ENTRADA DE MICROFONE';
+                return;
+            }
+            try {
+                micStream = await navigator.mediaDevices.getUserMedia({
+                    audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false }
+                });
+                micSourceNode = audioCtx.createMediaStreamSource(micStream);
+                micSourceNode.connect(workletNode);
+                btnMicEnable.textContent = 'DESATIVAR MICROFONE (ATIVO)';
+            } catch (err) {
+                btnMicEnable.textContent = 'ERRO AO ACESSAR MICROFONE';
+            }
+        });
+
+        // ====================================================================
+        // VISUALIZERS (Circular Ring Buffer + Oscilloscope/Spectrum)
+        // ====================================================================
+        const bufferCanvas = document.getElementById('bufferCanvas');
+        const bCtx = bufferCanvas.getContext('2d');
+        const scopeCanvas = document.getElementById('scopeCanvas');
+        const sCtx = scopeCanvas.getContext('2d');
+
+        function resizeCanvases() {
+            const dpr = window.devicePixelRatio || 1;
+            [bufferCanvas, scopeCanvas].forEach(c => {
+                const rect = c.getBoundingClientRect();
+                c.width = rect.width * dpr;
+                c.height = rect.height * dpr;
+            });
+        }
+        window.addEventListener('resize', resizeCanvases);
+        resizeCanvases();
+
+        let simWrite = 0;
+        const scopeData = new Float32Array(512);
+        const freqData = new Uint8Array(256);
+
+        function renderVisuals() {
+            const dpr = window.devicePixelRatio || 1;
+
+            // --- 1. Circular Buffer Ring Visualizer ---
+            const bw = bufferCanvas.width;
+            const bh = bufferCanvas.height;
+            bCtx.clearRect(0, 0, bw, bh);
+
+            const cx = bw * 0.5;
+            const cy = bh * 0.47;
+            const radius = Math.min(bw, bh) * 0.34;
+
+            let wNorm = visState.writeNorm;
+            let r1Norm = visState.read1Norm;
+            let r2Norm = visState.read2Norm;
+            let g1 = visState.gain1;
+            let g2 = visState.gain2;
+
+            if (!isRunning) {
+                const speed = parseFloat(paramSpeed.value);
+                simWrite = (simWrite + 0.004) % 1.0;
+                wNorm = simWrite;
+                const p1 = (simWrite * speed + 0.5) % 1.0;
+                const p2 = (p1 + 0.5) % 1.0;
+                r1Norm = (wNorm - (1.0 - p1) + 1.0) % 1.0;
+                r2Norm = (wNorm - (1.0 - p2) + 1.0) % 1.0;
+                g1 = 1.0 - Math.abs(2.0 * p1 - 1.0);
+                g2 = 1.0 - Math.abs(2.0 * p2 - 1.0);
+            }
+
+            // Outer ring track
+            bCtx.beginPath();
+            bCtx.arc(cx, cy, radius, 0, Math.PI * 2);
+            bCtx.strokeStyle = '#27272a';
+            bCtx.lineWidth = 10 * dpr;
+            bCtx.stroke();
+
+            const wAngle = wNorm * Math.PI * 2 - Math.PI / 2;
+            const r1Angle = r1Norm * Math.PI * 2 - Math.PI / 2;
+            const r2Angle = r2Norm * Math.PI * 2 - Math.PI / 2;
+
+            // Crossfade Gain Arcs around the outer ring
+            if (isMusical2Tap) {
+                // Tap 1 Gain Halo (Amber)
+                bCtx.beginPath();
+                bCtx.arc(cx, cy, radius + 9 * dpr, r1Angle - 0.35, r1Angle + 0.35);
+                bCtx.strokeStyle = `rgba(245, 158, 11, ${0.15 + g1 * 0.75})`;
+                bCtx.lineWidth = 4 * dpr;
+                bCtx.stroke();
+
+                // Tap 2 Gain Halo (Cyan)
+                bCtx.beginPath();
+                bCtx.arc(cx, cy, radius + 9 * dpr, r2Angle - 0.35, r2Angle + 0.35);
+                bCtx.strokeStyle = `rgba(6, 182, 212, ${0.15 + g2 * 0.75})`;
+                bCtx.lineWidth = 4 * dpr;
+                bCtx.stroke();
+            } else {
+                // De-click danger zone marker at index 0 (top of circle)
+                const declick = parseFloat(paramDeclick.value);
+                if (declick > 0) {
+                    const zSpan = declick * Math.PI * 2;
+                    bCtx.beginPath();
+                    bCtx.arc(cx, cy, radius, -Math.PI / 2 - zSpan, -Math.PI / 2 + zSpan);
+                    bCtx.strokeStyle = 'rgba(244, 63, 94, 0.45)';
+                    bCtx.lineWidth = 12 * dpr;
+                    bCtx.stroke();
+                }
+            }
+
+            // Index 0 tick
+            bCtx.beginPath();
+            bCtx.moveTo(cx, cy - radius - 8 * dpr);
+            bCtx.lineTo(cx, cy - radius + 8 * dpr);
+            bCtx.strokeStyle = '#52525b';
+            bCtx.lineWidth = 2 * dpr;
+            bCtx.stroke();
+
+            // Write Pointer (Emerald)
+            const wx = cx + Math.cos(wAngle) * radius;
+            const wy = cy + Math.sin(wAngle) * radius;
+            bCtx.beginPath();
+            bCtx.arc(wx, wy, 6 * dpr, 0, Math.PI * 2);
+            bCtx.fillStyle = '#10b981';
+            bCtx.fill();
+
+            // Read Pointer 1 (Amber - scaled by its crossfade gain)
+            const r1x = cx + Math.cos(r1Angle) * radius;
+            const r1y = cy + Math.sin(r1Angle) * radius;
+            bCtx.beginPath();
+            bCtx.arc(r1x, r1y, (4 + g1 * 4) * dpr, 0, Math.PI * 2);
+            bCtx.fillStyle = `rgba(245, 158, 11, ${0.35 + g1 * 0.65})`;
+            bCtx.fill();
+
+            // Read Pointer 2 (Cyan - 180° out of phase in 2-Tap mode)
+            if (isMusical2Tap) {
+                const r2x = cx + Math.cos(r2Angle) * radius;
+                const r2y = cy + Math.sin(r2Angle) * radius;
+                bCtx.beginPath();
+                bCtx.arc(r2x, r2y, (4 + g2 * 4) * dpr, 0, Math.PI * 2);
+                bCtx.fillStyle = `rgba(6, 182, 212, ${0.35 + g2 * 0.65})`;
+                bCtx.fill();
+
+                // Dashed chord connecting Tap 1 & Tap 2
+                bCtx.beginPath();
+                bCtx.moveTo(r1x, r1y);
+                bCtx.lineTo(r2x, r2y);
+                bCtx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
+                bCtx.setLineDash([4 * dpr, 4 * dpr]);
+                bCtx.lineWidth = 1.5 * dpr;
+                bCtx.stroke();
+                bCtx.setLineDash([]);
+            }
+
+            // Detect pointer collision (when Tap 1 overtakes Write)
+            const dist1 = Math.abs(wNorm - r1Norm);
+            const isColliding = dist1 < 0.03 || dist1 > 0.97;
+            if (isColliding) {
+                bCtx.beginPath();
+                bCtx.arc(r1x, r1y, 14 * dpr, 0, Math.PI * 2);
+                bCtx.strokeStyle = isMusical2Tap ? 'rgba(6, 182, 212, 0.7)' : '#f43f5e';
+                bCtx.lineWidth = 2 * dpr;
+                bCtx.stroke();
+            }
+
+            // Center Info
+            bCtx.fillStyle = isColliding ? (isMusical2Tap ? '#22d3ee' : '#fb7185') : '#a1a1aa';
+            bCtx.font = `bold ${10.5 * dpr}px "JetBrains Mono", monospace`;
+            bCtx.textAlign = 'center';
+            const statusText = isColliding
+                ? (isMusical2Tap ? 'CROSSFADE SUAVE' : 'SALTO DE PONTEIRO!')
+                : (isMusical2Tap ? '2-TAPS SYNC' : '1-TAP CRU');
+            bCtx.fillText(statusText, cx, cy - 5 * dpr);
+
+            bCtx.fillStyle = '#71717a';
+            bCtx.font = `${9.5 * dpr}px "JetBrains Mono", monospace`;
+            if (isMusical2Tap) {
+                bCtx.fillText(`T1:${Math.round(g1 * 100)}% | T2:${Math.round(g2 * 100)}%`, cx, cy + 11 * dpr);
+            } else {
+                bCtx.fillText(`${visState.delaySize} smp`, cx, cy + 11 * dpr);
+            }
+
+            // --- 2. Output Oscilloscope + Low-End Sub-Octave Spectrum ---
+            const sw = scopeCanvas.width;
+            const sh = scopeCanvas.height;
+            sCtx.clearRect(0, 0, sw, sh);
+
+            if (analyserNode && isRunning) {
+                // Background Low-End Frequency Bars (Sub-octaves 30Hz - 800Hz)
+                analyserNode.getByteFrequencyData(freqData);
+                const subBins = 48;
+                const barW = sw / subBins;
+                for (let b = 0; b < subBins; b++) {
+                    const mag = freqData[b] / 255.0;
+                    const barH = mag * sh * 0.85;
+                    sCtx.fillStyle = b < 12 ? 'rgba(245, 158, 11, 0.22)' : 'rgba(6, 182, 212, 0.14)';
+                    sCtx.fillRect(b * barW, sh - barH, barW - 1, barH);
+                }
+
+                // Foreground Waveform
+                analyserNode.getFloatTimeDomainData(scopeData);
+                sCtx.beginPath();
+                let peak = 0;
+                for (let i = 0; i < scopeData.length; i++) {
+                    const v = scopeData[i];
+                    if (Math.abs(v) > peak) peak = Math.abs(v);
+                    const x = (i / (scopeData.length - 1)) * sw;
+                    const y = (0.5 - v * 0.45) * sh;
+                    if (i === 0) sCtx.moveTo(x, y);
+                    else sCtx.lineTo(x, y);
+                }
+                sCtx.strokeStyle = isMusical2Tap ? '#22d3ee' : '#fb7185';
+                sCtx.lineWidth = 2 * dpr;
+                sCtx.stroke();
+
+                const clipEl = document.getElementById('clipIndicator');
+                if (peak > 0.98) {
+                    clipEl.textContent = 'CLIP!';
+                    clipEl.className = 'text-rose-400 font-bold';
+                } else {
+                    clipEl.textContent = `${(20 * Math.log10(Math.max(peak, 0.0001))).toFixed(1)} dB`;
+                    clipEl.className = 'text-zinc-500';
+                }
+            }
+
+            requestAnimationFrame(renderVisuals);
+        }
+
+        setArchitectureMode(true);
+        requestAnimationFrame(renderVisuals);
     </script>
 </body>
 </html>

@@ -24,6 +24,16 @@ enum {
 #define HYDRA_DSP_PARAMS_SIZE_V1_2 (29 * sizeof(float))
 #define HYDRA_DSP_PARAMS_SIZE_V1_3 (35 * sizeof(float))
 
+typedef struct hydra_dsp_params_v1_2 {
+  float flutterDepth, wowDepth, dropoutSeverity, drive, noise;
+  float tapeSpeed, tapeAge, headBumpAmount, azimuthError;
+  float flutterRate, wowRate;
+  float delayActive, delayTimeMs, feedback, dryWet, delayWet;
+  float activeHeads, bpm, headsMusical, guitarFocus, tone;
+  float pingPong, freeze, reverse, reverseSmear, spring;
+  float springDecay, springDamping, springMix;
+} hydra_dsp_params_v1_2;
+
 typedef struct hydra_dsp_params {
   float flutterDepth, wowDepth, dropoutSeverity, drive, noise;
   float tapeSpeed, tapeAge, headBumpAmount, azimuthError;
@@ -111,7 +121,24 @@ int hydra_dsp_prepare(hydra_dsp_handle* handle, uint32_t max_frames, uint32_t ch
 void hydra_dsp_reset(hydra_dsp_handle* handle);
 int hydra_dsp_set_parameter(hydra_dsp_handle* handle, hydra_dsp_param_id param_id, float value);
 int hydra_dsp_get_parameter(hydra_dsp_handle* handle, hydra_dsp_param_id param_id, float* out_value);
+/**
+ * @brief Sets DSP parameters from full API 1.3 parameter structure (140 bytes).
+ *
+ * NOTE: Callers compiled against earlier API revisions (e.g. 1.2 with 116 bytes)
+ * MUST NOT call this function across dynamic link boundaries without recompilation,
+ * as C does not pass runtime struct sizes. Use hydra_dsp_set_params_v1_2() or
+ * hydra_dsp_set_params_sized() instead for guaranteed ABI safety.
+ */
 int hydra_dsp_set_params(hydra_dsp_handle* handle, const hydra_dsp_params* params);
+
+/**
+ * @brief Sets DSP parameters for callers using legacy API 1.2 structure (116 bytes).
+ *
+ * Guarantees that warp parameters safely retain default inactive values without
+ * reading out-of-bounds from the caller's buffer.
+ */
+int hydra_dsp_set_params_v1_2(hydra_dsp_handle* handle, const hydra_dsp_params_v1_2* params);
+
 /**
  * @brief Sets DSP parameters with explicit struct size for backward and forward ABI safety.
  *

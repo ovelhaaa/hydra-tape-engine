@@ -332,6 +332,40 @@ void test_warp_all_modes() {
 
     hydra_dsp_destroy(h);
   }
+
+  // Testar transição dinâmica e suave entre modos (0 -> 1 -> 2 -> 3 -> 0) com sinal contínuo
+  {
+    hydra_dsp_handle* h = create_test_handle();
+    hydra_dsp_params p{};
+    p.drive = 20.0f;
+    p.delayActive = 1.0f;
+    p.delayTimeMs = 200.0f;
+    p.dryWet = 100.0f;
+    p.delayWet = 100.0f;
+    p.warpActive = 1.0f;
+    p.warpSpeed = 0.5f;
+    p.warpGrainMs = 80.0f;
+    p.warpMode = 0.0f;
+    CHECK(hydra_dsp_set_params(h, &p) == 0);
+    CHECK(hydra_dsp_commit(h) == 0);
+
+    constexpr uint32_t kBlock = 64;
+    std::vector<float> in(kBlock, 0.4f);
+    std::vector<float> outL(kBlock), outR(kBlock);
+
+    for (float modeTarget : {1.0f, 2.0f, 3.0f, 0.0f}) {
+      CHECK(hydra_dsp_set_parameter(h, HYDRA_DSP_PARAM_WARP_MODE, modeTarget) == 0);
+      CHECK(hydra_dsp_commit(h) == 0);
+      for (int b = 0; b < 20; ++b) {
+        CHECK(hydra_dsp_process(h, in.data(), in.data(), outL.data(), outR.data(), kBlock) == 0);
+        for (uint32_t i = 0; i < kBlock; ++i) {
+          CHECK(!std::isnan(outL[i]) && !std::isinf(outL[i]));
+          CHECK(!std::isnan(outR[i]) && !std::isinf(outR[i]));
+        }
+      }
+    }
+    hydra_dsp_destroy(h);
+  }
 }
 
 // 6. Validar continuidade de fase na modulação do tamanho do grão (warpGrainMs)
@@ -471,6 +505,14 @@ void test_warp_abrupt_speed_and_stereo_changes() {
 void test_api_backward_compatibility() {
   hydra_dsp_handle* h = create_test_handle();
 
+  // Testar chamada direta com tipo hydra_dsp_params_v1_2
+  hydra_dsp_params_v1_2 v12{};
+  v12.drive = 45.0f;
+  v12.delayActive = 1.0f;
+  v12.delayTimeMs = 250.0f;
+  CHECK(hydra_dsp_set_params_v1_2(h, &v12) == 0);
+  CHECK(hydra_dsp_commit(h) == 0);
+
   // Testar chamada com tamanho da estrutura v1.2 (116 bytes)
   std::vector<uint8_t> legacyBuffer(HYDRA_DSP_PARAMS_SIZE_V1_2, 0);
   auto* legacyParams = reinterpret_cast<hydra_dsp_params*>(legacyBuffer.data());
@@ -488,6 +530,14 @@ void test_api_backward_compatibility() {
 
   // Verificar rejeição de tamanho truncado inválido (< 116 bytes)
   CHECK(hydra_dsp_set_params_sized(h, legacyBuffer.data(), 64) == -2);
+
+  // Validar especificação do parâmetro HYDRA_DSP_PARAM_WARP_MODE (0 a 3)
+  hydra_dsp_param_spec modeSpec{};
+  CHECK(hydra_dsp_get_param_spec(HYDRA_DSP_PARAM_WARP_MODE, &modeSpec) == 0);
+  CHECK(modeSpec.id == HYDRA_DSP_PARAM_WARP_MODE);
+  CHECK(modeSpec.min_value == 0.0f);
+  CHECK(modeSpec.max_value == 3.0f);
+  CHECK(modeSpec.default_value == 0.0f);
 
   // Testar Get / Set de parâmetros C API para todos os IDs de 30 a 35
   CHECK(hydra_dsp_set_parameter(h, HYDRA_DSP_PARAM_WARP_ACTIVE, 1.0f) == 0);

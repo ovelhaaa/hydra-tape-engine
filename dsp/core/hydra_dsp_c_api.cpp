@@ -48,7 +48,7 @@ static const hydra_dsp_param_spec kParamSpecs[HYDRA_DSP_PARAM_COUNT] = {
     {HYDRA_DSP_PARAM_WARP_GRAIN_MS, "warpGrainMs", 20.0f, 400.0f, 80.0f, HYDRA_DSP_SMOOTHING_BLOCK_EDGE, HYDRA_DSP_PARAM_SPEC_FLAG_NONE},
     {HYDRA_DSP_PARAM_WARP_STEREO, "warpStereo", 0.0f, 1.0f, 0.5f, HYDRA_DSP_SMOOTHING_BLOCK_EDGE, HYDRA_DSP_PARAM_SPEC_FLAG_NONE},
     {HYDRA_DSP_PARAM_WARP_FEEDBACK, "warpFeedback", 0.0f, 100.0f, 0.0f, HYDRA_DSP_SMOOTHING_BLOCK_EDGE, HYDRA_DSP_PARAM_SPEC_FLAG_NONE},
-    {HYDRA_DSP_PARAM_WARP_MODE, "warpMode", 0.0f, 1.0f, 0.0f, HYDRA_DSP_SMOOTHING_NONE, HYDRA_DSP_PARAM_SPEC_FLAG_NONE},
+    {HYDRA_DSP_PARAM_WARP_MODE, "warpMode", 0.0f, 3.0f, 0.0f, HYDRA_DSP_SMOOTHING_NONE, HYDRA_DSP_PARAM_SPEC_FLAG_NONE},
 };
 
 static hydra_dsp_param_spec resolve_runtime_spec(const hydra_dsp_handle* handle, hydra_dsp_param_id param_id) {
@@ -269,6 +269,10 @@ int hydra_dsp_set_params_sized(hydra_dsp_handle* handle, const void* params, siz
 
 int hydra_dsp_set_params(hydra_dsp_handle* handle, const hydra_dsp_params* params) {
   return hydra_dsp_set_params_sized(handle, params, sizeof(hydra_dsp_params));
+}
+
+int hydra_dsp_set_params_v1_2(hydra_dsp_handle* handle, const hydra_dsp_params_v1_2* params) {
+  return hydra_dsp_set_params_sized(handle, params, sizeof(hydra_dsp_params_v1_2));
 }
 
 int hydra_dsp_commit(hydra_dsp_handle* handle) {

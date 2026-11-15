@@ -16,6 +16,7 @@ EXPECTED = {
     "hydra_dsp_set_parameter",
     "hydra_dsp_get_parameter",
     "hydra_dsp_set_params",
+    "hydra_dsp_set_params_v1_2",
     "hydra_dsp_set_params_sized",
     "hydra_dsp_commit",
     "hydra_dsp_process",

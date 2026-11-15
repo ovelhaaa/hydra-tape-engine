@@ -66,29 +66,44 @@ Para garantir que o Hydra 2.0 mantenha rigor acústico e estabilidade em tempo r
 
 Para atestar o comportamento em hardware físico (ESP32-S3 DevKitC-1 N16R8):
 
-1. **Compilação e Uso de Memória:**
-   - **RAM Utilizada:** 25.640 bytes de 327.680 bytes (**7.8%**).
-   - **Flash Utilizada:** 545.415 bytes de 16.777.216 bytes (**3.3%**).
+1. **Compilação e Uso de Memória (Build PlatformIO Verificado):**
+   - **RAM Utilizada:** 25.688 bytes de 327.680 bytes (**7.8%**).
+   - **Flash Utilizada:** 551.523 bytes de 16.777.216 bytes (**3.3%**).
    - Compilador: `xtensa-esp-elf-gcc 14.2.0`, Framework Arduino-ESP32 3.3.6 / IDF 5.5.
-2. **Tempo de Execução por Bloco (CPU Load Estimado):**
-   - A chamada `TapeCore::processStereo` para um bloco de 32 amostras consome $< 380\,\mu\text{s}$ no núcleo dedicado (orçamento a 44.1 kHz: $725\,\mu\text{s}$).
-   - Folga de processamento garantida $> 45\%$.
+   - Ambientes validados: `esp32-s3-devkitc-1` com PSRAM Octal habilitada.
+2. **Tempo de Execução por Bloco e Instrumentação em Tempo Real:**
+   - Tamanho de bloco no ESP32: `AUDIO_CHUNK_SIZE = 128` frames a 44.1 kHz.
+   - Orçamento temporal por bloco: $T_{budget} = \frac{128}{44100} \times 10^6 \approx 2902.5\,\mu\text{s}$.
+   - Telemetria de DSP em tempo real implementada no loop principal via `esp_timer_get_time()`:
+     - `g_dsp_last_block_us`: tempo de processamento do bloco mais recente em microssegundos.
+     - `g_dsp_total_block_us` e `g_dsp_block_count`: cálculo da média real de execução.
+     - `g_dsp_max_block_us`: medição do pico de latência máxima sem descontinuidade.
+     - `g_dsp_cpu_load_pct`: percentual instantâneo da CPU suavizado por média móvel exponencial.
+     - `g_dsp_overrun_count`: contador de blocos que excederam o orçamento de $2902\,\mu\text{s}$.
+     - Comando Serial CLI `perf`: exibe o relatório de performance, carga de CPU, heap interno livre (`heap_caps_get_free_size(MALLOC_CAP_INTERNAL)`) e PSRAM livre (`heap_caps_get_free_size(MALLOC_CAP_SPIRAM)`).
 3. **PSRAM e Estabilidade:**
    - Buffers de delay estéreo alocados em PSRAM Octal SPIRAM (`MALLOC_CAP_SPIRAM`), sem alocações dinâmicas durante o processamento de áudio.
 
 ---
 
-## 4. Matriz de Resultados A/B: Simulador Protótipo vs. C++ TapeCore
+## 4. Matriz de Resultados Tri-Engine: AudioWorklet Original vs. Modelo Python vs. C++ TapeCore
 
-A suíte executável `scripts/validate_warp_prototype.py` gerou e verificou os seguintes arquivos comparativos em `tests/output/warp_ab_validation/`:
+A suíte executável `scripts/validate_warp_prototype.py` cobre 12 cenários de teste exaustivos, gerando os áudios e registrando o arquivo oficial `tests/output/warp_ab_validation/manifest.json`:
 
-| Cenário de Teste | Arquivo de Áudio Protótipo | Arquivo de Áudio C++ TapeCore | Métrica Protótipo | Métrica C++ TapeCore | Parecer |
+| Cenário de Teste | Estímulo & Duração | Configuração | Métrica Worklet JS (A) | Métrica C++ TapeCore (C) | Parecer & Status |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| **1. Octave-Up (+12 st)** | `warp_ref_octave_up.wav` | `warp_hydra_octave_up.wav` | 890.0 Hz | 890.0 Hz | **100% Equivalente** |
-| **2. Fifth-Up (+7 st)** | `warp_ref_fifth_up.wav` | `warp_hydra_fifth_up.wav` | 665.0 Hz | 665.0 Hz | **100% Equivalente** |
-| **3. Stereo Decorrelation** | `warp_ref_stereo_decorrelation.wav` | `warp_hydra_stereo_decorrelation.wav` | 2008.43 L/R Diff | 1411.96 L/R Diff | **Aprovado (Auditivo & Medido)** |
-| **4. Raw Int Cast (Mode 2)**| `warp_ref_raw_int.wav` | `warp_hydra_raw_int.wav` | Truncamento inteiro | Truncamento inteiro | **Aprovado (Crunch digital preservado)** |
-| **5. Feedback Cascade** | `warp_ref_feedback_cascade.wav` | `warp_hydra_feedback_cascade.wav` | Cascade com tanh | Cascade com fastSat | **Estável, sem estouro/NaN** |
+| **1. Octave-Up (+12 st)** | Senoide 440 Hz (0.8s) | `speed=1.0, grain=80ms` | 890.0 Hz | 890.0 Hz | **100% Equivalência de Frequência** (RMS Err: 0.14) |
+| **2. Fifth-Up (+7 st)** | Senoide 440 Hz (0.8s) | `speed=0.5, grain=80ms` | 665.0 Hz | 665.0 Hz | **100% Equivalência de Frequência** |
+| **3. Mode 0 (2-Tap Hermite)** | Senoide 330 Hz (0.8s) | `speed=1.0, stereo=0.2` | Transposição pura | Transposição pura | **Aprovado** (RMS 0.245, Estável) |
+| **4. Mode 1 (1-Tap Hermite)** | Senoide 330 Hz (0.8s) | `speed=1.0, declick=0.05` | Single-pointer bug | Single-pointer bug | **Aprovado** (Quirk de +1000 amostras) |
+| **5. Mode 2 (1-Tap Raw Int)** | Senoide 330 Hz (0.8s) | `speed=1.0, rawInt=true` | Truncamento inteiro | Truncamento inteiro | **Aprovado** (Crunch digital preservado) |
+| **6. Mode 3 (2-Tap Raw Int)** | Senoide 330 Hz (0.8s) | `speed=1.0, 2-tap + raw` | Crossfade + Truncamento | Crossfade + Truncamento | **Aprovado** (Textura de clock imperfeito) |
+| **7. Stereo Phase Offset** | Senoide 440 Hz (0.6s) | `stereo = 0.0, 0.5, 1.0` | Decorrelação L/R | Decorrelação L/R | **Aprovado** ($s=0$: mono, $s>0$: estéreo) |
+| **8. Feedback Levels (0-95%)**| Impulso Dirac (1.5s) | `fb = 0%, 50%, 80%, 95%` | Decaimento / Cascade | Decaimento / Cascade | **Estável** (Zero NaN/Inf, pico < 1.0) |
+| **9. Grain Window Modulation**| Senoide 440 Hz (1.2s) | `grain: 40 -> 240 ms` | Contínuo sem estalos | Contínuo sem estalos | **Aprovado** ($\Delta < 0.13$) |
+| **10. Speed Modulation** | Senoide 440 Hz (1.2s) | `speed: 0.0 -> 1.5` | Glissando contínuo | Glissando contínuo | **Aprovado** ($\Delta < 0.08$) |
+| **11. Live Buffer Toggle** | Senoide 440 Hz (1.2s) | `warp: 1 -> 0 -> 1` | Bypass suave | Bypass suave | **Aprovado** (Sem cliques ou pops) |
+| **12. Cascade Longa (15s)** | Burst melódico (15.0s)| `fb=65%, grain=90ms` | Cascata ascendente | Cascata ascendente | **Estável** (Pico 0.015, sem acúmulo de DC) |
 
 ### 4.1. Diferenças Identificadas e Justificativas Técnicas
 

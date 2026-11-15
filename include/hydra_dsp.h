@@ -1,5 +1,6 @@
 #pragma once
 
+#include <stddef.h>
 #include <stdint.h>
 
 #ifdef __cplusplus
@@ -19,6 +20,9 @@ enum {
       (HYDRA_DSP_API_VERSION_MINOR << 8) |
       HYDRA_DSP_API_VERSION_PATCH
 };
+
+#define HYDRA_DSP_PARAMS_SIZE_V1_2 (29 * sizeof(float))
+#define HYDRA_DSP_PARAMS_SIZE_V1_3 (35 * sizeof(float))
 
 typedef struct hydra_dsp_params {
   float flutterDepth, wowDepth, dropoutSeverity, drive, noise;
@@ -108,6 +112,18 @@ void hydra_dsp_reset(hydra_dsp_handle* handle);
 int hydra_dsp_set_parameter(hydra_dsp_handle* handle, hydra_dsp_param_id param_id, float value);
 int hydra_dsp_get_parameter(hydra_dsp_handle* handle, hydra_dsp_param_id param_id, float* out_value);
 int hydra_dsp_set_params(hydra_dsp_handle* handle, const hydra_dsp_params* params);
+/**
+ * @brief Sets DSP parameters with explicit struct size for backward and forward ABI safety.
+ *
+ * If struct_size is HYDRA_DSP_PARAMS_SIZE_V1_2 (116 bytes), parameters introduced
+ * in API 1.3 (such as warp parameters) safely default without out-of-bounds reads.
+ *
+ * @param handle Handle to DSP instance
+ * @param params Pointer to parameter structure buffer
+ * @param struct_size Size in bytes of caller's structure buffer
+ * @return 0 on success, -1 on null handle/params, -2 on struct_size < HYDRA_DSP_PARAMS_SIZE_V1_2
+ */
+int hydra_dsp_set_params_sized(hydra_dsp_handle* handle, const void* params, size_t struct_size);
 int hydra_dsp_commit(hydra_dsp_handle* handle);
 int hydra_dsp_process(hydra_dsp_handle* handle,
                       const float* in_l,

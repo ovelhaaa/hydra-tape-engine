@@ -225,7 +225,9 @@ class HydraProcessor extends AudioWorkletProcessor {
         freeze: 22,
         reverse: 23,
         reverseSmear: 24,
-        spring: 25
+        spring: 25,
+        warpActive: 30,
+        warpMode: 35
       };
 
       const paramId = commandMap[command];

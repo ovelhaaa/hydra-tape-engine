@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
+#include <cstring>
 #include <iostream>
 #include <vector>
 
@@ -112,8 +113,6 @@ void test_warp_ascending_pitch_shift() {
   float durationSeconds = static_cast<float>(endIdx - startIdx) / kSampleRate;
   float measuredFreq = static_cast<float>(zeroCrossings) / (2.0f * durationSeconds);
 
-  // A frequência de entrada era 440 Hz. A leitura com v_eff=2.0x deve produzir ~880 Hz (+1 oitava).
-  // Se fosse descendente (pitch down), a frequência seria ~220 Hz.
   std::cout << "[Warp Pitch Test] Freq Entrada: " << kFreqIn
             << " Hz | Freq Medida Saida: " << measuredFreq << " Hz\n";
   CHECK(measuredFreq > 750.0f && measuredFreq < 980.0f);
@@ -151,7 +150,7 @@ void test_warp_stereo_phase_offset() {
     CHECK(std::fabs(outL_mono[i] - outR_mono[i]) < 1e-5f);
   }
 
-  // Agora criar novo handle ou resetar e habilitar stereoWarp = 1.0f
+  // Com stereoWarp = 1.0f, canais L e R devem se diferenciar
   hydra_dsp_handle* h2 = create_test_handle();
   p.warpStereo = 1.0f;
   CHECK(hydra_dsp_set_params(h2, &p) == 0);
@@ -160,7 +159,6 @@ void test_warp_stereo_phase_offset() {
   std::vector<float> outL_stereo(kN), outR_stereo(kN);
   CHECK(hydra_dsp_process(h2, in.data(), in.data(), outL_stereo.data(), outR_stereo.data(), kN) == 0);
 
-  // Com stereoWarp = 1.0, deve haver decorrelação temporal entre L e R
   float diffSum = 0.0f;
   for (size_t i = 500; i < kN; ++i) {
     diffSum += std::fabs(outL_stereo[i] - outR_stereo[i]);
@@ -172,54 +170,326 @@ void test_warp_stereo_phase_offset() {
   hydra_dsp_destroy(h2);
 }
 
-// 4. Validar estabilidade de realimentação e cascata ascendente (Feedback sem runaway nem NaN)
-void test_warp_feedback_stability() {
-  hydra_dsp_handle* h = create_test_handle();
+// 4. Validar Feedback em múltiplos níveis: 0%, 50%, 80%, 95%
+void test_warp_feedback_levels() {
+  // Teste 4a: warpFeedback = 0% -> sem realimentação fantasma (não cai no feedback tradicional)
+  {
+    hydra_dsp_handle* h = create_test_handle();
+    hydra_dsp_params p{};
+    p.drive = 20.0f;
+    p.delayActive = 1.0f;
+    p.delayTimeMs = 100.0f;
+    p.dryWet = 100.0f;
+    p.delayWet = 100.0f;
+    p.feedback = 80.0f;      // Feedback tradicional ALTO no parâmetro de fita
+    p.warpActive = 1.0f;
+    p.warpSpeed = 1.0f;
+    p.warpGrainMs = 60.0f;   // ~2880 amostras
+    p.warpFeedback = 0.0f;   // WARP FEEDBACK É ZERO!
 
+    CHECK(hydra_dsp_set_params(h, &p) == 0);
+    CHECK(hydra_dsp_commit(h) == 0);
+
+    // Injetar Dirac no início
+    constexpr uint32_t kFrames = 24000;
+    std::vector<float> inL(kFrames, 0.0f), inR(kFrames, 0.0f);
+    inL[0] = 0.9f; inR[0] = 0.9f;
+    std::vector<float> outL(kFrames), outR(kFrames);
+
+    for (uint32_t pos = 0; pos < kFrames; pos += 64) {
+      CHECK(hydra_dsp_process(h, inL.data() + pos, inR.data() + pos,
+                              outL.data() + pos, outR.data() + pos, 64) == 0);
+    }
+
+    // Após o término do grão primário (~60ms = 2880 amostras + margem de segurança),
+    // a cauda deve decair para zero absoluto (sem recirculações adicionais).
+    float lateEnergy = 0.0f;
+    for (uint32_t i = 10000; i < kFrames; ++i) {
+      lateEnergy += std::fabs(outL[i]) + std::fabs(outR[i]);
+    }
+    std::cout << "[Warp Feedback 0%] Late Energy: " << lateEnergy << "\n";
+    CHECK(lateEnergy < 1e-3f);
+
+    hydra_dsp_destroy(h);
+  }
+
+  // Teste 4b: warpFeedback = 50% e 80% -> realimentação sustentada
+  for (float fbVal : {50.0f, 80.0f}) {
+    hydra_dsp_handle* h = create_test_handle();
+    hydra_dsp_params p{};
+    p.drive = 20.0f;
+    p.delayActive = 1.0f;
+    p.delayTimeMs = 100.0f;
+    p.dryWet = 100.0f;
+    p.delayWet = 100.0f;
+    p.warpActive = 1.0f;
+    p.warpSpeed = 0.5f;
+    p.warpGrainMs = 60.0f;
+    p.warpFeedback = fbVal;
+
+    CHECK(hydra_dsp_set_params(h, &p) == 0);
+    CHECK(hydra_dsp_commit(h) == 0);
+
+    constexpr uint32_t kFrames = 24000;
+    std::vector<float> inL(kFrames, 0.0f), inR(kFrames, 0.0f);
+    inL[0] = 0.9f; inR[0] = 0.9f;
+    std::vector<float> outL(kFrames), outR(kFrames);
+
+    for (uint32_t pos = 0; pos < kFrames; pos += 64) {
+      CHECK(hydra_dsp_process(h, inL.data() + pos, inR.data() + pos,
+                              outL.data() + pos, outR.data() + pos, 64) == 0);
+    }
+
+    float lateEnergy = 0.0f;
+    for (uint32_t i = 10000; i < kFrames; ++i) {
+      lateEnergy += std::fabs(outL[i]) + std::fabs(outR[i]);
+      CHECK(!std::isnan(outL[i]) && !std::isinf(outL[i]));
+      CHECK(std::fabs(outL[i]) <= 1.0f);
+    }
+    CHECK(lateEnergy > 0.01f); // Comprova recirculação ativa
+
+    hydra_dsp_destroy(h);
+  }
+
+  // Teste 4c: warpFeedback = 95% -> estabilidade extrema sem estouro durante 5 segundos
+  {
+    hydra_dsp_handle* h = create_test_handle();
+    hydra_dsp_params p{};
+    p.drive = 30.0f;
+    p.delayActive = 1.0f;
+    p.delayTimeMs = 100.0f;
+    p.dryWet = 80.0f;
+    p.delayWet = 100.0f;
+    p.warpActive = 1.0f;
+    p.warpSpeed = 0.5f;
+    p.warpGrainMs = 70.0f;
+    p.warpFeedback = 95.0f; // 95% de realimentação
+
+    CHECK(hydra_dsp_set_params(h, &p) == 0);
+    CHECK(hydra_dsp_commit(h) == 0);
+
+    // 5 segundos = 240.000 amostras
+    constexpr uint32_t kLongFrames = 240000;
+    std::vector<float> inL(64, 0.0f), inR(64, 0.0f);
+    std::vector<float> outL(64), outR(64);
+    inL[0] = 0.95f; inR[0] = 0.95f;
+
+    for (uint32_t pos = 0; pos < kLongFrames; pos += 64) {
+      CHECK(hydra_dsp_process(h, inL.data(), inR.data(), outL.data(), outR.data(), 64) == 0);
+      inL[0] = 0.0f; inR[0] = 0.0f; // Apenas impulso inicial
+
+      for (int i = 0; i < 64; ++i) {
+        CHECK(!std::isnan(outL[i]) && !std::isinf(outL[i]));
+        CHECK(!std::isnan(outR[i]) && !std::isinf(outR[i]));
+        CHECK(std::fabs(outL[i]) <= 1.0f);
+        CHECK(std::fabs(outR[i]) <= 1.0f);
+      }
+    }
+
+    hydra_dsp_destroy(h);
+  }
+}
+
+// 5. Validar todos os 4 modos do Warp (Hermite vs Raw Int, 2-Taps vs 1-Tap)
+void test_warp_all_modes() {
+  for (int m = 0; m <= 3; ++m) {
+    hydra_dsp_handle* h = create_test_handle();
+    hydra_dsp_params p{};
+    p.drive = 25.0f;
+    p.delayActive = 1.0f;
+    p.delayTimeMs = 120.0f;
+    p.dryWet = 100.0f;
+    p.delayWet = 100.0f;
+    p.warpActive = 1.0f;
+    p.warpSpeed = 1.0f;
+    p.warpGrainMs = 80.0f;
+    p.warpStereo = 0.25f;
+    p.warpFeedback = 40.0f;
+    p.warpMode = static_cast<float>(m);
+
+    CHECK(hydra_dsp_set_params(h, &p) == 0);
+    CHECK(hydra_dsp_commit(h) == 0);
+
+    constexpr uint32_t kN = 4096;
+    std::vector<float> in(kN), outL(kN), outR(kN);
+    for (uint32_t i = 0; i < kN; ++i) {
+      in[i] = std::sin(kTwoPi * 440.0f * static_cast<float>(i) / kSampleRate) * 0.5f;
+    }
+
+    CHECK(hydra_dsp_process(h, in.data(), in.data(), outL.data(), outR.data(), kN) == 0);
+
+    float energyL = 0.0f, energyR = 0.0f;
+    for (uint32_t i = 500; i < kN; ++i) {
+      CHECK(!std::isnan(outL[i]) && !std::isinf(outL[i]));
+      CHECK(!std::isnan(outR[i]) && !std::isinf(outR[i]));
+      energyL += std::fabs(outL[i]);
+      energyR += std::fabs(outR[i]);
+    }
+
+    std::cout << "[Warp Mode " << m << "] Energy L: " << energyL << " | R: " << energyR << "\n";
+    CHECK(energyL > 1.0f);
+    CHECK(energyR > 1.0f);
+
+    hydra_dsp_destroy(h);
+  }
+}
+
+// 6. Validar continuidade de fase na modulação do tamanho do grão (warpGrainMs)
+void test_warp_grain_phase_continuity() {
+  hydra_dsp_handle* h = create_test_handle();
   hydra_dsp_params p{};
+  p.drive = 20.0f;
   p.delayActive = 1.0f;
-  p.delayTimeMs = 100.0f;
-  p.dryWet = 50.0f;
+  p.delayTimeMs = 150.0f;
+  p.dryWet = 100.0f;
   p.delayWet = 100.0f;
-  p.feedback = 80.0f;
   p.warpActive = 1.0f;
-  p.warpSpeed = 0.5f;     // +7 semitons por ciclo de repetição
-  p.warpGrainMs = 80.0f;
-  p.warpFeedback = 80.0f; // Realimentação ativa de 80%
+  p.warpSpeed = 1.0f;
+  p.warpGrainMs = 40.0f;
 
   CHECK(hydra_dsp_set_params(h, &p) == 0);
   CHECK(hydra_dsp_commit(h) == 0);
 
-  // Injetar impulso curto (Dirac)
-  std::vector<float> inL(48000, 0.0f), inR(48000, 0.0f);
-  inL[0] = 0.8f;
-  inR[0] = 0.8f;
+  constexpr uint32_t kBlock = 64;
+  std::vector<float> in(kBlock, 0.5f);
+  std::vector<float> outL(kBlock), outR(kBlock);
 
-  std::vector<float> outL(48000), outR(48000);
-  for (uint32_t pos = 0; pos < 48000; pos += 64) {
-    CHECK(hydra_dsp_process(h, inL.data() + pos, inR.data() + pos,
-                            outL.data() + pos, outR.data() + pos, 64) == 0);
+  // Inicializar buffer com áudio contínuo
+  for (int b = 0; b < 20; ++b) {
+    CHECK(hydra_dsp_process(h, in.data(), in.data(), outL.data(), outR.data(), kBlock) == 0);
   }
 
-  // Verificar ausência estrita de NaN, Inf e estouro de amplitude
-  for (uint32_t i = 0; i < 48000; ++i) {
-    CHECK(!std::isnan(outL[i]) && !std::isinf(outL[i]));
-    CHECK(!std::isnan(outR[i]) && !std::isinf(outR[i]));
-    CHECK(std::fabs(outL[i]) <= 1.0f);
-    CHECK(std::fabs(outR[i]) <= 1.0f);
+  // Variação dinâmica contínua de warpGrainMs
+  float prevSample = outL[kBlock - 1];
+  for (int step = 0; step < 40; ++step) {
+    float newGrain = 40.0f + static_cast<float>(step) * 5.0f; // 40ms -> 240ms
+    CHECK(hydra_dsp_set_parameter(h, HYDRA_DSP_PARAM_WARP_GRAIN_MS, newGrain) == 0);
+    CHECK(hydra_dsp_commit(h) == 0);
+
+    CHECK(hydra_dsp_process(h, in.data(), in.data(), outL.data(), outR.data(), kBlock) == 0);
+
+    // Assert ausência de saltos descontínuos bruscos entre blocos
+    float deltaFirst = std::fabs(outL[0] - prevSample);
+    CHECK(deltaFirst < 1.0f);
+
+    for (uint32_t i = 1; i < kBlock; ++i) {
+      float delta = std::fabs(outL[i] - outL[i - 1]);
+      CHECK(!std::isnan(outL[i]));
+      CHECK(delta < 0.8f);
+    }
+    prevSample = outL[kBlock - 1];
   }
 
   hydra_dsp_destroy(h);
 }
 
-// 5. Validar acesso a parâmetros da API C para Warp
-void test_warp_param_c_api() {
+// 7. Validar alternância Liga/Desliga do Warp com áudio presente no buffer
+void test_warp_toggle_with_audio_in_buffer() {
+  hydra_dsp_handle* h = create_test_handle();
+  hydra_dsp_params p{};
+  p.drive = 20.0f;
+  p.delayActive = 1.0f;
+  p.delayTimeMs = 150.0f;
+  p.dryWet = 50.0f;
+  p.delayWet = 100.0f;
+  p.warpActive = 0.0f; // Inicia em Delay tradicional
+
+  CHECK(hydra_dsp_set_params(h, &p) == 0);
+  CHECK(hydra_dsp_commit(h) == 0);
+
+  constexpr uint32_t kN = 2048;
+  std::vector<float> in(kN), outL(kN), outR(kN);
+  for (uint32_t i = 0; i < kN; ++i) {
+    in[i] = std::sin(kTwoPi * 350.0f * static_cast<float>(i) / kSampleRate) * 0.4f;
+  }
+
+  // Preencher buffer com fita tradicional
+  CHECK(hydra_dsp_process(h, in.data(), in.data(), outL.data(), outR.data(), kN) == 0);
+
+  // Alternar dinamicamente para Warp
+  CHECK(hydra_dsp_set_parameter(h, HYDRA_DSP_PARAM_WARP_ACTIVE, 1.0f) == 0);
+  CHECK(hydra_dsp_commit(h) == 0);
+  CHECK(hydra_dsp_process(h, in.data(), in.data(), outL.data(), outR.data(), kN) == 0);
+  for (uint32_t i = 0; i < kN; ++i) {
+    CHECK(!std::isnan(outL[i]) && !std::isinf(outL[i]));
+    CHECK(std::fabs(outL[i]) <= 1.0f);
+  }
+
+  // Desativar Warp de volta para delay de fita
+  CHECK(hydra_dsp_set_parameter(h, HYDRA_DSP_PARAM_WARP_ACTIVE, 0.0f) == 0);
+  CHECK(hydra_dsp_commit(h) == 0);
+  CHECK(hydra_dsp_process(h, in.data(), in.data(), outL.data(), outR.data(), kN) == 0);
+  for (uint32_t i = 0; i < kN; ++i) {
+    CHECK(!std::isnan(outL[i]) && !std::isinf(outL[i]));
+    CHECK(std::fabs(outL[i]) <= 1.0f);
+  }
+
+  hydra_dsp_destroy(h);
+}
+
+// 8. Validar saltos abruptos de Speed e Stereo durante áudio contínuo
+void test_warp_abrupt_speed_and_stereo_changes() {
+  hydra_dsp_handle* h = create_test_handle();
+  hydra_dsp_params p{};
+  p.drive = 20.0f;
+  p.delayActive = 1.0f;
+  p.delayTimeMs = 120.0f;
+  p.dryWet = 100.0f;
+  p.delayWet = 100.0f;
+  p.warpActive = 1.0f;
+  p.warpSpeed = 1.0f;
+  p.warpStereo = 0.0f;
+
+  CHECK(hydra_dsp_set_params(h, &p) == 0);
+  CHECK(hydra_dsp_commit(h) == 0);
+
+  constexpr uint32_t kBlock = 64;
+  std::vector<float> in(kBlock, 0.4f);
+  std::vector<float> outL(kBlock), outR(kBlock);
+
+  const float speeds[] = {0.1f, 1.8f, 0.5f, 2.0f, 0.0f, 1.5f};
+  const float stereos[] = {1.0f, 0.0f, 0.8f, 0.2f, 0.5f, 0.0f};
+
+  for (size_t i = 0; i < sizeof(speeds) / sizeof(speeds[0]); ++i) {
+    CHECK(hydra_dsp_set_parameter(h, HYDRA_DSP_PARAM_WARP_SPEED, speeds[i]) == 0);
+    CHECK(hydra_dsp_set_parameter(h, HYDRA_DSP_PARAM_WARP_STEREO, stereos[i]) == 0);
+    CHECK(hydra_dsp_commit(h) == 0);
+
+    for (int b = 0; b < 16; ++b) {
+      CHECK(hydra_dsp_process(h, in.data(), in.data(), outL.data(), outR.data(), kBlock) == 0);
+      for (int k = 0; k < 64; ++k) {
+        CHECK(!std::isnan(outL[k]) && !std::isinf(outL[k]));
+        CHECK(std::fabs(outL[k]) <= 1.0f);
+      }
+    }
+  }
+
+  hydra_dsp_destroy(h);
+}
+
+// 9. Validar compatibilidade binária e proteção contra buffer overrun na API C
+void test_api_backward_compatibility() {
   hydra_dsp_handle* h = create_test_handle();
 
+  // Testar chamada com tamanho da estrutura v1.2 (116 bytes)
+  std::vector<uint8_t> legacyBuffer(HYDRA_DSP_PARAMS_SIZE_V1_2, 0);
+  auto* legacyParams = reinterpret_cast<hydra_dsp_params*>(legacyBuffer.data());
+  legacyParams->drive = 50.0f;
+  legacyParams->delayActive = 1.0f;
+  legacyParams->delayTimeMs = 300.0f;
+
+  CHECK(hydra_dsp_set_params_sized(h, legacyBuffer.data(), HYDRA_DSP_PARAMS_SIZE_V1_2) == 0);
+  CHECK(hydra_dsp_commit(h) == 0);
+
+  // Verificar que warpActive permaneceu seguro (0.0f) mesmo recebendo buffer legado sem os campos do Warp
   float v = -1.0f;
   CHECK(hydra_dsp_get_parameter(h, HYDRA_DSP_PARAM_WARP_ACTIVE, &v) == 0);
   CHECK(v == 0.0f);
 
+  // Verificar rejeição de tamanho truncado inválido (< 116 bytes)
+  CHECK(hydra_dsp_set_params_sized(h, legacyBuffer.data(), 64) == -2);
+
+  // Testar Get / Set de parâmetros C API para todos os IDs de 30 a 35
   CHECK(hydra_dsp_set_parameter(h, HYDRA_DSP_PARAM_WARP_ACTIVE, 1.0f) == 0);
   CHECK(hydra_dsp_get_parameter(h, HYDRA_DSP_PARAM_WARP_ACTIVE, &v) == 0);
   CHECK(v == 1.0f);
@@ -232,9 +502,17 @@ void test_warp_param_c_api() {
   CHECK(hydra_dsp_get_parameter(h, HYDRA_DSP_PARAM_WARP_GRAIN_MS, &v) == 0);
   CHECK(std::fabs(v - 120.0f) < 1e-5f);
 
-  CHECK(hydra_dsp_set_parameter(h, HYDRA_DSP_PARAM_WARP_MODE, 1.0f) == 0);
+  CHECK(hydra_dsp_set_parameter(h, HYDRA_DSP_PARAM_WARP_STEREO, 0.8f) == 0);
+  CHECK(hydra_dsp_get_parameter(h, HYDRA_DSP_PARAM_WARP_STEREO, &v) == 0);
+  CHECK(std::fabs(v - 0.8f) < 1e-5f);
+
+  CHECK(hydra_dsp_set_parameter(h, HYDRA_DSP_PARAM_WARP_FEEDBACK, 75.0f) == 0);
+  CHECK(hydra_dsp_get_parameter(h, HYDRA_DSP_PARAM_WARP_FEEDBACK, &v) == 0);
+  CHECK(std::fabs(v - 75.0f) < 1e-5f);
+
+  CHECK(hydra_dsp_set_parameter(h, HYDRA_DSP_PARAM_WARP_MODE, 3.0f) == 0);
   CHECK(hydra_dsp_get_parameter(h, HYDRA_DSP_PARAM_WARP_MODE, &v) == 0);
-  CHECK(v == 1.0f);
+  CHECK(v == 3.0f);
 
   hydra_dsp_destroy(h);
 }
@@ -242,12 +520,16 @@ void test_warp_param_c_api() {
 } // namespace
 
 int main() {
-  std::cout << "Running Accidental Warp V1 DSP Test Suite...\n";
+  std::cout << "Running Accidental Warp V1.1 Comprehensive DSP Test Suite...\n";
   test_dual_tap_window_complementarity();
   test_warp_ascending_pitch_shift();
   test_warp_stereo_phase_offset();
-  test_warp_feedback_stability();
-  test_warp_param_c_api();
-  std::cout << "All Accidental Warp V1 Tests PASSED successfully!\n";
+  test_warp_feedback_levels();
+  test_warp_all_modes();
+  test_warp_grain_phase_continuity();
+  test_warp_toggle_with_audio_in_buffer();
+  test_warp_abrupt_speed_and_stereo_changes();
+  test_api_backward_compatibility();
+  std::cout << "All Accidental Warp V1.1 Tests PASSED successfully!\n";
   return 0;
 }

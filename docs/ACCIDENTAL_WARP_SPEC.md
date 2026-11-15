@@ -1,4 +1,4 @@
-# ACCIDENTAL WARP — DSP MATHEMATICAL & SONIC SPECIFICATION
+# ACCIDENTAL WARP V1.1 — DSP MATHEMATICAL & SONIC SPECIFICATION
 
 ## 1. Identidade Sonora e Princípio Físico
 
@@ -13,11 +13,11 @@ Historicamente, versões preliminares da interface de usuário continham termino
 
 ## 2. Relação Matemática de Velocidade e Transposição
 
-No protótipo original de referência do simulador AudioWorklet:
+No protótipo original de referência do simulador (`docs/simulators/accidental_warp_simulator.html`):
 - O ponteiro de gravação físico avança rigorosamente a $1.0\text{ amostra/frame}$.
 - O ponteiro virtual de leitura avança em taxa adicional determinada por $\text{speedMultiplier}$.
-- A velocidade efetiva de leitura sobre o áudio gravado na fita é aproximadamente:
-  $$v_{eff} \approx 1.0 + \text{speedMultiplier}$$
+- A velocidade efetiva de leitura sobre o áudio gravado na fita é rigorosamente:
+  $$v_{eff} = 1.0 + \text{speedMultiplier}$$
 
 | `speedMultiplier` | Velocidade Efetiva ($v_{eff}$) | Relação de Frequência | Intervalo Musical Transposto | Caráter Perceptual |
 | :---: | :---: | :---: | :---: | :--- |
@@ -31,7 +31,7 @@ No protótipo original de referência do simulador AudioWorklet:
 
 ---
 
-## 3. Topologia de Leitura Dual-Tap com Crossfade Complementar
+## 3. Topologia de Leitura Dual-Tap com Crossfade Complementar e Continuidade de Fase
 
 Para viabilizar uma leitura musicalmente contínua sem estalos abruptos de descontinuidade de ponteiro, o algoritmo opera com **dois pontos de leitura virtuais simultâneos (Tap 1 e Tap 2)** sobre a mesma memória de fita:
 
@@ -47,70 +47,90 @@ Distância 2:     0.5*Period ---------> 0.0 ----------------> 0.5*Period
 Soma dos Ganhos: Gain1 + Gain2 = 1.00000000 (Complementaridade Exata)
 ```
 
-### 3.1. Formulação Matemática por Amostra
-Para cada amostra $n$, dado o avanço da posição virtual $\text{virtualPos}$ e o tamanho do grão em amostras $\text{grainPeriodSamples} = \text{grainPeriodMs} \times 0.001 \times f_s$:
+### 3.1. Rastreamento de Fase Normalizada e Continuidade de Grão
 
-1. **Avanço da Posição Virtual:**
-   $$\text{virtualPos} \leftarrow \text{virtualPos} + \text{speedMultiplier}$$
-2. **Cálculo da Fase do Tap 1 (Normalizada entre 0.0 e 1.0):**
-   $$\text{phase}_1 = \text{fmod}\left(\frac{\text{virtualPos}}{\text{grainPeriodSamples}}, 1.0\right)$$
-   $$\text{se } \text{phase}_1 < 0 \implies \text{phase}_1 \leftarrow \text{phase}_1 + 1.0$$
-3. **Cálculo da Fase do Tap 2 (Defasagem Estrita de 180°):**
-   $$\text{phase}_2 = \text{fmod}(\text{phase}_1 + 0.5, 1.0)$$
-4. **Envoltórias de Ganho Triangulares Complementares:**
-   $$\text{gain}_1 = 1.0 - |2.0 \cdot \text{phase}_1 - 1.0|$$
-   $$\text{gain}_2 = 1.0 - |2.0 \cdot \text{phase}_2 - 1.0|$$
-5. **Distâncias de Atraso em Relação ao Ponteiro de Gravação:**
-   $$\text{delay}_1 = (1.0 - \text{phase}_1) \cdot \text{grainPeriodSamples}$$
-   $$\text{delay}_2 = (1.0 - \text{phase}_2) \cdot \text{grainPeriodSamples}$$
-6. **Leitura Interpolada e Recombinação:**
-   $$s_1 = \text{readTapeHermite4}(\text{delay}_1)$$
-   $$s_2 = \text{readTapeHermite4}(\text{delay}_2)$$
-   $$y_{\text{warp}} = s_1 \cdot \text{gain}_1 + s_2 \cdot \text{gain}_2$$
+Na V1.1, a posição do leitor virtual é mantida em **fase normalizada** $\text{warpPhase} \in [0.0, 1.0)$:
+
+1. **Suavização do Tamanho de Grão:**
+   $$\text{targetGrainSamples} = \max(64.0, \text{warpGrainMs} \times 0.001 \times f_s)$$
+   $$\text{smoothedGrainSamples} \leftarrow \text{smoothedGrainSamples} + 0.005 \times (\text{targetGrainSamples} - \text{smoothedGrainSamples})$$
+
+2. **Avanço de Fase Contínuo:**
+   $$\Delta \text{phase} = \frac{\text{speedMultiplier}}{\text{smoothedGrainSamples}}$$
+   $$\text{warpPhase} \leftarrow \text{warpPhase} + \Delta \text{phase}$$
+   $$\text{se } \text{warpPhase} \ge 1.0 \implies \text{warpPhase} \leftarrow \text{warpPhase} - 1.0$$
+   $$\text{se } \text{warpPhase} < 0.0 \implies \text{warpPhase} \leftarrow \text{warpPhase} + 1.0$$
+
+Essa formulação garante que, quando o usuário altera `warpGrainMs`, a fase instantânea dos osciladores de grão não salta, eliminando estalos durante giros de potenciômetro.
 
 ---
 
-## 4. Diferenciação de Modos: 2-Taps (Musical) vs. 1-Tap (Bug Cru)
+## 4. Modos de Operação (Hermite vs. Raw Int Cast, 2-Taps vs. 1-Tap)
 
-O protótipo de referência implementa dois modos de operação que são mantidos no motor para validação acústica:
+O Hydra 2.0 Accidental Warp V1.1 implementa formalmente os 4 modos extraídos do simulador:
 
-1. **2-Taps (Musical — Padrão de Produção):**
-   - Utiliza a interpolação cruzada descrita na Seção 3.
-   - Crossfade suave entre os dois grãos, mascarando os momentos de reinicialização de ponteiro.
-   - Textura límpida e harmônica, ideal para cascatas musicais e pads ressonantes.
-2. **1-Tap (Bug Cru — Referência de Laboratório):**
-   - Desativa o segundo leitor e o janelamento triangular ($\text{gain}_1 = 1.0, \text{gain}_2 = 0.0$).
-   - A leitura varre continuamente a distância de atraso e, ao atingir a fronteira do grão ($\text{phase}_1 = 1.0$), salta bruscamente de volta para a distância inicial.
-   - Gera estalos rítmicos percussivos, batimentos e artefatos de descontinuidade que conferem uma textura lofi/broken altamente expressiva.
+1. **Modo 0: 2-Taps Musical (Hermite — Padrão de Produção):**
+   - Interpolação cúbica Hermite de 4 pontos nos dois taps.
+   - Crossfade triangular contínuo ($\text{gain}_1 + \text{gain}_2 = 1.0$).
+   - Textura suave, shimmer brilhante e ausência de estalos de descontinuidade.
+2. **Modo 1: 1-Tap Bug Cru (Hermite):**
+   - Single-pointer com compensação de offset de +1000 amostras (quirk do protótipo).
+   - Envoltória de desclicagem de 5% nas bordas:
+     $$\text{env} = \begin{cases} \text{normPos} / 0.05, & \text{se } \text{normPos} < 0.05 \\ (1.0 - \text{normPos}) / 0.05, & \text{se } \text{normPos} > 0.95 \\ 1.0, & \text{caso contrário} \end{cases}$$
+   - Interpolação Hermite. Produz artefatos percussivos rítmicos analógicos.
+3. **Modo 2: 1-Tap Bug Cru (Raw Int Cast):**
+   - Mesma topologia do Modo 1, porém com truncamento inteiro explícito: $\text{relD} = \lfloor \text{relD} \rfloor$.
+   - Leitura de amostras inteiras sem interpolação polinomial.
+   - Textura digital quebrada, bit-crushed, com artefatos de sample-skipping.
+4. **Modo 3: 2-Taps Musical (Raw Int Cast):**
+   - Dual-tap com crossfade complementar de 180°, porém com leitura em posições inteiras truncadas.
+   - Mantém a fluidez de envelope sem estalos de fronteira, mas com o "crunch" harmônico característico de clock digital imperfeito.
 
 ---
 
 ## 5. Stereo Warp (Espacialização por Deslocamento de Fase)
 
-Para obter uma imagem estéreo expansiva e dinâmica sem incorrer em desafinação assimétrica permanente entre os ouvidos (o que desorientaria a harmonia):
-- A velocidade de transposição $\text{speedMultiplier}$ é **idêntica** em ambos os canais, preservando a exata mesma afinação.
-- O canal direito recebe uma **defasagem no ciclo do grão**:
-  $$\text{phase}_{R} = \text{fmod}\left(\text{phase}_{L} + \text{stereoWarp} \cdot 0.25, 1.0\right)$$
-- Com $\text{stereoWarp} = 0.0$, ambos os canais transitam em uníssono de fase (imagem estéreo mono-compatível centrada).
-- Com $\text{stereoWarp} = 1.0$, os cruzamentos de grãos do canal direito ocorrem $90^\circ$ defasados em relação ao canal esquerdo, criando uma ilusão de movimento orbital contínuo e textura percussiva alternada.
+Para obter imagem estéreo expansiva sem introduzir desafinação entre os canais:
+- $\text{speedMultiplier}$ é idêntico em ambos os canais (afinação uniforme).
+- O canal direito recebe uma defasagem pura no ciclo do grão:
+  $$\text{phase}_{R1} = \text{fmod}\left(\text{phase}_{L1} + \text{stereoWarp} \cdot 0.25, 1.0\right)$$
+  $$\text{phase}_{R2} = \text{fmod}\left(\text{phase}_{R1} + 0.5, 1.0\right)$$
+- Com `warpStereo = 0.0`, imagem mono-compatível centrada.
+- Com `warpStereo = 1.0`, os cruzamentos de grão do canal direito operam $90^\circ$ em quadratura em relação ao canal esquerdo, criando ampla textura espacial sem desarmonia.
 
 ---
 
-## 6. Laço de Feedback do Warp & Proteção de Estabilidade
+## 6. Arquitetura de Feedback e Separação de Roteamento
 
-O sinal gerado pela leitura acelerada do Warp precisa ser realimentado na cabeça de gravação magnética para gerar as cascatas infinitas. A cadeia de condicionamento dedicada segue o fluxo:
+### 6.1. Separação Conceitual dos Três Tipos de Feedback
 
-$$\text{Warp Read} \longrightarrow \text{HPF (120 Hz)} \longrightarrow \text{LPF (8 kHz)} \longrightarrow \text{Soft Saturation} \longrightarrow \text{Feedback Gain} \longrightarrow \text{Tape Write}$$
+1. **Feedback Convencional de Fita (`feedback`):**
+   - Recircula a saída das cabeças de reprodução fixas através da EQ de cabeçote, pre-ênfase, saturação magnética e compressor de fita.
+   - Ativo apenas quando `warpActive == false`.
+2. **Warp Feedback (`warpFeedback`):**
+   - Recircula exclusivamente o sinal processado pelo Accidental Warp.
+   - Se `warpFeedback == 0.0f`, a realimentação é estritamente **zero** (não há fallback silencioso para o feedback de fita).
+   - Cada recirculação sofre nova transposição ascendente, gerando cascatas tonais crescentes.
+   - Níveis calibrados de 0% a 95% com estabilização por compressor de pico, garantindo ausência de NaN, Inf e estouro de amplitude.
+3. **Spiral Feedback (Hydra 2.5 Roadmap):**
+   - Matriz de roteamento cruzado entre cabeças de fita convencionais e cabeça Warp, permitindo realimentações entrelaçadas em proporções controladas.
 
-1. **Filtragem Passa-Altas (HPF):** Remove o acúmulo de subgraves e "thumps" decorrentes da modulação dos grãos.
-2. **Filtragem Passa-Baixas Anti-Aliasing (LPF):** Leituras em velocidade $2\times$ ou $2.5\times$ dobram as frequências do sinal lido. Sem filtragem antes da regravação na fita, componentes acima de $f_s / 4$ gerariam rebatimento de aliasing agressivo na realimentação.
-3. **Soft Saturation:** Aplicação de compressão racional `fastSatRational` para evitar que picos ressonantes excedam $1.0$, mantendo a saturação redonda e musical.
-4. **Limite Seguro de Realimentação:** O ganho máximo de feedback é calibrado abaixo de $+0.92$, evitando runaways incontroláveis.
+### 6.2. Separação de Filtros de Saída vs. Filtros de Feedback
+
+No protótipo original:
+- **Sinal de Saída:** O leitor granular envia o áudio lido diretamente para o mixer dry/wet, preservando todo o brilho das frequências agudas e o ar harmônico gerado pela transposição.
+- **Sinal de Retorno (Loop de Realimentação):** O retorno é condicionado isoladamente por:
+  $$\text{Warp Return} \longrightarrow \text{HPF (120 Hz)} \longrightarrow \text{LPF (2.2 kHz)} \longrightarrow \text{Soft Drive (tanh/rational)} \longrightarrow \text{warpFeedback} \longrightarrow \text{Compressor}$$
+  - **HPF (120 Hz, Q=0.707):** Elimina o acúmulo de sub-graves e offsets DC que desestabilizariam o laço.
+  - **LPF (2200 Hz, Q=0.707):** Amortece o acúmulo descontrolado de harmônicos ultra-altos em cada ciclo de pitch-up.
+  - **Soft Saturation:** Compressão suave que confere compressão de fita analógica e estabilidade estrita.
 
 ---
 
-## 7. Registro de Limitação do Workspace
+## 7. Compatibilidade de API e Segurança de Memória
 
-> [!NOTE]
-> O arquivo HTML original do simulador fornecido pelo usuário (*"Accidental Warp Delay — Simulador DSP"*) não se encontrava pré-alocado na árvore de arquivos do repositório local.
-> Conforme estipulado nas diretrizes do projeto, esta limitação é formalmente documentada aqui. A implementação em C++ nativo e as suites de validação utilizam integralmente a especificação matemática e paramétrica descrita nesta documentação. Comparações adicionais com o arquivo HTML original serão consolidadas na fase de refinamento em escuta crítica.
+A estrutura `hydra_dsp_params` foi expandida na API 1.3 de 29 campos (116 bytes) para 35 campos (140 bytes). Para proteger clientes antigos contra leituras fora dos limites (out-of-bounds reads):
+- Introdução de `hydra_dsp_set_params_sized(handle, params, struct_size)`.
+- Se `struct_size == HYDRA_DSP_PARAMS_SIZE_V1_2` (116 bytes), os parâmetros do Warp são inicializados automaticamente com valores seguros (`warpActive = 0`, `warpSpeed = 1.0`, etc.) sem acessar memória além do buffer do cliente.
+- Tamanhos menores que 116 bytes são rejeitados com código de erro `-2`.
+- A função padrão `hydra_dsp_set_params` encaminha com `sizeof(hydra_dsp_params)`, mantendo compatibilidade total de ABI.

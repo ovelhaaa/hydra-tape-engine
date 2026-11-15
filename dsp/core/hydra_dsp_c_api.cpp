@@ -2,6 +2,7 @@
 #include "tape_core.hpp"
 
 #include <algorithm>
+#include <cstring>
 #include <new>
 
 struct hydra_dsp_handle {
@@ -245,11 +246,29 @@ int hydra_dsp_get_parameter(hydra_dsp_handle* handle, hydra_dsp_param_id param_i
   return 0;
 }
 
-int hydra_dsp_set_params(hydra_dsp_handle* handle, const hydra_dsp_params* params) {
+int hydra_dsp_set_params_sized(hydra_dsp_handle* handle, const void* params, size_t struct_size) {
   if (!handle || !params) return -1;
-  from_c(*params, &handle->params);
+  if (struct_size < HYDRA_DSP_PARAMS_SIZE_V1_2) return -2;
+
+  hydra_dsp_params local{};
+  // Provide safe defaults for unpopulated fields (e.g., when called with V1.2 size)
+  local.warpActive = 0.0f;
+  local.warpSpeed = 1.0f;
+  local.warpGrainMs = 80.0f;
+  local.warpStereo = 0.5f;
+  local.warpFeedback = 0.0f;
+  local.warpMode = 0.0f;
+
+  size_t copy_size = std::min(struct_size, sizeof(hydra_dsp_params));
+  std::memcpy(&local, params, copy_size);
+
+  from_c(local, &handle->params);
   handle->dirty = true;
   return 0;
+}
+
+int hydra_dsp_set_params(hydra_dsp_handle* handle, const hydra_dsp_params* params) {
+  return hydra_dsp_set_params_sized(handle, params, sizeof(hydra_dsp_params));
 }
 
 int hydra_dsp_commit(hydra_dsp_handle* handle) {

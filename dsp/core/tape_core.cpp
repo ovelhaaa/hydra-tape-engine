@@ -187,7 +187,7 @@ class DelayAllpass { public: ~DelayAllpass(){delete[] buffer;} void init(int len
 }
 
 struct TapeCore::Impl {
-  explicit Impl(float fs,float maxDelayMs):sampleRate(fs),noiseGen(fs,123456789u),noiseGenR(fs,987654321u){ tanhLUT.init(); magneticsL.lut=&tanhLUT; magneticsR.lut=&tanhLUT; updateSampleRateConstants(); magneticsL.updateParams(fs,currentParams); magneticsR.updateParams(fs,currentParams); bufferSize=(int32_t)(fs*(maxDelayMs/1000.f)); bufferCapacity=bufferSize+TAPE_BUFFER_GUARD; delayLine=allocateDelayBuffer(bufferCapacity); delayLineR=allocateDelayBuffer(bufferCapacity); if(!delayLine||!delayLineR){freeDelayBuffer(delayLine);freeDelayBuffer(delayLineR);delayLine=delayLineR=nullptr;bufferSize=0;return;} static const float sc[6]={0.7f,0.65f,0.6f,0.6f,0.5f,0.5f}; static const int st[6]={223,367,491,647,821,1039}; for(int i=0;i<6;i++){springAP_L[i].init(st[i]);springAP_R[i].init(st[i]+23);springAP_L[i].setCoeff(sc[i]);springAP_R[i].setCoeff(sc[i]);springLPF_L[i].setLowpass(fs,2500,0.5f);springLPF_R[i].setLowpass(fs,2500,0.5f);} static const float rc[4]={0.6f,0.55f,0.5f,0.45f}; static const int rt[4]={151,313,569,797}; for(int i=0;i<4;i++){reverseAP_L[i].init(rt[i]);reverseAP_R[i].init(rt[i]+17);reverseAP_L[i].setCoeff(rc[i]);reverseAP_R[i].setCoeff(rc[i]);} updateFilters(); flutterLPF.setLowpass(fs,15,0.707f); flutterLPFR.setLowpass(fs,15,0.707f); warpHPF_L.setHighpass(fs,120.0f,0.707f); warpHPF_R.setHighpass(fs,120.0f,0.707f); warpLPF_L.setLowpass(fs,7500.0f,0.707f); warpLPF_R.setLowpass(fs,7500.0f,0.707f);}
+  explicit Impl(float fs,float maxDelayMs):sampleRate(fs),noiseGen(fs,123456789u),noiseGenR(fs,987654321u){ tanhLUT.init(); magneticsL.lut=&tanhLUT; magneticsR.lut=&tanhLUT; updateSampleRateConstants(); magneticsL.updateParams(fs,currentParams); magneticsR.updateParams(fs,currentParams); bufferSize=(int32_t)(fs*(maxDelayMs/1000.f)); bufferCapacity=bufferSize+TAPE_BUFFER_GUARD; delayLine=allocateDelayBuffer(bufferCapacity); delayLineR=allocateDelayBuffer(bufferCapacity); if(!delayLine||!delayLineR){freeDelayBuffer(delayLine);freeDelayBuffer(delayLineR);delayLine=delayLineR=nullptr;bufferSize=0;return;} static const float sc[6]={0.7f,0.65f,0.6f,0.6f,0.5f,0.5f}; static const int st[6]={223,367,491,647,821,1039}; for(int i=0;i<6;i++){springAP_L[i].init(st[i]);springAP_R[i].init(st[i]+23);springAP_L[i].setCoeff(sc[i]);springAP_R[i].setCoeff(sc[i]);springLPF_L[i].setLowpass(fs,2500,0.5f);springLPF_R[i].setLowpass(fs,2500,0.5f);} static const float rc[4]={0.6f,0.55f,0.5f,0.45f}; static const int rt[4]={151,313,569,797}; for(int i=0;i<4;i++){reverseAP_L[i].init(rt[i]);reverseAP_R[i].init(rt[i]+17);reverseAP_L[i].setCoeff(rc[i]);reverseAP_R[i].setCoeff(rc[i]);} updateFilters(); flutterLPF.setLowpass(fs,15,0.707f); flutterLPFR.setLowpass(fs,15,0.707f); warpHPF_L.setHighpass(fs,120.0f,0.707f); warpHPF_R.setHighpass(fs,120.0f,0.707f); warpLPF_L.setLowpass(fs,2200.0f,0.707f); warpLPF_R.setLowpass(fs,2200.0f,0.707f); smoothedGrainSamples=std::max(64.0f,80.0f*0.001f*fs);}
   ~Impl(){freeDelayBuffer(delayLine);freeDelayBuffer(delayLineR);}
   bool valid() const {return delayLine&&delayLineR&&bufferSize>0;}
   float feedbackCompressor(float x){ const float t=0.6f,r=1.5f,k=0.2f; float a=std::fabs(x); if(a<=t-k*0.5f)return x; if(a>=t+k*0.5f)return std::copysign(t+(a-t)/r,x); float kx=(a-(t-k*0.5f))/k; float ratio=1.f+(1.f/r-1.f)*kx*kx; return std::copysign(a*ratio,x);}
@@ -220,6 +220,7 @@ struct TapeCore::Impl {
     return clampf(mod,-0.25f*modBaseSamples,0.25f*modBaseSamples);
   }
   float readTapeAt(float d,float* b){ if(!b||bufferSize==0) return 0; d=clampf(d,2,(float)bufferSize-4); float rp=(float)writeHead-d; if(rp<0)rp+=bufferSize; int32_t r=(int32_t)rp; float f=rp-r; int32_t prev=(r>0)?r-1:bufferSize-1; return hermite4(b[prev],b[r],b[r+1],b[r+2],f); }
+  float readTapeInt(float d,float* b){ if(!b||bufferSize<=0) return 0; d=clampf(d,2,(float)bufferSize-4); float rp=(float)writeHead-d; while(rp<0)rp+=bufferSize; while(rp>=(float)bufferSize)rp-=bufferSize; int32_t r=(int32_t)rp; return b[r]; }
   float readTapeReverse(float d,float* b){ if(!b||bufferSize<=0)return 0; d=clampf(d,2,(float)bufferSize-4); int32_t di=(int32_t)d; if(std::abs(di-reverseWindowSize)>1000){reverseCounter=0;reverseWindowSize=di;} reverseCounter++; if(reverseCounter>=std::max<int32_t>(1,di))reverseCounter=0; float rp=(float)writeHead-d+(float)reverseCounter; int32_t r=((int32_t)rp%bufferSize+bufferSize)%bufferSize; float f=rp-std::floor(rp); int32_t i1=r,i0=(r>0)?r-1:bufferSize-1,i2=(r<bufferSize-1)?r+1:0,i3=(i2<bufferSize-1)?i2+1:0; float d1=b[i1],d0=b[i0],d2=b[i2],d3=b[i3]; float c0=d1,c1=0.5f*(d0-d2),c2=d2-2.5f*d1+2.f*d0-0.5f*d3,c3=0.5f*(d3-d1)+1.5f*(d1-d0); return ((c3*f+c2)*f+c1)*f+c0; }
   void updateSampleRateConstants(){ const float fs=std::max(1.0f,sampleRate); delaySmoothAlpha=1.f-std::exp(-1.f/(0.200f*fs)); delayRampInc=1.f/(0.250f*fs); azimuthInc=0.2f/fs; mechNoiseSlowAlpha=mechNoiseOnePoleAlpha(fs,kMechNoiseSlowTimeSeconds); mechNoiseFastAlpha=mechNoiseOnePoleAlpha(fs,kMechNoiseFastTimeSeconds); duckAttackCoeff=1.f-std::exp(-1.f/(kHissDuckAttackTimeSeconds*fs)); duckReleaseCoeff=1.f-std::exp(-1.f/(kHissDuckReleaseTimeSeconds*fs)); }
   void updateCachedParams();
@@ -238,7 +239,7 @@ struct TapeCore::Impl {
   int springStages=3;
   uint8_t activeHeadMask=4;
   bool delayActive=false,headsMusical=false,pingPong=false,reverse=false,freeze=false,reverseSmear=false,spring=false,useAzimuth=false,warpActive=false;
-  float warpVirtualPos=0.0f;
+  float warpPhase=0.0f, smoothedGrainSamples=3840.0f;
   BiquadFilter warpHPF_L,warpHPF_R,warpLPF_L,warpLPF_R;
   BiquadFilter flutterLPF,flutterLPFR; MechNoise mechNoiseL{22222u},mechNoiseR{33333u}; DropoutGenerator dropout; TapeNoiseGenerator noiseGen, noiseGenR; BiquadFilter reproHeadBump,tapeRolloff,gapLossLPF; OnePoleLP dropoutLPF,dropoutLPFR; AllpassFilter azimuthFilter; DCBlocker dcBlocker; BiquadFilter inputHPF,inputLPF; BiquadFilter reproHeadBumpR,tapeRolloffR,gapLossLPFR; AllpassFilter azimuthFilterR; DCBlocker dcBlockerR; BiquadFilter inputHPFR,inputLPFR; OnePoleLP feedbackGapLoss,feedbackGapLossR; BiquadFilter feedbackHPF,feedbackHPFR,feedbackHeadBump,feedbackHeadBumpR; AllpassFilter feedbackPhase,feedbackPhaseR;  DelayAllpass springAP_L[6],springAP_R[6],reverseAP_L[4],reverseAP_R[4]; BiquadFilter springLPF_L[6],springLPF_R[6]; float springFB_L=0,springFB_R=0; float freezeFade=0; float delayEnableRamp=0,smoothedDelaySamples=0,smoothedAzCoeff=0; float* delayLine=nullptr; float* delayLineR=nullptr; int32_t bufferSize=0,bufferCapacity=0,writeHead=0,reverseCounter=0,reverseWindowSize=0;
 };
@@ -319,7 +320,7 @@ void TapeCore::reset(){
   if(!isValid()) return;
   std::memset(impl_->delayLine,0,sizeof(float)*impl_->bufferCapacity);
   std::memset(impl_->delayLineR,0,sizeof(float)*impl_->bufferCapacity);
-  impl_->writeHead=0; impl_->reverseCounter=0; impl_->reverseWindowSize=0; impl_->warpVirtualPos=0; impl_->inEnvL=0; impl_->inEnvR=0;
+  impl_->writeHead=0; impl_->reverseCounter=0; impl_->reverseWindowSize=0; impl_->warpPhase=0.0f; impl_->inEnvL=0; impl_->inEnvR=0;
   impl_->flutterPhase=impl_->wowPhase=impl_->azimuthPhase=0;
   impl_->mechStateL=Impl::MechanicalState{};
   impl_->mechStateR=Impl::MechanicalState{0,0,0,0,0x2468ACE1u,0x56473829u};
@@ -344,11 +345,11 @@ void TapeCore::updateParams(const TapeParams& newParams){
     impl_->feedbackPhase.reset(); impl_->feedbackPhaseR.reset();
     impl_->warpHPF_L.reset(); impl_->warpHPF_R.reset(); impl_->warpLPF_L.reset(); impl_->warpLPF_R.reset();
     std::memset(impl_->delayLine,0,sizeof(float)*impl_->bufferCapacity); std::memset(impl_->delayLineR,0,sizeof(float)*impl_->bufferCapacity);
-    impl_->writeHead=0; impl_->reverseCounter=0; impl_->reverseWindowSize=0; impl_->warpVirtualPos=0;
+    impl_->writeHead=0; impl_->reverseCounter=0; impl_->reverseWindowSize=0; impl_->warpPhase=0.0f;
     impl_->smoothedDelaySamples = newParams.delayTimeMs * impl_->sampleRate * 0.001f;
   }
   if(!impl_->currentParams.warpActive && newParams.warpActive){
-    impl_->warpVirtualPos=0;
+    impl_->warpPhase=0.0f;
     impl_->warpHPF_L.reset(); impl_->warpHPF_R.reset();
     impl_->warpLPF_L.reset(); impl_->warpLPF_R.reset();
   }
@@ -411,47 +412,93 @@ void TapeCore::processStereo(float inL,float inR,float* outL,float* outR){
   if(impl_->delayActive){impl_->delayEnableRamp+=impl_->delayRampInc;if(impl_->delayEnableRamp>1)impl_->delayEnableRamp=1;} else impl_->delayEnableRamp=0;
 
   float warpSigL=0.0f, warpSigR=0.0f;
+  float warpFbL=0.0f, warpFbR=0.0f;
   if(impl_->delayActive && impl_->warpActive){
     const float speedMult = clampf(p->warpSpeed, 0.0f, 4.0f);
-    const float grainSamples = std::max(64.0f, p->warpGrainMs * 0.001f * impl_->sampleRate);
+    const float targetGrainSamples = std::max(64.0f, p->warpGrainMs * 0.001f * impl_->sampleRate);
+    impl_->smoothedGrainSamples += 0.005f * (targetGrainSamples - impl_->smoothedGrainSamples);
+    const float grainSamples = impl_->smoothedGrainSamples;
 
-    impl_->warpVirtualPos += speedMult;
-    if(impl_->warpVirtualPos >= grainSamples) impl_->warpVirtualPos -= grainSamples;
-    if(impl_->warpVirtualPos < 0.0f) impl_->warpVirtualPos = 0.0f;
+    impl_->warpPhase += speedMult / grainSamples;
+    if(impl_->warpPhase >= 1.0f) impl_->warpPhase -= 1.0f;
+    if(impl_->warpPhase < 0.0f) impl_->warpPhase += 1.0f;
 
-    float phaseL1 = clampf(impl_->warpVirtualPos / grainSamples, 0.0f, 1.0f);
+    float phaseL1 = impl_->warpPhase;
     float phaseL2 = phaseL1 + 0.5f;
     if(phaseL2 >= 1.0f) phaseL2 -= 1.0f;
 
-    float stereoOffset = clampf(p->warpStereo * 0.25f, 0.0f, 0.5f);
+    const float stereoOffset = clampf(p->warpStereo * 0.25f, 0.0f, 0.25f);
     float phaseR1 = phaseL1 + stereoOffset;
     if(phaseR1 >= 1.0f) phaseR1 -= 1.0f;
     float phaseR2 = phaseR1 + 0.5f;
     if(phaseR2 >= 1.0f) phaseR2 -= 1.0f;
 
-    float gainL1 = 1.0f - std::fabs(2.0f * phaseL1 - 1.0f);
-    float gainL2 = 1.0f - std::fabs(2.0f * phaseL2 - 1.0f);
-    float gainR1 = 1.0f - std::fabs(2.0f * phaseR1 - 1.0f);
-    float gainR2 = 1.0f - std::fabs(2.0f * phaseR2 - 1.0f);
+    const float baseDelay = 4.0f;
+    float rawL = 0.0f, rawR = 0.0f;
 
-    if(p->warpMode == 1){
-      gainL1 = 1.0f; gainL2 = 0.0f;
-      gainR1 = 1.0f; gainR2 = 0.0f;
+    const int mode = p->warpMode;
+    if(mode == 1 || mode == 2){
+      // 1-Tap Bug Cru (Mode 1: Hermite, Mode 2: Raw Int Cast)
+      const float dSize = grainSamples + 1000.0f;
+      float relD_L = (1.0f - phaseL1) * dSize;
+      float relD_R = (1.0f - phaseR1) * dSize;
+
+      float normL = relD_L / dSize;
+      float normR = relD_R / dSize;
+      float envL = 1.0f, envR = 1.0f;
+      const float declick = 0.05f;
+      if (normL < declick) envL = normL / declick;
+      else if (normL > (1.0f - declick)) envL = (1.0f - normL) / declick;
+      if (normR < declick) envR = normR / declick;
+      else if (normR > (1.0f - declick)) envR = (1.0f - normR) / declick;
+
+      if(mode == 2){
+        relD_L = std::floor(relD_L);
+        relD_R = std::floor(relD_R);
+        rawL = impl_->readTapeInt(baseDelay + relD_L, impl_->delayLine) * envL;
+        rawR = impl_->readTapeInt(baseDelay + relD_R, impl_->delayLineR) * envR;
+      } else {
+        rawL = impl_->readTapeAt(baseDelay + relD_L, impl_->delayLine) * envL;
+        rawR = impl_->readTapeAt(baseDelay + relD_R, impl_->delayLineR) * envR;
+      }
+    } else {
+      // 2-Taps Musical (Mode 0: Hermite, Mode 3: Raw Int Cast)
+      const float gainL1 = 1.0f - std::fabs(2.0f * phaseL1 - 1.0f);
+      const float gainL2 = 1.0f - std::fabs(2.0f * phaseL2 - 1.0f);
+      const float gainR1 = 1.0f - std::fabs(2.0f * phaseR1 - 1.0f);
+      const float gainR2 = 1.0f - std::fabs(2.0f * phaseR2 - 1.0f);
+
+      float relD1_L = (1.0f - phaseL1) * grainSamples;
+      float relD2_L = (1.0f - phaseL2) * grainSamples;
+      float relD1_R = (1.0f - phaseR1) * grainSamples;
+      float relD2_R = (1.0f - phaseR2) * grainSamples;
+
+      if(mode == 3){
+        relD1_L = std::floor(relD1_L);
+        relD2_L = std::floor(relD2_L);
+        relD1_R = std::floor(relD1_R);
+        relD2_R = std::floor(relD2_R);
+        rawL = impl_->readTapeInt(baseDelay + relD1_L, impl_->delayLine) * gainL1 +
+               impl_->readTapeInt(baseDelay + relD2_L, impl_->delayLine) * gainL2;
+        rawR = impl_->readTapeInt(baseDelay + relD1_R, impl_->delayLineR) * gainR1 +
+               impl_->readTapeInt(baseDelay + relD2_R, impl_->delayLineR) * gainR2;
+      } else {
+        rawL = impl_->readTapeAt(baseDelay + relD1_L, impl_->delayLine) * gainL1 +
+               impl_->readTapeAt(baseDelay + relD2_L, impl_->delayLine) * gainL2;
+        rawR = impl_->readTapeAt(baseDelay + relD1_R, impl_->delayLineR) * gainR1 +
+               impl_->readTapeAt(baseDelay + relD2_R, impl_->delayLineR) * gainR2;
+      }
     }
 
-    const float baseDelay = 8.0f;
-    float delayL1 = baseDelay + (1.0f - phaseL1) * grainSamples;
-    float delayL2 = baseDelay + (1.0f - phaseL2) * grainSamples;
-    float delayR1 = baseDelay + (1.0f - phaseR1) * grainSamples;
-    float delayR2 = baseDelay + (1.0f - phaseR2) * grainSamples;
+    // Direct output retains pristine high-frequency brilliance
+    warpSigL = rawL;
+    warpSigR = rawR;
 
-    float rawL = impl_->readTapeAt(delayL1, impl_->delayLine) * gainL1 +
-                 impl_->readTapeAt(delayL2, impl_->delayLine) * gainL2;
-    float rawR = impl_->readTapeAt(delayR1, impl_->delayLineR) * gainR1 +
-                 impl_->readTapeAt(delayR2, impl_->delayLineR) * gainR2;
-
-    warpSigL = impl_->warpLPF_L.process(impl_->warpHPF_L.process(rawL));
-    warpSigR = impl_->warpLPF_R.process(impl_->warpHPF_R.process(rawR));
+    // Feedback path: HPF (120 Hz) -> LPF (2200 Hz) -> soft saturation (tanh / rational)
+    float procL = impl_->warpLPF_L.process(impl_->warpHPF_L.process(rawL));
+    float procR = impl_->warpLPF_R.process(impl_->warpHPF_R.process(rawR));
+    warpFbL = fastSatRational(procL * 1.6f) * (1.0f / 1.6f);
+    warpFbR = fastSatRational(procR * 1.6f) * (1.0f / 1.6f);
   }
 
   struct ChannelFrame {
@@ -460,12 +507,12 @@ void TapeCore::processStereo(float inL,float inR,float* outL,float* outR){
     float feedbackSource;
   };
 
-  auto readCh=[&](float input,float noiseInjected,float* buffer,BiquadFilter& reproHeadBumpFilter,BiquadFilter& tr,BiquadFilter& outputGapLossFilter,AllpassFilter& az,BiquadFilter&iHP,BiquadFilter&iLP,OnePoleLP&dropoutFilter,DropoutFrame drop,float mod,float warpSig){
+  auto readCh=[&](float input,float noiseInjected,float* buffer,BiquadFilter& reproHeadBumpFilter,BiquadFilter& tr,BiquadFilter& outputGapLossFilter,AllpassFilter& az,BiquadFilter&iHP,BiquadFilter&iLP,OnePoleLP&dropoutFilter,DropoutFrame drop,float mod,float warpSig,float warpFb){
     ChannelFrame frame{};
     // --- input conditioning ---
     frame.conditionedInput=iLP.process(iHP.process(input));
     // --- delay read ---
-    float textureSig=(impl_->textureWetGain>0.0f)?impl_->readTapeAt(200.f+mod,buffer):0.0f;
+    float textureSig=(impl_->textureWetGain>0.0f && !impl_->warpActive)?impl_->readTapeAt(200.f+mod,buffer):0.0f;
     float delaySig=0,headGainSum=0,base=impl_->smoothedDelaySamples;
     float d1,d2,d3; if(impl_->headsMusical){ d1=impl_->musicalHeadDelay1; d2=impl_->musicalHeadDelay2; d3=impl_->musicalHeadDelay3;} else {d1=base*0.33f; d2=base*0.66f; d3=base;}
     d1 += mod * 0.33f; d2 += mod * 0.66f; d3 += mod;
@@ -488,39 +535,46 @@ void TapeCore::processStereo(float inL,float inR,float* outL,float* outR){
     }
     if(useAzimuth) tapeSig=az.process(tapeSig);
     tapeSig += noiseInjected;
-    // --- playback head EQ ---
-    frame.feedbackSource=tapeSig;
+    // --- playback head EQ & routing ---
+    if (impl_->warpActive) {
+      frame.feedbackSource = warpFb;
+    } else {
+      frame.feedbackSource = tapeSig;
+    }
     frame.tapeOutput=outputGapLossFilter.process(reproHeadBumpFilter.process(tr.process(tapeSig)));
     return frame;
   };
 
   auto feedbackFrom=[&](float feedbackInput,BiquadFilter&fbHPF,BiquadFilter&feedbackHeadBumpFilter,OnePoleLP&feedbackGapLossFilter,AllpassFilter&feedbackPhaseFilter,float inputEnv){
     float feedSig=0; if(impl_->delayActive){
-      feedSig=fbHPF.process(feedbackInput);
-      float feedbackDrive=1.0f+(impl_->safeFeedback*0.30f)+clampf(inputEnv*0.18f,0.f,0.22f)+(impl_->feedbackWearAmount*0.10f);
-      feedSig*=feedbackDrive;
-      feedSig=feedbackHeadBumpFilter.process(feedSig);
-      feedSig=feedbackGapLossFilter.process(feedSig);
-      feedSig=feedbackPhaseFilter.process(feedSig);
+      if(impl_->warpActive){
+        const float fbGain = clampf(p->warpFeedback * 0.01f, 0.0f, 0.95f);
+        feedSig = feedbackInput * fbGain;
+        feedSig = impl_->feedbackCompressor(feedSig);
+        feedSig *= impl_->delayEnableRamp;
+      } else {
+        feedSig=fbHPF.process(feedbackInput);
+        float feedbackDrive=1.0f+(impl_->safeFeedback*0.30f)+clampf(inputEnv*0.18f,0.f,0.22f)+(impl_->feedbackWearAmount*0.10f);
+        feedSig*=feedbackDrive;
+        feedSig=feedbackHeadBumpFilter.process(feedSig);
+        feedSig=feedbackGapLossFilter.process(feedSig);
+        feedSig=feedbackPhaseFilter.process(feedSig);
 
-      // subtle pre-emphasis before staged saturation
-      float satIn=feedSig*impl_->feedbackPreEmph;
+        // subtle pre-emphasis before staged saturation
+        float satIn=feedSig*impl_->feedbackPreEmph;
 
-      // two light saturation stages with trim between them (less harsh than single heavy drive)
-      satIn=fastSatRational(satIn*1.10f);
-      satIn *= 0.82f;
-      satIn=fastSatRational(satIn*1.08f);
+        // two light saturation stages with trim between them (less harsh than single heavy drive)
+        satIn=fastSatRational(satIn*1.10f);
+        satIn *= 0.82f;
+        satIn=fastSatRational(satIn*1.08f);
 
-      // complementary de-emphasis via cached reciprocal to avoid per-sample division
-      feedSig=satIn*impl_->feedbackDeEmph;
+        // complementary de-emphasis via cached reciprocal to avoid per-sample division
+        feedSig=satIn*impl_->feedbackDeEmph;
 
-      float fbGain = impl_->safeFeedback;
-      if(impl_->warpActive && p->warpFeedback > 0.001f){
-        fbGain = std::min(p->warpFeedback * 0.01f, 0.88f);
+        feedSig *= impl_->safeFeedback;
+        feedSig=impl_->feedbackCompressor(feedSig);
+        feedSig *= impl_->delayEnableRamp;
       }
-      feedSig *= fbGain;
-      feedSig=impl_->feedbackCompressor(feedSig);
-      feedSig *= impl_->delayEnableRamp;
     }
     return feedSig;
   };
@@ -533,8 +587,8 @@ void TapeCore::processStereo(float inL,float inR,float* outL,float* outR){
     return impl_->outputLimiter((input*impl_->dryGain)+dryTapeOutput);
   };
 
-  ChannelFrame frameL=readCh(inL,hissL,impl_->delayLine,impl_->reproHeadBump,impl_->tapeRolloff,impl_->gapLossLPF,impl_->azimuthFilter,impl_->inputHPF,impl_->inputLPF,impl_->dropoutLPF,dropoutL,modL,warpSigL);
-  ChannelFrame frameR=readCh(inR,hissR,impl_->delayLineR,impl_->reproHeadBumpR,impl_->tapeRolloffR,impl_->gapLossLPFR,impl_->azimuthFilterR,impl_->inputHPFR,impl_->inputLPFR,impl_->dropoutLPFR,dropoutR,modR,warpSigR);
+  ChannelFrame frameL=readCh(inL,hissL,impl_->delayLine,impl_->reproHeadBump,impl_->tapeRolloff,impl_->gapLossLPF,impl_->azimuthFilter,impl_->inputHPF,impl_->inputLPF,impl_->dropoutLPF,dropoutL,modL,warpSigL,warpFbL);
+  ChannelFrame frameR=readCh(inR,hissR,impl_->delayLineR,impl_->reproHeadBumpR,impl_->tapeRolloffR,impl_->gapLossLPFR,impl_->azimuthFilterR,impl_->inputHPFR,impl_->inputLPFR,impl_->dropoutLPFR,dropoutR,modR,warpSigR,warpFbR);
   const float fbSourceL=impl_->pingPong?frameR.feedbackSource:frameL.feedbackSource;
   const float fbSourceR=impl_->pingPong?frameL.feedbackSource:frameR.feedbackSource;
   const float feedbackL=feedbackFrom(fbSourceL,impl_->feedbackHPF,impl_->feedbackHeadBump,impl_->feedbackGapLoss,impl_->feedbackPhase,impl_->inEnvL);

@@ -490,11 +490,11 @@ resetBtn.addEventListener('click', () => {
   setActionFeedback('DSP buffers cleared', 'success');
 });
 
-// Setup listener bindings for all 28 configuration variables
+// Setup listener bindings for all 34 configuration variables
 ALL_PARAM_IDS.forEach((id) => {
   const el = document.getElementById(id);
   if (!el) return;
-  el.addEventListener('input', () => {
+  const onInput = () => {
     const value = el.type === 'checkbox' ? (el.checked ? 1 : 0) : Number(el.value);
     uiState[id] = value;
     if (CONTINUOUS_PARAM_IDS.has(id)) {
@@ -503,7 +503,9 @@ ALL_PARAM_IDS.forEach((id) => {
       post({ type: 'command', command: id, value });
     }
     requestUIFlush();
-  });
+  };
+  el.addEventListener('input', onInput);
+  el.addEventListener('change', onInput);
 });
 
 exportPresetBtn.addEventListener('click', () => {

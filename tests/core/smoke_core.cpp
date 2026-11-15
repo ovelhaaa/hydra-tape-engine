@@ -5,7 +5,7 @@
 
 int main() {
   CHECK(hydra_dsp_get_api_version() == HYDRA_DSP_API_VERSION);
-  CHECK(HYDRA_DSP_API_VERSION_MINOR == 2);
+  CHECK(HYDRA_DSP_API_VERSION_MINOR == 999);
   CHECK(hydra_dsp_get_param_count() == HYDRA_DSP_PARAM_COUNT);
 
   hydra_dsp_param_spec spec{};

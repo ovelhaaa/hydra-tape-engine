@@ -33,7 +33,8 @@ O pacote A/B está em `%LOCALAPPDATA%/HydraAudit/528ebb8/renders` com WAVs e mé
 para `baseline_glue`, `short_slap_bright`, `feedback_edge`, `saturated_dark` e
 `modulated_space`. Para reproduzir a partir do SHA base, compile os dois runners
 com `-DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_FLAGS_RELEASE=-O3` e passe os binários
-a `tests/core/build_ab_review_package.py`.
+a `tests/core/build_ab_review_package.py`. O ZIP com os renders é
+`%LOCALAPPDATA%/HydraAudit/528ebb8/reference-renders.zip`.
 
 Os cinco traces CSV são byte a byte idênticos à referência dentro de cada
 backend após as alterações. A comparação cruzada MinGW/WASM já excedia o
@@ -41,11 +42,26 @@ limite de RMSE de `1e-6` na base. Em `baseline_glue` o máximo é `7.436e-6` e
 o RMSE é `2.49805e-6` antes e depois. O pacote A/B também falha nesses
 toolchains. As tolerâncias e fixtures versionadas foram preservadas.
 
-A mutação temporária que exigia minor da API igual a `999` falhou em Release
-com diagnóstico de linha e expressão. O comando do job native,
-`set -o pipefail; ctest --output-on-failure | tee …`, preservou o status 8 de
-CTest na reprodução local. Após desfazer a mutação, o smoke passou.
-O log local está em `%LOCALAPPDATA%/HydraAudit/validation/native/ctest_failure_probe.txt`.
+A mutação temporária que exigia minor da API igual a `999` fez o
+job `test_native_core` do GitHub Actions falhar em Release com o diagnóstico
+da expressão e código de saída 8. A mutação de `859f5af` foi revertida em
+`5730536`. [Log da falha intencional](https://github.com/ovelhaaa/hydra-tape-engine/actions/runs/43677156862/job/132699803823)
+
+## Validação de build
+
+- CMake Release em MinGW com 8/8 testes aprovados, incluindo símbolos ABI e
+  goldens. Os 16 testes do host web também passaram, incluindo presets.
+- CMake Release em Emscripten 5.0.7 produziu o runtime web. Os 8 testes do
+  backend passaram, incluindo os três goldens WASM. Os dois testes cruzados
+  falharam conforme as métricas de referência acima.
+- PlatformIO `esp32-s3-devkitc-1` compilou e linkou com Arduino 3.3.6 e
+  Xtensa GCC 14.2. O build usou 25.616 bytes de RAM estática e 543.455 bytes
+  de flash. O ELF contém o adaptador, a ABI C, TapeCore, Fripp, Bubbles e
+  Freeverb. A tabela de símbolos e o mapa do linker confirmam a ausência
+  de TapeModel. O único ajuste no core foi explicitar `int32_t` no máximo
+  da janela reverse para acomodar a definição desse tipo no Xtensa.
+- O simulador histórico PlatformIO `native` e o firmware em placa ficaram
+  fora da validação.
 
 ## Arquivo histórico
 

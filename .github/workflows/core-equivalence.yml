@@ -189,6 +189,7 @@ jobs:
             --render-wav-dir ci-reports/native-vs-wasm/audio
 
       - name: Summarize equivalence results
+        if: ${{ always() && hashFiles('ci-reports/native-vs-wasm/equivalence_report.json') != '' }}
         run: |
           echo "### Native ↔ WASM Equivalence" >> "$GITHUB_STEP_SUMMARY"
           python3 - <<'PY'
@@ -208,6 +209,7 @@ jobs:
           cat ci-reports/native-vs-wasm/equivalence_report.txt
 
       - name: Upload equivalence reports
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: native-vs-wasm-equivalence-reports

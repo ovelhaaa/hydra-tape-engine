@@ -40,7 +40,15 @@ Os cinco traces CSV são byte a byte idênticos à referência dentro de cada
 backend após as alterações. A comparação cruzada MinGW/WASM já excedia o
 limite de RMSE de `1e-6` na base. Em `baseline_glue` o máximo é `7.436e-6` e
 o RMSE é `2.49805e-6` antes e depois. O pacote A/B também falha nesses
-toolchains. As tolerâncias e fixtures versionadas foram preservadas.
+toolchains.
+
+No GitHub Actions, com Linux e Emscripten 3.1.62, a comparação cruzada
+registrou `max_abs=3.4746e-5` e `RMSE=1.52453e-5` tanto no SHA base
+quanto na branch. Os cinco pares de traces antes/depois foram idênticos
+em cada backend também no runner hospedado. A CI continua a reprovar a
+equivalência cruzada pelos limites originais (`1e-5` e `1e-6`) e publica
+os relatórios de falha. As fixtures permanecem versionadas com o mesmo conteúdo.
+[Comparação hospedada com o SHA base](https://github.com/ovelhaaa/hydra-tape-engine/actions/runs/43677511076/job/132700929038)
 
 A mutação temporária que exigia minor da API igual a `999` fez o
 job `test_native_core` do GitHub Actions falhar em Release com o diagnóstico
@@ -85,7 +93,7 @@ SHA-256: `ecb681487310b14dba2134af19cc2e6310c0f3d97e2907d30960038c85804cc6`.
   PSRAM, custo em tempo real e escuta de Fripp, Bubbles e Freeverb ainda
   dependem de execução em placa.
 - A equivalência cruzada depende dos toolchains e da biblioteca matemática.
-  O resultado MinGW/WASM acima é uma pendência conhecida para revisão.
+  A falha cruzada reproduzida em Linux e MinGW mantém o PR em rascunho.
 - Tap tempo pode entrar na camada host. O host poderá calcular e publicar
   `bpm` para heads musicais e `delayTimeMs` para atraso em milissegundos
   usando o snapshot existente e o commit na fronteira de processamento.

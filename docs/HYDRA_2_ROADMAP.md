@@ -35,10 +35,10 @@ flowchart LR
 ---
 
 ### FASE 1 — Accidental Warp V1.3
-- **Status:** Em revisão para integração na `main`.
+- **Status:** Em revisão para integração na `main` (bloqueador de tempo real no ESP32-S3 resolvido e validado em hardware).
 - Leitor granular ascendente sobre o buffer de fita, com modos Hermite e Raw Integer, janelas dual-tap, fase estéreo e retorno Warp separado.
 - Contrato legado de 116 bytes preservado e API expandida com setter versionado. Integração web exercitada com WASM real. O firmware expõe tempo DSP, overruns de orçamento e falhas de escrita I2S separadamente.
-- A bancada offline renderiza Worklet, Python persistente e TapeCore em 11 cenários comuns, com toggle nativo adicional. Consulte os limites e as evidências em [Validação de áudio](HYDRA_2_AUDIO_VALIDATION.md).
+- A bancada offline renderiza Worklet, Python persistente e TapeCore em 11 cenários comuns, com toggle nativo adicional. Em hardware ESP32-S3 (rev. 0.2 @ 240 MHz, 44,1 kHz / 128 frames), o firmware otimizado (`c9bc17e`) eliminou os overruns nos 11 cenários e sustentou 5 min contínuos na cadeia completa com `P99 = 1.861 µs` (`64,12%` do orçamento) e zero falhas I2S. Consulte os limites e as evidências em [Validação de áudio](HYDRA_2_AUDIO_VALIDATION.md) e na [Auditoria de desempenho ESP32-S3](ESP32_S3_PERFORMANCE_AUDIT.md).
 - **Critério de saída:** Confira a CI no HEAD da PR, registre a divergência histórica Native/WASM e conclua a escuta A/B conforme o [checklist de release](RELEASE_CHECKLIST.md).
 
 ---
@@ -82,12 +82,12 @@ flowchart LR
 ---
 
 ### FASE 5 — Integração de UX, Hardware ESP32 & MVP Final
-- **Status:** PLANEJADO.
+- **Status:** PLANEJADO (meta de folga DSP em hardware físico já comprovada na PR #47 com `P99 < 65%` e `0` overruns; veja [Auditoria ESP32-S3](ESP32_S3_PERFORMANCE_AUDIT.md)).
 - **Objetivos:**
   - Interface Web visual com controle completo dos três modos (Tape, Reverse, Warp).
   - Mapeamento de encoders físicos, botões e display OLED SSD1306 no firmware ESP32-S3.
   - Integração de importação/exportação de presets em formato JSON padronizado.
-  - Medições físicas de uso de CPU (Core 0/1) e largura de banda da PSRAM sob estresse contínuo.
+  - Medições físicas de uso de CPU (Core 0/1) e largura de banda da PSRAM sob estresse contínuo (baseline DSP e largura de banda PSRAM já auditados na Fase E: `PSRAM 192k 4Tap+Wr = 143,736 µs/128` e cadeia completa 5 min com `61,05%` médio / `64,12%` P99).
 - **Critério de Saída:** Firmware estável em hardware físico executando a 44.1 kHz estéreo com folga de processamento (> 30% idle time).
 
 ---

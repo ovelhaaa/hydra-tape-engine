@@ -47,35 +47,47 @@ if(BUILD_TESTING)
             --library $<TARGET_FILE:hydra_dsp_core>
   )
 
-  add_executable(hydra_render_trace_native tests/core/render_trace.cpp)
-  target_link_libraries(hydra_render_trace_native PRIVATE hydra_dsp_core)
+  if(NOT EMSCRIPTEN)
+    add_executable(hydra_listen_native tests/core/listen.cpp)
+    target_link_libraries(hydra_listen_native PRIVATE hydra_dsp_core)
+    add_test(
+      NAME core_transition_characterization
+      COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/tests/core/listening_review.py
+              --native $<TARGET_FILE:hydra_listen_native>
+              --characterize-only
+              --output-dir ${CMAKE_BINARY_DIR}/transition_review
+    )
 
-  add_executable(hydra_golden_regression_native tests/core/golden_regression.cpp)
-  target_link_libraries(hydra_golden_regression_native PRIVATE hydra_dsp_core)
-  add_test(
-    NAME test_golden_delay_modes
-    COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/tests/core/golden_test.py
-            --runner $<TARGET_FILE:hydra_golden_regression_native>
-            --scenario delay_modes
-            --fixtures-root ${CMAKE_SOURCE_DIR}/tests/fixtures
-            --compare-script ${CMAKE_SOURCE_DIR}/tests/core/golden_compare.py
-  )
-  add_test(
-    NAME test_golden_reset_state
-    COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/tests/core/golden_test.py
-            --runner $<TARGET_FILE:hydra_golden_regression_native>
-            --scenario reset_state
-            --fixtures-root ${CMAKE_SOURCE_DIR}/tests/fixtures
-            --compare-script ${CMAKE_SOURCE_DIR}/tests/core/golden_compare.py
-  )
-  add_test(
-    NAME test_golden_param_automation
-    COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/tests/core/golden_test.py
-            --runner $<TARGET_FILE:hydra_golden_regression_native>
-            --scenario param_automation
-            --fixtures-root ${CMAKE_SOURCE_DIR}/tests/fixtures
-            --compare-script ${CMAKE_SOURCE_DIR}/tests/core/golden_compare.py
-  )
+    add_executable(hydra_render_trace_native tests/core/render_trace.cpp)
+    target_link_libraries(hydra_render_trace_native PRIVATE hydra_dsp_core)
+
+    add_executable(hydra_golden_regression_native tests/core/golden_regression.cpp)
+    target_link_libraries(hydra_golden_regression_native PRIVATE hydra_dsp_core)
+    add_test(
+      NAME test_golden_delay_modes
+      COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/tests/core/golden_test.py
+              --runner $<TARGET_FILE:hydra_golden_regression_native>
+              --scenario delay_modes
+              --fixtures-root ${CMAKE_SOURCE_DIR}/tests/fixtures
+              --compare-script ${CMAKE_SOURCE_DIR}/tests/core/golden_compare.py
+    )
+    add_test(
+      NAME test_golden_reset_state
+      COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/tests/core/golden_test.py
+              --runner $<TARGET_FILE:hydra_golden_regression_native>
+              --scenario reset_state
+              --fixtures-root ${CMAKE_SOURCE_DIR}/tests/fixtures
+              --compare-script ${CMAKE_SOURCE_DIR}/tests/core/golden_compare.py
+    )
+    add_test(
+      NAME test_golden_param_automation
+      COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/tests/core/golden_test.py
+              --runner $<TARGET_FILE:hydra_golden_regression_native>
+              --scenario param_automation
+              --fixtures-root ${CMAKE_SOURCE_DIR}/tests/fixtures
+              --compare-script ${CMAKE_SOURCE_DIR}/tests/core/golden_compare.py
+    )
+  endif()
 endif()
 
 if(BUILD_WEB)
@@ -130,6 +142,15 @@ if(BUILD_WEB)
   )
 
   if(BUILD_TESTING)
+    add_executable(hydra_listen_wasm tests/core/listen.cpp)
+    target_link_libraries(hydra_listen_wasm PRIVATE hydra_dsp_core)
+    set_target_properties(hydra_listen_wasm PROPERTIES
+      OUTPUT_NAME "hydra_listen"
+      SUFFIX ".js"
+      RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/wasm-tests"
+    )
+    target_link_options(hydra_listen_wasm PRIVATE "SHELL:-sENVIRONMENT=node" "SHELL:-sNODERAWFS=1")
+
     add_executable(hydra_render_trace_wasm
       dsp/core/tape_core.cpp
       dsp/core/hydra_dsp_c_api.cpp
@@ -147,25 +168,30 @@ if(BUILD_WEB)
     target_link_options(hydra_render_trace_wasm PRIVATE
       "SHELL:-sENVIRONMENT=node"
     )
-    add_test(
-      NAME native_vs_wasm_equivalence
-      COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/tests/core/compare_native_wasm.py
-              --native $<TARGET_FILE:hydra_render_trace_native>
-              --wasm-js $<TARGET_FILE:hydra_render_trace_wasm>
-              --max-abs-threshold 1e-5
-              --rmse-threshold 1e-6
-    )
+    set(HYDRA_NATIVE_TRACE_RUNNER "" CACHE FILEPATH "Native hydra_render_trace_native executable for WASM comparison")
+    if(HYDRA_NATIVE_TRACE_RUNNER)
+      add_test(
+        NAME native_vs_wasm_equivalence
+        COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/tests/core/compare_native_wasm.py
+                --native "${HYDRA_NATIVE_TRACE_RUNNER}"
+                --wasm-js $<TARGET_FILE:hydra_render_trace_wasm>
+                --max-abs-threshold 1e-5
+                --rmse-threshold 1e-6
+      )
 
-    add_test(
-      NAME native_wasm_ab_review_package
-      COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/tests/core/build_ab_review_package.py
-              --native $<TARGET_FILE:hydra_render_trace_native>
-              --wasm-js $<TARGET_FILE:hydra_render_trace_wasm>
-              --null-test-script ${CMAKE_SOURCE_DIR}/tests/core/null_test_wav.py
-              --output-dir ${CMAKE_BINARY_DIR}/ab_review
-              --max-abs-threshold 1e-5
-              --rmse-threshold 1e-6
-    )
+      add_test(
+        NAME native_wasm_ab_review_package
+        COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/tests/core/build_ab_review_package.py
+                --native "${HYDRA_NATIVE_TRACE_RUNNER}"
+                --wasm-js $<TARGET_FILE:hydra_render_trace_wasm>
+                --null-test-script ${CMAKE_SOURCE_DIR}/tests/core/null_test_wav.py
+                --output-dir ${CMAKE_BINARY_DIR}/ab_review
+                --max-abs-threshold 1e-5
+                --rmse-threshold 1e-6
+      )
+    else()
+      message(STATUS "Set HYDRA_NATIVE_TRACE_RUNNER to enable native/WASM comparisons")
+    endif()
 
     add_executable(hydra_golden_regression_wasm
       dsp/core/tape_core.cpp
@@ -183,6 +209,7 @@ if(BUILD_WEB)
     )
     target_link_options(hydra_golden_regression_wasm PRIVATE
       "SHELL:-sENVIRONMENT=node"
+      "SHELL:-sNODERAWFS=1"
     )
     add_test(
       NAME test_golden_delay_modes_wasm

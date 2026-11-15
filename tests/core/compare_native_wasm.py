@@ -13,7 +13,12 @@ def run_capture(cmd):
     values = []
     for line in out.strip().splitlines():
         l, r = line.split(',')
-        values.append((float(l), float(r)))
+        frame = (float(l), float(r))
+        if not all(map(math.isfinite, frame)):
+            raise ValueError(f"non-finite output at frame {len(values)}: {cmd[0]}")
+        values.append(frame)
+    if not values:
+        raise ValueError(f"empty trace: {cmd[0]}")
     return values
 
 

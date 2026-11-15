@@ -1,8 +1,8 @@
+#include "check.h"
 #include "hydra_dsp.h"
 
 #include <algorithm>
 #include <array>
-#include <cassert>
 #include <cmath>
 #include <cstdint>
 #include <iostream>
@@ -14,11 +14,11 @@ constexpr float kSampleRate = 48000.0f;
 constexpr float kMaxDelayMs = 2000.0f;
 constexpr uint32_t kFrames = 64;
 
-hydra_dsp_handle* make_handle() {
+hydra_dsp_handle* make_handle(float maxDelayMs = kMaxDelayMs) {
   hydra_dsp_handle* h = nullptr;
-  assert(hydra_dsp_create(kSampleRate, kMaxDelayMs, &h) == 0);
-  assert(h != nullptr);
-  assert(hydra_dsp_prepare(h, kFrames, HYDRA_DSP_CHANNELS_STEREO) == 0);
+  CHECK(hydra_dsp_create(kSampleRate, maxDelayMs, &h) == 0);
+  CHECK(h != nullptr);
+  CHECK(hydra_dsp_prepare(h, kFrames, HYDRA_DSP_CHANNELS_STEREO) == 0);
   return h;
 }
 
@@ -52,8 +52,8 @@ void configure_deterministic(hydra_dsp_handle* h) {
   p.springDecay = 60.0f;
   p.springDamping = 45.0f;
   p.springMix = 0.0f;
-  assert(hydra_dsp_set_params(h, &p) == 0);
-  assert(hydra_dsp_commit(h) == 0);
+  CHECK(hydra_dsp_set_params(h, &p) == 0);
+  CHECK(hydra_dsp_commit(h) == 0);
 }
 
 
@@ -87,14 +87,14 @@ void configure_silent_wet_delay(hydra_dsp_handle* h, float drive = 0.0f) {
   p.springDecay = 0.0f;
   p.springDamping = 0.0f;
   p.springMix = 0.0f;
-  assert(hydra_dsp_set_params(h, &p) == 0);
-  assert(hydra_dsp_commit(h) == 0);
+  CHECK(hydra_dsp_set_params(h, &p) == 0);
+  CHECK(hydra_dsp_commit(h) == 0);
 }
 
 float process_peak(hydra_dsp_handle* h, const std::vector<float>& inL, const std::vector<float>& inR) {
   std::vector<float> outL(inL.size());
   std::vector<float> outR(inR.size());
-  assert(hydra_dsp_process(h, inL.data(), inR.data(), outL.data(), outR.data(), inL.size()) == 0);
+  CHECK(hydra_dsp_process(h, inL.data(), inR.data(), outL.data(), outR.data(), inL.size()) == 0);
 
   float peak = 0.0f;
   for (size_t i = 0; i < outL.size(); ++i) {
@@ -136,8 +136,8 @@ void configure_ping_pong_delay(hydra_dsp_handle* h, bool pingPong) {
   p.springDecay = 0.0f;
   p.springDamping = 0.0f;
   p.springMix = 0.0f;
-  assert(hydra_dsp_set_params(h, &p) == 0);
-  assert(hydra_dsp_commit(h) == 0);
+  CHECK(hydra_dsp_set_params(h, &p) == 0);
+  CHECK(hydra_dsp_commit(h) == 0);
 }
 
 float channel_energy(const std::vector<float>& v, size_t begin, size_t end) {
@@ -153,17 +153,124 @@ void test_ping_pong_cross_feedback_moves_repeat_to_opposite_channel() {
 
   std::vector<float> inL(1600, 0.0f), inR(1600, 0.0f), outL(1600), outR(1600);
   inL[0] = 1.0f;
-  assert(hydra_dsp_process(h, inL.data(), inR.data(), outL.data(), outR.data(), inL.size()) == 0);
+  CHECK(hydra_dsp_process(h, inL.data(), inR.data(), outL.data(), outR.data(), inL.size()) == 0);
 
   const float firstEchoL = channel_energy(outL, 430, 540);
   const float firstEchoR = channel_energy(outR, 430, 540);
   const float secondEchoL = channel_energy(outL, 900, 1040);
   const float secondEchoR = channel_energy(outR, 900, 1040);
 
-  assert(firstEchoL > firstEchoR * 100.0f);
-  assert(secondEchoR > firstEchoR * 5.0f);
-  assert(secondEchoR > 1e-5f);
+  CHECK(firstEchoL > firstEchoR * 100.0f);
+  CHECK(secondEchoR > firstEchoR * 5.0f);
+  CHECK(secondEchoR > 1e-5f);
 
+  hydra_dsp_destroy(h);
+}
+
+void set_param(hydra_dsp_handle* h, hydra_dsp_param_id id, float value) {
+  CHECK(hydra_dsp_set_parameter(h, id, value) == 0);
+  CHECK(hydra_dsp_commit(h) == 0);
+}
+
+void test_freeze_preserves_recording_until_released() {
+  constexpr size_t ringFrames = 960;
+  auto* h = make_handle(20.0f);
+  configure_ping_pong_delay(h, false);
+  set_param(h, HYDRA_DSP_PARAM_FEEDBACK, 0.0f);
+
+  std::vector<float> input(ringFrames, 0.0f), silence(ringFrames, 0.0f);
+  std::vector<float> outL(ringFrames), outR(ringFrames);
+  input[80] = 0.8f;
+  CHECK(hydra_dsp_process(h, input.data(), silence.data(), outL.data(), outR.data(), ringFrames) == 0);
+
+  set_param(h, HYDRA_DSP_PARAM_FREEZE, 1.0f);
+  const auto processSilence = [&] {
+    CHECK(hydra_dsp_process(h, silence.data(), silence.data(), outL.data(), outR.data(), ringFrames) == 0);
+    return channel_energy(outL, 530, 620);
+  };
+  const float firstLoop = processSilence();
+  for (int loop = 0; loop < 8; ++loop) {
+    CHECK(processSilence() > firstLoop * 0.5f);
+  }
+  CHECK(firstLoop > 1e-5f);
+
+  set_param(h, HYDRA_DSP_PARAM_FREEZE, 0.0f);
+  for (int loop = 0; loop < 8; ++loop) {
+    processSilence();
+  }
+  CHECK(processSilence() < firstLoop * 0.01f);
+  hydra_dsp_destroy(h);
+}
+
+void test_reverse_stereo_channel_isolation() {
+  for (bool leftInput : {true, false}) {
+    std::vector<float> signal(4096, 0.0f), silence(4096, 0.0f);
+    std::vector<float> outL(4096), outR(4096);
+    signal[100] = 0.8f;
+    signal[260] = -0.4f;
+    auto* h = make_handle();
+    configure_ping_pong_delay(h, false);
+    set_param(h, HYDRA_DSP_PARAM_FEEDBACK, 0.0f);
+    set_param(h, HYDRA_DSP_PARAM_REVERSE, 1.0f);
+    const auto& inL = leftInput ? signal : silence;
+    const auto& inR = leftInput ? silence : signal;
+    CHECK(hydra_dsp_process(h, inL.data(), inR.data(), outL.data(), outR.data(), signal.size()) == 0);
+    const auto reverse = leftInput ? outL : outR;
+    const auto& quiet = leftInput ? outR : outL;
+    CHECK(channel_energy(reverse, 150, reverse.size()) > 1e-5f);
+    CHECK(channel_energy(quiet, 0, quiet.size()) < 1e-10f);
+
+    set_param(h, HYDRA_DSP_PARAM_REVERSE, 0.0f);
+    hydra_dsp_reset(h);
+    CHECK(hydra_dsp_process(h, inL.data(), inR.data(), outL.data(), outR.data(), signal.size()) == 0);
+    const auto& forward = leftInput ? outL : outR;
+    CHECK(!std::equal(reverse.begin(), reverse.end(), forward.begin(),
+                      [](float a, float b) { return std::fabs(a - b) < 1e-5f; }));
+    hydra_dsp_destroy(h);
+  }
+}
+
+void test_max_delay_buffer_wrap_is_block_independent() {
+  constexpr size_t frames = 4096;
+  auto* h = make_handle(20.0f);
+  configure_ping_pong_delay(h, false);
+  set_param(h, HYDRA_DSP_PARAM_DELAY_MS, 20.0f);
+  std::vector<float> inL(frames, 0.0f), inR(frames, 0.0f);
+  std::vector<float> fullL(frames), fullR(frames), splitL(frames), splitR(frames);
+  inL[955] = 0.8f;
+  inR[1920] = -0.6f;
+  CHECK(hydra_dsp_process(h, inL.data(), inR.data(), fullL.data(), fullR.data(), frames) == 0);
+  hydra_dsp_destroy(h);
+  h = make_handle(20.0f);
+  configure_ping_pong_delay(h, false);
+  set_param(h, HYDRA_DSP_PARAM_DELAY_MS, 20.0f);
+  for (size_t offset = 0; offset < frames; offset += 37) {
+    const auto count = std::min<size_t>(37, frames - offset);
+    CHECK(hydra_dsp_process(h, inL.data() + offset, inR.data() + offset,
+                           splitL.data() + offset, splitR.data() + offset, count) == 0);
+  }
+  CHECK(channel_energy(fullL, 1880, 1990) > 1e-5f);
+  CHECK(channel_energy(fullR, 2840, 2960) > 1e-5f);
+  CHECK(fullL == splitL);
+  CHECK(fullR == splitR);
+  hydra_dsp_destroy(h);
+}
+
+void test_feedback_adds_same_channel_repeat() {
+  auto* h = make_handle();
+  configure_ping_pong_delay(h, false);
+  std::vector<float> inL(1600, 0.0f), inR(1600, 0.0f), outL(1600), outR(1600);
+  inL[0] = 0.8f;
+  CHECK(hydra_dsp_process(h, inL.data(), inR.data(), outL.data(), outR.data(), inL.size()) == 0);
+  const float withFeedback = channel_energy(outL, 900, 1040);
+  CHECK(channel_energy(outR, 900, 1040) < 1e-10f);
+  hydra_dsp_destroy(h);
+  h = make_handle();
+  configure_ping_pong_delay(h, false);
+  set_param(h, HYDRA_DSP_PARAM_FEEDBACK, 0.0f);
+  CHECK(hydra_dsp_process(h, inL.data(), inR.data(), outL.data(), outR.data(), inL.size()) == 0);
+  CHECK(withFeedback > 1e-5f);
+  CHECK(withFeedback > 1.05f * channel_energy(outL, 900, 1040));
   hydra_dsp_destroy(h);
 }
 
@@ -180,7 +287,7 @@ void test_known_buffer() {
 
   std::array<float, 16> outL{};
   std::array<float, 16> outR{};
-  assert(hydra_dsp_process(h, inL.data(), inR.data(), outL.data(), outR.data(), inL.size()) == 0);
+  CHECK(hydra_dsp_process(h, inL.data(), inR.data(), outL.data(), outR.data(), inL.size()) == 0);
 
   constexpr std::array<float, 16> expectedL = {
       -0.4f, -0.35f, -0.3f, -0.25f, -0.2f, -0.15f, -0.1f, -0.05f,
@@ -192,8 +299,8 @@ void test_known_buffer() {
   };
 
   for (size_t i = 0; i < expectedL.size(); ++i) {
-    assert(std::fabs(outL[i] - expectedL[i]) < 1e-7f);
-    assert(std::fabs(outR[i] - expectedR[i]) < 1e-7f);
+    CHECK(std::fabs(outL[i] - expectedL[i]) < 1e-7f);
+    CHECK(std::fabs(outR[i] - expectedR[i]) < 1e-7f);
   }
 
   hydra_dsp_destroy(h);
@@ -208,14 +315,14 @@ void test_reset_state() {
   inR[0] = -1.0f;
 
   std::vector<float> outAL(kFrames), outAR(kFrames), outBL(kFrames), outBR(kFrames);
-  assert(hydra_dsp_process(h, inL.data(), inR.data(), outAL.data(), outAR.data(), kFrames) == 0);
+  CHECK(hydra_dsp_process(h, inL.data(), inR.data(), outAL.data(), outAR.data(), kFrames) == 0);
 
   hydra_dsp_reset(h);
-  assert(hydra_dsp_process(h, inL.data(), inR.data(), outBL.data(), outBR.data(), kFrames) == 0);
+  CHECK(hydra_dsp_process(h, inL.data(), inR.data(), outBL.data(), outBR.data(), kFrames) == 0);
 
   for (uint32_t i = 0; i < kFrames; ++i) {
-    assert(std::fabs(outAL[i] - outBL[i]) < 1e-7f);
-    assert(std::fabs(outAR[i] - outBR[i]) < 1e-7f);
+    CHECK(std::fabs(outAL[i] - outBL[i]) < 1e-7f);
+    CHECK(std::fabs(outAR[i] - outBR[i]) < 1e-7f);
   }
 
   hydra_dsp_destroy(h);
@@ -237,16 +344,16 @@ void test_parameter_automation() {
   std::array<float, 3> firstSampleAbs{};
 
   for (size_t i = 0; i < dryWetValues.size(); ++i) {
-    assert(hydra_dsp_set_parameter(h, HYDRA_DSP_PARAM_DRY_WET, dryWetValues[i]) == 0);
-    assert(hydra_dsp_commit(h) == 0);
-    assert(hydra_dsp_process(h, inputL.data(), inputR.data(), outL.data(), outR.data(), inputL.size()) == 0);
+    CHECK(hydra_dsp_set_parameter(h, HYDRA_DSP_PARAM_DRY_WET, dryWetValues[i]) == 0);
+    CHECK(hydra_dsp_commit(h) == 0);
+    CHECK(hydra_dsp_process(h, inputL.data(), inputR.data(), outL.data(), outR.data(), inputL.size()) == 0);
     firstSampleAbs[i] = std::fabs(outL[0]);
   }
 
   // Delay remains disabled, so increasing dry/wet should reduce dry contribution.
-  assert(firstSampleAbs[0] > firstSampleAbs[1]);
-  assert(firstSampleAbs[1] > firstSampleAbs[2]);
-  assert(firstSampleAbs[2] < 1e-7f);
+  CHECK(firstSampleAbs[0] > firstSampleAbs[1]);
+  CHECK(firstSampleAbs[1] > firstSampleAbs[2]);
+  CHECK(firstSampleAbs[2] < 1e-7f);
 
   hydra_dsp_destroy(h);
 }
@@ -258,7 +365,7 @@ void test_silent_wet_delay_does_not_record_bias() {
 
   std::vector<float> zeros(2048, 0.0f);
   const float peak = process_peak(h, zeros, zeros);
-  assert(peak < 1e-7f);
+  CHECK(peak < 1e-7f);
 
   hydra_dsp_destroy(h);
 }
@@ -268,21 +375,21 @@ void test_reenabled_delay_clears_magnetic_state() {
   configure_silent_wet_delay(h, 100.0f);
 
   std::vector<float> hot(256, 0.75f);
-  assert(process_peak(h, hot, hot) >= 0.0f);
+  CHECK(process_peak(h, hot, hot) >= 0.0f);
 
   hydra_dsp_params disabled{};
   disabled.delayActive = 0.0f;
   disabled.delayTimeMs = 10.0f;
   disabled.activeHeads = 4.0f;
   disabled.tone = 100.0f;
-  assert(hydra_dsp_set_params(h, &disabled) == 0);
-  assert(hydra_dsp_commit(h) == 0);
+  CHECK(hydra_dsp_set_params(h, &disabled) == 0);
+  CHECK(hydra_dsp_commit(h) == 0);
 
   configure_silent_wet_delay(h);
 
   std::vector<float> zeros(2048, 0.0f);
   const float peak = process_peak(h, zeros, zeros);
-  assert(peak < 1e-7f);
+  CHECK(peak < 1e-7f);
 
   hydra_dsp_destroy(h);
 }
@@ -291,6 +398,10 @@ void test_reenabled_delay_clears_magnetic_state() {
 
 int main() {
   test_known_buffer();
+  test_freeze_preserves_recording_until_released();
+  test_reverse_stereo_channel_isolation();
+  test_max_delay_buffer_wrap_is_block_independent();
+  test_feedback_adds_same_channel_repeat();
   test_reset_state();
   test_parameter_automation();
   test_silent_wet_delay_does_not_record_bias();

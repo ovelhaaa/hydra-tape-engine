@@ -2,6 +2,7 @@
 import argparse
 import os
 import subprocess
+import sys
 import tempfile
 from pathlib import Path
 
@@ -48,6 +49,7 @@ def main() -> int:
         subprocess.check_call(cmd, env={**os.environ, 'LC_ALL': 'C'})
 
         compare_cmd = [
+            sys.executable,
             args.compare_script,
             '--reference',
             str(golden_file),

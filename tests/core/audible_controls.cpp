@@ -1,7 +1,7 @@
+#include "check.h"
 #include "hydra_dsp.h"
 
 #include <algorithm>
-#include <cassert>
 #include <cmath>
 #include <cstdint>
 #include <iostream>
@@ -15,9 +15,9 @@ constexpr uint32_t kBlock = 128;
 
 hydra_dsp_handle* make_handle() {
   hydra_dsp_handle* h = nullptr;
-  assert(hydra_dsp_create(kSampleRate, 2000.0f, &h) == 0);
-  assert(h != nullptr);
-  assert(hydra_dsp_prepare(h, kBlock, HYDRA_DSP_CHANNELS_STEREO) == 0);
+  CHECK(hydra_dsp_create(kSampleRate, 2000.0f, &h) == 0);
+  CHECK(h != nullptr);
+  CHECK(hydra_dsp_prepare(h, kBlock, HYDRA_DSP_CHANNELS_STEREO) == 0);
   return h;
 }
 
@@ -56,8 +56,8 @@ hydra_dsp_params base_params() {
 }
 
 void set_params(hydra_dsp_handle* h, const hydra_dsp_params& p) {
-  assert(hydra_dsp_set_params(h, &p) == 0);
-  assert(hydra_dsp_commit(h) == 0);
+  CHECK(hydra_dsp_set_params(h, &p) == 0);
+  CHECK(hydra_dsp_commit(h) == 0);
 }
 
 float rms(const std::vector<float>& v) {
@@ -67,7 +67,7 @@ float rms(const std::vector<float>& v) {
 }
 
 float rms_diff(const std::vector<float>& a, const std::vector<float>& b) {
-  assert(a.size() == b.size());
+  CHECK(a.size() == b.size());
   double sum = 0.0;
   for (size_t i = 0; i < a.size(); ++i) {
     const double d = double(a[i]) - double(b[i]);
@@ -85,7 +85,7 @@ void render(hydra_dsp_handle* h,
   outR->assign(inR.size(), 0.0f);
   for (size_t pos = 0; pos < inL.size(); pos += kBlock) {
     const uint32_t n = static_cast<uint32_t>(std::min<size_t>(kBlock, inL.size() - pos));
-    assert(hydra_dsp_process(h, inL.data() + pos, inR.data() + pos, outL->data() + pos, outR->data() + pos, n) == 0);
+    CHECK(hydra_dsp_process(h, inL.data() + pos, inR.data() + pos, outL->data() + pos, outR->data() + pos, n) == 0);
   }
 }
 
@@ -98,7 +98,7 @@ void test_noise_gain_and_stereo_decorrelation() {
   set_params(h0, p0);
   render(h0, zero, zero, &outL, &outR);
   const float silentRms = 0.5f * (rms(outL) + rms(outR));
-  assert(silentRms < 1.0e-5f);
+  CHECK(silentRms < 1.0e-5f);
   hydra_dsp_destroy(h0);
 
   hydra_dsp_handle* h1 = make_handle();
@@ -108,9 +108,9 @@ void test_noise_gain_and_stereo_decorrelation() {
   render(h1, zero, zero, &outL, &outR);
   const float noiseRms = 0.5f * (rms(outL) + rms(outR));
   const float lrDiffRms = rms_diff(outL, outR);
-  assert(noiseRms > 1.0e-3f);
-  assert(noiseRms < 0.12f);
-  assert(lrDiffRms > noiseRms * 0.25f);
+  CHECK(noiseRms > 1.0e-3f);
+  CHECK(noiseRms < 0.12f);
+  CHECK(lrDiffRms > noiseRms * 0.25f);
   hydra_dsp_destroy(h1);
 }
 
@@ -146,7 +146,7 @@ void test_wow_flutter_affect_delay_and_texture_paths() {
       std::cerr << "wow/flutter diff " << diff << " <= " << threshold
                 << " (delayActive=" << delayActive << ")\n";
     }
-    assert(diff > threshold);
+    CHECK(diff > threshold);
   };
 
   verify(1.0f, 2.0e-4f);
@@ -181,7 +181,7 @@ void test_dropout_depth_remains_continuous() {
   if (diff <= 1.0e-4f) {
     std::cerr << "dropout midpoint/full-scale diff too small: " << diff << "\n";
   }
-  assert(diff > 1.0e-4f);
+  CHECK(diff > 1.0e-4f);
 }
 
 }  // namespace

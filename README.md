@@ -1,6 +1,9 @@
 # Hydra Tape Engine
 
-Projeto de DSP compartilhado (native + web) para um emulador de tape delay multi-head, com API C estável para integração com hosts.
+O tape delay multi-head usa `dsp/core/tape_core.cpp` no ESP32-S3, no host
+nativo e no navegador. O firmware integra pela API C e mantém Fripp,
+Bubbles e Freeverb como efeitos embarcados. O mapa de dependências e os
+resultados da consolidação estão na [auditoria DSP](docs/DSP_ARCHITECTURE_AUDIT.md).
 
 ## API pública estável (`include/hydra_dsp.h`)
 
@@ -30,23 +33,33 @@ O contrato de compatibilidade é:
 
 As instruções de integração física (requisitos, pinout e comandos serial CLI) foram preservadas em:
 
-- `docs/hardware_esp32.md`
+- [Integração física do ESP32-S3](docs/hardware_esp32.md)
+
+```bash
+pio run -e esp32-s3-devkitc-1
+```
 
 ---
 
 ## Build native
 
 ```bash
-cmake -S . -B build -DBUILD_TESTING=ON
+cmake -S . -B build -DBUILD_TESTING=ON -DCMAKE_BUILD_TYPE=Release
 cmake --build build -j
 ```
 
 ## Build web (Emscripten)
 
 ```bash
-emcmake cmake -S . -B build-web -DBUILD_WEB=ON -DBUILD_TESTING=ON
+emcmake cmake -S . -B build-web -DBUILD_WEB=ON -DBUILD_TESTING=ON -DCMAKE_BUILD_TYPE=Release \
+  -DHYDRA_NATIVE_TRACE_RUNNER="$PWD/build/hydra_render_trace_native"
 cmake --build build-web -j
 ```
+
+Para habilitar a equivalência, compile primeiro o runner native acima.
+Em Windows, indique o caminho do executável `.exe`. Quando
+`HYDRA_NATIVE_TRACE_RUNNER` é omitido, CTest executa os testes do backend WASM.
+O diretório `build-web/` é gerado localmente pelo CMake.
 
 Artefatos principais (web):
 
@@ -69,7 +82,7 @@ ctest --test-dir build --output-on-failure
 Inclui:
 
 - `core_smoke`
-- `core_regression`
+- `core_regression` (freeze, reverse estéreo, buffer circular, feedback e automação)
 - `core_abi_symbols` (sanity check de símbolos ABI esperados)
 - golden regressions
 
@@ -131,15 +144,22 @@ Por isso a validação usa equivalência com tolerâncias, não igualdade bit-a-
 ---
 
 
-## Suíte A/B offline (percepção auditiva sem ESP32)
+## Renders A/B de escuta
 
-Para gerar pacote de revisão com pares WAV (`native` vs `wasm`) e null-test:
+Com os builds native e WASM acima, gere pares de 12 s com entrada comum:
 
 ```bash
-python3 tests/core/build_ab_review_package.py   --native build/hydra_render_trace_native   --wasm-js build-web/wasm-tests/hydra_render_trace.js   --output-dir artifacts/ab_review
+python3 tests/core/listening_review.py \
+  --native build/hydra_listen_native \
+  --wasm-js build-web/wasm-tests/hydra_listen.js \
+  --output-dir artifacts/listening
 ```
 
-O pacote inclui, por cenário, `native.wav`, `wasm.wav`, `diff.wav`, `summary.json` e `null_test.txt`.
+O pacote inclui `dry.wav`, `native.wav`, `wasm.wav` e um relatório com cenários
+e métricas de transição. O diagnóstico numérico curto continua disponível em
+`tests/core/compare_native_wasm.py` e `tests/core/build_ab_review_package.py`.
+As instruções para reproduzir a investigação estão na
+[auditoria DSP](docs/DSP_ARCHITECTURE_AUDIT.md#validação-complementar-da-pr-46).
 
 Checklist de release e critério de aceite: `docs/RELEASE_CHECKLIST.md`.
 Template para rastrear mudanças sonoras: `RELEASE_NOTES_TEMPLATE.md`.

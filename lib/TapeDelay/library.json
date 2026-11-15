@@ -1,0 +1,6 @@
+{
+  "name": "TapeDelay",
+  "build": {
+    "srcFilter": "+<FrippEngine.cpp> +<BubblesEngine.cpp> +<FreeverbEngine.cpp>"
+  }
+}

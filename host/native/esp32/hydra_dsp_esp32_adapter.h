@@ -1,6 +1,5 @@
 #pragma once
 
-#include "TapeDelay.h"
 #include "hydra_dsp.h"
 
 class HydraDspEsp32Adapter {
@@ -9,7 +8,7 @@ public:
   ~HydraDspEsp32Adapter();
 
   bool isValid() const;
-  void updateParams(const TapeParams& params);
+  void updateParams(const hydra_dsp_params& params);
   void updateFilters();
   float process(float input);
   void processStereo(float inL, float inR, float* outL, float* outR);
@@ -20,9 +19,9 @@ public:
                          uint32_t frames);
 
 private:
-  bool applyParams(const TapeParams& params, bool force);
+  bool applyParams(const hydra_dsp_params& params, bool force);
 
   hydra_dsp_handle* handle_ = nullptr;
-  TapeParams params_{};
+  hydra_dsp_params params_{};
   bool paramsInitialized_ = false;
 };

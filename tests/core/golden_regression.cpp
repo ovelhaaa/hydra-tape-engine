@@ -1,7 +1,7 @@
+#include "check.h"
 #include "hydra_dsp.h"
 
 #include <algorithm>
-#include <cassert>
 #include <cmath>
 #include <cstdint>
 #include <fstream>
@@ -65,9 +65,9 @@ void write_csv(const std::string& path, const StereoBuffer& buffer) {
 
 hydra_dsp_handle* create_handle() {
   hydra_dsp_handle* h = nullptr;
-  assert(hydra_dsp_create(kSampleRate, kMaxDelayMs, &h) == 0);
-  assert(h != nullptr);
-  assert(hydra_dsp_prepare(h, kBlockSize, HYDRA_DSP_CHANNELS_STEREO) == 0);
+  CHECK(hydra_dsp_create(kSampleRate, kMaxDelayMs, &h) == 0);
+  CHECK(h != nullptr);
+  CHECK(hydra_dsp_prepare(h, kBlockSize, HYDRA_DSP_CHANNELS_STEREO) == 0);
   return h;
 }
 
@@ -101,29 +101,29 @@ void apply_base_params(hydra_dsp_handle* h) {
   p.springDecay = 60.0f;
   p.springDamping = 45.0f;
   p.springMix = 0.0f;
-  assert(hydra_dsp_set_params(h, &p) == 0);
-  assert(hydra_dsp_commit(h) == 0);
+  CHECK(hydra_dsp_set_params(h, &p) == 0);
+  CHECK(hydra_dsp_commit(h) == 0);
 }
 
 StereoBuffer process_delay_modes(hydra_dsp_handle* h, const StereoBuffer& input) {
   StereoBuffer out{std::vector<float>(input.left.size()), std::vector<float>(input.right.size())};
   for (size_t start = 0; start < input.left.size(); start += kBlockSize) {
     if (start == 128) {
-      assert(hydra_dsp_set_parameter(h, HYDRA_DSP_PARAM_HEADS_MUSICAL, 1.0f) == 0);
-      assert(hydra_dsp_commit(h) == 0);
+      CHECK(hydra_dsp_set_parameter(h, HYDRA_DSP_PARAM_HEADS_MUSICAL, 1.0f) == 0);
+      CHECK(hydra_dsp_commit(h) == 0);
     }
     if (start == 256) {
-      assert(hydra_dsp_set_parameter(h, HYDRA_DSP_PARAM_REVERSE, 1.0f) == 0);
-      assert(hydra_dsp_commit(h) == 0);
+      CHECK(hydra_dsp_set_parameter(h, HYDRA_DSP_PARAM_REVERSE, 1.0f) == 0);
+      CHECK(hydra_dsp_commit(h) == 0);
     }
     if (start == 384) {
-      assert(hydra_dsp_set_parameter(h, HYDRA_DSP_PARAM_REVERSE, 0.0f) == 0);
-      assert(hydra_dsp_set_parameter(h, HYDRA_DSP_PARAM_HEADS_MUSICAL, 0.0f) == 0);
-      assert(hydra_dsp_commit(h) == 0);
+      CHECK(hydra_dsp_set_parameter(h, HYDRA_DSP_PARAM_REVERSE, 0.0f) == 0);
+      CHECK(hydra_dsp_set_parameter(h, HYDRA_DSP_PARAM_HEADS_MUSICAL, 0.0f) == 0);
+      CHECK(hydra_dsp_commit(h) == 0);
     }
 
     const auto n = static_cast<uint32_t>(std::min<size_t>(kBlockSize, input.left.size() - start));
-    assert(hydra_dsp_process(h,
+    CHECK(hydra_dsp_process(h,
                              input.left.data() + start,
                              input.right.data() + start,
                              out.left.data() + start,
@@ -138,7 +138,7 @@ StereoBuffer process_reset_state(hydra_dsp_handle* h, const StereoBuffer& input)
 
   for (size_t start = 0; start < input.left.size(); start += kBlockSize) {
     const auto n = static_cast<uint32_t>(std::min<size_t>(kBlockSize, input.left.size() - start));
-    assert(hydra_dsp_process(h,
+    CHECK(hydra_dsp_process(h,
                              input.left.data() + start,
                              input.right.data() + start,
                              out.left.data() + start,
@@ -151,7 +151,7 @@ StereoBuffer process_reset_state(hydra_dsp_handle* h, const StereoBuffer& input)
   const size_t offset = input.left.size();
   for (size_t start = 0; start < input.left.size(); start += kBlockSize) {
     const auto n = static_cast<uint32_t>(std::min<size_t>(kBlockSize, input.left.size() - start));
-    assert(hydra_dsp_process(h,
+    CHECK(hydra_dsp_process(h,
                              input.left.data() + start,
                              input.right.data() + start,
                              out.left.data() + offset + start,
@@ -166,20 +166,20 @@ StereoBuffer process_param_automation(hydra_dsp_handle* h, const StereoBuffer& i
   StereoBuffer out{std::vector<float>(input.left.size()), std::vector<float>(input.right.size())};
   for (size_t start = 0; start < input.left.size(); start += kBlockSize) {
     if (start == 64) {
-      assert(hydra_dsp_set_parameter(h, HYDRA_DSP_PARAM_DRY_WET, 30.0f) == 0);
-      assert(hydra_dsp_commit(h) == 0);
+      CHECK(hydra_dsp_set_parameter(h, HYDRA_DSP_PARAM_DRY_WET, 30.0f) == 0);
+      CHECK(hydra_dsp_commit(h) == 0);
     }
     if (start == 192) {
-      assert(hydra_dsp_set_parameter(h, HYDRA_DSP_PARAM_DRY_WET, 70.0f) == 0);
-      assert(hydra_dsp_set_parameter(h, HYDRA_DSP_PARAM_FEEDBACK, 55.0f) == 0);
-      assert(hydra_dsp_commit(h) == 0);
+      CHECK(hydra_dsp_set_parameter(h, HYDRA_DSP_PARAM_DRY_WET, 70.0f) == 0);
+      CHECK(hydra_dsp_set_parameter(h, HYDRA_DSP_PARAM_FEEDBACK, 55.0f) == 0);
+      CHECK(hydra_dsp_commit(h) == 0);
     }
     if (start == 320) {
-      assert(hydra_dsp_set_parameter(h, HYDRA_DSP_PARAM_DELAY_MS, 380.0f) == 0);
-      assert(hydra_dsp_commit(h) == 0);
+      CHECK(hydra_dsp_set_parameter(h, HYDRA_DSP_PARAM_DELAY_MS, 380.0f) == 0);
+      CHECK(hydra_dsp_commit(h) == 0);
     }
     const auto n = static_cast<uint32_t>(std::min<size_t>(kBlockSize, input.left.size() - start));
-    assert(hydra_dsp_process(h,
+    CHECK(hydra_dsp_process(h,
                              input.left.data() + start,
                              input.right.data() + start,
                              out.left.data() + start,

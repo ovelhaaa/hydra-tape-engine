@@ -185,9 +185,10 @@ A workflow was added in `.github/workflows/web-pages.yml`.
 - Steps: setup Emscripten, build with `BUILD_WEB=ON`, publish `build-web/web` to GitHub Pages.
 - For the first run, enable Pages in repo settings (Source: **GitHub Actions**).
 
-## Shared DSP architecture (PR3)
+## Shared DSP architecture
 
-The final structure for shared processing and hosts is:
+See the [DSP architecture audit](DSP_ARCHITECTURE_AUDIT.md) for the ESP32
+routing, build target inventory and reference renders.
 
 - `dsp/core/`: canonical DSP engine (`TapeCore`) + C ABI bridge (`hydra_dsp_c_api.cpp`).
 - `host/native/`: native adapters and embeddings (e.g. ESP32 glue in `host/native/esp32`).
@@ -210,49 +211,11 @@ The initial documented tolerance for native-vs-wasm output equivalence is:
 - `max_abs <= 1e-5`
 - `RMSE <= 1e-6`
 
-### Exact build/test commands
+### Build and test commands
 
-
-### Quick check: wow/flutter/hiss are active
-
-If `ctest` in `build-web` was generated on another machine, it may point to invalid absolute paths for `node`/`python`. In that case, run the core regression binary directly:
-
-```bash
-node build-web/hydra_core_regression.js
-```
-
-Expected output:
-
-```text
-regression_core: ok
-```
-
-This regression run exercises the tape-core render path with modulation and noise code paths compiled in (wow/flutter/noise parameters available in the DSP API).
-#### Native (Linux/macOS)
-
-```bash
-cmake -S . -B build
-cmake --build build -j
-ctest --test-dir build --output-on-failure
-```
-
-This runs:
-
-- `core_smoke`
-- `core_regression` (deterministic buffer, reset/state, simple automation)
-
-#### WebAssembly + equivalence
-
-```bash
-emcmake cmake -S . -B build-web -DBUILD_WEB=ON -DBUILD_TESTING=ON
-cmake --build build-web -j
-ctest --test-dir build-web --output-on-failure
-```
-
-This additionally runs:
-
-- `native_vs_wasm_equivalence` via `tests/core/compare_native_wasm.py`
-  using the same input, parameters, and call order for both backends.
+The [root README](../README.md#build-native) covers Release builds, golden
+regressions and native/WASM equivalence using a runner from a separate native
+build.
 
 ### Expected platform divergences
 

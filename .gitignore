@@ -12,3 +12,17 @@ test_04_delay_mode.wav
 test_05_spring_reverb.wav
 test_06_reverse_delay.wav
 test_07_reverse_reverb.wav
+
+# Generated CMake builds and CI reports
+/build/
+/build-native/
+/build-wasm/
+/build-web/
+/ci-reports/
+/artifacts/
+
+# Local caches and editor backups
+__pycache__/
+*.pyc
+*.bak
+*.log

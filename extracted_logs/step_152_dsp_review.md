@@ -1,2 +1,0 @@
-"# Hydra DSP — Audio Quality Review\n\n> Analysis of `tape_core.cpp`, `TapeDelay.cpp`, and `FrippEngine.cpp` from an audio DSP specialist perspective.\n\n---\n\n## 🔴 Critical — Audible Artifacts\n\n### 1. Feedback tap taken AFTER output filters (dou
-<truncated 12156 bytes>

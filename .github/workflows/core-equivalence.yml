@@ -41,7 +41,7 @@ jobs:
       - name: Build native core targets
         run: >-
           cmake --build build-native --config ${CMAKE_BUILD_TYPE} -j
-          --target hydra_dsp_core hydra_render_trace_native hydra_golden_regression_native
+          --target hydra_dsp_core hydra_render_trace_native hydra_golden_regression_native hydra_listen_native
 
       - name: Upload native build artifacts
         uses: actions/upload-artifact@v4
@@ -49,6 +49,7 @@ jobs:
           name: native-core-build
           path: |
             build-native/hydra_render_trace_native
+            build-native/hydra_listen_native
             build-native/hydra_golden_regression_native
 
   test_native_core:
@@ -76,10 +77,12 @@ jobs:
 
       - name: Run native test suite
         run: |
+          set -o pipefail
           mkdir -p ci-reports/native
           ctest --test-dir build-native --output-on-failure | tee ci-reports/native/ctest_native.txt
 
       - name: Upload native test reports
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: native-core-test-reports
@@ -114,7 +117,10 @@ jobs:
       - name: Build wasm core targets
         run: >-
           cmake --build build-wasm --config ${CMAKE_BUILD_TYPE} -j
-          --target hydra_render_trace_wasm hydra_golden_regression_wasm
+          --target hydra_render_trace_wasm hydra_golden_regression_wasm hydra_listen_wasm
+
+      - name: Run WASM golden regressions
+        run: ctest --test-dir build-wasm --output-on-failure -R '_wasm$'
 
       - name: Upload wasm build artifacts
         uses: actions/upload-artifact@v4
@@ -123,6 +129,8 @@ jobs:
           path: |
             build-wasm/wasm-tests/hydra_render_trace.js
             build-wasm/wasm-tests/hydra_render_trace.wasm
+            build-wasm/wasm-tests/hydra_listen.js
+            build-wasm/wasm-tests/hydra_listen.wasm
             build-wasm/wasm-tests/hydra_golden_regression.js
             build-wasm/wasm-tests/hydra_golden_regression.wasm
 
@@ -183,7 +191,16 @@ jobs:
             --diff-csv ci-reports/native-vs-wasm/diff.csv \
             --render-wav-dir ci-reports/native-vs-wasm/audio
 
+      - name: Diagnose Release equivalence
+        if: ${{ always() && github.event_name == 'workflow_dispatch' }}
+        run: |
+          git fetch --no-tags --depth=1 origin 528ebb87281d29331f7df19b0a375f7892d7fd2d
+          python3 tests/core/diagnose_equivalence.py \
+            --base 528ebb87281d29331f7df19b0a375f7892d7fd2d \
+            --output ci-reports/native-vs-wasm/operations.json
+
       - name: Summarize equivalence results
+        if: ${{ always() && hashFiles('ci-reports/native-vs-wasm/equivalence_report.json') != '' }}
         run: |
           echo "### Native ↔ WASM Equivalence" >> "$GITHUB_STEP_SUMMARY"
           python3 - <<'PY'
@@ -203,7 +220,39 @@ jobs:
           cat ci-reports/native-vs-wasm/equivalence_report.txt
 
       - name: Upload equivalence reports
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: native-vs-wasm-equivalence-reports
           path: ci-reports/native-vs-wasm
+
+
+  listening_review:
+    runs-on: ubuntu-latest
+    needs: [build_native_core, build_wasm_core]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Download native runners
+        uses: actions/download-artifact@v4
+        with:
+          name: native-core-build
+          path: build-native
+      - name: Download WASM runners
+        uses: actions/download-artifact@v4
+        with:
+          name: wasm-core-build
+          path: build-wasm/wasm-tests
+      - name: Build listening and transition renders
+        run: |
+          chmod +x build-native/hydra_listen_native
+          python3 tests/core/listening_review.py \
+            --native build-native/hydra_listen_native \
+            --wasm-js build-wasm/wasm-tests/hydra_listen.js \
+            --output-dir ci-reports/listening
+
+      - name: Upload listening renders
+        uses: actions/upload-artifact@v4
+        with:
+          name: listening-review
+          path: ci-reports/listening

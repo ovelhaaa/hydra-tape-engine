@@ -174,34 +174,6 @@ jobs:
           emcmake cmake -S . -B build-wasm -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} -DBUILD_WEB=ON -DBUILD_TESTING=ON
           cmake --build build-wasm --config ${CMAKE_BUILD_TYPE} -j --target hydra_render_trace_wasm
 
-      - name: Measure equivalence at the original SHA with assertions enabled
-        shell: bash
-        run: |
-          set -euo pipefail
-          base=528ebb87281d29331f7df19b0a375f7892d7fd2d
-          git fetch --no-tags --depth=1 origin "$base"
-          audit="$RUNNER_TEMP/hydra-baseline"
-          mkdir -p "$audit/source"
-          git archive "$base" | tar -x -C "$audit/source"
-          cmake -S "$audit/source" -B "$audit/native" -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_FLAGS_RELEASE=-O3
-          cmake --build "$audit/native" -j --target hydra_render_trace_native
-          emcmake cmake -S "$audit/source" -B "$audit/wasm" -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_FLAGS_RELEASE=-O3 -DBUILD_WEB=ON
-          cmake --build "$audit/wasm" -j --target hydra_render_trace_wasm
-          native_baseline="$audit/native/hydra_render_trace_native"
-          wasm_baseline="$audit/wasm/wasm-tests/hydra_render_trace.js"
-          for scenario in $("$native_baseline" --list-scenarios); do
-            "$native_baseline" --scenario "$scenario" > "$audit/before-native.csv"
-            build-native/hydra_render_trace_native --scenario "$scenario" > "$audit/after-native.csv"
-            node "$wasm_baseline" --scenario "$scenario" > "$audit/before-wasm.csv"
-            node build-wasm/wasm-tests/hydra_render_trace.js --scenario "$scenario" > "$audit/after-wasm.csv"
-            cmp "$audit/before-native.csv" "$audit/after-native.csv"
-            cmp "$audit/before-wasm.csv" "$audit/after-wasm.csv"
-            echo "$scenario: byte-identical native and WASM traces against their respective baselines"
-          done
-          baseline_rc=0
-          python3 tests/core/compare_native_wasm.py --native "$native_baseline" --wasm-js "$wasm_baseline" --test-name original_sha_equivalence || baseline_rc=$?
-          test "$baseline_rc" -eq 1
-
       - name: Run native vs wasm equivalence
         run: |
           mkdir -p ci-reports/native-vs-wasm

@@ -69,6 +69,8 @@ MelodyGen::MelodyGen(float fs)
   envAttack = 0.005f;
   envRelease = 0.001f;
   stereoDrift = 0.0f;
+  panGainL = 1.0f;
+  panGainR = 1.0f;
   noteOn = true;
   isResting = false;
 
@@ -138,6 +140,17 @@ void MelodyGen::pickNextNote() {
 
   tone = 0.2f + (mood * 0.6f);
   stereoDrift = ((esp_random() % 1000) / 1000.0f - 0.5f) * 0.3f;
+  {
+    float panL = 1.0f + stereoDrift;
+    float panR = 1.0f - stereoDrift;
+    float norm = 1.0f;
+    if (panL > 1.0f)
+      norm = 1.0f / panL;
+    if (panR > 1.0f && (1.0f / panR) < norm)
+      norm = 1.0f / panR;
+    panGainL = panL * norm;
+    panGainR = panR * norm;
+  }
 
   // FIXED: Deterministic Drift (Simplified for speed)
   drift = 1.0f + ((esp_random() & 0xFF) / 255.0f - 0.5f) * 0.004f;
@@ -429,18 +442,8 @@ void MelodyGen::nextStereo(float *outL, float *outR) {
 
   float sig = outMono * shapedEnv * currentAccent * 0.6f;
 
-  float panL = 1.0f + stereoDrift;
-  float panR = 1.0f - stereoDrift;
-
-  // Normalize Panning
-  float norm = 1.0f;
-  if (panL > 1.0f)
-    norm = 1.0f / panL;
-  if (panR > 1.0f && (1.0f / panR) < norm)
-    norm = 1.0f / panR;
-
-  *outL = sig * panL * norm;
-  *outR = sig * panR * norm;
+  *outL = sig * panGainL;
+  *outR = sig * panGainR;
 }
 
 void MelodyGen::nextStereoBlock(float *outL, float *outR, int frames) {

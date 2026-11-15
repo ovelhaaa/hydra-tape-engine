@@ -380,9 +380,33 @@ public:
   }
 
   void processBlock(float *bufL, float *bufR, int frames) {
+    float env = envelope;
+    float g = gain;
+    const float att = attackCoeff;
+    const float rel = releaseCoeff;
+    const float thr = threshold;
+    const float atten = attenuation;
     for (int i = 0; i < frames; ++i) {
-      processStereo(bufL[i], bufR[i], &bufL[i], &bufR[i]);
+      const float inL = bufL[i];
+      const float inR = bufR[i];
+      const float absL = fabsf(inL);
+      const float absR = fabsf(inR);
+      const float absIn = (absL > absR) ? absL : absR;
+      env += ((absIn > env) ? att : rel) * (absIn - env);
+      const float targetGain = (env > thr) ? 1.0f : atten;
+      if (targetGain < g) {
+        g -= 0.0005f;
+        if (g < targetGain) g = targetGain;
+      } else {
+        g += 0.01f;
+        if (g > targetGain) g = targetGain;
+      }
+      bufL[i] = inL * g;
+      bufR[i] = inR * g;
     }
+    if (env < 1e-20f) env = 0.0f;
+    envelope = env;
+    gain = g;
   }
 };
 
@@ -797,12 +821,7 @@ void audioTask(void *parameter) {
 
       // === STAGE A3c: FREEVERB POST-PROCESSING ===
       if (p_freeverbEnabled && freeverb && freeverb->isAllocated()) {
-        for (int i = 0; i < AUDIO_CHUNK_SIZE; ++i) {
-          float reverbL, reverbR;
-          freeverb->processStereo(blockL[i], blockR[i], &reverbL, &reverbR);
-          blockL[i] = reverbL;
-          blockR[i] = reverbR;
-        }
+        freeverb->processStereoBlock(blockL, blockR, blockL, blockR, AUDIO_CHUNK_SIZE);
       }
       if (stageProfActive) {
         c1 = esp_cpu_get_cycle_count();

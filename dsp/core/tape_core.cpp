@@ -35,10 +35,27 @@ constexpr float kHissDuckAttackTimeSeconds = 0.002f;
 constexpr float kHissDuckReleaseTimeSeconds = 0.080f;
 constexpr float kHissNoiseMinDuckGain = 0.22f;
 HYDRA_AUDIO_INLINE float clampf(float v, float lo, float hi) { return std::max(lo, std::min(v, hi)); }
+HYDRA_AUDIO_INLINE float fastRecip(float d) {
+#if defined(__XTENSA__) && defined(__XCHAL_HAVE_FP_RECIP) && (__XCHAL_HAVE_FP_RECIP == 1)
+  float y, e;
+  __asm__("recip0.s %0, %2\n\t"
+          "const.s  %1, 1\n\t"
+          "msub.s   %1, %2, %0\n\t"
+          "madd.s   %0, %0, %1\n\t"
+          "const.s  %1, 1\n\t"
+          "msub.s   %1, %2, %0\n\t"
+          "madd.s   %0, %0, %1\n\t"
+          : "=&f"(y), "=&f"(e)
+          : "f"(d));
+  return y;
+#else
+  return 1.0f / d;
+#endif
+}
 HYDRA_AUDIO_INLINE float fastSatRational(float x) {
   x = clampf(x, -4.0f, 4.0f);
   float ax = std::fabs(x);
-  return clampf(x * (27.0f + ax * ax) / (27.0f + 9.0f * ax * ax), -1.0f, 1.0f);
+  return clampf(x * (27.0f + ax * ax) * fastRecip(27.0f + 9.0f * ax * ax), -1.0f, 1.0f);
 }
 HYDRA_AUDIO_INLINE float fast_sin(float x) {
   while (x > PI) x -= TWO_PI;
@@ -134,9 +151,12 @@ struct TapeMagnetics {
     float y = lut->process(h);
 
     m = remanence * m + (1.0f - remanence) * y;
-    if (std::fabs(m) < 1e-20f) m = 0.0f;
 
     return satNorm * (0.82f * y + 0.18f * m);
+  }
+
+  inline void flushDenormals() {
+    if (std::fabs(m) < 1e-20f) m = 0.0f;
   }
 
   inline void reset() {
@@ -145,19 +165,20 @@ struct TapeMagnetics {
   }
 };
 
-class DCBlocker { public: HYDRA_AUDIO_INLINE float process(float input){ float out=input-x1+R*y1; x1=input; y1=out; if (std::fabs(y1)<1e-20f) y1=0; return out;} void clear(){x1=y1=0;} private: float x1=0,y1=0,R=0.995f; };
+class DCBlocker { public: HYDRA_AUDIO_INLINE float process(float input){ float out=input-x1+R*y1; x1=input; y1=out; return out;} void flushDenormals(){ if (std::fabs(y1)<1e-20f) y1=0.0f; } void clear(){x1=y1=0;} private: float x1=0,y1=0,R=0.995f; };
 class BiquadFilter {
 public:
   void reset(){z1=z2=0;}
+  void flushDenormals(){ if (std::fabs(z1)<1e-20f) z1=0.0f; if (std::fabs(z2)<1e-20f) z2=0.0f; }
   void setLowShelf(float fs,float freq,float Q,float gainDB){ float A=std::pow(10.f,gainDB/40.f),w0=2*PI*freq/fs,cosw0=std::cos(w0),sinw0=std::sin(w0),alpha=sinw0/(2*Q),sqA=std::sqrt(A),ap1=A+1,am1=A-1,tw=2*sqA*alpha,a0=ap1+am1*cosw0+tw; b0=(A*(ap1-am1*cosw0+tw))/a0; b1=(2*A*(am1-ap1*cosw0))/a0; b2=(A*(ap1-am1*cosw0-tw))/a0; a1=(-2*(am1+ap1*cosw0))/a0; a2=(ap1+am1*cosw0-tw)/a0; }
   void setPeak(float fs,float freq,float Q,float gainDB){ freq=std::fmin(freq,0.45f*fs); Q=std::fmax(Q,0.001f); float A=std::pow(10.f,gainDB*0.025f),w0=TWO_PI*freq/fs,s=std::sin(w0),c=std::cos(w0),alpha=s/(2.f*Q),a0=1.f+alpha/A; b0=(1.f+alpha*A)/a0; b1=(-2.f*c)/a0; b2=(1.f-alpha*A)/a0; a1=(-2.f*c)/a0; a2=(1.f-alpha/A)/a0; }
   void setHighShelf(float fs,float freq,float Q,float gainDB){ float A=std::pow(10.f,gainDB/40.f),w0=2*PI*freq/fs,cosw0=std::cos(w0),sinw0=std::sin(w0),alpha=sinw0/(2*Q),sqA=std::sqrt(A),ap1=A+1,am1=A-1,tw=2*sqA*alpha,a0=ap1-am1*cosw0+tw; b0=(A*(ap1+am1*cosw0+tw))/a0; b1=(-2*A*(am1+ap1*cosw0))/a0; b2=(A*(ap1+am1*cosw0-tw))/a0; a1=(2*(am1-ap1*cosw0))/a0; a2=(ap1-am1*cosw0-tw)/a0; }
   void setLowpass(float fs,float freq,float Q){ float w0=2*PI*freq/fs,cosw0=std::cos(w0),sinw0=std::sin(w0),alpha=sinw0/(2*Q),a0=1+alpha; b0=((1-cosw0)/2)/a0; b1=(1-cosw0)/a0; b2=b0; a1=(-2*cosw0)/a0; a2=(1-alpha)/a0; }
   void setHighpass(float fs,float freq,float Q){ float w0=2*PI*freq/fs,cosw0=std::cos(w0),sinw0=std::sin(w0),alpha=sinw0/(2*Q),a0=1+alpha; b0=((1+cosw0)/2)/a0; b1=-(1+cosw0)/a0; b2=b0; a1=(-2*cosw0)/a0; a2=(1-alpha)/a0; }
-  HYDRA_AUDIO_INLINE float process(float in){ float out=b0*in+z1; z1=b1*in-a1*out+z2; z2=b2*in-a2*out; if (std::fabs(z1)<1e-20f) z1=0; if (std::fabs(z2)<1e-20f) z2=0; return out; }
+  HYDRA_AUDIO_INLINE float process(float in){ float out=b0*in+z1; z1=b1*in-a1*out+z2; z2=b2*in-a2*out; return out; }
 private: float b0=1,b1=0,b2=0,a1=0,a2=0,z1=0,z2=0; };
-class OnePoleLP { public: void reset(){z=0;} void setCutoff(float fs,float fc){ fc=clampf(fc,20.f,0.45f*fs); float x=std::exp(-TWO_PI*fc/fs); a=1.f-x; } HYDRA_AUDIO_INLINE void setCutoffFast(float fs,float fc){ fc=clampf(fc,20.f,0.45f*fs); float x=TWO_PI*fc/fs; a=clampf(x/(1.f+x),0.f,1.f); } HYDRA_AUDIO_INLINE void setCutoffFastInv(float maxFc,float invFs,float fc){ fc=clampf(fc,20.f,maxFc); float x=TWO_PI*fc*invFs; a=clampf(x/(1.f+x),0.f,1.f); } HYDRA_AUDIO_INLINE float process(float in){ z += a*(in-z); if(std::fabs(z)<1e-20f) z=0; return z; } private: float a=0.1f,z=0; };
-class AllpassFilter { public: void setCoeff(float c){a1=clampf(c,-0.99f,0.99f);} void reset(){z1=0;} HYDRA_AUDIO_INLINE float process(float in){ float out=a1*in+z1; z1=in-a1*out; if(std::fabs(z1)<1e-20f) z1=0.0f; return out;} private: float a1=0,z1=0; };
+class OnePoleLP { public: void reset(){z=0;} void flushDenormals(){ if(std::fabs(z)<1e-20f) z=0.0f; } void setCutoff(float fs,float fc){ fc=clampf(fc,20.f,0.45f*fs); float x=std::exp(-TWO_PI*fc/fs); a=1.f-x; } HYDRA_AUDIO_INLINE void setCutoffFast(float fs,float fc){ fc=clampf(fc,20.f,0.45f*fs); float x=TWO_PI*fc/fs; a=clampf(x/(1.f+x),0.f,1.f); } HYDRA_AUDIO_INLINE void setCutoffFastInv(float maxFc,float invFs,float fc){ fc=clampf(fc,20.f,maxFc); float x=TWO_PI*fc*invFs; a=clampf(x*fastRecip(1.f+x),0.f,1.f); } HYDRA_AUDIO_INLINE float process(float in){ z += a*(in-z); return z; } private: float a=0.1f,z=0; };
+class AllpassFilter { public: void setCoeff(float c){a1=clampf(c,-0.99f,0.99f);} void reset(){z1=0;} void flushDenormals(){ if(std::fabs(z1)<1e-20f) z1=0.0f; } HYDRA_AUDIO_INLINE float process(float in){ float out=a1*in+z1; z1=in-a1*out; return out;} private: float a1=0,z1=0; };
 struct DropoutFrame { float ampGain=1.0f; float hfLoss=1.0f; };
 class DropoutGenerator {
 public:
@@ -199,6 +220,12 @@ public:
     float pink=(0.55f*pink1)+(0.30f*pink2)+(0.15f*pink3);
     float band=hissTilt.process(hissLPF.process(hissHPF.process(pink)));
     return fastSatRational(band*0.9f);
+  }
+  void flushDenormals(){
+    hissHPF.flushDenormals(); hissLPF.flushDenormals(); hissTilt.flushDenormals();
+    if(std::fabs(pink1)<1e-20f) pink1=0.0f;
+    if(std::fabs(pink2)<1e-20f) pink2=0.0f;
+    if(std::fabs(pink3)<1e-20f) pink3=0.0f;
   }
 private:
   HYDRA_AUDIO_INLINE uint32_t fast_rand(){seed=seed*1664525u+1013904223u; return seed;}
@@ -257,12 +284,13 @@ struct TapeCore::Impl {
     float mod=(wowDepthScale*modBaseSamples)*wow+(flutterDepthScale*modBaseSamples)*flutter+(scrapeDepthScale*modBaseSamples)*scrape+residual;
     return clampf(mod,-0.25f*modBaseSamples,0.25f*modBaseSamples);
   }
-  HYDRA_DSP_IRAM HYDRA_AUDIO_INLINE float readTapeAt(float d,float* b){ if(!b||bufferSize==0) return 0; d=clampf(d,2,(float)bufferSize-4); float rp=(float)writeHead-d; if(rp<0)rp+=bufferSize; int32_t r=(int32_t)rp; float f=rp-r; int32_t prev=(r>0)?r-1:bufferSize-1; return hermite4(b[prev],b[r],b[r+1],b[r+2],f); }
-  HYDRA_DSP_IRAM HYDRA_AUDIO_INLINE float readTapeInt(float d,float* b){ if(!b||bufferSize<=0) return 0; d=clampf(d,2,(float)bufferSize-4); float rp=(float)writeHead-d; while(rp<0)rp+=bufferSize; while(rp>=(float)bufferSize)rp-=bufferSize; int32_t r=(int32_t)rp; return b[r]; }
+  HYDRA_DSP_IRAM HYDRA_AUDIO_INLINE float readTapeAt(float d,const float* __restrict__ b){ d=clampf(d,2,(float)bufferSize-4); float rp=(float)writeHead-d; if(rp<0)rp+=bufferSize; int32_t r=(int32_t)rp; float f=rp-r; int32_t prev=(r>0)?r-1:bufferSize-1; return hermite4(b[prev],b[r],b[r+1],b[r+2],f); }
+  HYDRA_DSP_IRAM HYDRA_AUDIO_INLINE float readTapeInt(float d,const float* __restrict__ b){ d=clampf(d,2,(float)bufferSize-4); float rp=(float)writeHead-d; while(rp<0)rp+=bufferSize; while(rp>=(float)bufferSize)rp-=bufferSize; int32_t r=(int32_t)rp; return b[r]; }
   HYDRA_AUDIO_NOINLINE float readTapeReverse(float d,float* b){ if(!b||bufferSize<=0)return 0; d=clampf(d,2,(float)bufferSize-4); int32_t di=(int32_t)d; if(std::abs(di-reverseWindowSize)>1000){reverseCounter=0;reverseWindowSize=di;} reverseCounter++; if(reverseCounter>=std::max<int32_t>(1,di))reverseCounter=0; float rp=(float)writeHead-d+(float)reverseCounter; int32_t r=((int32_t)rp%bufferSize+bufferSize)%bufferSize; float f=rp-std::floor(rp); int32_t i1=r,i0=(r>0)?r-1:bufferSize-1,i2=(r<bufferSize-1)?r+1:0,i3=(i2<bufferSize-1)?i2+1:0; float d1=b[i1],d0=b[i0],d2=b[i2],d3=b[i3]; float c0=d1,c1=0.5f*(d0-d2),c2=d2-2.5f*d1+2.f*d0-0.5f*d3,c3=0.5f*(d3-d1)+1.5f*(d1-d0); return ((c3*f+c2)*f+c1)*f+c0; }
   void updateSampleRateConstants(){ const float fs=std::max(1.0f,sampleRate); invSampleRate=1.0f/fs; maxDropoutFc=0.45f*fs; delaySmoothAlpha=1.f-std::exp(-1.f/(0.200f*fs)); delayRampInc=1.f/(0.250f*fs); azimuthInc=0.2f*invSampleRate; mechNoiseSlowAlpha=mechNoiseOnePoleAlpha(fs,kMechNoiseSlowTimeSeconds); mechNoiseFastAlpha=mechNoiseOnePoleAlpha(fs,kMechNoiseFastTimeSeconds); duckAttackCoeff=1.f-std::exp(-1.f/(kHissDuckAttackTimeSeconds*fs)); duckReleaseCoeff=1.f-std::exp(-1.f/(kHissDuckReleaseTimeSeconds*fs)); }
   void updateCachedParams();
   void updateFilters();
+  void flushDenormals();
   FastTanhLUT tanhLUT; TapeMagnetics magneticsL,magneticsR; float sampleRate; float invSampleRate=1.0f/48000.0f,maxDropoutFc=21600.0f,invHeadGainSum=1.0f; TapeParams currentParams{}; float flutterPhase=0,wowPhase=0,azimuthPhase=0; float flutterInc=0,wowInc=0,azimuthInc=0,delaySmoothAlpha=0,delayRampInc=0,mechNoiseSlowAlpha=0,mechNoiseFastAlpha=0;
   float driveGain=0,dryGain=0.5f,textureWetGain=0.5f,delayWetGain=0.5f,safeFeedback=0,feedbackWearAmount=0;
   MechanicalState mechStateL{};
@@ -407,10 +435,52 @@ void TapeCore::updateParams(const TapeParams& newParams){
   impl_->updateFilters();
 }
 
+HYDRA_DSP_IRAM void TapeCore::Impl::flushDenormals(){
+  magneticsL.flushDenormals(); magneticsR.flushDenormals();
+  noiseGen.flushDenormals(); noiseGenR.flushDenormals();
+  flutterLPF.flushDenormals(); flutterLPFR.flushDenormals();
+  warpHPF_L.flushDenormals(); warpHPF_R.flushDenormals();
+  warpLPF_L.flushDenormals(); warpLPF_R.flushDenormals();
+  reproHeadBump.flushDenormals(); reproHeadBumpR.flushDenormals();
+  tapeRolloff.flushDenormals(); tapeRolloffR.flushDenormals();
+  gapLossLPF.flushDenormals(); gapLossLPFR.flushDenormals();
+  dropoutLPF.flushDenormals(); dropoutLPFR.flushDenormals();
+  azimuthFilter.flushDenormals(); azimuthFilterR.flushDenormals();
+  dcBlocker.flushDenormals(); dcBlockerR.flushDenormals();
+  inputHPF.flushDenormals(); inputHPFR.flushDenormals();
+  inputLPF.flushDenormals(); inputLPFR.flushDenormals();
+  feedbackGapLoss.flushDenormals(); feedbackGapLossR.flushDenormals();
+  feedbackHPF.flushDenormals(); feedbackHPFR.flushDenormals();
+  feedbackHeadBump.flushDenormals(); feedbackHeadBumpR.flushDenormals();
+  feedbackPhase.flushDenormals(); feedbackPhaseR.flushDenormals();
+  if(spring){
+    for(int i=0;i<6;++i){ springLPF_L[i].flushDenormals(); springLPF_R[i].flushDenormals(); }
+    if(std::fabs(springFB_L)<1e-20f) springFB_L=0.0f;
+    if(std::fabs(springFB_R)<1e-20f) springFB_R=0.0f;
+  }
+  if(std::fabs(inEnvL)<1e-20f) inEnvL=0.0f;
+  if(std::fabs(inEnvR)<1e-20f) inEnvR=0.0f;
+}
+
 float TapeCore::process(float input){ float oL,oR; processStereo(input,input,&oL,&oR); return oL; }
 
 HYDRA_DSP_IRAM void TapeCore::processStereo(float inL,float inR,float* outL,float* outR){
-  if(!isValid()){*outL=inL;*outR=inR;return;} TapeParams* p=&impl_->currentParams;
+  processStereoBlock(&inL,&inR,outL,outR,1);
+}
+
+HYDRA_DSP_IRAM void TapeCore::processStereoBlock(const float* inLBlock,const float* inRBlock,float* outLBlock,float* outRBlock,uint32_t frames){
+  if(frames==0||!inLBlock||!inRBlock||!outLBlock||!outRBlock) return;
+  if(!isValid()){
+    for(uint32_t i=0;i<frames;++i){ outLBlock[i]=inLBlock[i]; outRBlock[i]=inRBlock[i]; }
+    return;
+  }
+  TapeParams* p=&impl_->currentParams;
+  for(uint32_t frameIdx=0;frameIdx<frames;++frameIdx){
+    const float inL=inLBlock[frameIdx];
+    const float inR=inRBlock[frameIdx];
+    float sampleOutL=0.0f, sampleOutR=0.0f;
+    float* const outL=&sampleOutL;
+    float* const outR=&sampleOutR;
   impl_->flutterPhase += impl_->flutterInc; if(impl_->flutterPhase>TWO_PI) impl_->flutterPhase-=TWO_PI;
   impl_->wowPhase += impl_->wowInc; if(impl_->wowPhase>TWO_PI) impl_->wowPhase-=TWO_PI;
 
@@ -441,9 +511,7 @@ HYDRA_DSP_IRAM void TapeCore::processStereo(float inL,float inR,float* outL,floa
   float aL=(absInL>impl_->inEnvL)?impl_->duckAttackCoeff:impl_->duckReleaseCoeff;
   float aR=(absInR>impl_->inEnvR)?impl_->duckAttackCoeff:impl_->duckReleaseCoeff;
   impl_->inEnvL += aL*(absInL-impl_->inEnvL);
-  if(std::fabs(impl_->inEnvL)<1e-20f) impl_->inEnvL=0.0f;
   impl_->inEnvR += aR*(absInR-impl_->inEnvR);
-  if(std::fabs(impl_->inEnvR)<1e-20f) impl_->inEnvR=0.0f;
 
   float hissL=0, hissR=0;
   if(impl_->noiseBaseGain>0.000001f) {
@@ -467,7 +535,7 @@ HYDRA_DSP_IRAM void TapeCore::processStereo(float inL,float inR,float* outL,floa
     const float targetGrainSamples = impl_->warpTargetGrainSamples;
     impl_->smoothedGrainSamples += 0.005f * (targetGrainSamples - impl_->smoothedGrainSamples);
     const float grainSamples = impl_->smoothedGrainSamples;
-    const float invGrainSamples = 1.0f / grainSamples;
+    const float invGrainSamples = fastRecip(grainSamples);
 
     impl_->warpPhase += speedMult * invGrainSamples;
     if(impl_->warpPhase >= 1.0f) impl_->warpPhase -= 1.0f;
@@ -677,6 +745,10 @@ HYDRA_DSP_IRAM void TapeCore::processStereo(float inL,float inR,float* outL,floa
   if(impl_->freeze){if(impl_->freezeFade<1.0f){impl_->freezeFade+=0.0002f; if(impl_->freezeFade>1.0f)impl_->freezeFade=1.0f;}} else {if(impl_->freezeFade>0.0f){impl_->freezeFade-=0.0008f; if(impl_->freezeFade<0.0f)impl_->freezeFade=0.0f;}}
   if(impl_->writeHead<TAPE_BUFFER_GUARD){ impl_->mirrorDelayGuard(impl_->delayLine); impl_->mirrorDelayGuard(impl_->delayLineR); }
   impl_->writeHead++; if(impl_->writeHead>=impl_->bufferSize) impl_->writeHead=0;
+  outLBlock[frameIdx]=sampleOutL;
+  outRBlock[frameIdx]=sampleOutR;
+  }
+  impl_->flushDenormals();
 }
 
 } // namespace hydra::dsp

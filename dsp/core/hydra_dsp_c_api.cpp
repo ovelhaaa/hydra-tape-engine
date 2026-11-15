@@ -5,6 +5,13 @@
 #include <cstring>
 #include <new>
 
+#if defined(ARDUINO_ARCH_ESP32) || defined(ESP_PLATFORM)
+#include "esp_attr.h"
+#define HYDRA_DSP_IRAM IRAM_ATTR
+#else
+#define HYDRA_DSP_IRAM
+#endif
+
 struct hydra_dsp_handle {
   hydra::dsp::TapeCore* core;
   hydra::dsp::TapeParams params;
@@ -293,7 +300,7 @@ int hydra_dsp_commit(hydra_dsp_handle* handle) {
   return 0;
 }
 
-int hydra_dsp_process(hydra_dsp_handle* handle,
+HYDRA_DSP_IRAM int hydra_dsp_process(hydra_dsp_handle* handle,
                       const float* in_l,
                       const float* in_r,
                       float* out_l,
@@ -301,9 +308,7 @@ int hydra_dsp_process(hydra_dsp_handle* handle,
                       uint32_t frames) {
   if (!handle || !out_l || !out_r || !in_l || !in_r) return -1;
   if (handle->dirty) handle->core->updateParams(handle->params), handle->dirty = false;
-  for (uint32_t i = 0; i < frames; ++i) {
-    handle->core->processStereo(in_l[i], in_r[i], &out_l[i], &out_r[i]);
-  }
+  handle->core->processStereoBlock(in_l, in_r, out_l, out_r, frames);
   return 0;
 }
 }

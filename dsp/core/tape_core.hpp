@@ -53,6 +53,7 @@ public:
   const TapeParams& params() const;
   float process(float input);
   void processStereo(float inL, float inR, float* outL, float* outR);
+  void processStereoBlock(const float* inL, const float* inR, float* outL, float* outR, uint32_t frames);
 
 private:
   struct Impl;

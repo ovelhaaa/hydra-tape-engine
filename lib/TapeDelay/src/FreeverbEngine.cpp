@@ -1,6 +1,7 @@
 #include "TapeDelay.h"
 #include <math.h>
 #include <string.h>
+#include "esp_attr.h"
 #include "esp_heap_caps.h"
 
 // ============================================================================
@@ -106,8 +107,9 @@ void FreeverbEngine::update() {
     // Recalculate parameters based on current settings
     roomsize1 = roomsize * scaleRoom + offsetRoom;
     damp1 = damp * scaleDamp;
-    wet1 = wet * scaleWet;
-    wet2 = wet * scaleWet; // For stereo, can be different
+    const float wetGain = wet * scaleWet;
+    wet1 = wetGain * (width * 0.5f + 0.5f);
+    wet2 = wetGain * (0.5f - width * 0.5f);
     
     for (int i = 0; i < numcombs; ++i) {
         combL[i].setfeedback(roomsize1);
@@ -182,9 +184,54 @@ void FreeverbEngine::processStereo(float inL, float inR, float* outL, float* out
     }
 
     // Apply stereo width and mix with dry signal
-    float final_wetL = out_allpassL * (wet1 * (width / 2.0f + 0.5f)) + out_allpassR * (wet2 * (0.5f - width / 2.0f));
-    float final_wetR = out_allpassR * (wet2 * (width / 2.0f + 0.5f)) + out_allpassL * (wet1 * (0.5f - width / 2.0f));
+    float final_wetL = out_allpassL * wet1 + out_allpassR * wet2;
+    float final_wetR = out_allpassR * wet1 + out_allpassL * wet2;
 
     *outL = inL * dry + final_wetL;
     *outR = inR * dry + final_wetR;
+}
+
+IRAM_ATTR void FreeverbEngine::processStereoBlock(const float* inL, const float* inR, float* outL, float* outR, int frames) {
+    if (!allocated) {
+        if (outL != inL) memcpy(outL, inL, sizeof(float) * frames);
+        if (outR != inR) memcpy(outR, inR, sizeof(float) * frames);
+        return;
+    }
+
+    int offset = 0;
+    while (offset < frames) {
+        const int chunk = ((frames - offset) > 128) ? 128 : (frames - offset);
+        float monoIn[128];
+        float accL[128];
+        float accR[128];
+
+        for (int f = 0; f < chunk; ++f) {
+            monoIn[f] = (inL[offset + f] + inR[offset + f]) * fixedGain;
+            accL[f] = 0.0f;
+            accR[f] = 0.0f;
+        }
+
+        for (int i = 0; i < numcombs; ++i) {
+            combL[i].processBlockAccum(monoIn, accL, chunk);
+            combR[i].processBlockAccum(monoIn, accR, chunk);
+        }
+
+        for (int i = 0; i < numallpasses; ++i) {
+            allpassL[i].processBlockInPlace(accL, chunk);
+            allpassR[i].processBlockInPlace(accR, chunk);
+        }
+
+        const float w1 = wet1;
+        const float w2 = wet2;
+        const float dryGain = dry;
+        for (int f = 0; f < chunk; ++f) {
+            const float xL = inL[offset + f];
+            const float xR = inR[offset + f];
+            const float aL = accL[f];
+            const float aR = accR[f];
+            outL[offset + f] = xL * dryGain + (aL * w1 + aR * w2);
+            outR[offset + f] = xR * dryGain + (aR * w1 + aL * w2);
+        }
+        offset += chunk;
+    }
 }

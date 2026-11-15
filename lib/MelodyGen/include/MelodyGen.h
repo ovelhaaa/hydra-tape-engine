@@ -88,6 +88,8 @@ private:
   float envAttack;   // Attack coefficient
   float envRelease;  // Release coefficient
   float stereoDrift; // L/R phase/timbre offset
+  float panGainL;
+  float panGainR;
 
   bool noteOn;
   bool isResting;

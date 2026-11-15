@@ -571,7 +571,7 @@ def main():
         node = shutil.which(args.node)
         if node is None:
             raise ValueError(f"Node.js missing: {args.node}; install Node.js or pass --node.")
-        args.node = node
+        args.node = Path(node).resolve()
 
         def command_output(command):
             return subprocess.check_output(command, cwd=ROOT, text=True).strip()

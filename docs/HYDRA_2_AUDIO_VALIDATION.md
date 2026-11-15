@@ -50,6 +50,8 @@ O teste funcional web executa o AudioWorklet de produção em Node com o binári
 
 Para testar o firmware, execute `pio run -e esp32-s3-devkitc-1`. Em serial a 115200, `perf` mede geração, processamento e formatação PCM do bloco por `esp_timer_get_time()`, fora das chamadas de I2S. Com 128 frames a 44,1 kHz, o orçamento é `128 / 44100 ≈ 2.902,5 µs`. `DSP Budget Overruns` conta blocos acima desse limite. `I2S TX Write Failures` conta escritas que retornam erro ou quantidade incompleta de bytes. O contador de TX não mede continuidade física do sinal no conversor.
 
+Em uma placa ESP32-S3 rev. 0.2 com 16 MB de flash e 8 MB de PSRAM, o teste usou o sintetizador interno e 44,1 kHz. No primeiro firmware de bancada, os blocos de delay sem Warp e com Warp a 50% e 95% ultrapassaram o orçamento em todas as janelas de medição, com zero escritas curtas ou com erro. O pico acumulado chegou a 5.428 µs. O comando serial passou a rodar no Core 0 para continuar respondendo enquanto o áudio ocupa o Core 1. A build que forçou `-Ofast` elevou o pico de Warp para 7.547 µs, por isso a configuração padrão de otimização do framework foi restaurada. A [PR de validação](https://github.com/ovelhaaa/hydra-tape-engine/pull/47) registra o ensaio com o firmware final.
+
 ## Native ↔ WASM
 
 O teste de equivalência usa `max_abs <= 1e-5` e `RMSE <= 1e-6`. A execução local em Release mediu `max_abs = 7,436e-6` e `RMSE = 2,49805e-6` tanto na branch quanto no baseline `main` (`e4cae43`), com o mesmo toolchain. Os resultados do GitHub Actions devem ser verificados no HEAD da PR separadamente.

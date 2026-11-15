@@ -76,7 +76,7 @@ float p_springMix = 50.0f;       // 50% - balanced mix
 float p_springDecay = 60.0f;     // 60% - medium-long decay
 float p_springDamping = 45.0f;   // 45% - balanced damping
 
-// === ACCIDENTAL WARP V1.2 ===
+// === ACCIDENTAL WARP V1.3 ===
 bool p_warpActive = false;
 float p_warpSpeed = 1.0f;        // 1.0 = octave up (+12st, v_eff = 2.0x)
 float p_warpGrainMs = 80.0f;     // 80ms default window
@@ -810,7 +810,7 @@ void printHelp() {
   dualPrintln("  spm <0-100> : Spring Mix");
   dualPrintln("  spd <0-100> : Spring Decay");
   dualPrintln("  spf <0-100> : Spring Damping");
-  dualPrintln(" [ACCIDENTAL WARP V1.2]");
+  dualPrintln(" [ACCIDENTAL WARP V1.3]");
   dualPrintln("  wrp <0/1>   : Warp Enable/Bypass");
   dualPrintln("  wsp <0-2.0> : Warp Speed Multiplier (1.0 = +1 Octave)");
   dualPrintln("  wgr <10-400>: Warp Grain Window in ms");
@@ -827,6 +827,7 @@ void printDspPerformanceStats() {
   dualPrintln("\n=== HYDRA DSP PERFORMANCE TELEMETRY ===");
   dualPrintf("Block Size          : %d frames\n", AUDIO_CHUNK_SIZE);
   dualPrintf("Sample Rate         : %d Hz\n", SAMPLE_RATE);
+  dualPrintf("CPU Clock           : %u MHz\n", getCpuFrequencyMhz());
   portENTER_CRITICAL(&g_dsp_perf_mux);
   const DspPerformance perf = g_dsp_perf;
   portEXIT_CRITICAL(&g_dsp_perf_mux);
@@ -1067,7 +1068,7 @@ void executeCommand(String line) {
       printBar("Spring Damp", p_springDamping / 100.0f);
     }
 
-    // --- ACCIDENTAL WARP V1.2 ---
+    // --- ACCIDENTAL WARP V1.3 ---
     else if (cmd == "wrp") {
       p_warpActive = (val > 0);
       dualPrintf("Accidental Warp: %s\n", p_warpActive ? "ON" : "OFF");

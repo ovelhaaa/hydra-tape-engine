@@ -31,7 +31,13 @@ bool sameParams(const hydra_dsp_params& a, const hydra_dsp_params& b) {
          a.spring == b.spring &&
          a.springDecay == b.springDecay &&
          a.springDamping == b.springDamping &&
-         a.springMix == b.springMix;
+         a.springMix == b.springMix &&
+         a.warpActive == b.warpActive &&
+         a.warpSpeed == b.warpSpeed &&
+         a.warpGrainMs == b.warpGrainMs &&
+         a.warpStereo == b.warpStereo &&
+         a.warpFeedback == b.warpFeedback &&
+         a.warpMode == b.warpMode;
 }
 
 }  // namespace

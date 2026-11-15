@@ -35,7 +35,11 @@ if(BUILD_TESTING)
   target_link_libraries(hydra_audible_controls PRIVATE hydra_dsp_core)
   add_test(NAME core_audible_controls COMMAND hydra_audible_controls)
 
-  add_executable(hydra_warp_core_test tests/core/warp_core_test.cpp)
+  add_executable(hydra_warp_core_test
+    tests/core/warp_core_test.cpp
+    host/native/esp32/hydra_dsp_esp32_adapter.cpp
+  )
+  target_include_directories(hydra_warp_core_test PRIVATE host/native/esp32)
   target_link_libraries(hydra_warp_core_test PRIVATE hydra_dsp_core)
   add_test(NAME core_warp_test COMMAND hydra_warp_core_test)
 

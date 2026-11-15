@@ -481,6 +481,10 @@ def render_scenario(scenario, args, provenance, scratch):
                          run_external(engine, args.node if engine == "worklet" else args.listen,
                                       input_path, params, events, scratch, stimulus.shape))
                 run["dsp"] = analyze(audio, pitch, tail_start, events)
+                if name == "08_feedback" and np.isfinite(audio).all():
+                    # The first pass fits in one 80 ms grain. Start after 2.5
+                    # grains and include repeats before a low-gain tail dies out.
+                    run["dsp"]["metrics"]["repeat_rms_200_to_500_ms"] = float(rms(audio[FS // 5:FS // 2]))
                 if name == "09_grain" and run["dsp"]["status"] == "PASS":
                     baseline = (run_python(stimulus, params, []) if engine == "python" else
                                 run_external(engine, args.node if engine == "worklet" else args.listen,
@@ -525,9 +529,9 @@ def render_scenario(scenario, args, provenance, scratch):
                 passed = values[0] < 1e-5 and min(values[1:]) > 1e-3
                 criterion = "Mono baseline within float32 tolerance; stereo difference over -60 dBFS"
             else:
-                values = [m["tail_rms"] for m in metrics]
+                values = [m["repeat_rms_200_to_500_ms"] for m in metrics]
                 passed = values[0] < min(values[1:])
-                criterion = "Every feedback setting sustains more tail energy than the zero-feedback impulse"
+                criterion = "Each nonzero feedback renders more repeat energy from 200 to 500 ms than zero feedback"
             record["cross_variant_dsp"][engine] = {
                 "status": "PASS" if passed else "FAIL", "criteria": criterion, "values": values
             }
@@ -598,6 +602,17 @@ def main():
         parser.exit(2, f"{error}\n")
 
     print(manifest_path)
+    for scenario in manifest["scenarios"]:
+        for index, variant in enumerate(scenario["variants"], 1):
+            for category in ("engines", "similarity"):
+                for key, result in variant[category].items():
+                    if result["status"] == "FAIL":
+                        print(f"FAIL {scenario['id']} variant {index}: {key} "
+                              f"{result.get('reason') or result.get('dsp', {}).get('checks') or result.get('criteria')}",
+                              file=sys.stderr)
+        for engine, result in scenario.get("cross_variant_dsp", {}).items():
+            if result["status"] == "FAIL":
+                print(f"FAIL {scenario['id']} {engine}: {result['criteria']} {result['values']}", file=sys.stderr)
     statuses = [
         result["status"]
         for scenario in manifest["scenarios"]

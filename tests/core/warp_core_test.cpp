@@ -1,5 +1,6 @@
 #include "check.h"
 #include "hydra_dsp.h"
+#include "hydra_dsp_esp32_adapter.h"
 
 #include <algorithm>
 #include <cmath>
@@ -501,6 +502,63 @@ void test_warp_abrupt_speed_and_stereo_changes() {
   hydra_dsp_destroy(h);
 }
 
+void test_esp32_adapter_applies_warp_only_changes() {
+  constexpr float sampleRate = 44100.0f;
+  hydra_dsp_params params{};
+  params.drive = 20.0f;
+  params.tapeSpeed = 50.0f;
+  params.delayActive = 1.0f;
+  params.delayTimeMs = 100.0f;
+  params.dryWet = 100.0f;
+  params.delayWet = 100.0f;
+  params.activeHeads = 4.0f;
+  params.bpm = 120.0f;
+  params.tone = 50.0f;
+  params.warpActive = 1.0f;
+  params.warpSpeed = 1.0f;
+  params.warpGrainMs = 80.0f;
+
+  struct WarpChange {
+    float hydra_dsp_params::* member;
+    float value;
+  };
+  const WarpChange changes[] = {
+    {&hydra_dsp_params::warpActive, 0.0f},
+    {&hydra_dsp_params::warpSpeed, 0.5f},
+    {&hydra_dsp_params::warpGrainMs, 120.0f},
+    {&hydra_dsp_params::warpStereo, 0.75f},
+    {&hydra_dsp_params::warpFeedback, 80.0f},
+    {&hydra_dsp_params::warpMode, 2.0f},
+  };
+  constexpr uint32_t frames = 44100 / 2;
+  std::vector<float> input(frames);
+  for (uint32_t frame = 0; frame < frames; ++frame) {
+    input[frame] = 0.5f * std::sin(kTwoPi * 440.0f * frame / sampleRate);
+  }
+  for (const auto& change : changes) {
+    HydraDspEsp32Adapter control(sampleRate), automated(sampleRate);
+    CHECK(control.isValid() && automated.isValid());
+    control.updateParams(params);
+    automated.updateParams(params);
+    float controlL, controlR, actualL, actualR;
+    float peakDifference = 0.0f;
+    for (uint32_t frame = 0; frame < frames; ++frame) {
+      if (frame == 8192) {
+        auto changed = params;
+        changed.*(change.member) = change.value;
+        automated.updateParams(changed);
+      }
+      const float sample = input[frame];
+      control.processStereo(sample, sample, &controlL, &controlR);
+      automated.processStereo(sample, sample, &actualL, &actualR);
+      const float difference = std::max(std::fabs(controlL - actualL), std::fabs(controlR - actualR));
+      if (frame < 8192) CHECK(difference == 0.0f);
+      peakDifference = std::max(peakDifference, difference);
+    }
+    CHECK(peakDifference > 0.001f);
+  }
+}
+
 void test_api_backward_compatibility() {
   hydra_dsp_handle* h = create_test_handle();
   CHECK(hydra_dsp_get_param_count() == 36);
@@ -595,6 +653,7 @@ int main() {
   test_warp_grain_phase_continuity();
   test_warp_toggle_with_audio_in_buffer();
   test_warp_abrupt_speed_and_stereo_changes();
+  test_esp32_adapter_applies_warp_only_changes();
   test_api_backward_compatibility();
   std::cout << "All Accidental Warp V1.3 Tests PASSED successfully!\n";
   return 0;

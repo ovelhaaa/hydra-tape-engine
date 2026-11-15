@@ -24,11 +24,11 @@ A bancada envia a mesma entrada float32 a 48 kHz e os mesmos eventos nos limites
 | 2. Quinta | Alvo 660 Hz, pico de 665 Hz nos três motores. |
 | 3–6. Quatro modos | Saída não silenciosa, pico monitorado sobre o render completo e zero NaN/Inf. O leitor single-tap do TapeCore usa período de fase baseado em Grain e alcance de leitura Grain + 1000 amostras. O protótipo usa Grain + 1000 para ambos. |
 | 7. Estéreo | Entrada mono a 0, 0,5 e 1. Diferença L/R abaixo de `1e-5` no primeiro caso e acima de −60 dBFS nos demais. |
-| 8. Feedback | Impulso a 0%, 50%, 80% e 95%. A cauda perde energia com o fim do estímulo e 0% produz a menor energia tardia. |
+| 8. Feedback | Impulso a 0%, 50%, 80% e 95%. A cauda perde energia com o fim do estímulo e 0% produz a menor energia de repetição entre 200 e 500 ms. |
 | 9. Grain | 40 → 120 → 180 → 240 ms. A saída coincide com o controle de Grain estático até o primeiro evento e diverge depois dele. |
 | 10. Speed | 0 → 0,5 → 1 → 1,5. A frequência é verificada após a acomodação em cada segmento. |
 | 11. Toggle | Ativo → inativo → ativo. Só o nativo tem a transição de volta para o modo de delay convencional. Worklet e Python ficam como `NOT COMPARABLE`. |
-| 12. Cascata | Frase de cinco notas, feedback de 65% e render de 15 s. Finidade, pico e decaimento são medidos em toda a gravação. |
+| 12. Cascata | Frase de cinco notas, feedback de 65% e render de 15 s. Valores finitos, pico e decaimento são medidos em toda a gravação. |
 
 Para sinais estacionários, o erro de pitch permitido acomoda uma banda lateral à taxa de Grain mais um bin da FFT. O limite de 2 FS detecta crescimento acima da margem de 6 dB sobre PCM normalizado. Os testes do core cobrem as janelas complementares e transições. O teste Python verifica a evolução e o wrap da fase, persistência da memória dos filtros, retenção do impulso em buffer e a leitura esperada no frame 16 de uma janela de 64 frames.
 

@@ -26,7 +26,14 @@ inline float fastSatRational(float x) {
   return clampf(x * (27.0f + ax * ax) / (27.0f + 9.0f * ax * ax), -1.0f, 1.0f);
 }
 inline float fast_sin(float x) {
-  x -= TWO_PI * std::floor((x + PI) / TWO_PI);
+  constexpr float INV_TWO_PI = 1.0f / TWO_PI;
+  if (x > PI) {
+    x -= TWO_PI;
+    if (x > PI) x -= TWO_PI * std::floor((x + PI) * INV_TWO_PI);
+  } else if (x < -PI) {
+    x += TWO_PI;
+    if (x < -PI) x -= TWO_PI * std::floor((x + PI) * INV_TWO_PI);
+  }
   const float B = 4.0f / PI;
   const float C = -4.0f / (PI * PI);
   float y = B * x + C * x * std::fabs(x);
@@ -84,6 +91,7 @@ struct TapeMagnetics {
   float drive = 1.0f;
   float biasAmount = 0.08f;
   float biasHz = 18000.0f;
+  float biasPhaseInc = 18000.0f / 48000.0f;
   float coercivity = 0.12f;
   float remanence = 0.985f;
   float satNorm = 1.0f;
@@ -97,6 +105,7 @@ struct TapeMagnetics {
     drive = 0.9f + driveNorm * 0.35f;
     biasAmount = 0.035f + (1.0f - speedNorm) * 0.035f + driveNorm * 0.035f;
     biasHz = std::min(18000.0f, fs * 0.45f);
+    biasPhaseInc = biasHz / fs;
     coercivity = 0.07f + ageNorm * 0.10f;
     remanence = 0.970f + ageNorm * 0.024f;
     satNorm = 1.0f / std::max(0.55f, 0.82f + 0.18f * remanence);
@@ -104,8 +113,11 @@ struct TapeMagnetics {
 
   inline float process(float x, bool allowBias) {
     if (!lut) return x;
-    biasPhase += biasHz / fs;
-    biasPhase -= std::floor(biasPhase);
+    biasPhase += biasPhaseInc;
+    if (biasPhase >= 1.0f) {
+      biasPhase -= 1.0f;
+      if (biasPhase >= 1.0f) biasPhase -= std::floor(biasPhase);
+    }
     float tri = 4.0f * std::fabs(biasPhase - 0.5f) - 1.0f;
 
     float biasGate = (allowBias && std::fabs(x) > 1e-7f) ? 1.0f : 0.0f;
@@ -136,23 +148,26 @@ public:
   void setHighpass(float fs,float freq,float Q){ float w0=2*PI*freq/fs,cosw0=std::cos(w0),sinw0=std::sin(w0),alpha=sinw0/(2*Q),a0=1+alpha; b0=((1+cosw0)/2)/a0; b1=-(1+cosw0)/a0; b2=b0; a1=(-2*cosw0)/a0; a2=(1-alpha)/a0; }
   float process(float in){ float out=b0*in+z1; z1=b1*in-a1*out+z2; z2=b2*in-a2*out; if (std::fabs(z1)<1e-20f) z1=0; if (std::fabs(z2)<1e-20f) z2=0; return out; }
 private: float b0=1,b1=0,b2=0,a1=0,a2=0,z1=0,z2=0; };
-class OnePoleLP { public: void reset(){z=0;} void setCutoff(float fs,float fc){ fc=clampf(fc,20.f,0.45f*fs); float x=std::exp(-TWO_PI*fc/fs); a=1.f-x; } void setCutoffFast(float fs,float fc){ fc=clampf(fc,20.f,0.45f*fs); float x=TWO_PI*fc/fs; a=clampf(x/(1.f+x),0.f,1.f); } float process(float in){ z += a*(in-z); if(std::fabs(z)<1e-20f) z=0; return z; } private: float a=0.1f,z=0; };
-class AllpassFilter { public: void setCoeff(float c){a1=clampf(c,-0.99f,0.99f);} void reset(){z1=0;} float process(float in){ float out=a1*in+z1; z1=in-a1*out; return out;} private: float a1=0,z1=0; };
+class OnePoleLP { public: void reset(){z=0;} void setCutoff(float fs,float fc){ fc=clampf(fc,20.f,0.45f*fs); float x=std::exp(-TWO_PI*fc/fs); a=1.f-x; } void setCutoffFast(float fs,float fc){ fc=clampf(fc,20.f,0.45f*fs); float x=TWO_PI*fc/fs; a=clampf(x/(1.f+x),0.f,1.f); } void setCutoffFastInv(float maxFc,float invFs,float fc){ fc=clampf(fc,20.f,maxFc); float x=TWO_PI*fc*invFs; a=clampf(x/(1.f+x),0.f,1.f); } float process(float in){ z += a*(in-z); if(std::fabs(z)<1e-20f) z=0; return z; } private: float a=0.1f,z=0; };
+class AllpassFilter { public: void setCoeff(float c){a1=clampf(c,-0.99f,0.99f);} void reset(){z1=0;} float process(float in){ float out=a1*in+z1; z1=in-a1*out; if(std::fabs(z1)<1e-20f) z1=0.0f; return out;} private: float a1=0,z1=0; };
 struct DropoutFrame { float ampGain=1.0f; float hfLoss=1.0f; };
 class DropoutGenerator {
 public:
   void reset(){common.reset(987654321u); local[0].reset(2246822519u); local[1].reset(3266489917u); severity=0.5f; frame={1.0f,1.0f};}
-  void setSeverity(float sev){severity=clampf(sev,0,1); common.severity=severity; local[0].severity=severity*0.45f; local[1].severity=severity*0.45f;}
+  void setSeverity(float sev){severity=clampf(sev,0,1); common.setSeverity(severity); local[0].setSeverity(severity*0.45f); local[1].setSeverity(severity*0.45f);}
   void beginFrame(float fs){common.process(fs); frame.ampGain=common.amp; frame.hfLoss=common.hf;}
   DropoutFrame value(int channel,float fs){int ch=(channel!=0)?1:0; local[ch].process(fs); DropoutFrame out; out.ampGain=clampf(frame.ampGain*(0.75f+0.25f*local[ch].amp),0.02f,1.0f); out.hfLoss=clampf(frame.hfLoss*(0.70f+0.30f*local[ch].hf),0.02f,1.0f); return out;}
 private:
   struct State {
     float amp=1.0f, ampTarget=1.0f, hf=1.0f, hfTarget=1.0f, severity=0.5f; int remain=0; uint32_t s=987654321u;
-    void reset(uint32_t seed){amp=ampTarget=hf=hfTarget=1.0f; remain=0; s=seed;}
+    float cachedFs=0.0f, srScale=1.0f, trigProb=0.00006f, downAmp=0.0042f, upAmp=0.00025f, downHf=0.00756f, upHf=0.000175f;
+    void updateRates(){ trigProb=(severity*0.00012f)*srScale; downAmp=(0.0012f+0.006f*severity)*srScale; upAmp=0.00025f*srScale; downHf=downAmp*1.8f; upHf=upAmp*0.7f; }
+    void setSeverity(float sev){ severity=sev; updateRates(); }
+    void reset(uint32_t seed){amp=ampTarget=hf=hfTarget=1.0f; remain=0; s=seed; updateRates();}
     uint32_t randu(){s=s*1664525u+1013904223u; return s;}
     float rand01(){return float(randu()>>8)*(1.0f/16777216.0f);}
-    void maybeTrigger(float fs){float safeFs=std::max(1.f,fs); float p=(severity*0.00012f)*(48000.f/safeFs); if(rand01()<p){float r=rand01(); if(r<0.72f){remain=int((0.001f+0.019f*rand01())*fs); ampTarget=0.65f+0.30f*rand01(); hfTarget=0.35f+0.45f*rand01();} else if(r<0.96f){remain=int((0.020f+0.130f*rand01())*fs); ampTarget=0.18f+0.55f*rand01(); hfTarget=0.12f+0.35f*rand01();} else {remain=int((0.150f+0.600f*rand01())*fs); ampTarget=0.05f+0.35f*rand01(); hfTarget=0.05f+0.20f*rand01();}}}
-    void process(float fs){if(remain<=0){ampTarget=1.0f; hfTarget=1.0f; maybeTrigger(fs);} else --remain; float scale=48000.f/std::max(1.f,fs); float down=(0.0012f+0.006f*severity)*scale, up=0.00025f*scale; float ca=(ampTarget<amp)?down:up, ch=(hfTarget<hf)?down*1.8f:up*0.7f; amp += ca*(ampTarget-amp); hf += ch*(hfTarget-hf);}
+    void maybeTrigger(float fs){if(rand01()<trigProb){float r=rand01(); if(r<0.72f){remain=int((0.001f+0.019f*rand01())*fs); ampTarget=0.65f+0.30f*rand01(); hfTarget=0.35f+0.45f*rand01();} else if(r<0.96f){remain=int((0.020f+0.130f*rand01())*fs); ampTarget=0.18f+0.55f*rand01(); hfTarget=0.12f+0.35f*rand01();} else {remain=int((0.150f+0.600f*rand01())*fs); ampTarget=0.05f+0.35f*rand01(); hfTarget=0.05f+0.20f*rand01();}}}
+    void process(float fs){if(fs!=cachedFs){cachedFs=fs; srScale=48000.f/std::max(1.f,fs); updateRates();} if(remain<=0){ampTarget=1.0f; hfTarget=1.0f; maybeTrigger(fs);} else --remain; float ca=(ampTarget<amp)?downAmp:upAmp, ch=(hfTarget<hf)?downHf:upHf; amp += ca*(ampTarget-amp); hf += ch*(hfTarget-hf);}
   } common, local[2];
   float severity=0.5f; DropoutFrame frame;
 };
@@ -177,7 +192,7 @@ public:
   }
 private:
   uint32_t fast_rand(){seed=seed*1664525u+1013904223u; return seed;}
-  float white(){uint32_t r=fast_rand(); return ((float)(r&0xFFFF)/32768.f)-1.f;}
+  float white(){uint32_t r=fast_rand(); return ((float)(r&0xFFFF)*(1.0f/32768.0f))-1.f;}
   float pink1=0.0f,pink2=0.0f,pink3=0.0f;
   uint32_t seed=1;
   BiquadFilter hissHPF,hissLPF,hissTilt;
@@ -222,10 +237,10 @@ struct TapeCore::Impl {
   float readTapeAt(float d,float* b){ if(!b||bufferSize==0) return 0; d=clampf(d,2,(float)bufferSize-4); float rp=(float)writeHead-d; if(rp<0)rp+=bufferSize; int32_t r=(int32_t)rp; float f=rp-r; int32_t prev=(r>0)?r-1:bufferSize-1; return hermite4(b[prev],b[r],b[r+1],b[r+2],f); }
   float readTapeInt(float d,float* b){ if(!b||bufferSize<=0) return 0; d=clampf(d,2,(float)bufferSize-4); float rp=(float)writeHead-d; while(rp<0)rp+=bufferSize; while(rp>=(float)bufferSize)rp-=bufferSize; int32_t r=(int32_t)rp; return b[r]; }
   float readTapeReverse(float d,float* b){ if(!b||bufferSize<=0)return 0; d=clampf(d,2,(float)bufferSize-4); int32_t di=(int32_t)d; if(std::abs(di-reverseWindowSize)>1000){reverseCounter=0;reverseWindowSize=di;} reverseCounter++; if(reverseCounter>=std::max<int32_t>(1,di))reverseCounter=0; float rp=(float)writeHead-d+(float)reverseCounter; int32_t r=((int32_t)rp%bufferSize+bufferSize)%bufferSize; float f=rp-std::floor(rp); int32_t i1=r,i0=(r>0)?r-1:bufferSize-1,i2=(r<bufferSize-1)?r+1:0,i3=(i2<bufferSize-1)?i2+1:0; float d1=b[i1],d0=b[i0],d2=b[i2],d3=b[i3]; float c0=d1,c1=0.5f*(d0-d2),c2=d2-2.5f*d1+2.f*d0-0.5f*d3,c3=0.5f*(d3-d1)+1.5f*(d1-d0); return ((c3*f+c2)*f+c1)*f+c0; }
-  void updateSampleRateConstants(){ const float fs=std::max(1.0f,sampleRate); delaySmoothAlpha=1.f-std::exp(-1.f/(0.200f*fs)); delayRampInc=1.f/(0.250f*fs); azimuthInc=0.2f/fs; mechNoiseSlowAlpha=mechNoiseOnePoleAlpha(fs,kMechNoiseSlowTimeSeconds); mechNoiseFastAlpha=mechNoiseOnePoleAlpha(fs,kMechNoiseFastTimeSeconds); duckAttackCoeff=1.f-std::exp(-1.f/(kHissDuckAttackTimeSeconds*fs)); duckReleaseCoeff=1.f-std::exp(-1.f/(kHissDuckReleaseTimeSeconds*fs)); }
+  void updateSampleRateConstants(){ const float fs=std::max(1.0f,sampleRate); invSampleRate=1.0f/fs; maxDropoutFc=0.45f*fs; delaySmoothAlpha=1.f-std::exp(-1.f/(0.200f*fs)); delayRampInc=1.f/(0.250f*fs); azimuthInc=0.2f*invSampleRate; mechNoiseSlowAlpha=mechNoiseOnePoleAlpha(fs,kMechNoiseSlowTimeSeconds); mechNoiseFastAlpha=mechNoiseOnePoleAlpha(fs,kMechNoiseFastTimeSeconds); duckAttackCoeff=1.f-std::exp(-1.f/(kHissDuckAttackTimeSeconds*fs)); duckReleaseCoeff=1.f-std::exp(-1.f/(kHissDuckReleaseTimeSeconds*fs)); }
   void updateCachedParams();
   void updateFilters();
-  FastTanhLUT tanhLUT; TapeMagnetics magneticsL,magneticsR; float sampleRate; TapeParams currentParams{}; float flutterPhase=0,wowPhase=0,azimuthPhase=0; float flutterInc=0,wowInc=0,azimuthInc=0,delaySmoothAlpha=0,delayRampInc=0,mechNoiseSlowAlpha=0,mechNoiseFastAlpha=0;
+  FastTanhLUT tanhLUT; TapeMagnetics magneticsL,magneticsR; float sampleRate; float invSampleRate=1.0f/48000.0f,maxDropoutFc=21600.0f,invHeadGainSum=1.0f; TapeParams currentParams{}; float flutterPhase=0,wowPhase=0,azimuthPhase=0; float flutterInc=0,wowInc=0,azimuthInc=0,delaySmoothAlpha=0,delayRampInc=0,mechNoiseSlowAlpha=0,mechNoiseFastAlpha=0;
   float driveGain=0,dryGain=0.5f,textureWetGain=0.5f,delayWetGain=0.5f,safeFeedback=0,feedbackWearAmount=0;
   MechanicalState mechStateL{};
   MechanicalState mechStateR{0,0,0,0,0x2468ACE1u,0x56473829u};
@@ -264,6 +279,11 @@ void TapeCore::Impl::updateCachedParams(){
   springFeedbackGain=springDecayNorm*0.85f;
   springWetGain=clampf(currentParams.springMix*0.01f,0.f,1.f);
   activeHeadMask=static_cast<uint8_t>(currentParams.activeHeads)&0x07u;
+  float hSum=0.0f;
+  if(activeHeadMask&1) hSum+=1.0f;
+  if(activeHeadMask&2) hSum+=0.75f;
+  if(activeHeadMask&4) hSum+=0.55f;
+  invHeadGainSum=(hSum>0.0f)?(1.0f/hSum):0.0f;
   delayActive=currentParams.delayActive;
   headsMusical=currentParams.headsMusical;
   pingPong=currentParams.pingPong;
@@ -374,10 +394,10 @@ void TapeCore::processStereo(float inL,float inR,float* outL,float* outR){
   float modL=impl_->mechanicalMod(scrapeL,impl_->flutterLPF,impl_->mechStateL,residual);
   float modR=impl_->mechanicalMod(scrapeR,impl_->flutterLPFR,impl_->mechStateR,residual);
 
-  impl_->azimuthPhase += impl_->azimuthInc; if(impl_->azimuthPhase>1) impl_->azimuthPhase=0;
-  float tri=(impl_->azimuthPhase<0.5f)?(impl_->azimuthPhase*2):(2-impl_->azimuthPhase*2); float azimuthMod=0.5f+(tri*1.5f);
   const bool useAzimuth=impl_->useAzimuth;
   if(useAzimuth){
+    impl_->azimuthPhase += impl_->azimuthInc; if(impl_->azimuthPhase>1) impl_->azimuthPhase=0;
+    float tri=(impl_->azimuthPhase<0.5f)?(impl_->azimuthPhase*2):(2-impl_->azimuthPhase*2); float azimuthMod=0.5f+(tri*1.5f);
     float targetAz=-0.90f*impl_->azimuthErrorNorm*azimuthMod;
     impl_->smoothedAzCoeff += 0.001f * (targetAz - impl_->smoothedAzCoeff);
     impl_->azimuthFilter.setCoeff(impl_->smoothedAzCoeff);
@@ -418,8 +438,9 @@ void TapeCore::processStereo(float inL,float inR,float* outL,float* outR){
     const float targetGrainSamples = std::max(64.0f, p->warpGrainMs * 0.001f * impl_->sampleRate);
     impl_->smoothedGrainSamples += 0.005f * (targetGrainSamples - impl_->smoothedGrainSamples);
     const float grainSamples = impl_->smoothedGrainSamples;
+    const float invGrainSamples = 1.0f / grainSamples;
 
-    impl_->warpPhase += speedMult / grainSamples;
+    impl_->warpPhase += speedMult * invGrainSamples;
     if(impl_->warpPhase >= 1.0f) impl_->warpPhase -= 1.0f;
     if(impl_->warpPhase < 0.0f) impl_->warpPhase += 1.0f;
 
@@ -443,18 +464,19 @@ void TapeCore::processStereo(float inL,float inR,float* outL,float* outR){
       float relD_L = (1.0f - phaseL1) * dSize;
       float relD_R = (1.0f - phaseR1) * dSize;
 
-      float normL = relD_L / dSize;
-      float normR = relD_R / dSize;
+      const float normL = 1.0f - phaseL1;
+      const float normR = 1.0f - phaseR1;
       float envL = 1.0f, envR = 1.0f;
-      const float declick = 0.05f;
-      if (normL < declick) envL = normL / declick;
-      else if (normL > (1.0f - declick)) envL = (1.0f - normL) / declick;
-      if (normR < declick) envR = normR / declick;
-      else if (normR > (1.0f - declick)) envR = (1.0f - normR) / declick;
+      constexpr float declick = 0.05f;
+      constexpr float invDeclick = 1.0f / declick;
+      if (normL < declick) envL = normL * invDeclick;
+      else if (normL > (1.0f - declick)) envL = (1.0f - normL) * invDeclick;
+      if (normR < declick) envR = normR * invDeclick;
+      else if (normR > (1.0f - declick)) envR = (1.0f - normR) * invDeclick;
 
       if(mode == 2){
-        relD_L = std::floor(relD_L);
-        relD_R = std::floor(relD_R);
+        relD_L = static_cast<float>(static_cast<int32_t>(relD_L));
+        relD_R = static_cast<float>(static_cast<int32_t>(relD_R));
         rawL = impl_->readTapeInt(baseDelay + relD_L, impl_->delayLine) * envL;
         rawR = impl_->readTapeInt(baseDelay + relD_R, impl_->delayLineR) * envR;
       } else {
@@ -474,10 +496,10 @@ void TapeCore::processStereo(float inL,float inR,float* outL,float* outR){
       float relD2_R = (1.0f - phaseR2) * grainSamples;
 
       if(mode == 3){
-        relD1_L = std::floor(relD1_L);
-        relD2_L = std::floor(relD2_L);
-        relD1_R = std::floor(relD1_R);
-        relD2_R = std::floor(relD2_R);
+        relD1_L = static_cast<float>(static_cast<int32_t>(relD1_L));
+        relD2_L = static_cast<float>(static_cast<int32_t>(relD2_L));
+        relD1_R = static_cast<float>(static_cast<int32_t>(relD1_R));
+        relD2_R = static_cast<float>(static_cast<int32_t>(relD2_R));
         rawL = impl_->readTapeInt(baseDelay + relD1_L, impl_->delayLine) * gainL1 +
                impl_->readTapeInt(baseDelay + relD2_L, impl_->delayLine) * gainL2;
         rawR = impl_->readTapeInt(baseDelay + relD1_R, impl_->delayLineR) * gainR1 +
@@ -513,23 +535,36 @@ void TapeCore::processStereo(float inL,float inR,float* outL,float* outR){
     frame.conditionedInput=iLP.process(iHP.process(input));
     // --- delay read ---
     float textureSig=(impl_->textureWetGain>0.0f && !impl_->warpActive)?impl_->readTapeAt(200.f+mod,buffer):0.0f;
-    float delaySig=0,headGainSum=0,base=impl_->smoothedDelaySamples;
-    float d1,d2,d3; if(impl_->headsMusical){ d1=impl_->musicalHeadDelay1; d2=impl_->musicalHeadDelay2; d3=impl_->musicalHeadDelay3;} else {d1=base*0.33f; d2=base*0.66f; d3=base;}
-    d1 += mod * 0.33f; d2 += mod * 0.66f; d3 += mod;
+    float delaySig=0;
     if(impl_->delayActive){
-      if(impl_->warpActive){ delaySig = warpSig; headGainSum = 1.0f; } else
-      if(impl_->reverse){ delaySig = impl_->readTapeReverse(d3,buffer); headGainSum=1.f;} else {
-        if(impl_->activeHeadMask & 1){ delaySig += impl_->readTapeAt(d1,buffer)*1.0f; headGainSum += 1.0f; }
-        if(impl_->activeHeadMask & 2){ delaySig += impl_->readTapeAt(d2,buffer)*0.75f; headGainSum += 0.75f; }
-        if(impl_->activeHeadMask & 4){ delaySig += impl_->readTapeAt(d3,buffer)*0.55f; headGainSum += 0.55f; }
-        if(headGainSum>0) delaySig/=headGainSum;
+      if(impl_->warpActive){
+        delaySig = warpSig;
+      } else if(impl_->reverse){
+        float d3 = (impl_->headsMusical ? impl_->musicalHeadDelay3 : impl_->smoothedDelaySamples) + mod;
+        delaySig = impl_->readTapeReverse(d3,buffer);
+      } else {
+        const uint8_t mask = impl_->activeHeadMask;
+        const float base = impl_->smoothedDelaySamples;
+        if(mask & 1){
+          float d1 = (impl_->headsMusical ? impl_->musicalHeadDelay1 : (base * 0.33f)) + mod * 0.33f;
+          delaySig += impl_->readTapeAt(d1,buffer) * 1.0f;
+        }
+        if(mask & 2){
+          float d2 = (impl_->headsMusical ? impl_->musicalHeadDelay2 : (base * 0.66f)) + mod * 0.66f;
+          delaySig += impl_->readTapeAt(d2,buffer) * 0.75f;
+        }
+        if(mask & 4){
+          float d3 = (impl_->headsMusical ? impl_->musicalHeadDelay3 : base) + mod;
+          delaySig += impl_->readTapeAt(d3,buffer) * 0.55f;
+        }
+        delaySig *= impl_->invHeadGainSum;
       }
     }
     float tapeSig = (textureSig * impl_->textureWetGain) + (delaySig * impl_->delayWetGain);
     // --- dropout/gap loss ---
     if(drop.hfLoss<0.9995f||drop.ampGain<0.9995f){
       float dynamicCutoff=(6000.f+(p->tapeSpeed*100.f))*(0.35f+0.65f*drop.hfLoss);
-      dropoutFilter.setCutoffFast(impl_->sampleRate,dynamicCutoff);
+      dropoutFilter.setCutoffFastInv(impl_->maxDropoutFc,impl_->invSampleRate,dynamicCutoff);
       tapeSig=dropoutFilter.process(tapeSig);
       tapeSig *= drop.ampGain;
     }
@@ -610,7 +645,7 @@ void TapeCore::processStereo(float inL,float inR,float* outL,float* outR){
     float wetMix=impl_->springWetGain;
     *outL=impl_->outputLimiter(dryL*(1-wetMix)+wetL*wetMix); *outR=impl_->outputLimiter(dryR*(1-wetMix)+wetR*wetMix);
   }
-  if(impl_->freeze){impl_->freezeFade+=0.0002f; if(impl_->freezeFade>1)impl_->freezeFade=1;} else {impl_->freezeFade-=0.0008f; if(impl_->freezeFade<0)impl_->freezeFade=0;}
+  if(impl_->freeze){if(impl_->freezeFade<1.0f){impl_->freezeFade+=0.0002f; if(impl_->freezeFade>1.0f)impl_->freezeFade=1.0f;}} else {if(impl_->freezeFade>0.0f){impl_->freezeFade-=0.0008f; if(impl_->freezeFade<0.0f)impl_->freezeFade=0.0f;}}
   if(impl_->writeHead<TAPE_BUFFER_GUARD){ impl_->mirrorDelayGuard(impl_->delayLine); impl_->mirrorDelayGuard(impl_->delayLineR); }
   impl_->writeHead++; if(impl_->writeHead>=impl_->bufferSize) impl_->writeHead=0;
 }

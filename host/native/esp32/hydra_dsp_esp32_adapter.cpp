@@ -42,8 +42,9 @@ bool sameParams(const hydra_dsp_params& a, const hydra_dsp_params& b) {
 
 }  // namespace
 
-HydraDspEsp32Adapter::HydraDspEsp32Adapter(float sampleRate, float maxDelayMs) {
-  if (hydra_dsp_create(sampleRate, maxDelayMs, &handle_) == 0) {
+HydraDspEsp32Adapter::HydraDspEsp32Adapter(float sampleRate, float maxDelayMs,
+                                             float historyMs) {
+  if (hydra_dsp_create_v1_4(sampleRate, maxDelayMs, historyMs, &handle_) == 0) {
     if (hydra_dsp_prepare(handle_, 128, HYDRA_DSP_CHANNELS_STEREO) != 0) {
       hydra_dsp_destroy(handle_);
       handle_ = nullptr;
@@ -60,14 +61,19 @@ bool HydraDspEsp32Adapter::isValid() const {
 }
 
 void HydraDspEsp32Adapter::updateParams(const hydra_dsp_params& params) {
+  updateParams({params, HYDRA_DSP_REVERSE_LEGACY, HYDRA_DSP_REVERSE_QUARTER});
+}
+
+void HydraDspEsp32Adapter::updateParams(const hydra_dsp_params_v1_4& params) {
   applyParams(params, false);
 }
 
-bool HydraDspEsp32Adapter::applyParams(const hydra_dsp_params& params, bool force) {
+bool HydraDspEsp32Adapter::applyParams(const hydra_dsp_params_v1_4& params, bool force) {
   if (!handle_) return false;
-  if (!force && paramsInitialized_ && sameParams(params_, params)) return false;
+  if (!force && paramsInitialized_ && sameParams(params_.v1_3, params.v1_3) &&
+      params_.reverseMode == params.reverseMode && params_.reverseDivision == params.reverseDivision) return false;
 
-  const int setResult = hydra_dsp_set_params_v1_3(handle_, &params);
+  const int setResult = hydra_dsp_set_params_sized(handle_, &params, sizeof(params));
   if (setResult != 0) return false;
   const int commitResult = hydra_dsp_commit(handle_);
   if (commitResult != 0) return false;

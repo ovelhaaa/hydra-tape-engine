@@ -13,7 +13,7 @@ enum { HYDRA_DSP_CHANNELS_STEREO = 2 };
 
 enum {
   HYDRA_DSP_API_VERSION_MAJOR = 1,
-  HYDRA_DSP_API_VERSION_MINOR = 3,
+  HYDRA_DSP_API_VERSION_MINOR = 4,
   HYDRA_DSP_API_VERSION_PATCH = 0,
   HYDRA_DSP_API_VERSION =
       (HYDRA_DSP_API_VERSION_MAJOR << 16) |
@@ -23,6 +23,7 @@ enum {
 
 #define HYDRA_DSP_PARAMS_SIZE_V1_2 (29 * sizeof(float))
 #define HYDRA_DSP_PARAMS_SIZE_V1_3 (35 * sizeof(float))
+#define HYDRA_DSP_PARAMS_SIZE_V1_4 (37 * sizeof(float))
 
 typedef struct hydra_dsp_params_v1_2 {
   float flutterDepth, wowDepth, dropoutSeverity, drive, noise;
@@ -44,6 +45,29 @@ typedef struct hydra_dsp_params {
   float springDecay, springDamping, springMix;
   float warpActive, warpSpeed, warpGrainMs, warpStereo, warpFeedback, warpMode;
 } hydra_dsp_params;
+
+typedef enum hydra_dsp_reverse_mode {
+  HYDRA_DSP_REVERSE_RHYTHMIC = 0,
+  HYDRA_DSP_REVERSE_FREE = 1,
+  HYDRA_DSP_REVERSE_LEGACY = 2
+} hydra_dsp_reverse_mode;
+
+typedef enum hydra_dsp_reverse_division {
+  HYDRA_DSP_REVERSE_QUARTER = 0,
+  HYDRA_DSP_REVERSE_WHOLE = 1,
+  HYDRA_DSP_REVERSE_HALF = 2,
+  HYDRA_DSP_REVERSE_EIGHTH = 3,
+  HYDRA_DSP_REVERSE_SIXTEENTH = 4,
+  HYDRA_DSP_REVERSE_DOTTED_QUARTER = 5,
+  HYDRA_DSP_REVERSE_DOTTED_EIGHTH = 6,
+  HYDRA_DSP_REVERSE_TRIPLET_QUARTER = 7,
+  HYDRA_DSP_REVERSE_TRIPLET_EIGHTH = 8
+} hydra_dsp_reverse_division;
+
+typedef struct hydra_dsp_params_v1_4 {
+  hydra_dsp_params v1_3;
+  float reverseMode, reverseDivision;
+} hydra_dsp_params_v1_4;
 
 typedef enum hydra_dsp_param_id {
   HYDRA_DSP_PARAM_FLUTTER_DEPTH = 0,
@@ -82,7 +106,9 @@ typedef enum hydra_dsp_param_id {
   HYDRA_DSP_PARAM_WARP_STEREO = 33,
   HYDRA_DSP_PARAM_WARP_FEEDBACK = 34,
   HYDRA_DSP_PARAM_WARP_MODE = 35,
-  HYDRA_DSP_PARAM_COUNT = 36
+  HYDRA_DSP_PARAM_REVERSE_MODE = 36,
+  HYDRA_DSP_PARAM_REVERSE_DIVISION = 37,
+  HYDRA_DSP_PARAM_COUNT = 38
 } hydra_dsp_param_id;
 
 typedef enum hydra_dsp_smoothing_policy {
@@ -115,6 +141,9 @@ int hydra_dsp_get_param_spec_for_handle(const hydra_dsp_handle* handle,
                                         hydra_dsp_param_spec* out_spec);
 
 int hydra_dsp_create(float sample_rate, float max_delay_ms, hydra_dsp_handle** out_handle);
+/* Opt-in shared history capacity for longer reverse windows. Allocates only at create. */
+int hydra_dsp_create_v1_4(float sample_rate, float max_delay_ms, float history_ms,
+                          hydra_dsp_handle** out_handle);
 void hydra_dsp_destroy(hydra_dsp_handle* handle);
 // channels must be HYDRA_DSP_CHANNELS_STEREO.
 int hydra_dsp_prepare(hydra_dsp_handle* handle, uint32_t max_frames, uint32_t channels);
@@ -138,6 +167,7 @@ int hydra_dsp_set_params_v1_2(hydra_dsp_handle* handle, const hydra_dsp_params_v
 /**
  * @brief Sets DSP parameters with explicit struct size for backward and forward ABI safety.
  *
+ * Sizes below V1.4 select legacy Reverse with the quarter-note division as default.
  * If struct_size is less than HYDRA_DSP_PARAMS_SIZE_V1_3 (140 bytes), parameters introduced
  * in API 1.3 (such as warp parameters) safely default without out-of-bounds reads.
  *

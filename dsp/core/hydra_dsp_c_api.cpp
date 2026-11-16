@@ -2,6 +2,7 @@
 #include "tape_core.hpp"
 
 #include <algorithm>
+#include <cmath>
 #include <cstring>
 #include <new>
 
@@ -56,6 +57,8 @@ static const hydra_dsp_param_spec kParamSpecs[HYDRA_DSP_PARAM_COUNT] = {
     {HYDRA_DSP_PARAM_WARP_STEREO, "warpStereo", 0.0f, 1.0f, 0.5f, HYDRA_DSP_SMOOTHING_BLOCK_EDGE, HYDRA_DSP_PARAM_SPEC_FLAG_NONE},
     {HYDRA_DSP_PARAM_WARP_FEEDBACK, "warpFeedback", 0.0f, 100.0f, 0.0f, HYDRA_DSP_SMOOTHING_BLOCK_EDGE, HYDRA_DSP_PARAM_SPEC_FLAG_NONE},
     {HYDRA_DSP_PARAM_WARP_MODE, "warpMode", 0.0f, 3.0f, 0.0f, HYDRA_DSP_SMOOTHING_NONE, HYDRA_DSP_PARAM_SPEC_FLAG_NONE},
+    {HYDRA_DSP_PARAM_REVERSE_MODE, "reverseMode", 0.0f, 2.0f, 0.0f, HYDRA_DSP_SMOOTHING_NONE, HYDRA_DSP_PARAM_SPEC_FLAG_NONE},
+    {HYDRA_DSP_PARAM_REVERSE_DIVISION, "reverseDivision", 0.0f, 8.0f, 0.0f, HYDRA_DSP_SMOOTHING_NONE, HYDRA_DSP_PARAM_SPEC_FLAG_NONE},
 };
 
 static hydra_dsp_param_spec resolve_runtime_spec(const hydra_dsp_handle* handle, hydra_dsp_param_id param_id) {
@@ -142,6 +145,8 @@ static int set_param(hydra_dsp_handle* h, hydra_dsp_param_id id, float v) {
     case HYDRA_DSP_PARAM_WARP_STEREO: h->params.warpStereo = v; break;
     case HYDRA_DSP_PARAM_WARP_FEEDBACK: h->params.warpFeedback = v; break;
     case HYDRA_DSP_PARAM_WARP_MODE: h->params.warpMode = (int)v; break;
+    case HYDRA_DSP_PARAM_REVERSE_MODE: h->params.reverseMode = (int)v; break;
+    case HYDRA_DSP_PARAM_REVERSE_DIVISION: h->params.reverseDivision = (int)v; break;
     default: return -2;
   }
   h->dirty = true;
@@ -172,10 +177,20 @@ int hydra_dsp_get_param_spec_for_handle(const hydra_dsp_handle* handle,
 }
 
 int hydra_dsp_create(float sample_rate, float max_delay_ms, hydra_dsp_handle** out_handle) {
+  return hydra_dsp_create_v1_4(sample_rate, max_delay_ms, max_delay_ms, out_handle);
+}
+
+int hydra_dsp_create_v1_4(float sample_rate, float max_delay_ms, float history_ms,
+                         hydra_dsp_handle** out_handle) {
   if (!out_handle) return -1;
+  const double history_frames = static_cast<double>(sample_rate) *
+      std::max(max_delay_ms, history_ms) * 0.001;
+  if (!std::isfinite(history_ms) || !std::isfinite(max_delay_ms) ||
+      !std::isfinite(history_frames) || !(max_delay_ms > 0.f) ||
+      !(history_frames >= 8. && history_frames < 2147483000.)) return -3;
   auto* h = new (std::nothrow) hydra_dsp_handle;
   if (!h) return -2;
-  h->core = new (std::nothrow) hydra::dsp::TapeCore(sample_rate, max_delay_ms);
+  h->core = new (std::nothrow) hydra::dsp::TapeCore(sample_rate, max_delay_ms, history_ms);
   if (!h->core || !h->core->isValid()) { delete h->core; delete h; return -3; }
   h->params = h->core->params();
   h->max_delay_ms = max_delay_ms;
@@ -248,6 +263,8 @@ int hydra_dsp_get_parameter(hydra_dsp_handle* handle, hydra_dsp_param_id param_i
     case HYDRA_DSP_PARAM_WARP_STEREO: *out_value = handle->params.warpStereo; break;
     case HYDRA_DSP_PARAM_WARP_FEEDBACK: *out_value = handle->params.warpFeedback; break;
     case HYDRA_DSP_PARAM_WARP_MODE: *out_value = (float)handle->params.warpMode; break;
+    case HYDRA_DSP_PARAM_REVERSE_MODE: *out_value = (float)handle->params.reverseMode; break;
+    case HYDRA_DSP_PARAM_REVERSE_DIVISION: *out_value = (float)handle->params.reverseDivision; break;
     default: return -2;
   }
   return 0;
@@ -275,6 +292,20 @@ int hydra_dsp_set_params_sized(hydra_dsp_handle* handle, const void* params, siz
   std::memcpy(&local, params, copy_size);
 
   from_c(local, &handle->params);
+  handle->params.reverseMode = HYDRA_DSP_REVERSE_LEGACY;
+  handle->params.reverseDivision = HYDRA_DSP_REVERSE_QUARTER;
+  static_assert(sizeof(hydra_dsp_params_v1_4) == HYDRA_DSP_PARAMS_SIZE_V1_4);
+  static_assert(offsetof(hydra_dsp_params_v1_4, reverseMode) == HYDRA_DSP_PARAMS_SIZE_V1_3);
+  if (struct_size >= HYDRA_DSP_PARAMS_SIZE_V1_4) {
+    hydra_dsp_params_v1_4 extended;
+    std::memcpy(&extended, params, sizeof(extended));
+    const auto mode = kParamSpecs[HYDRA_DSP_PARAM_REVERSE_MODE];
+    const auto division = kParamSpecs[HYDRA_DSP_PARAM_REVERSE_DIVISION];
+    handle->params.reverseMode = static_cast<int>(std::max(mode.min_value,
+        std::min(extended.reverseMode, mode.max_value)));
+    handle->params.reverseDivision = static_cast<int>(std::max(division.min_value,
+        std::min(extended.reverseDivision, division.max_value)));
+  }
   handle->dirty = true;
   return 0;
 }

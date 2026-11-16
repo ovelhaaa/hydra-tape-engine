@@ -40,11 +40,14 @@ struct TapeParams {
   float warpStereo = 0.5f;
   float warpFeedback = 0.0f;
   int warpMode = 0;
+  int reverseMode = 0; // 0 Rhythmic, 1 Free, 2 V1
+  int reverseDivision = 0; // quarter note
 };
 
 class TapeCore {
 public:
   TapeCore(float sampleRate, float maxDelayMs = 2000.0f);
+  TapeCore(float sampleRate, float maxDelayMs, float historyMs);
   ~TapeCore();
 
   bool isValid() const;

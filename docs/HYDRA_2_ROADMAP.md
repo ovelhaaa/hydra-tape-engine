@@ -35,11 +35,11 @@ flowchart LR
 ---
 
 ### FASE 1 — Accidental Warp V1.3
-- **Status:** Em revisão para integração na `main` (bloqueador de tempo real no ESP32-S3 resolvido e validado em hardware).
+- **Status:** ACCIDENTAL WARP V1.3 — MERGED na main em 16/11/2026 pela [PR #47](https://github.com/ovelhaaa/hydra-tape-engine/pull/47), [commit de merge](https://github.com/ovelhaaa/hydra-tape-engine/commit/20f65698643473d934f574eea3d602a8a58385bb).
 - Leitor granular ascendente sobre o buffer de fita, com modos Hermite e Raw Integer, janelas dual-tap, fase estéreo e retorno Warp separado.
 - Contrato legado de 116 bytes preservado e API expandida com setter versionado. Integração web exercitada com WASM real. O firmware expõe tempo DSP, overruns de orçamento e falhas de escrita I2S separadamente.
 - A bancada offline renderiza Worklet, Python persistente e TapeCore em 11 cenários comuns, com toggle nativo adicional. Em hardware ESP32-S3 (rev. 0.2 @ 240 MHz, 44,1 kHz / 128 frames), o firmware otimizado (`c9bc17e`) eliminou os overruns nos 11 cenários e sustentou 5 min contínuos na cadeia completa com `P99 = 1.861 µs` (`64,12%` do orçamento) e zero falhas I2S. Consulte os limites e as evidências em [Validação de áudio](HYDRA_2_AUDIO_VALIDATION.md) e na [Auditoria de desempenho ESP32-S3](ESP32_S3_PERFORMANCE_AUDIT.md).
-- **Critério de saída:** Revise os resultados no [gate de release](ACCIDENTAL_WARP_RELEASE_GATE.md), decida a exceção histórica Native/WASM e conclua a [escuta A/B](ACCIDENTAL_WARP_LISTENING_SIGNOFF.md) antes de integrar.
+- **Encerramento:** [Escuta do de-click aprovada](MAGNETIC_BIAS_DECLICK_SIGNOFF.md) e validação física concluída. A exceção Native/WASM do [gate de release](ACCIDENTAL_WARP_RELEASE_GATE.md) vale exclusivamente para a PR #47. A [issue #48](https://github.com/ovelhaaa/hydra-tape-engine/issues/48) acompanha a dívida técnica.
 
 ---
 

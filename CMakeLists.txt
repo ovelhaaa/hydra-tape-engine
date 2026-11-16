@@ -43,6 +43,14 @@ if(BUILD_TESTING)
   target_link_libraries(hydra_warp_core_test PRIVATE hydra_dsp_core)
   add_test(NAME core_warp_test COMMAND hydra_warp_core_test)
 
+  add_executable(hydra_reverse_core_test
+    tests/core/reverse_core_test.cpp
+    host/native/esp32/hydra_dsp_esp32_adapter.cpp
+  )
+  target_include_directories(hydra_reverse_core_test PRIVATE host/native/esp32)
+  target_link_libraries(hydra_reverse_core_test PRIVATE hydra_dsp_core)
+  add_test(NAME core_reverse_test COMMAND hydra_reverse_core_test)
+
   add_test(
     NAME web_param_ids
     COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/tests/core/web_param_ids_check.py
@@ -140,7 +148,7 @@ if(BUILD_WEB)
     # runs the generated ES module as web-compatible JS, not via a separate
     # `worklet` ENVIRONMENT token.
     "SHELL:-sENVIRONMENT=web,worker"
-    "SHELL:-sEXPORTED_FUNCTIONS=['_hydra_dsp_get_api_version','_hydra_dsp_get_param_count','_hydra_dsp_get_param_specs','_hydra_dsp_get_param_spec','_hydra_dsp_get_param_spec_for_handle','_hydra_dsp_create','_hydra_dsp_destroy','_hydra_dsp_prepare','_hydra_dsp_reset','_hydra_dsp_set_parameter','_hydra_dsp_get_parameter','_hydra_dsp_set_params','_hydra_dsp_set_params_v1_2','_hydra_dsp_set_params_v1_3','_hydra_dsp_set_params_sized','_hydra_dsp_commit','_hydra_dsp_process','_malloc','_free']"
+    "SHELL:-sEXPORTED_FUNCTIONS=['_hydra_dsp_get_api_version','_hydra_dsp_get_param_count','_hydra_dsp_get_param_specs','_hydra_dsp_get_param_spec','_hydra_dsp_get_param_spec_for_handle','_hydra_dsp_create','_hydra_dsp_create_v1_4','_hydra_dsp_destroy','_hydra_dsp_prepare','_hydra_dsp_reset','_hydra_dsp_set_parameter','_hydra_dsp_get_parameter','_hydra_dsp_set_params','_hydra_dsp_set_params_v1_2','_hydra_dsp_set_params_v1_3','_hydra_dsp_set_params_sized','_hydra_dsp_commit','_hydra_dsp_process','_malloc','_free']"
     "SHELL:-sEXPORTED_RUNTIME_METHODS=['cwrap','HEAP32','HEAPF32']"
   )
 

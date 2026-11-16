@@ -75,6 +75,7 @@ test("real release WAVs through seek, switch, loop, blind reveal, persistence an
   const { page, errors } = await setup(t);
   await page.locator("#folder").setInputFiles(resolve(real));
   await page.locator("#player").waitFor({ timeout: 60_000 });
+  const provenanceShown = (await page.locator("#package-meta").textContent()).includes("Commit baseline");
   await page.locator("#scenarios").getByRole("button", { name: /^tape clean/i }).click();
   await page.locator("#player").waitFor();
   assert.match(await page.locator("#pair option:checked").textContent(), /Baseline × Optimized/);
@@ -119,12 +120,18 @@ test("real release WAVs through seek, switch, loop, blind reveal, persistence an
     const content = await readFile(path, "utf8");
     if (id === "export-json") {
       assert.match(content, /"schemaVersion": 1/);
+      if (provenanceShown) {
+        const exported = JSON.parse(content);
+        assert.equal(exported.provenance.listening_lab_package_id, exported.packageId);
+        assert.equal(exported.provenance.complete, true);
+      }
       await page.locator("#import-json").setInputFiles(path);
       await page.waitForFunction(() => document.querySelector("#notice").textContent === "Sessão importada.");
     } else {
       assert.match(content, /INCOMPLETE/);
       assert.match(content, /Cenários pendentes/);
       assert.match(content, /Validado no teste/);
+      if (provenanceShown) assert.match(content, /Commit otimizado\*\* d942a7b/);
     }
   }
   await page.reload();
@@ -166,7 +173,16 @@ test("extracted CI package and explicit file pairing work at mobile width", { sk
   await page.locator("#commit").fill("18351893431e994535be7929daa38eae55c9a870");
   await page.locator("#folder").setInputFiles(resolve(ci));
   await page.locator("#player").waitFor({ timeout: 60_000 });
-  assert.match(await page.locator("#package-meta").innerText(), /9 cenários · commit 1835189/);
+  const review = JSON.parse(await readFile(resolve(ci, "review.json"), "utf8"));
+  const meta = await page.locator("#package-meta").innerText();
+  assert.match(meta, /9 cenários · pacote [a-f0-9]{64}/);
+  if (review.provenance) {
+    assert.match(meta, /Commit do motor de renderização/);
+    assert.ok(meta.includes(review.provenance.package_id));
+    assert.match(meta, /Verificação dos WAVs A\/B · Completa/);
+  } else {
+    assert.ok(meta.includes(review.commit ?? "18351893431e994535be7929daa38eae55c9a870"));
+  }
   assert.match(await page.locator("#pair option:checked").textContent(), /TapeCore Native × WASM/);
   assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
 

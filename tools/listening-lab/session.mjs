@@ -73,11 +73,37 @@ export function overall(pack, session) {
 
 const inline = value => String(value ?? "—").replace(/[\r\n]+/g, " ").replace(/[\\`*_~<>\[\]|]/g, "\\$&");
 
+export function provenanceLabels(pack) {
+  const origin = pack.provenance;
+  if (!origin) return [["Commit registrado no manifesto ou na sessão", pack.commit ?? "Indisponível"]];
+  const renders = Object.values(origin.renders);
+  const commits = [...new Set(renders.map(render => render.dsp_commit ?? origin.dsp_commit ?? "Indisponível"))];
+  const firmware = [...new Set([origin.firmware_commit, ...renders.map(render => render.firmware_commit)].filter(Boolean))];
+  return [
+    ["Commit baseline", origin.baseline_commit ?? "Indisponível"],
+    ["Commit otimizado", origin.optimized_commit ?? "Indisponível"],
+    ["Commit do motor de renderização", commits.join(", ") || "Indisponível"],
+    ...(firmware.length ? [["Commit do firmware", firmware.join(", ")]] : []),
+    ["SHA-256 do inventário de renders", origin.package_id],
+    ["Verificação dos WAVs A/B", origin.complete ? "Completa" : "Parcial"],
+  ];
+}
+
+export function renderOrigin(pack, path) {
+  const origin = pack.provenance;
+  const render = origin?.renders[path];
+  if (!render) return "";
+  return [render.render_engine, render.render_variant, render.dsp_commit ?? origin.dsp_commit,
+    render.firmware_commit ?? origin.firmware_commit, render.build_profile ?? origin.build_profile,
+    render.compiler_flags ?? origin.compiler_flags].filter(Boolean).join(" · ");
+}
+
 export function report(pack, session) {
   const result = overall(pack, session);
   const lines = ["# Escuta A/B — Accidental Warp V1.3", "", `- **Status** \`${result.status}\``,
-    "- **PR** [#47](https://github.com/ovelhaaa/hydra-tape-engine/pull/47)", `- **Commit avaliado** ${inline(pack.commit ?? "Indisponível")}`,
-    `- **Pacote de WAVs** ${inline(pack.title)} · \`${pack.id}\``, "", "## Cenários pendentes", "",
+    "- **PR** [#47](https://github.com/ovelhaaa/hydra-tape-engine/pull/47)",
+    `- **Identificador do pacote de escuta** ${inline(pack.title)} · \`${pack.id}\``,
+    ...provenanceLabels(pack).map(([label, value]) => `- **${label}** ${inline(value)}`), "", "## Cenários pendentes", "",
     ...(result.pending.length ? result.pending.map(label => `- ${inline(label)}`) : ["Nenhum."]),
     "", "## Avaliações e problemas encontrados", ""];
   if (!result.reviewed.length) lines.push("Nenhuma avaliação salva.", "");
@@ -85,6 +111,10 @@ export function report(pack, session) {
     const trial = session.trials[keyFor(row, pair)];
     lines.push(`### ${inline(row.label)} · ${inline(pair.label)}`, "",
       pair.solo ? `- **Arquivo** ${inline(pair.a.path)}` : `- **Arquivos A/B** ${inline(pair.a.path)} / ${inline(pair.b.path)}`,
+      ...(trial && !trial.revealed ? [] : (pair.solo ? [["A", pair.a]] : [["A", pair.a], ["B", pair.b]]).flatMap(([slot, item]) => {
+        const origin = renderOrigin(pack, item.path);
+        return origin ? [`- **Procedência ${slot}** ${inline(origin)} · SHA-256 \`${item.hash ?? "indisponível"}\``] : [];
+      })),
       `- **Decisão** ${inline(record.decision ?? "Pendente")} · ${record.timestamp}`,
       `- **Fidelidade / Musicalidade** ${inline(record.fidelity)} / ${inline(record.musicality)}`,
       `- **Artefatos** ${inline(record.artifacts)}`, `- **Diferenças** ${inline(record.differences.join(", ") || "—")}`,

@@ -76,7 +76,7 @@ export function parseManifest(name, data) {
   }
   if (name === "package_summary.json" && Array.isArray(data.scenarios)) {
     return { title: "CI · A/B Offline Review", commit: data.commit, scenarios: data.scenarios.map(row =>
-      scenario(row.scenario, row, { pairs: [enginePair(row.scenario)] })) };
+      scenario(row.scenario, row, { rate: data.rate, pairs: [enginePair(row.scenario)] })) };
   }
   const rows = Object.entries(data).filter(([, row]) => row?.comparisons && row.rate);
   if (rows.length) {
@@ -122,7 +122,9 @@ export async function inventory(files, commitOverride = "") {
       const source = await items[0].text();
       const data = JSON.parse(source.replace(/^\uFEFF/, ""));
       if (basename(path) === "metrics.json") continue;
-      packages.push({ path, source, ...parseManifest(basename(path), data) });
+      const { provenance, ...manifest } = data;
+      packages.push({ path, source: provenance ? JSON.stringify(manifest) : source,
+        provenance, ...parseManifest(basename(path), manifest) });
     } catch (error) {
       errors.push(`${path} · ${error.message}`);
     }
@@ -138,6 +140,42 @@ function resolve(path, root, source) {
   if (source.available.every(item => !item.includes("/")) && source.uniqueNames.has(basename(expected))
     && source.paths.get(basename(expected))?.length === 1) return basename(expected);
   return null;
+}
+
+async function verifiedProvenance(provenance, scenarios, fileHashes, locate, paths) {
+  const digestPattern = /^[a-f0-9]{64}$/;
+  if (provenance.package_schema_version !== 1 || !provenance.renders || Array.isArray(provenance.renders)) {
+    throw new Error("Esquema de procedência inválido.");
+  }
+  const files = Object.keys(provenance.renders).sort().map(path => {
+    const digest = provenance.renders[path]?.render_wav_sha256;
+    if (!digestPattern.test(digest)) throw new Error(`SHA-256 ausente ou inválido · ${path}`);
+    const actual = fileHashes.get(locate(path));
+    if (actual && actual !== digest) throw new Error(`SHA-256 divergente · ${path}`);
+    return [path, digest];
+  });
+  if (provenance.package_id !== await sha256(new TextEncoder().encode(JSON.stringify(files)))) {
+    throw new Error("SHA-256 do inventário de procedência divergente.");
+  }
+  let complete = true;
+  for (const row of scenarios) {
+    const input = row.input && locate(row.input);
+    const pcmHash = input && /\.f32$/i.test(input)
+      ? await sha256(await paths.get(input)[0].arrayBuffer()) : null;
+    for (const path of new Set(row.pairs.flatMap(p => [p.a.path, p.b.path]))) {
+      const render = Object.hasOwn(provenance.renders, path) ? provenance.renders[path] : null;
+      if (!render || (row.rate && render.sample_rate !== row.rate)) {
+        throw new Error(`Procedência ausente ou taxa divergente · ${path}`);
+      }
+      if (!fileHashes.has(locate(path))) complete = false;
+      const wavHash = fileHashes.get(input);
+      if ((wavHash && render.source_wav_sha256 && wavHash !== render.source_wav_sha256) ||
+          (pcmHash && render.source_pcm_sha256 && pcmHash !== render.source_pcm_sha256)) {
+        throw new Error(`SHA-256 da fonte divergente · ${row.input}`);
+      }
+    }
+  }
+  return { ...provenance, complete };
 }
 
 export async function openPackage(source, descriptor, manual) {
@@ -188,7 +226,19 @@ export async function openPackage(source, descriptor, manual) {
   const identity = { title, commit, manifest: descriptor?.source ?? null, scenarios: scenarios.map(row =>
     [row.id, row.conditions, row.pairs.map(p => [p.id, p.kind, p.a.hash ?? null, p.b.hash ?? null])]),
     files: [...fileHashes].sort(([a], [b]) => a.localeCompare(b)).map(([path, hash]) => [manual ? path : path.startsWith(root) ? path.slice(root.length) : path, hash]) };
-  return { id: await sha256(new TextEncoder().encode(JSON.stringify(identity))), title, commit, scenarios,
+  const id = await sha256(new TextEncoder().encode(JSON.stringify(identity)));
+  let provenance = descriptor?.provenance;
+  const companion = descriptor && source.paths.get(root + "provenance.json");
+  if (!provenance && companion) {
+    if (companion.length !== 1) throw new Error("Manifesto de procedência ambíguo.");
+    provenance = JSON.parse((await companion[0].text()).replace(/^\uFEFF/, ""));
+    // Legacy sessions are bound to the original manifest and A/B files.
+    if (provenance.listening_lab_package_id !== id) {
+      throw new Error("A procedência pertence a outro pacote de escuta.");
+    }
+  }
+  if (provenance) provenance = await verifiedProvenance(provenance, scenarios, fileHashes, locate, source.paths);
+  return { id, title, commit, scenarios, provenance,
     incomplete: descriptor?.incomplete ?? false };
 }
 

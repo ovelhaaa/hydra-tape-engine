@@ -6,6 +6,7 @@ Auditoria de 2026-11-15 da [PR #47](https://github.com/ovelhaaa/hydra-tape-engin
 
 | Referência | Commit |
 |---|---|
+| HEAD recebido para o encerramento em 2026-11-16 | `df0fdd44d9ef0feb76a79d3d5dd0309ab8a806a1` |
 | HEAD no início da auditoria | `d942a7b26523e5a50193e0fb9206093f070cc130` |
 | Correções de PCM e Freeverb | `b9fbbd342e3ead2054ca02c49705e385ba4fd985` |
 | `main` comparada | `e4cae4354716cd2ac207a67afe95303b30bb6e4b` |
@@ -21,14 +22,18 @@ O diff de `c9bc17e` até `d942a7b` contém quatro documentos. O BIN local encont
 
 ## CI e proposta de exceção
 
-No HEAD `d942a7b`, passaram `build_native_core`, `test_native_core`, `build_wasm_core`, `validate_warp` (tri-engine e consumidor ABI com AddressSanitizer), `listening_review` e `build_esp32_s3`. Falhou `test_native_vs_wasm`. Na workflow Web Demo, `build` passou e `deploy` foi pulado no evento de PR. Na `main`, o comparador estrito também falhou e o deploy web passou. [Core Equivalence PR](https://github.com/ovelhaaa/hydra-tape-engine/actions/runs/43776656015) · [Web Demo PR](https://github.com/ovelhaaa/hydra-tape-engine/actions/runs/43776656027) · [Core Equivalence main](https://github.com/ovelhaaa/hydra-tape-engine/actions/runs/43680877692) · [Web Demo main](https://github.com/ovelhaaa/hydra-tape-engine/actions/runs/43680877711)
+No HEAD de entrada `df0fdd4`, passaram `build_native_core`, `test_native_core`, `build_wasm_core`, `validate_warp` (tri-engine e consumidor ABI com AddressSanitizer), `listening_review`, `build_esp32_s3` e o build Web Demo. Falhou `test_native_vs_wasm`. O deploy Web Demo foi pulado no evento de PR. Na `main`, o mesmo comparador falhou e o deploy web passou. [Core Equivalence PR](https://github.com/ovelhaaa/hydra-tape-engine/actions/runs/43924405920) · [Web Demo PR](https://github.com/ovelhaaa/hydra-tape-engine/actions/runs/43924405980) · [Core Equivalence main](https://github.com/ovelhaaa/hydra-tape-engine/actions/runs/43680877692) · [Web Demo main](https://github.com/ovelhaaa/hydra-tape-engine/actions/runs/43680877711)
 
-| Ambiente | PR max_abs / RMSE | `main` max_abs / RMSE |
-|---|---:|---:|
-| GitHub Actions, Ubuntu, Emscripten 3.1.62 | `4,15300e-5 / 1,58022e-5` | `3,47460e-5 / 1,52453e-5` |
-| Windows, GCC 14.2.0, Emscripten 5.0.7 e Node 24.11.1 | `8,47900e-6 / 2,74890e-6` | `7,43600e-6 / 2,49805e-6` |
+### Exceção Native/WASM
 
-Os dois commits falham com `max_abs <= 1e-5` e `RMSE <= 1e-6`. No Windows só o RMSE excede o limite. No Linux o HEAD subiu ~19,5% em max_abs e ~3,65% em RMSE sobre uma divergência já presente. Em escala de áudio normalizada, o aumento absoluto foi `6,784e-6` no máximo e `5,569e-7` no RMSE. A exceção proposta vale para esse teste e essas revisões. **Decisão do responsável pelo merge: pendente.** Critérios, fixtures e estado do job continuam estritos.
+| Ambiente | Revisão testada na PR | `main` | PR max_abs / RMSE | `main` max_abs / RMSE |
+|---|---|---|---:|---:|
+| Actions, Ubuntu 26.04 e Emscripten 3.1.62 | `ff09de0bc063858d42cd493b8153f8cf213fcb89` (merge de `df0fdd4` em `e4cae43`) | `e4cae4354716cd2ac207a67afe95303b30bb6e4b` | `4,15300e-5 / 1,58022e-5` | `3,47460e-5 / 1,52453e-5` |
+| Windows, mesmo GCC 14.2.0, Emscripten 5.0.7 e Node 24.11.1 | `d942a7b26523e5a50193e0fb9206093f070cc130` | `e4cae4354716cd2ac207a67afe95303b30bb6e4b` | `8,47900e-6 / 2,74890e-6` | `7,43600e-6 / 2,49805e-6` |
+
+Os relatórios publicados de `test_native_vs_wasm` têm 2.048 amostras e falham nos limites `max_abs <= 1e-5` e `RMSE <= 1e-6`. As imagens dos jobs comparadores no Actions tinham revisões diferentes (`20261111.196.1` e `20261111.82.6`). O ensaio Windows controla o toolchain e confirma o aumento absoluto de `1,043e-6` no pico e `2,509e-7` no RMSE. Nesse ambiente só o RMSE excede o limite. No Linux os aumentos foram `6,784e-6` no pico e `5,569e-7` no RMSE. O código do núcleo e o runner do trace de `d942a7b` continuam iguais em `df0fdd4`.
+
+O impacto confirmado é a quebra de equivalência estrita de amostras, já presente na `main`. O trace da PR usa o setter V1.3 com parâmetros inicializados a zero e mantém `warpActive = 0` durante toda a execução. O tamanho dos deltas e a ausência de ativação Warp sustentam tratar a falha como preexistente, com aumento numérico medido e sem regressão material demonstrada nesse teste. O risco residual é divergência maior em configurações ou caudas fora do trace. O teste também deixa em aberto a audibilidade e a paridade entre backends com Warp ativo. Uma eventual aceitação vale para esse comparador e as revisões examinadas. **Decisão do responsável pelo merge: ACCEPT / REJECT — pendente.** Critérios, fixtures e estado do job continuam estritos.
 
 Para reproduzir, crie worktrees nos dois SHAs e execute em cada uma com o mesmo compilador Native, SDK WASM e Node:
 
@@ -148,4 +153,4 @@ Build `FW Nov 15 2026 21:41:19` gravado e verificado na mesma placa. A RAM está
 
 No ensaio sustentado, o P99 ocupou 64,60% do orçamento, com 1.027,49 µs de folga. O heap interno ficou em 128.180 B e a PSRAM livre em 3.830.424 B durante a janela. A tarefa completou os ensaios sem reset observado. Depois dos cinco minutos, a CLI confirmou os extremos de Grain e Speed com Warp e Freeverb ativos. O log bruto está em `artifacts/release-gate/bench-final.log`.
 
-**Parecer: `READY FOR HUMAN REVIEW`.** A validação funcional do Warp, a matemática de tempo real, o build e as correções de PCM e Freeverb passaram nos ensaios descritos. O responsável pelo merge deve decidir a exceção da equivalência Native/WASM. O revisor de áudio deve registrar a escuta, com atenção ao Drive pós-Freeverb e à cauda tradicional com feedback alto.
+**Parecer técnico: `BLOCKED — REPRODUCIBLE AUDIO DEFECT`.** O sign-off registrou 34 aprovações e uma aprovação com ressalva. O clique de Tape Clean foi reproduzido no WAV Native Fast e isolado na comutação do bias magnético. Multi-Head apresentou pulsos da mesma origem. Veja os instantes, níveis e o controle diagnóstico no [sign-off](ACCIDENTAL_WARP_LISTENING_SIGNOFF.md#investigação-técnica-de-encerramento--2026-11-16). A exceção da equivalência Native/WASM permanece uma decisão separada do responsável pelo merge.

@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { inventory, openPackage, parseManifest, suggestions } from "./inventory.mjs";
+import { inventory, openPackage, parseManifest, sha256, suggestions } from "./inventory.mjs";
 import { match, levels } from "./audio.mjs";
 import { importSession, keyFor, mapping, newSession, overall, report } from "./session.mjs";
 
@@ -41,6 +41,41 @@ test("release gate times are seconds, and CI identifies Native/WASM", () => {
   const ci = parseManifest("review.json", { rate: 48000, scenes: [{ scene: "tape", seconds: 3, wasm_peak: .5 }] });
   assert.equal(ci.scenarios[0].pairs[0].label, "TapeCore Native × WASM");
   assert.equal(ci.scenarios[0].input, "tape/dry.wav");
+});
+
+test("verified provenance preserves the legacy session and checks the associated audio", async () => {
+  const encode = text => new TextEncoder().encode(text);
+  const review = { rate: 48000, scenes: [{ scene: "tape", native_peak: 0.5, wasm_peak: 0.5 }] };
+  const open = async (manifest, companion, wasm = "b", dry = "source") => {
+    const source = await inventory([
+      file("lab/review.json", JSON.stringify(manifest)),
+      file("lab/tape/native.wav", "a"), file("lab/tape/wasm.wav", wasm), file("lab/tape/dry.wav", dry),
+      ...(companion ? [file("lab/provenance.json", JSON.stringify(companion))] : []),
+    ]);
+    return openPackage(source, source.packages[0]);
+  };
+  const legacy = await open(review);
+  const sourceHash = await sha256(encode("source"));
+  const files = await Promise.all([["tape/native.wav", "a"], ["tape/wasm.wav", "b"]].map(async ([path, content]) =>
+    [path, await sha256(encode(content))]));
+  const provenance = {
+    package_schema_version: 1, package_id: await sha256(encode(JSON.stringify(files))),
+    listening_lab_package_id: legacy.id, dsp_commit: "abcdef",
+    renders: Object.fromEntries(files.map(([path, hash]) => [path, {
+      render_wav_sha256: hash, source_wav_sha256: sourceHash, sample_rate: 48000, render_engine: path,
+    }])),
+  };
+  const enhanced = await open(review, provenance);
+  assert.equal(enhanced.id, legacy.id);
+  assert.equal(enhanced.provenance.complete, true);
+  const oldSession = newSession(legacy);
+  assert.deepEqual(importSession(JSON.stringify(oldSession), enhanced), oldSession);
+  assert.match(report(enhanced, oldSession), /Commit do motor de renderização\*\* abcdef/);
+  assert.match(report(enhanced, oldSession), new RegExp(legacy.id));
+  await assert.rejects(open(review, provenance, "other"), /outro pacote/);
+  await assert.rejects(open({ ...review, provenance }, null, "other"), /SHA-256 divergente/);
+  await assert.rejects(open({ ...review, provenance }, null, "b", "other"), /SHA-256 da fonte divergente/);
+  assert.equal((await open({ ...review, provenance })).id, legacy.id);
 });
 
 test("ambiguous filenames require a unique path and no-manifest suggestions require confirmation", async () => {

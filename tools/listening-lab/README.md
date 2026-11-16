@@ -36,6 +36,10 @@ O DriftBrigade orientou a navegação por cenários, a decodificação sob deman
 
 **Salvar avaliação** grava o formulário por par no armazenamento local da origem. Reabra o mesmo pacote para retomar. A identidade SHA-256 inclui o manifesto, o commit informado e os WAVs usados, de modo que uma atualização de áudio produz uma identidade diferente. JSON transporta a sessão para outro perfil. A importação exige a mesma identidade e substitui a sessão daquele pacote.
 
+Pacotes novos podem trazer um objeto `provenance` no manifesto, com o SHA-256 de cada render, a taxa e a origem do build quando conhecida. O `package_id` da procedência é o SHA-256 da lista JSON de pares caminho/hash em ordem lexicográfica. O Lab verifica os renders carregados e os hashes das entradas quando elas estão disponíveis. Os commits de baseline, otimizado, motor e firmware aparecem em campos próprios. Manifestos antigos continuam aceitos.
+
+Para o pacote histórico Release gate · TapeCore, copie [release-gate-tapecore.json](provenance/release-gate-tapecore.json) como `provenance.json` ao lado do `manifest.json` original e abra a pasta completa com o campo manual de commit vazio. O Lab confere o identificador de escuta original antes de aceitar a procedência. Assim, a mesma sessão e as mesmas avaliações continuam disponíveis. Os geradores Native/WASM aceitam `--dsp-commit` e `--build-profile` quando a procedência dos binários foi verificada. O gerador Warp usa `--native-commit` e `--native-build-profile` para o runner Native.
+
 **Export Listening Report** baixa um Markdown no formato do [sign-off](../../docs/ACCIDENTAL_WARP_LISTENING_SIGNOFF.md). Pareceres de investigação ou rejeição resultam em REQUIRES FIXES. Sem esses pareceres, um par sem decisão ou um pacote incompleto resulta em INCOMPLETE. A aprovação exige decisões para todos os pares do pacote aberto. Exporte um relatório por pacote avaliado. A decisão de release continua com o revisor.
 
 ## Testes

@@ -35,6 +35,30 @@ A ressalva foi **Tape Clean · Strict × Fast**. O revisor preferiu Strict no te
 
 O parecer cobre os WAVs identificados acima. A decisão de merge sobre a exceção de equivalência Native/WASM segue pendente.
 
+## Investigação técnica de encerramento — 2026-11-16
+
+O Hydra Listening Lab recalculou o identificador `8f1c674365bf7d2485d3bb0fcb92c7021b3720fe54a4d9748659c9a5c5c3db7e` com as 35 associações A/B em 16 cenários. O [manifesto complementar](../tools/listening-lab/provenance/release-gate-tapecore.json) registra os SHA-256 dos 66 renders distintos e os vincula à mesma identidade. Os quatro runners Native coincidiram com `listening/build-sha256.txt`. A referência de firmware do controle PCM é `b9fbbd3`. A revisão exata do motor que produziu esse WAV e a versão e o horário do gerador histórico ficaram indisponíveis.
+
+### Tape Clean · clique entre 5 e 7 s
+
+Foram lidos `tape_clean/strict.wav`, `tape_clean/fast.wav` e `tape_clean/input.f32` no nível original, a 48 kHz. Os WAVs foram decodificados em float64 e comparados por canal, frame a frame. Strict e Fast tiveram RMS de 0,0267744 e 0,0267721 e correlação de 0,99999633. O maior passo em ambos foi 0,0263213, a 5,022333 s. O resíduo Fast − Strict teve RMS 7,253e-5 e pico de **0,0119662 FS (−38,4 dBFS)** à esquerda no frame 300287, **6,255979 s**. O maior passo do resíduo foi 0,0084475 a 6,752104 s.
+
+Os maiores transientes do resíduo na janela ocorreram a 5,860188, 6,256021, 6,356271, 6,656042 e 6,752104 s (instantes da derivada). Os intervalos variam e os frames têm restos 73, 1, 77, 2 e 5 módulo 128. O estímulo é comum e a automação está vazia. A presença dos transientes nas amostras exclui a alternância do player como causa necessária.
+
+### Ruído agudo e Multi-Head
+
+Welch com janela Hann de 8192 frames e média dos canais encontrou linhas estáveis de **6 kHz e 18 kHz** em Strict e Fast, com −38,3 e −48,9 dBFS por bin em Tape Clean (5–7 s). A banda a partir de 4 kHz reuniu 36% da energia em ambos, contra menos de 0,00001% na entrada. A linha de 6 kHz dominou essa banda em todas as janelas de 1 s. O bias triangular de 18 kHz tem período de oito amostras a 48 kHz. Seu terceiro harmônico dobra para 6 kHz nessa taxa. Em uma sonda separada com `biasGate = 0`, as linhas caíram para −131,2 e −148,8 dBFS por bin, respectivamente. O ruído agudo é coloração do bias, presente nos dois renders. Wow, flutter, hiss e severidade de dropout têm valor zero no roteiro.
+
+Em `multi_head_transients/strict.wav` e `fast.wav`, também com automação vazia, os RMS foram 0,0357142 e 0,0357089, a correlação 0,99999907 e a energia acima de 4 kHz cerca de 25% em ambos. As mesmas linhas aparecem a −37,1 e −48,0 dBFS por bin. O maior transiente diferencial foi **0,0215551 FS (−33,3 dBFS)** à direita em **0,125167 s**, com um passo de 0,0152425 no resíduo duas amostras depois. O controle isolou o maior pulso em Strict, consistente com a nota da escuta cega que mapeou Y para Strict. Os ataques de maior amplitude em comum, como o de 3,006750 s, aparecem nos dois renders, com passo de aproximadamente 0,03744.
+
+### Causa e impacto
+
+Os runners históricos Strict e Fast, com os `input.f32` e `automation.txt` de cada cenário, reproduziram os quatro WAVs PCM24 byte a byte em arquivos temporários. A sonda compilou `tests/core/listen.cpp`, `dsp/core/hydra_dsp_c_api.cpp` e uma cópia de `dsp/core/tape_core.cpp` a `-O2` com as flags Strict/Fast do manifesto complementar. Na cópia, a única alteração foi substituir `(allowBias && std::fabs(x) > 1e-7f)` por `allowBias` dentro de `TapeMagnetics::process`. A diferença máxima Strict/Fast caiu de 0,0119662 para 0,00005236 FS em Tape Clean (5–7 s), e de 0,0215551 para 0,00012571 FS em Multi-Head. A diferença Fast original × Fast com bias contínuo em Tape Clean e a diferença Strict original × Strict com bias contínuo em Multi-Head localizaram os mesmos picos.
+
+O gate binário comuta a amplitude inteira do bias quando o sinal que entra no estágio magnético cruza o limiar. As flags mudam quais cruzamentos atingem esse limiar, e a comutação abrupta produz os pulsos. O gate já existe no comparador `f8d2851`. Os picos nas janelas investigadas variam entre builds. Em Multi-Head o pico de 0,125167 s também aparece no resíduo Head − Baseline. A evidência localiza a causa no DSP Native e deixa a ocorrência e a amplitude no ESP32-S3 em aberto.
+
+O parecer humano continua `APPROVED WITH RESERVATIONS`. O parecer técnico é **`BLOCKED — REPRODUCIBLE AUDIO DEFECT`** pela descontinuidade audível de Tape Clean confirmada nos renders. A menor correção proposta é substituir a comutação binária por uma transição curta de ganho do bias, preservando o desligamento em silêncio e o controle `allowBias`. Forçar bias contínuo foi apenas um controle diagnóstico. Uma correção de produção requer conferir o trecho e as caudas, os regressivos Native/WASM e o orçamento do caminho crítico no ESP32-S3.
+
 ## Avaliações individuais
 
 Registro exportado do [Hydra Listening Lab](../tools/listening-lab/README.md), com as decisões e observações do revisor.

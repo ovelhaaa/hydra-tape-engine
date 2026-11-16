@@ -1,6 +1,7 @@
 import { inventory, openPackage, suggestions, groups } from "./inventory.mjs";
 import { Deck, decodePair, db, dbText, levels, match, wavFormat } from "./audio.mjs";
-import { decisions, differences, artifacts, newSession, storageKey, keyFor, importSession, report, overall, mapping } from "./session.mjs";
+import { decisions, differences, artifacts, newSession, storageKey, keyFor, importSession, report, overall, mapping,
+  provenanceLabels, renderOrigin } from "./session.mjs";
 import { draw, clock } from "./wave.mjs";
 
 const $ = id => document.getElementById(id);
@@ -163,7 +164,10 @@ function refreshPackage() {
   const masked = blind();
   const { status } = overall(pack, session);
   say("package-name", pack.title);
-  say("package-meta", `${pack.scenarios.length} cenários · commit ${pack.commit || "indisponível"} · pacote ${pack.id.slice(0, 12)}`);
+  say("package-meta", [
+    `${pack.scenarios.length} cenários · pacote ${pack.id}`,
+    ...provenanceLabels(pack).map(([label, value]) => `${label} · ${value}`),
+  ].join(" | "));
   const done = pack.scenarios.filter(item => item.pairs.length && item.pairs.every(p =>
     p.a.file && p.b.file && session.evaluations[keyFor(item, p)]?.decision)).length;
   say("progress", `${done}/${pack.scenarios.length}`);
@@ -292,6 +296,10 @@ function refreshIdentity() {
     row.input ? `Entrada · ${row.input}${row.inputFound ? "" : " (ausente)"}` : "",
     `${row.rate ? row.rate + " Hz · " : ""}${duration} no cenário · deck a ${context.sampleRate} Hz`,
     row.source ?? "",
+    ...[pair.a, ...(pair.solo ? [] : [pair.b])].map((item, index) => {
+      const origin = renderOrigin(pack, item.path);
+      return origin ? `${index === 0 ? "A" : "B"} · ${origin} · SHA-256 ${item.hash ?? "indisponível"}` : "";
+    }),
     row.conditions ? JSON.stringify(row.conditions, null, 2) : "",
   ].filter(Boolean).join("\n"));
   show("blind-panel", pair.kind === "Regressão");
@@ -533,7 +541,10 @@ function download(name, content, type) {
   anchor.click();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
-$("export-json").onclick = () => download("hydra-listening-session.json", JSON.stringify(session, null, 2), "application/json");
+$("export-json").onclick = () => {
+  const data = { ...session, provenance: pack.provenance };
+  download("hydra-listening-session.json", JSON.stringify(data, null, 2), "application/json");
+};
 $("export-report").onclick = () => download("ACCIDENTAL_WARP_LISTENING_SIGNOFF.md", report(pack, session), "text/markdown");
 $("import-json").onchange = async event => {
   const input = event.target;

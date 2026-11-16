@@ -13,7 +13,9 @@
 
 ## Evidência auditiva
 
-- [ ] Escutar os pares A/B com níveis ajustados e registrar cenários, artefatos e decisão no [registro de escuta](ACCIDENTAL_WARP_LISTENING_SIGNOFF.md).
-- [ ] Conferir textura nos quatro modos, transições de automação e toggle, brilho e degradação das repetições, incluindo a cascata longa e o impulso a 95%.
+- [x] Registrar o parecer humano para os 35 pares do pacote avaliado. O [registro de escuta](ACCIDENTAL_WARP_LISTENING_SIGNOFF.md) contém 34 aprovações e uma aprovação com ressalva.
+- [x] Conferir os WAVs do sign-off pelo SHA-256 do pacote de escuta e registrar a [procedência por render](../tools/listening-lab/provenance/release-gate-tapecore.json).
+- [x] Reproduzir os transientes de Tape Clean e Multi-Head nos WAVs Native e isolar a comutação abrupta do bias magnético.
+- [ ] Resolver o defeito de áudio reproduzível documentado no sign-off e registrar a verificação da correção.
 
 O merge requer revisão das categorias de correção DSP, similaridade numérica e percepção. Divergências pendentes precisam de resolução ou justificativa aprovada na PR. Consulte o [protocolo de validação](HYDRA_2_AUDIO_VALIDATION.md).

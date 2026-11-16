@@ -109,7 +109,10 @@ jobs:
       - name: Check persistent Python state
         run: python scripts/test_validate_warp_prototype.py
       - name: Render and validate Warp scenarios
-        run: python scripts/validate_warp_prototype.py --listen build-native/hydra_listen_native --output-dir artifacts/warp-ab
+        run: >-
+          python scripts/validate_warp_prototype.py --listen build-native/hydra_listen_native
+          --native-commit "$(git rev-parse HEAD)" --native-build-profile "$CMAKE_BUILD_TYPE"
+          --output-dir artifacts/warp-ab
       - name: Upload Warp A/B renders and manifest
         if: always()
         uses: actions/upload-artifact@v4
@@ -287,6 +290,7 @@ jobs:
           python3 tests/core/listening_review.py \
             --native build-native/hydra_listen_native \
             --wasm-js build-wasm/wasm-tests/hydra_listen.js \
+            --dsp-commit "$GITHUB_SHA" --build-profile "$CMAKE_BUILD_TYPE" \
             --output-dir ci-reports/listening
 
       - name: Upload listening renders

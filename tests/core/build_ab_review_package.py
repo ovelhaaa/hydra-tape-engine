@@ -8,6 +8,11 @@ import subprocess
 import sys
 import wave
 
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[2] / "scripts"))
+import audio_provenance
+
+RATE = 48_000
+
 
 def get_scenarios(native_bin):
     out = subprocess.check_output([native_bin, '--list-scenarios'], text=True)
@@ -30,7 +35,7 @@ def clamp_pcm16(value):
     return max(-32768, min(32767, int(round(value))))
 
 
-def write_stereo_wav(path, values, sample_rate=48000):
+def write_stereo_wav(path, values, sample_rate=RATE):
     with wave.open(str(path), 'wb') as wav_file:
         wav_file.setnchannels(2)
         wav_file.setsampwidth(2)
@@ -64,6 +69,8 @@ def main():
     ap.add_argument('--output-dir', default='artifacts/ab_review')
     ap.add_argument('--max-abs-threshold', type=float, default=1e-5)
     ap.add_argument('--rmse-threshold', type=float, default=1e-6)
+    ap.add_argument('--dsp-commit', help='Verified source revision used to build both runners')
+    ap.add_argument('--build-profile', help='Verified build profile for both runners')
     args = ap.parse_args()
 
     scenarios = get_scenarios(args.native)
@@ -73,8 +80,10 @@ def main():
 
     package = {
         'thresholds': {'max_abs': args.max_abs_threshold, 'rmse': args.rmse_threshold},
+        'rate': RATE,
         'scenarios': [],
     }
+    renders = {}
 
     for scenario in scenarios:
         scenario_dir = root / scenario
@@ -94,6 +103,9 @@ def main():
         diff_wav = scenario_dir / 'diff.wav'
         write_stereo_wav(native_wav, native)
         write_stereo_wav(wasm_wav, wasm)
+        for engine, wav in (('native', native_wav), ('wasm', wasm_wav)):
+            path = wav.relative_to(root).as_posix()
+            renders[path] = audio_provenance.render(root, path, scenario, engine, engine, RATE)
 
         null_cmd = [
             sys.executable,
@@ -122,6 +134,9 @@ def main():
         (scenario_dir / 'null_test.txt').write_text(null_proc.stdout + (null_proc.stderr or ''), encoding='utf-8')
 
     package['status'] = 'PASS' if all(item['status'] == 'PASS' and item['null_test_status'] == 'PASS' for item in package['scenarios']) else 'FAIL'
+    package['provenance'] = audio_provenance.manifest(
+        __file__, renders, dsp_commit=args.dsp_commit, build_profile=args.build_profile
+    )
     (root / 'package_summary.json').write_text(json.dumps(package, indent=2) + '\n', encoding='utf-8')
 
     lines = [

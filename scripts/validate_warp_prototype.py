@@ -16,6 +16,8 @@ from array import array
 from datetime import datetime, timezone
 from pathlib import Path
 
+import audio_provenance
+
 dependency_error = None
 try:
     import numpy as np
@@ -547,6 +549,8 @@ def main():
     parser.add_argument("--listen", type=Path, default=ROOT / "build-native" /
                         ("hydra_listen_native.exe" if os.name == "nt" else "hydra_listen_native"))
     parser.add_argument("--node", default="node")
+    parser.add_argument("--native-commit", help="Verified source revision used to build the Native runner")
+    parser.add_argument("--native-build-profile", help="Verified Native runner build profile")
     parser.add_argument("--output-dir", type=Path, default=ROOT / "artifacts/warp-ab")
     args = parser.parse_args()
     args.output_dir = args.output_dir.resolve()
@@ -555,8 +559,10 @@ def main():
     manifest_path = args.output_dir / "manifest.json"
     manifest = {"suite": "Accidental Warp V1.3", "utc": datetime.now(timezone.utc).isoformat(),
                 "complete": False, "scenarios": []}
+    renders = {}
 
     def save():
+        manifest["provenance"] = audio_provenance.manifest(__file__, renders)
         manifest_path.write_text(json.dumps(manifest, indent=2, allow_nan=False) + "\n", encoding="utf-8")
 
     save()
@@ -591,6 +597,18 @@ def main():
             for scenario in scenarios():
                 record = render_scenario(scenario, args, provenance, Path(scratch))
                 manifest["scenarios"].append(record)
+                for index, variant in enumerate(record["variants"], 1):
+                    for engine, run in variant["engines"].items():
+                        path = run.get("output_wav")
+                        if not path:
+                            continue
+                        commit = args.native_commit if engine == "native" else (
+                            None if provenance["tracked_worktree_dirty"] else provenance["git_commit"]
+                        )
+                        renders[path] = audio_provenance.render(
+                            args.output_dir, path, record["id"], engine, index, FS, record["input_wav"],
+                            dsp_commit=commit, build_profile=args.native_build_profile if engine == "native" else None,
+                        )
                 print(f"Rendered {record['id']}", flush=True)
                 save()
         manifest["complete"] = True

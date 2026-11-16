@@ -116,7 +116,7 @@ class HydraProcessor extends AudioWorkletProcessor {
     try {
       this.module = await loadHydraRuntime(wasmBinary);
       this.api = {
-        create: this.module.cwrap('hydra_dsp_create', 'number', ['number', 'number', 'number']),
+        create: this.module.cwrap('hydra_dsp_create_v1_4', 'number', ['number', 'number', 'number', 'number']),
         destroy: this.module.cwrap('hydra_dsp_destroy', null, ['number']),
         prepare: this.module.cwrap('hydra_dsp_prepare', 'number', ['number', 'number', 'number']),
         reset: this.module.cwrap('hydra_dsp_reset', null, ['number']),
@@ -126,11 +126,12 @@ class HydraProcessor extends AudioWorkletProcessor {
       };
 
       const handlePtr = this.module._malloc(4);
-      const res = this.api.create(sampleRate, 4000.0, handlePtr);
+      const res = this.api.create(sampleRate, 4000.0, 16100.0, handlePtr);
       if (res !== 0) throw new Error(`DSP instantiation error: ${res}`);
 
       this.handle = this.module.HEAP32[handlePtr >> 2];
       this.module._free(handlePtr);
+      if (res !== 0) throw new Error(`DSP instantiation error: ${res}`);
 
       this.ensureBuffers(128);
 
@@ -227,7 +228,9 @@ class HydraProcessor extends AudioWorkletProcessor {
         reverseSmear: 24,
         spring: 25,
         warpActive: 30,
-        warpMode: 35
+        warpMode: 35,
+        reverseMode: 36,
+        reverseDivision: 37
       };
 
       const paramId = commandMap[command];

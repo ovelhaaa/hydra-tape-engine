@@ -39,7 +39,9 @@ const PARAM = {
   warpGrainMs: 32,
   warpStereo: 33,
   warpFeedback: 34,
-  warpMode: 35
+  warpMode: 35,
+  reverseMode: 36,
+  reverseDivision: 37
 };
 
 const ALL_PARAM_IDS = Object.keys(PARAM).filter(id => id !== 'reset');
@@ -87,7 +89,9 @@ const PARAM_METADATA = {
   warpGrainMs: { group: 'Warp Grain', engineParamId: PARAM.warpGrainMs, layer: 'AudioParam (Smooth)' },
   warpStereo: { group: 'Warp Stereo', engineParamId: PARAM.warpStereo, layer: 'AudioParam (Smooth)' },
   warpFeedback: { group: 'Warp Feedback', engineParamId: PARAM.warpFeedback, layer: 'AudioParam (Smooth)' },
-  warpMode: { group: 'Warp Mode', engineParamId: PARAM.warpMode, layer: 'MessagePort (Int Enum)' }
+  warpMode: { group: 'Warp Mode', engineParamId: PARAM.warpMode, layer: 'MessagePort (Int Enum)' },
+  reverseMode: { group: 'Playback Direction', engineParamId: PARAM.reverseMode, layer: 'MessagePort (Int Enum)' },
+  reverseDivision: { group: 'Tempo Sync', engineParamId: PARAM.reverseDivision, layer: 'MessagePort (Int Enum)' }
 };
 
 const DEBUG_ROUNDTRIP = false;
@@ -490,7 +494,7 @@ resetBtn.addEventListener('click', () => {
   setActionFeedback('DSP buffers cleared', 'success');
 });
 
-// Setup listener bindings for all 34 configuration variables
+// Bind controls to their DSP parameters
 ALL_PARAM_IDS.forEach((id) => {
   const el = document.getElementById(id);
   if (!el) return;

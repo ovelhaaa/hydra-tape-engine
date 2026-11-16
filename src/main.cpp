@@ -71,6 +71,8 @@ float p_tone = 50.0f;            // 50% - neutral
 // === NEW EFFECT MODES ===
 bool p_freeze = false;
 bool p_reverse = false;
+int p_reverseMode = HYDRA_DSP_REVERSE_RHYTHMIC;
+int p_reverseDivision = HYDRA_DSP_REVERSE_QUARTER;
 bool p_reverseSmear = false;
 bool p_spring = false;
 bool p_pingPong = false;
@@ -168,7 +170,7 @@ bool p_delayUnitBpm = false;     // false=ms, true=BPM
 
 volatile bool dspParamsDirty = true;
 
-static hydra_dsp_params makeTapeParams() {
+static hydra_dsp_params_v1_4 makeTapeParams() {
   hydra_dsp_params params{};
   params.flutterDepth = p_flutterDepth;
   params.wowDepth = p_wowDepth;
@@ -206,10 +208,10 @@ static hydra_dsp_params makeTapeParams() {
   params.warpStereo = p_warpStereo;
   params.warpFeedback = p_warpFeedback;
   params.warpMode = static_cast<float>(p_warpMode);
-  return params;
+  return {params, static_cast<float>(p_reverseMode), static_cast<float>(p_reverseDivision)};
 }
 
-hydra_dsp_params globalParams = makeTapeParams();
+hydra_dsp_params_v1_4 globalParams = makeTapeParams();
 // Setup params
 float p_masterVol = 30.0f;
 
@@ -480,7 +482,7 @@ void audioTask(void *parameter) {
   Serial.println("Audio Task: Started");
 
   // Attempt allocation in PSRAM
-  tape = new HydraDspEsp32Adapter(SAMPLE_RATE);
+  tape = new HydraDspEsp32Adapter(SAMPLE_RATE, 2000.0f, 8100.0f);
   if (tape == nullptr || !tape->isValid()) {
     Serial.println("CRITICAL: Hydra DSP adapter initialization FAILED!");
     while (1)
@@ -557,7 +559,7 @@ void audioTask(void *parameter) {
     // esp_task_wdt_reset();
 
     if (dspParamsDirty && xSemaphoreTake(paramMutex, 0) == pdTRUE) {
-      hydra_dsp_params localParams = globalParams;
+      hydra_dsp_params_v1_4 localParams = globalParams;
       float localGateThresh = p_gateThreshold;
       float localMood = p_mood;
       float localRhythm = p_rhythm;
@@ -568,7 +570,7 @@ void audioTask(void *parameter) {
         tape->updateParams(localParams);
       }
       if (melody) {
-        melody->setBPM(localParams.bpm);
+        melody->setBPM(localParams.v1_3.bpm);
         melody->setMood(localMood / 100.0f);
         melody->setRhythm(localRhythm / 100.0f);
       }
@@ -1139,6 +1141,8 @@ void printHelp() {
   dualPrintln(" [EFFECT MODES]");
   dualPrintln("  frz <0/1>   : Freeze/Hold");
   dualPrintln("  rev <0/1>   : Reverse Delay");
+  dualPrintln("  revmode <0..2> : Rhythmic, Free, Legacy");
+  dualPrintln("  revdiv <0..8>  : 1/4, 1/1, 1/2, 1/8, 1/16, 1/4D, 1/8D, 1/4T, 1/8T");
   dualPrintln("  rvb <0/1>   : Reverse Reverb");
   dualPrintln("  spr <0/1>   : Spring Reverb");
   dualPrintln("  spm <0-100> : Spring Mix");
@@ -1519,6 +1523,12 @@ void executeCommand(String line) {
     else if (cmd == "rev") {
       p_reverse = (val > 0);
       dualPrintf("Reverse: %s\n", p_reverse ? "ON" : "OFF");
+    } else if (cmd == "revmode") {
+      p_reverseMode = constrain(static_cast<int>(val), 0, 2);
+      dualPrintf("Reverse mode: %d\n", p_reverseMode);
+    } else if (cmd == "revdiv") {
+      p_reverseDivision = constrain(static_cast<int>(val), 0, 8);
+      dualPrintf("Reverse division: %d\n", p_reverseDivision);
     }
     else if (cmd == "rvb") {
       p_reverseSmear = (val > 0);

@@ -48,7 +48,9 @@ export const DEFAULT_CONTROL_STATE = {
   warpGrainMs: 80,
   warpStereo: 0.5,
   warpFeedback: 0,
-  warpMode: 0
+  warpMode: 0,
+  reverseMode: 0,
+  reverseDivision: 0
 };
 
 const RANGE_BY_PARAM = {
@@ -92,7 +94,9 @@ const RANGE_BY_PARAM = {
   warpGrainMs: { min: 20, max: 400 },
   warpStereo: { min: 0.0, max: 1.0 },
   warpFeedback: { min: 0, max: 100 },
-  warpMode: { min: 0, max: 3 }
+  warpMode: { min: 0, max: 3 },
+  reverseMode: { min: 0, max: 2, isInteger: true },
+  reverseDivision: { min: 0, max: 8, isInteger: true }
 };
 
 function isObject(value) {
@@ -109,7 +113,8 @@ function sanitizeParam(paramId, value) {
   if (!config) return undefined;
   const numeric = Number(value);
   const clamped = clampNumber(numeric, config.min, config.max, DEFAULT_CONTROL_STATE[paramId]);
-  return config.isBoolean ? (clamped >= 0.5 ? 1 : 0) : clamped;
+  if (config.isBoolean) return clamped >= 0.5 ? 1 : 0;
+  return config.isInteger ? Math.trunc(clamped) : clamped;
 }
 
 export function sanitizeControlState(input = {}) {
@@ -252,6 +257,10 @@ export function deserializePresetFromText(text) {
     ...fxParams,
     ...(fx && fx.enabled !== undefined ? { delayActive: fx.enabled ? 1 : 0 } : {})
   };
+
+  if (mergedParams.reverse >= 0.5 && mergedParams.reverseMode === undefined) {
+    mergedParams.reverseMode = 2;
+  }
 
   // Legacy fxChain presets are sparse and should import as a complete UI state;
   // flat v2 engineParams exports preserve exactly the parameters they contain.

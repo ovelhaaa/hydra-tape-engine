@@ -10,6 +10,7 @@ EXPECTED = {
     "hydra_dsp_get_param_spec",
     "hydra_dsp_get_param_spec_for_handle",
     "hydra_dsp_create",
+    "hydra_dsp_create_v1_4",
     "hydra_dsp_destroy",
     "hydra_dsp_prepare",
     "hydra_dsp_reset",

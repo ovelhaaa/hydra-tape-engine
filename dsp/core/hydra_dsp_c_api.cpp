@@ -331,6 +331,21 @@ int hydra_dsp_commit(hydra_dsp_handle* handle) {
   return 0;
 }
 
+int hydra_dsp_get_reverse_status(const hydra_dsp_handle* handle, float* out_effective_ms, int* out_is_clamped) {
+  if (!handle || !handle->core) return -1;
+  if (handle->dirty) {
+    const_cast<hydra_dsp_handle*>(handle)->core->updateParams(handle->params);
+    const_cast<hydra_dsp_handle*>(handle)->dirty = false;
+  }
+  if (out_effective_ms) {
+    *out_effective_ms = handle->core->effectiveReverseMs();
+  }
+  if (out_is_clamped) {
+    *out_is_clamped = handle->core->isReverseClamped() ? 1 : 0;
+  }
+  return 0;
+}
+
 HYDRA_DSP_IRAM int hydra_dsp_process(hydra_dsp_handle* handle,
                       const float* in_l,
                       const float* in_r,

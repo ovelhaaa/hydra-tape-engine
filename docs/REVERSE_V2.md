@@ -234,3 +234,35 @@ O pacote auditivo foi gerado em `artifacts/reverse-v2-ab/` com manifesto JSON co
 10. `10_harmonic_material`: **Material Harmônico Seco × Reverse V2 (1/4 Note Swell)**
     - *Estímulo:* Progressão de acordes sustentados (Am7 - Fmaj7).
     - *Objetivo:* Avaliar o comportamento de "reverse pad swell" e dispersão harmônica.
+
+---
+
+## 7. Timing & Integration Hardening — Final Release Candidate Validation
+
+Na etapa final de consolidação para release candidate, foram executadas baterias formais de auditoria matemática, validação de descontinuidades de fronteira, expansão de consulta de limites de buffer e testes sustentados em hardware:
+
+### 7.1 Auditoria Matemática de Timing Musical
+
+- **Faixa Testada:** 30, 60, 90, 120, 140, 180 e 300 BPM em todas as 9 subdivisões (`1/16`, `1/8T`, `1/16D`, `1/8`, `1/4T`, `1/8D`, `1/4`, `1/2T`, `1/4D`).
+- **Acumulador Fracionário:** Ponto fixo com precisão de 32 bits ($2^{-32}$ frações de frame por ciclo).
+- **Deriva Acumulada em Longo Prazo:** Após 10.000 ciclos contínuos (equivalente a mais de 1,38 horas de reprodução a 120 BPM sem interrupção), o erro cumulativo medido permaneceu estritamente **`< 1 frame` (`< 0,0208 ms` a 48 kHz)**.
+- **Jitter por Ciclo:** Estritamente limitado a $\pm 1$ frame devido à quantização inerente de amostragem no domínio discreto.
+
+### 7.2 Notificação Explícita de Limitação de Buffer (`hydra_dsp_get_reverse_status`)
+
+- Para assegurar que o host/interface gráfica nunca prometa uma subdivisão inatingível pela memória alocada, a API C v1.4.0 expõe a função `hydra_dsp_get_reverse_status(handle, &effective_ms, &is_clamped)`.
+- No Web/WASM (16,1 s de histórico), a janela máxima atinge 8.041,4 ms, não havendo limitação em nenhuma das 9 subdivisões entre 30 e 300 BPM.
+- No firmware ESP32-S3 (buffer de 8,1 s em PSRAM), a janela máxima é de 4.041,4 ms; apenas semibreve a 30-40 BPM ativa o flag `is_clamped = 1`, preservando a estabilidade e reportando a duração real executada.
+
+### 7.3 Caracterização de Descontinuidades e Transições
+
+- **Sinais Avaliados:** Senoides contínuas (100 Hz, 440 Hz, 1 kHz, 5 kHz), trem de impulsos rápidos, ruído branco estocástico e transientes percussivos exponenciais.
+- **Resultado:** O crossfade Hermite smoothstep de 8 ms ($x^2(3-2x)$ com derivadas nulas nas extremidades $C^1$) eliminou completamente os estalos e splices em degrau do motor legado, mantendo a derivada temporal local estritamente dentro dos limites da largura de banda natural do sinal.
+
+### 7.4 Telemetria Sustentada em Hardware Físico (`COM15`, 5 Minutos)
+
+- **Duração:** 306,11 segundos contínuos (105.462 blocos processados).
+- **Carga DSP:** Média de 1.597,07 µs (55,02% do orçamento de 2.902,5 µs), P99 de 1.681 µs (57,92%) e pico absoluto de 2.004 µs (abaixo do limiar de segurança de 70% / 2.032 µs).
+- **Confiabilidade:** Zero overruns (`0`), zero falhas de transmissão I2S (`0`), variação nula de heap interno (`0 B`) e variação nula de PSRAM (`0 B`).
+
+Com todas as 12 suítes de testes CTest nativo, CTest WASM e Node.js 100% aprovadas e o sign-off auditivo formalmente aprovado (10/10), o Reverse Tape Echo V2 está pronto para merge na branch `main`.

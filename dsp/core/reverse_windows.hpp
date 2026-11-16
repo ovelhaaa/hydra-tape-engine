@@ -26,11 +26,16 @@ class ReverseWindows {
     modulation_ = std::min<int32_t>(24, std::max<int32_t>(0, historyFrames / 16));
     anchor_ = 4 + modulation_;
     const int32_t maxHop = std::max<int32_t>(1, (historyFrames - 8 - 2 * modulation_) / 2 - overlap_);
+    isClamped_ = (requested > static_cast<double>(maxHop));
     const double hop = std::clamp(requested, static_cast<double>(std::min(overlap_ + 1, maxHop)),
                                   static_cast<double>(maxHop));
+    effectiveMs_ = static_cast<float>((hop / sampleRate) * 1000.0);
     hopFrames_ = static_cast<int32_t>(hop);
     fraction_ = static_cast<uint32_t>((hop - hopFrames_) * 4294967296.);
   }
+
+  bool isClamped() const { return isClamped_; }
+  float effectiveMs() const { return effectiveMs_; }
 
   void reset() {
     age_ = hop_ = previousAge_ = 0;
@@ -62,6 +67,8 @@ class ReverseWindows {
   }
 
  private:
+  float effectiveMs_ = 0.0f;
+  bool isClamped_ = false;
   int32_t age_ = 0;
   int32_t hop_ = 0;
   int32_t previousAge_ = 0;

@@ -178,6 +178,17 @@ int hydra_dsp_set_params_v1_2(hydra_dsp_handle* handle, const hydra_dsp_params_v
  */
 int hydra_dsp_set_params_sized(hydra_dsp_handle* handle, const void* params, size_t struct_size);
 int hydra_dsp_commit(hydra_dsp_handle* handle);
+
+/**
+ * @brief Retrieves the effective reverse playback window duration and whether it was clamped by buffer limits.
+ *
+ * @param handle Handle to DSP instance
+ * @param out_effective_ms Output pointer to receive effective window length in milliseconds (may be NULL)
+ * @param out_is_clamped Output pointer to receive 1 if window duration was clamped by history capacity, 0 otherwise (may be NULL)
+ * @return 0 on success, -1 on null handle
+ */
+int hydra_dsp_get_reverse_status(const hydra_dsp_handle* handle, float* out_effective_ms, int* out_is_clamped);
+
 int hydra_dsp_process(hydra_dsp_handle* handle,
                       const float* in_l,
                       const float* in_r,

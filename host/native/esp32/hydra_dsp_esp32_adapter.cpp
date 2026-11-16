@@ -60,6 +60,22 @@ bool HydraDspEsp32Adapter::isValid() const {
   return handle_ != nullptr;
 }
 
+bool HydraDspEsp32Adapter::isReverseClamped() const {
+  int clamped = 0;
+  if (handle_ && hydra_dsp_get_reverse_status(handle_, nullptr, &clamped) == 0) {
+    return clamped != 0;
+  }
+  return false;
+}
+
+float HydraDspEsp32Adapter::effectiveReverseMs() const {
+  float ms = 0.0f;
+  if (handle_ && hydra_dsp_get_reverse_status(handle_, &ms, nullptr) == 0) {
+    return ms;
+  }
+  return 0.0f;
+}
+
 void HydraDspEsp32Adapter::updateParams(const hydra_dsp_params& params) {
   updateParams({params, HYDRA_DSP_REVERSE_LEGACY, HYDRA_DSP_REVERSE_QUARTER});
 }

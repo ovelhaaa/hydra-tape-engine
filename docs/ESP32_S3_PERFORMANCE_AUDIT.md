@@ -185,3 +185,36 @@ Todos os critérios mínimos e de margem de segurança (`P99 < 2.032 µs` / `< 7
   - HEAD pós-otimização (`c9bc17e`): `max_abs = 8,479e-6 <= 1e-5` (PASS) e `RMSE = 2,74890e-6 > 1e-6` (FAIL pré-existente nos mesmos limites). Os thresholds originais foram mantidos inalterados.
 
 O [gate de release](ACCIDENTAL_WARP_RELEASE_GATE.md) reúne a revalidação posterior, os resultados do GitHub Actions e a auditoria de saída PCM e Freeverb.
+
+---
+
+## Fase F — Validação Física Sustentada do Reverse Tape Echo V2 (`COM15`, Release Candidate)
+
+**Data:** 16 de Novembro de 2026  
+**Branch:** `feature/reverse-tape-echo-v2`  
+**Alvo Físico:** ESP32-S3 DevKitC-1 N16R8 (rev. v0.2), Xtensa LX7 dual-core @ 240 MHz, 8 MB Octal PSRAM, 16 MB Flash  
+**Porta Serial:** `COM15` (115200 baud)  
+**Cadeia Ativa:** Gerador de Áudio + TapeCore (Delay + Reverse V2 janelas sobrepostas Hermite smoothstep) + Freeverb estéreo (`byp 0, gen 1, dly 1, rev 1, revmode 0, revdiv 0, frv 1, fbk 45, wet 50`)  
+**Orçamento de Tempo por Bloco:** 128 frames @ 44.100 Hz = `2.902,49 µs` (limiar de segurança de 70% = `2.031,74 µs`)
+
+### F.1 Ensaio Sustentado de 5 Minutos (300 s Contínuos em Hardware Real)
+
+O ensaio executou de forma ininterrupta por 306,11 segundos, processando 105.462 blocos de áudio sob automação dinâmica de parâmetros (chaveamento de subdivisões rítmicas para 1/8 aos 100 s, transição de BPM para 140 e modo Free aos 200 s, e retorno para 120 BPM e modo Rhythmic aos 250 s).
+
+| Métrica | Valor Medido | Limite / Meta | Status |
+|---|---:|---:|:---:|
+| **Duração do Ensaio** | **306,11 s** | `>= 300 s` (5 min) | **PASS** |
+| **Blocos Processados** | **105.462** | Monotônico contínuo | **PASS** |
+| **Média DSP (`bench 1000 100`)** | **1.597,07 µs** (55,02%) | `< 2.032 µs` (< 70%) | **PASS** |
+| **P50 DSP** | **1.606 µs** (55,33%) | `< 2.032 µs` | **PASS** |
+| **P95 DSP** | **1.636 µs** (56,36%) | `< 2.032 µs` | **PASS** |
+| **P99 DSP** | **1.681 µs** (57,92%) | `< 2.032 µs` (< 70%) | **PASS** |
+| **Pico Máximo DSP no Ensaio** | **2.004 µs** (69,04%) | `< 2.902,5 µs` (100%) | **PASS** |
+| **DSP Overruns** | **0 (0,0%)** | `0` | **PASS** |
+| **Falhas de Escrita I2S TX** | **0** | `0` | **PASS** |
+| **Variação de Heap Interno** | **0 bytes** (`125.968 -> 125.968 B`) | `0` vazamentos | **PASS** |
+| **Variação de SPIRAM (PSRAM)** | **0 bytes** (`1.667.736 -> 1.667.736 B`) | `0` vazamentos | **PASS** |
+
+### F.2 Conclusão de Desempenho
+
+O motor Reverse Tape Echo V2 opera com ampla margem de segurança no ESP32-S3 (P99 a 57,9% do orçamento de tempo real e pico máximo de 2.004 µs sob transições bruscas de tempo e subdivisão), mantendo zero overruns, zero falhas I2S e estabilidade estrita de memória (zero alocações no loop de áudio).

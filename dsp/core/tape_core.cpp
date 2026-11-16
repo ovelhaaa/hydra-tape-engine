@@ -428,6 +428,8 @@ TapeCore::TapeCore(float sampleRate,float maxDelayMs,float historyMs)
 TapeCore::~TapeCore(){ delete impl_; }
 bool TapeCore::isValid() const { return impl_ && impl_->valid(); }
 const TapeParams& TapeCore::params() const { return impl_->currentParams; }
+bool TapeCore::isReverseClamped() const { return impl_ ? impl_->reverseWindows.isClamped() : false; }
+float TapeCore::effectiveReverseMs() const { return impl_ ? impl_->reverseWindows.effectiveMs() : 0.0f; }
 
 void TapeCore::reset(){
   if(!isValid()) return;

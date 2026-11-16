@@ -9,6 +9,8 @@ public:
   ~HydraDspEsp32Adapter();
 
   bool isValid() const;
+  bool isReverseClamped() const;
+  float effectiveReverseMs() const;
   void updateParams(const hydra_dsp_params& params);
   void updateParams(const hydra_dsp_params_v1_4& params);
   void updateFilters();

@@ -54,6 +54,8 @@ public:
   void reset();
   void updateParams(const TapeParams& newParams);
   const TapeParams& params() const;
+  bool isReverseClamped() const;
+  float effectiveReverseMs() const;
   float process(float input);
   void processStereo(float inL, float inR, float* outL, float* outR);
   void processStereoBlock(const float* inL, const float* inR, float* outL, float* outR, uint32_t frames);

@@ -17,6 +17,6 @@
 - [x] Conferir os WAVs do sign-off pelo SHA-256 do pacote de escuta e registrar a [procedência por render](../tools/listening-lab/provenance/release-gate-tapecore.json).
 - [x] Reproduzir os transientes de Tape Clean e Multi-Head nos WAVs Native e isolar a comutação abrupta do bias magnético.
 - [x] Aplicar a rampa de ganho e medir a redução dos transientes nos mesmos estímulos do sign-off.
-- [ ] Registrar a escuta humana do novo [pacote Magnetic Bias De-Click](MAGNETIC_BIAS_DECLICK_SIGNOFF.md).
+- [x] Registrar a escuta humana do [pacote Magnetic Bias De-Click](MAGNETIC_BIAS_DECLICK_SIGNOFF.md), com 17 aprovações em 17 pares.
 
 O merge requer revisão das categorias de correção DSP, similaridade numérica e percepção. Divergências pendentes precisam de resolução ou justificativa aprovada na PR. Consulte o [protocolo de validação](HYDRA_2_AUDIO_VALIDATION.md).

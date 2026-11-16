@@ -1,6 +1,6 @@
 # Magnetic Bias De-Click — V1.3
 
-**Escuta humana · `PENDING HUMAN REVIEW`**
+**Escuta humana · `APPROVED` · 16/11/2026**
 
 Abra a pasta extraída do artefato `magnetic-bias-declick-v1.3` na [Hydra Listening Lab](../tools/listening-lab/README.md). O manifesto registra os commits, parâmetros iniciais, eventos, flags, taxa de 48 kHz e SHA-256 por render. Os WAVs são estéreo PCM24 sem normalização. Selecione **MATCHED** para a avaliação cega. O ponteiro de reprodução é comum ao par A/B. O resultado da [escuta anterior](ACCIDENTAL_WARP_LISTENING_SIGNOFF.md) permanece no registro original.
 
@@ -57,8 +57,10 @@ As quatro janelas tiveram zero overruns e zero falhas de escrita I2S, com heap i
 
 | Campo | Registro |
 |---|---|
-| SHA-256 do pacote aberto | — |
-| Tape Clean e Multi-Head | — |
-| Drive, estéreo e textura | — |
-| Warp a 95% e Silence/Decay | — |
-| Observações e decisão | `PENDING HUMAN REVIEW` |
+| SHA-256 do pacote aberto | `f91f2f74a708cb1b715e065352286461a2cc7ede88d2262fa19c317ec34abd89` |
+| Revisão corrigida avaliada | `04c89cc85b6e2175216d9c976a85ce360f0dc7e9` |
+| Tape Clean e Multi-Head | Preferência cega pela correção em Tape Clean Fast, Tape Clean Strict e Multi-Head Strict, com confiança 5/5. Os pares Strict × Fast corrigidos foram julgados equivalentes nos dois cenários. |
+| Drive, estéreo, Warp e Silence/Decay | Todos os pares receberam `APPROVE`. |
+| Decisão | `APPROVED`, 17 de 17 pares em 11 cenários. |
+
+O [relatório exportado da Hydra Listening Lab](MAGNETIC_BIAS_DECLICK_LISTENING_REPORT.md) contém as decisões individuais e o inventário verificado. A exceção Native/WASM continua pendente de decisão no gate de release.

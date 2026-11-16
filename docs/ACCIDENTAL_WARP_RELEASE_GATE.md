@@ -157,6 +157,6 @@ No baseline anterior à correção, o clique de Tape Clean e os pulsos de Multi-
 
 ### Correção de de-click
 
-A nova rampa de ganho do bias reduziu em cerca de 28 dB os picos diferenciais nas duas janelas medidas. A escuta do pacote `magnetic-bias-declick-v1.3` segue `PENDING HUMAN REVIEW`. Consulte os pares e marcadores no [sign-off da correção](MAGNETIC_BIAS_DECLICK_SIGNOFF.md).
+A nova rampa de ganho do bias reduziu em cerca de 28 dB os picos diferenciais nas duas janelas medidas. A escuta humana do pacote de de-click com os WAVs históricos foi concluída em 16/11/2026. Os 17 pares da revisão corrigida `04c89cc` receberam `APPROVE`. Consulte o [sign-off da correção](MAGNETIC_BIAS_DECLICK_SIGNOFF.md).
 
 Na bancada Windows, o trace estrito corrigido obteve `max_abs = 5,968e-6` e `RMSE = 2,344e-6`, contra `8,479e-6` e `2,749e-6` antes da correção. O RMSE ainda excede o limite. A exceção Native/WASM segue **ACCEPT / REJECT — pendente**. Os jobs e a medição física do candidato estão na [PR #47](https://github.com/ovelhaaa/hydra-tape-engine/pull/47).

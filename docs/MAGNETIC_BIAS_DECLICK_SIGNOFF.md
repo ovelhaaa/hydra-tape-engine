@@ -63,4 +63,4 @@ As quatro janelas tiveram zero overruns e zero falhas de escrita I2S, com heap i
 | Drive, estéreo, Warp e Silence/Decay | Todos os pares receberam `APPROVE`. |
 | Decisão | `APPROVED`, 17 de 17 pares em 11 cenários. |
 
-O [relatório exportado da Hydra Listening Lab](MAGNETIC_BIAS_DECLICK_LISTENING_REPORT.md) contém as decisões individuais e o inventário verificado. A exceção Native/WASM continua pendente de decisão no gate de release.
+O [relatório exportado da Hydra Listening Lab](MAGNETIC_BIAS_DECLICK_LISTENING_REPORT.md) contém as decisões individuais e o inventário verificado. O [gate de release](ACCIDENTAL_WARP_RELEASE_GATE.md#exceção-nativewasm) registra a decisão sobre Native/WASM.

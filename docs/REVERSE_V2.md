@@ -200,7 +200,7 @@ O pacote auditivo foi gerado em `artifacts/reverse-v2-ab/` com manifesto JSON co
 
 - **Nome do Pacote:** `Hydra Reverse V2 — Rhythmic Evaluation`
 - **Taxa de Amostragem:** 48 kHz (WAV PCM 24-bit estéreo)
-- **Status de Sign-off:** `PENDING HUMAN REVIEW`
+- **Status de Sign-off:** `APPROVED` (Relatório de Escuta: [docs/REVERSE_V2_LISTENING_SIGNOFF.md](file:///c:/Users/devx/Documents/PlatformIO/Projects/hydra/docs/REVERSE_V2_LISTENING_SIGNOFF.md))
 
 ### Relação dos 10 Pares de Avaliação A/B
 

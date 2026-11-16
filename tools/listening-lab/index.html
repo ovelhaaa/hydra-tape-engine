@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hydra / Listening Lab</title>
+<link rel="stylesheet" href="style.css">
+<script type="module" src="app.mjs"></script>
+</head>
+<body>
+<header class="masthead">
+  <div><span class="brand">HYDRA<span class="accent"> / </span></span><span class="wordmark">LISTENING LAB</span></div>
+  <a class="pr" href="https://github.com/ovelhaaa/hydra-tape-engine/pull/47">PR #47 <span aria-hidden="true">↗</span></a>
+</header>
+<main>
+  <section class="load" id="load">
+    <div class="load-info"><h1 id="package-name">Abra um pacote de escuta</h1><p id="package-meta">Selecione a pasta extraída com o manifesto e os WAVs.</p></div>
+    <div class="load-actions">
+      <label class="button primary">Selecionar pasta<input type="file" id="folder" webkitdirectory multiple></label>
+      <label class="button">Selecionar arquivos<input type="file" id="files" accept=".wav,.json" multiple></label>
+    </div>
+    <label class="commit">Commit dos renders, se ausente do manifesto <input id="commit" placeholder="SHA do commit" spellcheck="false"></label>
+    <div id="package-choices" hidden><label>Pacote <select id="package-select"></select></label></div>
+    <form id="manual" hidden>
+      <label>Sugestão <select id="suggestions"></select></label>
+      <label>Cenário <input id="manual-name" required></label>
+      <label>Arquivo A <select id="manual-a" required></select></label>
+      <label>Arquivo B <select id="manual-b" required></select></label>
+      <label>Comparação <select id="manual-kind"><option>Motores</option><option>Regressão</option><option>Outro</option></select></label>
+      <button>Adicionar par</button> <button id="manual-open" type="button" class="primary" disabled>Abrir pares confirmados</button> <output id="manual-count"></output>
+    </form>
+    <p id="notice" role="status" hidden></p>
+  </section>
+
+  <div class="workspace" id="workspace" hidden>
+    <aside class="suites">
+      <h2>Test Suites <span id="progress"></span></h2>
+      <nav id="scenarios" aria-label="Cenários"></nav>
+    </aside>
+
+    <section class="deck" aria-labelledby="deck-title">
+      <div class="deck-head"><div><h2>Listening Deck</h2><h3 id="deck-title"></h3></div><button id="next">Próximo <span aria-hidden="true">→</span></button></div>
+      <label id="pair-field">Comparação <select id="pair"></select></label>
+      <details id="conditions"><summary>Condições dos renders</summary><pre id="condition-text"></pre></details>
+      <p id="deck-message" role="status"></p>
+      <div id="player" hidden>
+        <div class="transport">
+          <button id="play" class="primary" title="Espaço">▶ Reproduzir</button>
+          <button id="stop" title="R">■ Início</button>
+          <button id="loop" aria-pressed="false" title="L">Loop</button>
+          <output id="time" aria-label="Tempo de reprodução"></output>
+        </div>
+        <div class="slots" aria-label="Fontes de áudio">
+          <button id="slot0" data-slot="0" aria-pressed="true"></button>
+          <button id="slot1" data-slot="1" aria-pressed="false"></button>
+        </div>
+        <div class="options">
+          <label>Nível <select id="mode"><option>RAW</option><option>MATCHED</option></select></label>
+          <label>Canal <select id="channel"><option>Stereo</option><option>L</option><option>R</option></select></label>
+          <label>Troca <select id="fade"><option value="0.008">8 ms · suave</option><option value="0.001">1 ms · transientes</option></select></label>
+          <label>Monitor <input id="volume" type="range" min="0" max="1" step="0.01" value="0.75"><output id="volume-value">75%</output></label>
+        </div>
+        <div class="wave-options">
+          <label>Forma de onda <select id="view"><option value="Both">Alinhadas</option><option value="A">A</option><option value="B">B</option><option value="Overlay">Sobrepostas</option><option value="Difference">A − B</option></select></label>
+          <label>Zoom <select id="zoom"><option value="1">1×</option><option value="2">2×</option><option value="4">4×</option><option value="8">8×</option><option value="16">16×</option></select></label>
+        </div>
+        <p class="wave-key" id="wave-key"></p>
+        <div class="timeline">
+          <canvas id="wave" aria-label="Formas de onda. Clique para ir ao ponto ou arraste para definir o loop."></canvas>
+          <div id="cursor" aria-hidden="true"></div>
+        </div>
+        <label class="seek">Posição <input id="seek" type="range" min="0" step="0.001" value="0"></label>
+        <label id="pan-field" class="seek" hidden>Janela <input id="pan" type="range" min="0" step="0.001" value="0"></label>
+        <div class="region">
+          <label>Loop de <input id="loop-start" type="number" min="0" step="0.001" aria-label="Início do loop em segundos"></label>
+          <label>até <input id="loop-end" type="number" min="0" step="0.001" aria-label="Fim do loop em segundos"></label>
+          <button id="set-loop">Aplicar trecho</button>
+          <button id="clear-loop">Trecho inteiro</button>
+        </div>
+        <div class="marker-row"><div id="markers" aria-label="Marcadores"></div>
+          <form id="marker-form"><input id="marker-name" placeholder="Nome do marcador" aria-label="Nome do marcador" required maxlength="90"><button>+ No cursor</button></form>
+        </div>
+        <div id="meters"></div>
+        <p class="hint">Espaço reproduz · A/B ou X/Y alterna · ⇧+A troca a fonte · L faz loop · ←/→ muda a posição</p>
+      </div>
+    </section>
+
+    <section class="evaluation">
+      <h2>Evaluation</h2>
+      <div id="blind-panel" hidden>
+        <button id="blind-start">Iniciar escuta cega</button>
+        <form id="blind-form" hidden>
+          <label>Preferência <select id="preference" required><option value="">Selecionar</option><option>X</option><option>Y</option><option>Equivalentes</option></select></label>
+          <label>Confiança <select id="confidence"></select></label>
+          <button class="primary">Registrar preferência</button>
+        </form>
+        <p id="blind-result"></p>
+        <button id="reveal" hidden>Revelar associação</button>
+      </div>
+      <form id="evaluate">
+        <div class="ratings">
+          <label>Fidelidade <select id="fidelity"></select></label>
+          <label>Musicalidade <select id="musicality"></select></label>
+        </div>
+        <label>Artefatos <select id="artifacts"></select></label>
+        <fieldset><legend>Diferenças percebidas</legend><div id="differences"></div></fieldset>
+        <label>Observações <textarea id="notes" rows="4"></textarea></label>
+        <label>Decisão <select id="decision"></select></label>
+        <button class="primary">Salvar avaliação</button>
+        <p id="save-status" role="status"></p>
+      </form>
+    </section>
+  </div>
+
+  <footer id="exports" hidden>
+    <div><h2>Sign-off</h2><output id="overall"></output></div>
+    <div class="footer-actions">
+      <button id="export-json">Exportar JSON</button>
+      <label class="button">Importar JSON<input id="import-json" type="file" accept=".json"></label>
+      <button id="export-report" class="primary">Export Listening Report</button>
+    </div>
+  </footer>
+</main>
+</body>
+</html>

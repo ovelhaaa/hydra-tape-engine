@@ -26,6 +26,8 @@ O pacote cobre Tape Clean, High Drive, High Feedback, Ping-Pong, Multi-Head, War
 
 ## Avaliação do revisor
 
+Use o [Hydra Listening Lab](../tools/listening-lab/README.md) para carregar o pacote, comparar os WAVs e exportar o parecer em Markdown.
+
 - **Revisor e data:** pendentes.
 - **Avaliação por trecho e equipamento:** pendente.
 - **Decisão:** `PENDING HUMAN REVIEW`.

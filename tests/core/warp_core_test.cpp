@@ -570,7 +570,7 @@ void test_esp32_adapter_applies_warp_only_changes() {
 
 void test_api_backward_compatibility() {
   hydra_dsp_handle* h = create_test_handle();
-  CHECK(hydra_dsp_get_param_count() == 36);
+  CHECK(hydra_dsp_get_param_count() >= HYDRA_DSP_PARAM_WARP_MODE + 1);
 
   for (int i = 0; i < HYDRA_DSP_PARAM_COUNT; ++i) {
     const auto id = static_cast<hydra_dsp_param_id>(i);
@@ -610,7 +610,7 @@ void test_api_backward_compatibility() {
     CHECK(value == expected);
   };
   auto expectWarpDefaults = [&] {
-    for (int i = HYDRA_DSP_PARAM_WARP_ACTIVE; i < HYDRA_DSP_PARAM_COUNT; ++i) {
+    for (int i = HYDRA_DSP_PARAM_WARP_ACTIVE; i <= HYDRA_DSP_PARAM_WARP_MODE; ++i) {
       const auto id = static_cast<hydra_dsp_param_id>(i);
       hydra_dsp_param_spec spec{};
       CHECK(hydra_dsp_get_param_spec(id, &spec) == 0);

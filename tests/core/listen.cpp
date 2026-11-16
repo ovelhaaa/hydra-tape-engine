@@ -35,7 +35,7 @@ int main(int argc, char** argv) {
   CHECK(input && automation && output);
 
   hydra_dsp_handle* handle = nullptr;
-  CHECK(hydra_dsp_create(48000.0f, 2000.0f, &handle) == 0);
+  CHECK(hydra_dsp_create_v1_4(48000.0f, 2000.0f, 8100.0f, &handle) == 0);
   CHECK(hydra_dsp_prepare(handle, kBlock, HYDRA_DSP_CHANNELS_STEREO) == 0);
 
   std::array<float, kBlock * 2> interleaved{};

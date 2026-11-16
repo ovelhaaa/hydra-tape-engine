@@ -8,15 +8,26 @@ const upgrades = {
   strict_vs_fast: ["strict", "fast", "Strict × Fast"],
   head_vs_head_post_tanh: ["head", "head_post_tanh", "Head × controle pós-tanh"],
   current_vs_post_tanh_control: ["current", "post_tanh_control", "PCM atual × controle pós-tanh"],
+  reverse_v1_vs_reverse_v2: ["reverse_v1", "reverse_v2", "Reverse V1 × Reverse V2"],
+  quarter_vs_eighth: ["quarter", "eighth", "Reverse V2 1/4 × 1/8"],
+  straight_vs_dotted: ["straight", "dotted", "Reverse V2 Straight × Dotted"],
+  straight_vs_triplet: ["straight", "triplet", "Reverse V2 Straight × Triplet"],
+  feedback_50_vs_95: ["feedback_50", "feedback_95", "Reverse Feedback 50% × 95%"],
+  free_vs_rhythmic: ["free", "rhythmic", "Reverse Free × Rhythmic"],
+  fixed_vs_automated: ["fixed_bpm", "automated_bpm", "BPM Fixo × BPM Automatizado"],
+  mono_vs_stereo: ["mono", "stereo", "Reverse V2 Mono × Estéreo"],
+  percussive_dry_vs_reverse: ["dry", "reverse", "Material Percussivo Dry × Reverse"],
+  harmonic_dry_vs_reverse: ["dry", "reverse", "Material Harmônico Dry × Reverse"],
 };
 
-export const groups = ["Accidental Warp", "Tape Character", "Feedback & Stability", "Automation", "Stereo / Spatial"];
+export const groups = ["Accidental Warp", "Tape Character", "Feedback & Stability", "Automation", "Stereo / Spatial", "Reverse Tape Echo"];
 export const humanize = id => id.replace(/^\d+_/, "").replaceAll("_", " ");
 const basename = path => path.split("/").at(-1);
 const stem = path => basename(path).replace(/\.wav$/i, "");
 const parameters = { 3: "Drive", 8: "Feedback", 31: "Speed", 32: "Grain" };
 
 function group(id, warp, events) {
+  if (/reverse/.test(id)) return groups[5];
   if (/automation|grain|speed|toggle|delay_step/.test(id) || events.length) return groups[3];
   if (/stereo|ping_pong|multi_head/.test(id)) return groups[4];
   if (/feedback|cascade|decay|dropout/.test(id)) return groups[2];
@@ -86,7 +97,7 @@ export function parseManifest(name, data) {
   if (rows.length) {
     return { title: data.suite ?? "Release gate · TapeCore", scenarios: rows.map(([id, row]) => {
       const pairs = Object.keys(row.comparisons).flatMap(key => {
-        const spec = upgrades[key];
+        const spec = upgrades[key] ?? row.comparisons[key]?.pair;
         if (!spec) return [];
         const [a, b, label] = spec;
         const peakFrame = row.comparisons[key]?.peak_frame;

@@ -153,4 +153,10 @@ Build `FW Nov 15 2026 21:41:19` gravado e verificado na mesma placa. A RAM está
 
 No ensaio sustentado, o P99 ocupou 64,60% do orçamento, com 1.027,49 µs de folga. O heap interno ficou em 128.180 B e a PSRAM livre em 3.830.424 B durante a janela. A tarefa completou os ensaios sem reset observado. Depois dos cinco minutos, a CLI confirmou os extremos de Grain e Speed com Warp e Freeverb ativos. O log bruto está em `artifacts/release-gate/bench-final.log`.
 
-**Parecer técnico: `BLOCKED — REPRODUCIBLE AUDIO DEFECT`.** O sign-off registrou 34 aprovações e uma aprovação com ressalva. O clique de Tape Clean foi reproduzido no WAV Native Fast e isolado na comutação do bias magnético. Multi-Head apresentou pulsos da mesma origem. Veja os instantes, níveis e o controle diagnóstico no [sign-off](ACCIDENTAL_WARP_LISTENING_SIGNOFF.md#investigação-técnica-de-encerramento--2026-11-16). A exceção da equivalência Native/WASM permanece uma decisão separada do responsável pelo merge.
+No baseline anterior à correção, o clique de Tape Clean e os pulsos de Multi-Head foram isolados na comutação abrupta do bias magnético. O [sign-off original](ACCIDENTAL_WARP_LISTENING_SIGNOFF.md) preserva as 35 avaliações.
+
+### Correção de de-click
+
+A nova rampa de ganho do bias reduziu em cerca de 28 dB os picos diferenciais nas duas janelas medidas. A escuta do pacote `magnetic-bias-declick-v1.3` segue `PENDING HUMAN REVIEW`. Consulte os pares e marcadores no [sign-off da correção](MAGNETIC_BIAS_DECLICK_SIGNOFF.md).
+
+Na bancada Windows, o trace estrito corrigido obteve `max_abs = 5,968e-6` e `RMSE = 2,344e-6`, contra `8,479e-6` e `2,749e-6` antes da correção. O RMSE ainda excede o limite. A exceção Native/WASM segue **ACCEPT / REJECT — pendente**. Os jobs e a medição física do candidato estão na [PR #47](https://github.com/ovelhaaa/hydra-tape-engine/pull/47).

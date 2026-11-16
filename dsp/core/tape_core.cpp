@@ -113,11 +113,13 @@ struct TapeMagnetics {
   float fs = 48000.0f;
   float m = 0.0f;
   float biasPhase = 0.0f;
+  float biasGain = 0.0f;
 
   float drive = 1.0f;
   float biasAmount = 0.08f;
   float biasHz = 18000.0f;
   float biasPhaseInc = 18000.0f / 48000.0f;
+  float biasGainStep = 1.0f / 24.0f;
   float coercivity = 0.12f;
   float remanence = 0.985f;
   float satNorm = 1.0f;
@@ -132,6 +134,8 @@ struct TapeMagnetics {
     biasAmount = 0.035f + (1.0f - speedNorm) * 0.035f + driveNorm * 0.035f;
     biasHz = std::min(18000.0f, fs * 0.45f);
     biasPhaseInc = biasHz / fs;
+    // Linear full-scale transition. Clamping reaches exact zero in silence.
+    biasGainStep = 1.0f / std::max(1.0f, std::round(fs * 0.0005f));
     coercivity = 0.07f + ageNorm * 0.10f;
     remanence = 0.970f + ageNorm * 0.024f;
     satNorm = 1.0f / std::max(0.55f, 0.82f + 0.18f * remanence);
@@ -145,8 +149,9 @@ struct TapeMagnetics {
     }
     float tri = 4.0f * std::fabs(biasPhase - 0.5f) - 1.0f;
 
-    float biasGate = (allowBias && std::fabs(x) > 1e-7f) ? 1.0f : 0.0f;
-    float xb = x * drive + (biasAmount * biasGate * tri);
+    const bool biasRequested = allowBias && std::fabs(x) > 1e-7f;
+    biasGain = clampf(biasGain + (biasRequested ? biasGainStep : -biasGainStep), 0.0f, 1.0f);
+    float xb = x * drive + (biasAmount * biasGain * tri);
     float h = xb + coercivity * m;
     float y = lut->process(h);
 
@@ -162,6 +167,7 @@ struct TapeMagnetics {
   inline void reset() {
     m = 0.0f;
     biasPhase = 0.0f;
+    biasGain = 0.0f;
   }
 };
 

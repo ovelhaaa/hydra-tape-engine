@@ -299,6 +299,50 @@ jobs:
           name: listening-review
           path: ci-reports/listening
 
+  magnetic_bias_review:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Build the five listening runners
+        run: |
+          baseline=f8d2851c663d62ae4850087dc5bb255bd8b818be
+          original=3bbcd720a2302cdd8b38d5d1e690d8ee521a9efb
+          git fetch --no-tags --depth=1 origin "$baseline" "$original"
+          git worktree add --detach "$RUNNER_TEMP/bias-baseline" "$baseline"
+          git worktree add --detach "$RUNNER_TEMP/bias-original" "$original"
+          build_listen() {
+            local src=$1 output=$2
+            shift 2
+            g++ -std=c++17 -DNDEBUG "$@" -I"$src/include" -I"$src/dsp/core" \
+              "$src/dsp/core/tape_core.cpp" "$src/dsp/core/hydra_dsp_c_api.cpp" \
+              "$src/tests/core/listen.cpp" -o "$RUNNER_TEMP/$output"
+          }
+          build_listen "$RUNNER_TEMP/bias-baseline" baseline -O3
+          build_listen "$RUNNER_TEMP/bias-original" original-strict -O2 -fno-fast-math
+          build_listen "$RUNNER_TEMP/bias-original" original-fast -O2 -ffast-math -fno-finite-math-only
+          build_listen . corrected-strict -O2 -fno-fast-math
+          build_listen . corrected-fast -O2 -ffast-math -fno-finite-math-only
+      - name: Render synchronized A/B audio
+        run: |
+          python -m pip install numpy scipy soundfile
+          python scripts/render_magnetic_bias_review.py \
+            --baseline "$RUNNER_TEMP/baseline" \
+            --original-strict "$RUNNER_TEMP/original-strict" \
+            --original-fast "$RUNNER_TEMP/original-fast" \
+            --corrected-strict "$RUNNER_TEMP/corrected-strict" \
+            --corrected-fast "$RUNNER_TEMP/corrected-fast" \
+            --corrected-commit "$(git rev-parse HEAD)" \
+            --output-dir ci-reports/magnetic-bias-declick
+      - uses: actions/upload-artifact@v4
+        with:
+          name: magnetic-bias-declick-v1.3
+          path: ci-reports/magnetic-bias-declick
+
   build_esp32_s3:
     runs-on: ubuntu-latest
     steps:

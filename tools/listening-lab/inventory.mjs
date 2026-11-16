@@ -1,5 +1,9 @@
 const engines = { worklet: "Original Worklet", python: "Python", native: "TapeCore Native", wasm: "WASM" };
 const upgrades = {
+  original_fast_vs_corrected_fast: ["original_fast", "corrected_fast", "Original Fast × Corrected Fast"],
+  original_strict_vs_corrected_strict: ["original_strict", "corrected_strict", "Original Strict × Corrected Strict"],
+  corrected_strict_vs_corrected_fast: ["corrected_strict", "corrected_fast", "Corrected Strict × Corrected Fast"],
+  baseline_vs_corrected: ["baseline", "corrected_fast", "Baseline × Corrected Fast"],
   before_vs_head: ["before", "head", "Baseline × Optimized"],
   strict_vs_fast: ["strict", "fast", "Strict × Fast"],
   head_vs_head_post_tanh: ["head", "head_post_tanh", "Head × controle pós-tanh"],
@@ -80,7 +84,7 @@ export function parseManifest(name, data) {
   }
   const rows = Object.entries(data).filter(([, row]) => row?.comparisons && row.rate);
   if (rows.length) {
-    return { title: "Release gate · TapeCore", scenarios: rows.map(([id, row]) => {
+    return { title: data.suite ?? "Release gate · TapeCore", scenarios: rows.map(([id, row]) => {
       const pairs = Object.keys(row.comparisons).flatMap(key => {
         const spec = upgrades[key];
         if (!spec) return [];
@@ -90,6 +94,7 @@ export function parseManifest(name, data) {
         if (Number.isFinite(peakFrame)) {
           comparison.markers = [{ time: peakFrame / row.rate, label: "Pico da diferença no manifesto" }];
         }
+        comparison.markers = [...(comparison.markers ?? []), ...(row.listening_markers ?? [])];
         return [comparison];
       });
       return scenario(id, row, { pairs, input: `${id}/input.f32` });

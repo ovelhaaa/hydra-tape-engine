@@ -43,6 +43,27 @@ test("release gate times are seconds, and CI identifies Native/WASM", () => {
   assert.equal(ci.scenarios[0].input, "tape/dry.wav");
 });
 
+test("de-click review exposes explicit pairings and the measured marker", () => {
+  const descriptor = parseManifest("manifest.json", {
+    suite: "Magnetic Bias De-Click — V1.3",
+    tape_clean: { rate: 48000, frames: 576000, comparisons: {
+      original_fast_vs_corrected_fast: { peak_frame: 315735 },
+      original_strict_vs_corrected_strict: {},
+      corrected_strict_vs_corrected_fast: {},
+      baseline_vs_corrected: {},
+    }, listening_markers: [{ time: 300287 / 48000, label: "Transiente histórico medido" }] },
+  });
+  assert.equal(descriptor.title, "Magnetic Bias De-Click — V1.3");
+  const pairs = descriptor.scenarios[0].pairs;
+  assert.deepEqual(pairs.map(p => [p.a.path, p.b.path]), [
+    ["tape_clean/original_fast.wav", "tape_clean/corrected_fast.wav"],
+    ["tape_clean/original_strict.wav", "tape_clean/corrected_strict.wav"],
+    ["tape_clean/corrected_strict.wav", "tape_clean/corrected_fast.wav"],
+    ["tape_clean/baseline.wav", "tape_clean/corrected_fast.wav"],
+  ]);
+  assert.equal(pairs[0].markers[1].time, 300287 / 48000);
+});
+
 test("verified provenance preserves the legacy session and checks the associated audio", async () => {
   const encode = text => new TextEncoder().encode(text);
   const review = { rate: 48000, scenes: [{ scene: "tape", native_peak: 0.5, wasm_peak: 0.5 }] };

@@ -214,8 +214,10 @@ void test_warp_feedback_levels() {
     hydra_dsp_destroy(h);
   }
 
-  // Teste 4b: warpFeedback = 50% e 80% -> realimentação sustentada
-  for (float fbVal : {50.0f, 80.0f}) {
+  // Compare the first audible recirculations with an otherwise identical 0% render.
+  // A very late window can primarily measure the magnetic bias rather than the repeat.
+  std::vector<float> noFeedback;
+  for (float fbVal : {0.0f, 50.0f, 80.0f}) {
     hydra_dsp_handle* h = create_test_handle();
     hydra_dsp_params p{};
     p.drive = 20.0f;
@@ -241,13 +243,20 @@ void test_warp_feedback_levels() {
                               outL.data() + pos, outR.data() + pos, 64) == 0);
     }
 
-    float lateEnergy = 0.0f;
-    for (uint32_t i = 10000; i < kFrames; ++i) {
-      lateEnergy += std::fabs(outL[i]) + std::fabs(outR[i]);
+    for (uint32_t i = 0; i < kFrames; ++i) {
       CHECK(!std::isnan(outL[i]) && !std::isinf(outL[i]));
       CHECK(std::fabs(outL[i]) <= 1.0f);
     }
-    CHECK(lateEnergy > 0.01f); // Comprova recirculação ativa
+    if (fbVal == 0.0f) {
+      noFeedback = outL;
+    } else {
+      float repeatDifference = 0.0f;
+      for (uint32_t i = 2400; i < 9600; ++i) {
+        repeatDifference += std::fabs(outL[i] - noFeedback[i]);
+      }
+      std::cout << "[Warp repeat] " << fbVal << "% difference=" << repeatDifference << '\n';
+      CHECK(repeatDifference > 0.01f);
+    }
 
     hydra_dsp_destroy(h);
   }
@@ -641,6 +650,92 @@ void test_api_backward_compatibility() {
   hydra_dsp_destroy(h);
 }
 
+struct BiasRender {
+  std::vector<float> left, right;
+};
+
+BiasRender render_bias_test(float rate, uint32_t block, const std::vector<float>& input,
+                            float feedback = 0.0f, bool warp = false, bool reset = false) {
+  auto output = BiasRender{std::vector<float>(input.size()), std::vector<float>(input.size())};
+  const std::vector<float> silence(input.size());
+  hydra_dsp_handle* handle = nullptr;
+  CHECK(hydra_dsp_create(rate, 2000.0f, &handle) == 0);
+  CHECK(hydra_dsp_prepare(handle, 128, HYDRA_DSP_CHANNELS_STEREO) == 0);
+  hydra_dsp_params params{};
+  params.drive = 20;
+  params.tapeSpeed = 50;
+  params.delayActive = 1;
+  params.delayTimeMs = 100;
+  params.activeHeads = 1;
+  params.dryWet = params.delayWet = 100;
+  params.tone = 100;
+  params.feedback = feedback;
+  params.warpActive = warp ? 1 : 0;
+  params.warpSpeed = 0.5f;
+  params.warpGrainMs = 80;
+  params.warpFeedback = warp ? 95 : 0;
+  CHECK(hydra_dsp_set_params_v1_3(handle, &params) == 0);
+  CHECK(hydra_dsp_commit(handle) == 0);
+  if (reset) {
+    float warmup[128], left[128], right[128];
+    std::fill_n(warmup, 128, 0.1f);
+    CHECK(hydra_dsp_process(handle, warmup, warmup, left, right, 128) == 0);
+  }
+  hydra_dsp_reset(handle);
+  for (size_t i = 0; i < input.size(); i += block) {
+    const auto frames = static_cast<uint32_t>(std::min<size_t>(block, input.size() - i));
+    CHECK(hydra_dsp_process(handle, input.data() + i, silence.data() + i,
+                            output.left.data() + i, output.right.data() + i, frames) == 0);
+  }
+  hydra_dsp_destroy(handle);
+  return output;
+}
+
+void test_magnetic_bias_declick() {
+  for (const float rate : {44100.0f, 48000.0f}) {
+    std::vector<float> input(static_cast<size_t>(rate));
+    // Near-threshold bursts straddle a block edge. Their direct signal is negligible.
+    for (size_t i = 127; i < 2000; i += 32) input[i] = 6e-7f;
+    const auto blocked = render_bias_test(rate, 128, input);
+    const auto scalar = render_bias_test(rate, 1, input);
+    const auto reset = render_bias_test(rate, 128, input, 0, false, true);
+    float peak = 0.0f, step = 0.0f;
+    for (size_t i = 1; i < input.size(); ++i) {
+      CHECK(std::isfinite(blocked.left[i]));
+      peak = std::max(peak, std::fabs(blocked.left[i]));
+      step = std::max(step, std::fabs(blocked.left[i] - blocked.left[i - 1]));
+      CHECK(std::fabs(blocked.left[i] - scalar.left[i]) < 1e-7f);
+      CHECK(blocked.left[i] == reset.left[i]);
+      CHECK(std::fabs(blocked.right[i]) < 1e-7f);
+      if (i > rate * 0.8f) CHECK(std::fabs(blocked.left[i]) < 1e-7f);
+    }
+    std::cout << "[Bias gate] " << rate << " Hz peak=" << peak << " step=" << step << '\n';
+    CHECK(peak > 1e-6f && step < 0.005f);
+
+    std::vector<float> impulse(static_cast<size_t>(rate * 5));
+    impulse[0] = 0.4f;
+    for (const bool warp : {false, true}) {
+      const auto decay = render_bias_test(rate, 128, impulse, warp ? 0.0f : 95.0f, warp);
+      double energy[5]{};
+      for (size_t i = 0; i < impulse.size(); ++i) {
+        CHECK(std::isfinite(decay.left[i]) && std::isfinite(decay.right[i]));
+        CHECK(std::fabs(decay.left[i]) <= 0.99f && std::fabs(decay.right[i]) <= 0.99f);
+        energy[static_cast<size_t>(i / rate)] += double(decay.left[i]) * decay.left[i];
+      }
+      std::cout << "[Bias decay] " << rate << " Hz Warp=" << warp;
+      for (const auto value : energy) std::cout << ' ' << std::sqrt(value / rate);
+      std::cout << '\n';
+      CHECK(energy[0] > 1e-8);
+      if (warp) {
+        CHECK(energy[4] < 1e-12 && energy[1] / rate < 1e-12);
+      } else {
+        // The traditional Tape loop can sustain at 95%. Keep its late energy bounded.
+        CHECK(energy[4] / rate < 0.64 && energy[4] <= 1.02 * energy[3] + 1e-10);
+      }
+    }
+  }
+}
+
 } // namespace
 
 int main() {
@@ -655,6 +750,7 @@ int main() {
   test_warp_abrupt_speed_and_stereo_changes();
   test_esp32_adapter_applies_warp_only_changes();
   test_api_backward_compatibility();
+  test_magnetic_bias_declick();
   std::cout << "All Accidental Warp V1.3 Tests PASSED successfully!\n";
   return 0;
 }

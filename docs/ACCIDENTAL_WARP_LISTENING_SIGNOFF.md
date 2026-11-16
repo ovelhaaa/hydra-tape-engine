@@ -1,6 +1,6 @@
 # Escuta A/B — Accidental Warp V1.3
 
-- **Status** `PENDING HUMAN REVIEW`
+- **Status** `APPROVED WITH RESERVATIONS`
 - **Data da preparação** 2026-11-15
 - **Commit de DSP** `d942a7b26523e5a50193e0fb9206093f070cc130`
 - **Correção de saída no firmware** `b9fbbd342e3ead2054ca02c49705e385ba4fd985`
@@ -26,8 +26,435 @@ O pacote cobre Tape Clean, High Drive, High Feedback, Ping-Pong, Multi-Head, War
 
 ## Avaliação do revisor
 
-Use o [Hydra Listening Lab](../tools/listening-lab/README.md) para carregar o pacote, comparar os WAVs e exportar o parecer em Markdown.
+- **Data da escuta** 2026-11-16.
+- **Pacote avaliado** Release gate · TapeCore · `8f1c674365bf7d2485d3bb0fcb92c7021b3720fe54a4d9748659c9a5c5c3db7e`. O identificador coincide com o pacote local.
+- **Commit no relatório exportado** Indisponível. Os commits de preparação permanecem registrados acima.
+- **Cobertura** 16 cenários e 35 comparações do pacote. 34 decisões `APPROVE` e uma `APPROVE WITH NOTES`. Nenhuma pendência de escuta dentro desse pacote.
 
-- **Revisor e data:** pendentes.
-- **Avaliação por trecho e equipamento:** pendente.
-- **Decisão:** `PENDING HUMAN REVIEW`.
+A ressalva foi **Tape Clean · Strict × Fast**. O revisor preferiu Strict no teste cego e ouviu um clique repetido, bem baixo, por volta de 6 s em Fast. Em **Warp Feedback Cascade · Baseline × Optimized**, a preferência X permanece no registro original. A observação do revisor esclarece que a seleção foi acidental e que ambos soaram equivalentes.
+
+O parecer cobre os WAVs identificados acima. A decisão de merge sobre a exceção de equivalência Native/WASM segue pendente.
+
+## Avaliações individuais
+
+Registro exportado do [Hydra Listening Lab](../tools/listening-lab/README.md), com as decisões e observações do revisor.
+
+### tape clean · Baseline × Optimized
+
+- **Arquivos A/B** tape\_clean/before.wav / tape\_clean/head.wav
+- **Decisão** APPROVE · 2026-11-16T17:31:59.042Z
+- **Fidelidade / Musicalidade** 5 / 5
+- **Artefatos** Leve
+- **Diferenças** —
+- **Monitoração** MATCHED · canal Stereo · ganhos A/B 1.0000 / 1.0000 · proteção 1.0000
+- **Escuta cega** Equivalentes · confiança 5 · semente ce94768e-75d4-4e92-b19f-730ad8502778 · X = A, Y = B
+
+> Ambos parecem ter um ruído high pitch de fundo
+
+### tape clean · Strict × Fast
+
+- **Arquivos A/B** tape\_clean/strict.wav / tape\_clean/fast.wav
+- **Decisão** APPROVE WITH NOTES · 2026-11-16T17:34:13.532Z
+- **Fidelidade / Musicalidade** 5 / 5
+- **Artefatos** Leve
+- **Diferenças** —
+- **Monitoração** MATCHED · canal Stereo · ganhos A/B 0.9999 / 1.0000 · proteção 1.0000
+- **Escuta cega** X · confiança 5 · semente b957d160-b753-46bd-95d0-3d1f82b47a66 · X = A, Y = B
+
+> Há um pequeno artefato no Y aos 6 segundos. Algo como um clique repetido bem baixinho
+
+### tape clean · Head × controle pós-tanh
+
+- **Arquivos A/B** tape\_clean/head.wav / tape\_clean/head\_post\_tanh.wav
+- **Decisão** APPROVE · 2026-11-16T17:35:07.811Z
+- **Fidelidade / Musicalidade** 5 / 5
+- **Artefatos** Nenhum
+- **Diferenças** —
+- **Monitoração** MATCHED · canal Stereo · ganhos A/B 0.9992 / 1.0000 · proteção 1.0000
+- **Escuta cega** Equivalentes · confiança 5 · semente bc843c3f-3aea-4168-93fa-0e78800fa745 · X = B, Y = A
+
+Sem observações.
+
+### tape high drive · Baseline × Optimized
+
+- **Arquivos A/B** tape\_high\_drive/before.wav / tape\_high\_drive/head.wav
+- **Decisão** APPROVE · 2026-11-16T17:36:24.957Z
+- **Fidelidade / Musicalidade** 5 / 5
+- **Artefatos** Nenhum
+- **Diferenças** —
+- **Monitoração** MATCHED · canal Stereo · ganhos A/B 1.0000 / 1.0000 · proteção 1.0000
+- **Escuta cega** Equivalentes · confiança 5 · semente 5df2bcd3-b473-4bd5-9c59-9b711d23df28 · X = B, Y = A
+
+Sem observações.
+
+### tape high drive · Strict × Fast
+
+- **Arquivos A/B** tape\_high\_drive/strict.wav / tape\_high\_drive/fast.wav
+- **Decisão** APPROVE · 2026-11-16T17:37:12.203Z
+- **Fidelidade / Musicalidade** 5 / 5
+- **Artefatos** Nenhum
+- **Diferenças** —
+- **Monitoração** MATCHED · canal Stereo · ganhos A/B 0.9999 / 1.0000 · proteção 1.0000
+- **Escuta cega** Equivalentes · confiança 5 · semente 937ce3de-ad2b-43ea-bff1-2ea0777c34be · X = A, Y = B
+
+Sem observações.
+
+### tape high drive · Head × controle pós-tanh
+
+- **Arquivos A/B** tape\_high\_drive/head.wav / tape\_high\_drive/head\_post\_tanh.wav
+- **Decisão** APPROVE · 2026-11-16T17:38:06.573Z
+- **Fidelidade / Musicalidade** 5 / 5
+- **Artefatos** Nenhum
+- **Diferenças** —
+- **Monitoração** MATCHED · canal Stereo · ganhos A/B 0.8693 / 1.0000 · proteção 1.0000
+- **Escuta cega** Equivalentes · confiança 5 · semente b4647b0d-d169-4b2a-ab63-cce82b71743f · X = B, Y = A
+
+Sem observações.
+
+### multi head transients · Baseline × Optimized
+
+- **Arquivos A/B** multi\_head\_transients/before.wav / multi\_head\_transients/head.wav
+- **Decisão** APPROVE · 2026-11-16T17:53:40.366Z
+- **Fidelidade / Musicalidade** 5 / 5
+- **Artefatos** Nenhum
+- **Diferenças** —
+- **Monitoração** MATCHED · canal Stereo · ganhos A/B 1.0000 / 1.0000 · proteção 1.0000
+- **Escuta cega** Equivalentes · confiança 5 · semente 41b9a6c7-3f70-4fff-bf9a-98a1e6eb02c4 · X = A, Y = B
+
+Sem observações.
+
+### multi head transients · Strict × Fast
+
+- **Arquivos A/B** multi\_head\_transients/strict.wav / multi\_head\_transients/fast.wav
+- **Decisão** APPROVE · 2026-11-16T17:54:54.000Z
+- **Fidelidade / Musicalidade** 5 / 5
+- **Artefatos** Nenhum
+- **Diferenças** Outros
+- **Monitoração** MATCHED · canal Stereo · ganhos A/B 0.9999 / 1.0000 · proteção 1.0000
+- **Escuta cega** X · confiança 5 · semente 28c5b224-3315-4e5a-a854-c00712a687d7 · X = B, Y = A
+
+> Há alguns leves cliques no outro
+
+### high feedback harmonic · Baseline × Optimized
+
+- **Arquivos A/B** high\_feedback\_harmonic/before.wav / high\_feedback\_harmonic/head.wav
+- **Decisão** APPROVE · 2026-11-16T17:41:44.129Z
+- **Fidelidade / Musicalidade** 5 / 5
+- **Artefatos** Nenhum
+- **Diferenças** —
+- **Monitoração** MATCHED · canal Stereo · ganhos A/B 1.0000 / 1.0000 · proteção 1.0000
+- **Escuta cega** Equivalentes · confiança 5 · semente 266369a4-82de-4ac8-8291-175471ad817c · X = B, Y = A
+
+Sem observações.
+
+### high feedback harmonic · Strict × Fast
+
+- **Arquivos A/B** high\_feedback\_harmonic/strict.wav / high\_feedback\_harmonic/fast.wav
+- **Decisão** APPROVE · 2026-11-16T17:42:51.216Z
+- **Fidelidade / Musicalidade** 5 / 5
+- **Artefatos** Nenhum
+- **Diferenças** —
+- **Monitoração** MATCHED · canal Stereo · ganhos A/B 0.9999 / 1.0000 · proteção 1.0000
+- **Escuta cega** Equivalentes · confiança 5 · semente b33cb29b-dcdd-4cfa-9f38-91cd3bf1796b · X = B, Y = A
+
+Sem observações.
+
+### high feedback harmonic · Head × controle pós-tanh
+
+- **Arquivos A/B** high\_feedback\_harmonic/head.wav / high\_feedback\_harmonic/head\_post\_tanh.wav
+- **Decisão** APPROVE · 2026-11-16T17:43:53.650Z
+- **Fidelidade / Musicalidade** 5 / 5
+- **Artefatos** Nenhum
+- **Diferenças** Volume
+- **Monitoração** MATCHED · canal Stereo · ganhos A/B 0.8764 / 1.0000 · proteção 1.0000
+- **Escuta cega** X · confiança 5 · semente 3788c86e-ad0e-4844-aed1-71498fc05a69 · X = B, Y = A
+
+Sem observações.
+
+### ping pong · Baseline × Optimized
+
+- **Arquivos A/B** ping\_pong/before.wav / ping\_pong/head.wav
+- **Decisão** APPROVE · 2026-11-16T17:55:59.004Z
+- **Fidelidade / Musicalidade** 5 / 5
+- **Artefatos** Nenhum
+- **Diferenças** —
+- **Monitoração** MATCHED · canal Stereo · ganhos A/B 1.0000 / 1.0000 · proteção 1.0000
+- **Escuta cega** Equivalentes · confiança 5 · semente 79a4d9e4-b1c4-4c40-97ce-05d44924d74a · X = A, Y = B
+
+Sem observações.
+
+### ping pong · Strict × Fast
+
+- **Arquivos A/B** ping\_pong/strict.wav / ping\_pong/fast.wav
+- **Decisão** APPROVE · 2026-11-16T17:56:27.044Z
+- **Fidelidade / Musicalidade** 5 / 5
+- **Artefatos** Nenhum
+- **Diferenças** —
+- **Monitoração** MATCHED · canal Stereo · ganhos A/B 0.9997 / 1.0000 · proteção 1.0000
+- **Escuta cega** Equivalentes · confiança 5 · semente a0f239f4-616d-4ffc-83f9-10c313f5cb4e · X = A, Y = B
+
+Sem observações.
+
+### wow flutter excerpt · Baseline × Optimized
+
+- **Arquivos A/B** wow\_flutter\_excerpt/before.wav / wow\_flutter\_excerpt/head.wav
+- **Decisão** APPROVE · 2026-11-16T17:38:45.034Z
+- **Fidelidade / Musicalidade** 5 / 5
+- **Artefatos** —
+- **Diferenças** —
+- **Monitoração** MATCHED · canal Stereo · ganhos A/B 1.0000 / 1.0000 · proteção 1.0000
+- **Escuta cega** Equivalentes · confiança 5 · semente f6c33344-4e69-4e62-8f8f-9e5f1bda7c0f · X = B, Y = A
+
+Sem observações.
+
+### wow flutter excerpt · Strict × Fast
+
+- **Arquivos A/B** wow\_flutter\_excerpt/strict.wav / wow\_flutter\_excerpt/fast.wav
+- **Decisão** APPROVE · 2026-11-16T17:39:50.616Z
+- **Fidelidade / Musicalidade** 5 / 5
+- **Artefatos** Nenhum
+- **Diferenças** —
+- **Monitoração** MATCHED · canal Stereo · ganhos A/B 0.9998 / 1.0000 · proteção 1.0000
+- **Escuta cega** Equivalentes · confiança 5 · semente 0df2d850-2cdf-4ae4-b708-69c268beb585 · X = B, Y = A
+
+Sem observações.
+
+### drive ramp excerpt · Baseline × Optimized
+
+- **Arquivos A/B** drive\_ramp\_excerpt/before.wav / drive\_ramp\_excerpt/head.wav
+- **Decisão** APPROVE · 2026-11-16T17:49:37.195Z
+- **Fidelidade / Musicalidade** 5 / 5
+- **Artefatos** Nenhum
+- **Diferenças** —
+- **Monitoração** MATCHED · canal Stereo · ganhos A/B 1.0000 / 1.0000 · proteção 1.0000
+- **Escuta cega** Equivalentes · confiança 5 · semente 4231450b-26bb-43ca-9d72-9e75476498af · X = B, Y = A
+
+Sem observações.
+
+### drive ramp excerpt · Strict × Fast
+
+- **Arquivos A/B** drive\_ramp\_excerpt/strict.wav / drive\_ramp\_excerpt/fast.wav
+- **Decisão** APPROVE · 2026-11-16T17:50:03.942Z
+- **Fidelidade / Musicalidade** 5 / 5
+- **Artefatos** Nenhum
+- **Diferenças** —
+- **Monitoração** MATCHED · canal Stereo · ganhos A/B 0.9999 / 1.0000 · proteção 1.0000
+- **Escuta cega** Equivalentes · confiança 5 · semente 699f9a67-2942-4e46-8c20-0e7865036379 · X = A, Y = B
+
+Sem observações.
+
+### drive ramp excerpt · Head × controle pós-tanh
+
+- **Arquivos A/B** drive\_ramp\_excerpt/head.wav / drive\_ramp\_excerpt/head\_post\_tanh.wav
+- **Decisão** APPROVE · 2026-11-16T17:51:09.409Z
+- **Fidelidade / Musicalidade** 5 / 5
+- **Artefatos** Nenhum
+- **Diferenças** —
+- **Monitoração** MATCHED · canal Stereo · ganhos A/B 0.9391 / 1.0000 · proteção 1.0000
+- **Escuta cega** Equivalentes · confiança 5 · semente eae8ea2a-66ff-4a23-92de-ae010ac63a7e · X = B, Y = A
+
+Sem observações.
+
+### reverse stereo · Baseline × Optimized
+
+- **Arquivos A/B** reverse\_stereo/before.wav / reverse\_stereo/head.wav
+- **Decisão** APPROVE · 2026-11-16T17:57:09.032Z
+- **Fidelidade / Musicalidade** 5 / 5
+- **Artefatos** Nenhum
+- **Diferenças** —
+- **Monitoração** MATCHED · canal Stereo · ganhos A/B 1.0000 / 1.0000 · proteção 1.0000
+- **Escuta cega** Equivalentes · confiança 5 · semente 437cbcf1-7522-41bd-af5f-48b46ce27f3e · X = B, Y = A
+
+Sem observações.
+
+### reverse stereo · Strict × Fast
+
+- **Arquivos A/B** reverse\_stereo/strict.wav / reverse\_stereo/fast.wav
+- **Decisão** APPROVE · 2026-11-16T17:57:35.512Z
+- **Fidelidade / Musicalidade** 5 / 5
+- **Artefatos** Nenhum
+- **Diferenças** —
+- **Monitoração** MATCHED · canal Stereo · ganhos A/B 1.0000 / 0.9980 · proteção 1.0000
+- **Escuta cega** Equivalentes · confiança 5 · semente eef81330-f44a-4a14-80ba-d6d3190f4a62 · X = B, Y = A
+
+Sem observações.
+
+### warp musical · Baseline × Optimized
+
+- **Arquivos A/B** warp\_musical/before.wav / warp\_musical/head.wav
+- **Decisão** APPROVE · 2026-11-16T17:27:58.063Z
+- **Fidelidade / Musicalidade** 5 / 5
+- **Artefatos** Nenhum
+- **Diferenças** —
+- **Monitoração** MATCHED · canal Stereo · ganhos A/B 1.0000 / 1.0000 · proteção 1.0000
+- **Escuta cega** Equivalentes · confiança 5 · semente 20b763b6-d239-46c0-9fe3-df39ccabaf93 · X = B, Y = A
+
+Sem observações.
+
+### warp musical · Strict × Fast
+
+- **Arquivos A/B** warp\_musical/strict.wav / warp\_musical/fast.wav
+- **Decisão** APPROVE · 2026-11-16T17:29:51.822Z
+- **Fidelidade / Musicalidade** 5 / 5
+- **Artefatos** Nenhum
+- **Diferenças** —
+- **Monitoração** MATCHED · canal Stereo · ganhos A/B 0.9997 / 1.0000 · proteção 1.0000
+- **Escuta cega** Equivalentes · confiança 5 · semente 9096b083-086e-4d62-a88d-f00a0c183833 · X = B, Y = A
+
+Sem observações.
+
+### warp raw integer · Baseline × Optimized
+
+- **Arquivos A/B** warp\_raw\_integer/before.wav / warp\_raw\_integer/head.wav
+- **Decisão** APPROVE · 2026-11-16T17:28:48.377Z
+- **Fidelidade / Musicalidade** 5 / 5
+- **Artefatos** Nenhum
+- **Diferenças** —
+- **Monitoração** MATCHED · canal Stereo · ganhos A/B 1.0000 / 1.0000 · proteção 1.0000
+- **Escuta cega** Equivalentes · confiança 5 · semente 8c80e86c-db8b-42d6-af0d-fac03cc253ca · X = A, Y = B
+
+Sem observações.
+
+### warp raw integer · Strict × Fast
+
+- **Arquivos A/B** warp\_raw\_integer/strict.wav / warp\_raw\_integer/fast.wav
+- **Decisão** APPROVE · 2026-11-16T17:30:46.094Z
+- **Fidelidade / Musicalidade** 5 / 5
+- **Artefatos** Nenhum
+- **Diferenças** —
+- **Monitoração** MATCHED · canal Stereo · ganhos A/B 0.9997 / 1.0000 · proteção 1.0000
+- **Escuta cega** Equivalentes · confiança 5 · semente edfcf016-93dd-41c7-b454-d742bc5a43d8 · X = A, Y = B
+
+Sem observações.
+
+### warp stereo · Baseline × Optimized
+
+- **Arquivos A/B** warp\_stereo/before.wav / warp\_stereo/head.wav
+- **Decisão** APPROVE · 2026-11-16T17:58:18.995Z
+- **Fidelidade / Musicalidade** 5 / 5
+- **Artefatos** Nenhum
+- **Diferenças** —
+- **Monitoração** MATCHED · canal Stereo · ganhos A/B 1.0000 / 1.0000 · proteção 1.0000
+- **Escuta cega** Equivalentes · confiança 5 · semente 8cbed680-e3fc-47dc-b684-4efce95709ba · X = B, Y = A
+
+Sem observações.
+
+### warp stereo · Strict × Fast
+
+- **Arquivos A/B** warp\_stereo/strict.wav / warp\_stereo/fast.wav
+- **Decisão** APPROVE · 2026-11-16T17:59:03.511Z
+- **Fidelidade / Musicalidade** 5 / 5
+- **Artefatos** Nenhum
+- **Diferenças** —
+- **Monitoração** MATCHED · canal Stereo · ganhos A/B 0.9998 / 1.0000 · proteção 1.0000
+- **Escuta cega** Equivalentes · confiança 5 · semente ae1a5744-54f6-40a7-aa89-cea3f50aa172 · X = A, Y = B
+
+Sem observações.
+
+### warp feedback cascade · Baseline × Optimized
+
+- **Arquivos A/B** warp\_feedback\_cascade/before.wav / warp\_feedback\_cascade/head.wav
+- **Decisão** APPROVE · 2026-11-16T17:45:06.175Z
+- **Fidelidade / Musicalidade** 5 / 5
+- **Artefatos** Nenhum
+- **Diferenças** —
+- **Monitoração** MATCHED · canal Stereo · ganhos A/B 1.0000 / 1.0000 · proteção 1.0000
+- **Escuta cega** X · confiança 5 · semente e1b09336-c88f-4560-8c46-236626bed1c0 · X = A, Y = B
+
+> Cliquei equivocadamente. Ambos soam equivalentes.
+
+### warp feedback cascade · Strict × Fast
+
+- **Arquivos A/B** warp\_feedback\_cascade/strict.wav / warp\_feedback\_cascade/fast.wav
+- **Decisão** APPROVE · 2026-11-16T17:45:36.880Z
+- **Fidelidade / Musicalidade** 5 / 5
+- **Artefatos** Nenhum
+- **Diferenças** —
+- **Monitoração** MATCHED · canal Stereo · ganhos A/B 1.0000 / 0.9992 · proteção 1.0000
+- **Escuta cega** Equivalentes · confiança 5 · semente c4f3e4a6-52bd-452c-ae35-cfc683abcd8c · X = A, Y = B
+
+Sem observações.
+
+### warp automation · Baseline × Optimized
+
+- **Arquivos A/B** warp\_automation/before.wav / warp\_automation/head.wav
+- **Decisão** APPROVE · 2026-11-16T17:52:13.687Z
+- **Fidelidade / Musicalidade** 5 / 5
+- **Artefatos** Nenhum
+- **Diferenças** —
+- **Monitoração** MATCHED · canal Stereo · ganhos A/B 1.0000 / 1.0000 · proteção 1.0000
+- **Escuta cega** Equivalentes · confiança 5 · semente f74d8f6a-1bd9-4bf4-a92d-1cd0df8b9030 · X = A, Y = B
+
+Sem observações.
+
+### warp automation · Strict × Fast
+
+- **Arquivos A/B** warp\_automation/strict.wav / warp\_automation/fast.wav
+- **Decisão** APPROVE · 2026-11-16T17:53:07.685Z
+- **Fidelidade / Musicalidade** 5 / 5
+- **Artefatos** Nenhum
+- **Diferenças** —
+- **Monitoração** MATCHED · canal Stereo · ganhos A/B 0.9997 / 1.0000 · proteção 1.0000
+- **Escuta cega** Equivalentes · confiança 5 · semente 0a0be12f-8f0b-460b-89b4-f0fd935bd4cc · X = A, Y = B
+
+Sem observações.
+
+### silence decay · Baseline × Optimized
+
+- **Arquivos A/B** silence\_decay/before.wav / silence\_decay/head.wav
+- **Decisão** APPROVE · 2026-11-16T17:46:19.850Z
+- **Fidelidade / Musicalidade** 5 / 5
+- **Artefatos** Nenhum
+- **Diferenças** —
+- **Monitoração** MATCHED · canal Stereo · ganhos A/B 1.0000 / 1.0000 · proteção 1.0000
+- **Escuta cega** Equivalentes · confiança 5 · semente 30c0a04a-baf1-4db5-aee8-0c5325da3bba · X = B, Y = A
+
+Sem observações.
+
+### silence decay · Strict × Fast
+
+- **Arquivos A/B** silence\_decay/strict.wav / silence\_decay/fast.wav
+- **Decisão** APPROVE · 2026-11-16T17:46:52.093Z
+- **Fidelidade / Musicalidade** 5 / 5
+- **Artefatos** Nenhum
+- **Diferenças** —
+- **Monitoração** MATCHED · canal Stereo · ganhos A/B 1.0000 / 1.0000 · proteção 1.0000
+- **Escuta cega** Equivalentes · confiança 5 · semente bdd5ce84-302e-49e9-81c5-81c85e077d28 · X = B, Y = A
+
+Sem observações.
+
+### noise dropout long · Baseline × Optimized
+
+- **Arquivos A/B** noise\_dropout\_long/before.wav / noise\_dropout\_long/head.wav
+- **Decisão** APPROVE · 2026-11-16T17:47:56.704Z
+- **Fidelidade / Musicalidade** 5 / 5
+- **Artefatos** Nenhum
+- **Diferenças** —
+- **Monitoração** MATCHED · canal Stereo · ganhos A/B 1.0000 / 1.0000 · proteção 1.0000
+- **Escuta cega** Equivalentes · confiança 5 · semente 8fdc3965-6340-428d-a4d4-c1d5647c8dad · X = B, Y = A
+
+Sem observações.
+
+### noise dropout long · Strict × Fast
+
+- **Arquivos A/B** noise\_dropout\_long/strict.wav / noise\_dropout\_long/fast.wav
+- **Decisão** APPROVE · 2026-11-16T17:48:49.208Z
+- **Fidelidade / Musicalidade** 5 / 5
+- **Artefatos** Nenhum
+- **Diferenças** —
+- **Monitoração** MATCHED · canal Stereo · ganhos A/B 1.0000 / 0.9976 · proteção 1.0000
+- **Escuta cega** Equivalentes · confiança 5 · semente eb286d91-ae54-4a6e-aad3-984b5ab0ff7b · X = A, Y = B
+
+Sem observações.
+
+### freeverb drive pcm 55hz · PCM atual × controle pós-tanh
+
+- **Arquivos A/B** freeverb\_drive\_pcm\_55hz/current.wav / freeverb\_drive\_pcm\_55hz/post\_tanh\_control.wav
+- **Decisão** APPROVE · 2026-11-16T17:40:53.066Z
+- **Fidelidade / Musicalidade** 5 / 5
+- **Artefatos** Nenhum
+- **Diferenças** —
+- **Monitoração** MATCHED · canal Stereo · ganhos A/B 0.7952 / 1.0000 · proteção 0.9798
+- **Escuta cega** Y · confiança 5 · semente 0da1e751-747a-406c-8a01-2d79415dc515 · X = A, Y = B
+
+Sem observações.

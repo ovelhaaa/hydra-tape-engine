@@ -1,5 +1,6 @@
 #pragma once
 
+#include <stddef.h>
 #include <stdint.h>
 
 #ifdef __cplusplus
@@ -12,13 +13,26 @@ enum { HYDRA_DSP_CHANNELS_STEREO = 2 };
 
 enum {
   HYDRA_DSP_API_VERSION_MAJOR = 1,
-  HYDRA_DSP_API_VERSION_MINOR = 2,
+  HYDRA_DSP_API_VERSION_MINOR = 3,
   HYDRA_DSP_API_VERSION_PATCH = 0,
   HYDRA_DSP_API_VERSION =
       (HYDRA_DSP_API_VERSION_MAJOR << 16) |
       (HYDRA_DSP_API_VERSION_MINOR << 8) |
       HYDRA_DSP_API_VERSION_PATCH
 };
+
+#define HYDRA_DSP_PARAMS_SIZE_V1_2 (29 * sizeof(float))
+#define HYDRA_DSP_PARAMS_SIZE_V1_3 (35 * sizeof(float))
+
+typedef struct hydra_dsp_params_v1_2 {
+  float flutterDepth, wowDepth, dropoutSeverity, drive, noise;
+  float tapeSpeed, tapeAge, headBumpAmount, azimuthError;
+  float flutterRate, wowRate;
+  float delayActive, delayTimeMs, feedback, dryWet, delayWet;
+  float activeHeads, bpm, headsMusical, guitarFocus, tone;
+  float pingPong, freeze, reverse, reverseSmear, spring;
+  float springDecay, springDamping, springMix;
+} hydra_dsp_params_v1_2;
 
 typedef struct hydra_dsp_params {
   float flutterDepth, wowDepth, dropoutSeverity, drive, noise;
@@ -28,6 +42,7 @@ typedef struct hydra_dsp_params {
   float activeHeads, bpm, headsMusical, guitarFocus, tone;
   float pingPong, freeze, reverse, reverseSmear, spring;
   float springDecay, springDamping, springMix;
+  float warpActive, warpSpeed, warpGrainMs, warpStereo, warpFeedback, warpMode;
 } hydra_dsp_params;
 
 typedef enum hydra_dsp_param_id {
@@ -61,7 +76,13 @@ typedef enum hydra_dsp_param_id {
   HYDRA_DSP_PARAM_SPRING_DAMPING = 27,
   HYDRA_DSP_PARAM_SPRING_MIX = 28,
   HYDRA_DSP_PARAM_RESET = 29,
-  HYDRA_DSP_PARAM_COUNT = 30
+  HYDRA_DSP_PARAM_WARP_ACTIVE = 30,
+  HYDRA_DSP_PARAM_WARP_SPEED = 31,
+  HYDRA_DSP_PARAM_WARP_GRAIN_MS = 32,
+  HYDRA_DSP_PARAM_WARP_STEREO = 33,
+  HYDRA_DSP_PARAM_WARP_FEEDBACK = 34,
+  HYDRA_DSP_PARAM_WARP_MODE = 35,
+  HYDRA_DSP_PARAM_COUNT = 36
 } hydra_dsp_param_id;
 
 typedef enum hydra_dsp_smoothing_policy {
@@ -100,7 +121,32 @@ int hydra_dsp_prepare(hydra_dsp_handle* handle, uint32_t max_frames, uint32_t ch
 void hydra_dsp_reset(hydra_dsp_handle* handle);
 int hydra_dsp_set_parameter(hydra_dsp_handle* handle, hydra_dsp_param_id param_id, float value);
 int hydra_dsp_get_parameter(hydra_dsp_handle* handle, hydra_dsp_param_id param_id, float* out_value);
-int hydra_dsp_set_params(hydra_dsp_handle* handle, const hydra_dsp_params* params);
+/* Legacy ABI: reads the 116-byte API 1.2 structure and resets Warp to defaults. */
+int hydra_dsp_set_params(hydra_dsp_handle* handle, const hydra_dsp_params_v1_2* params);
+
+/* Full 140-byte API 1.3 structure, including Warp. */
+int hydra_dsp_set_params_v1_3(hydra_dsp_handle* handle, const hydra_dsp_params* params);
+
+/**
+ * @brief Sets DSP parameters for callers using legacy API 1.2 structure (116 bytes).
+ *
+ * Guarantees that warp parameters safely retain default inactive values without
+ * reading out-of-bounds from the caller's buffer.
+ */
+int hydra_dsp_set_params_v1_2(hydra_dsp_handle* handle, const hydra_dsp_params_v1_2* params);
+
+/**
+ * @brief Sets DSP parameters with explicit struct size for backward and forward ABI safety.
+ *
+ * If struct_size is less than HYDRA_DSP_PARAMS_SIZE_V1_3 (140 bytes), parameters introduced
+ * in API 1.3 (such as warp parameters) safely default without out-of-bounds reads.
+ *
+ * @param handle Handle to DSP instance
+ * @param params Pointer to parameter structure buffer
+ * @param struct_size Size in bytes of caller's structure buffer
+ * @return 0 on success, -1 on null handle/params, -2 on struct_size < HYDRA_DSP_PARAMS_SIZE_V1_2
+ */
+int hydra_dsp_set_params_sized(hydra_dsp_handle* handle, const void* params, size_t struct_size);
 int hydra_dsp_commit(hydra_dsp_handle* handle);
 int hydra_dsp_process(hydra_dsp_handle* handle,
                       const float* in_l,

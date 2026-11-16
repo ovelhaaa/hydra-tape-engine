@@ -845,6 +845,46 @@ public:
     feedback = val;
   }
 
+  AUDIO_INLINE float processFast(float input) {
+    float output = buffer[bufidx];
+    filterstore = (output * damp2) + (filterstore * damp1) + 1e-24f;
+    buffer[bufidx] = input + (filterstore * feedback);
+    if (++bufidx >= bufsize) bufidx = 0;
+    return output;
+  }
+
+  AUDIO_INLINE void processBlockAccum(const float* __restrict__ in, float* __restrict__ acc, int frames) {
+    float* __restrict__ buf = buffer;
+    const int size = bufsize;
+    if (!buf || size <= 0 || frames <= 0) return;
+    int idx = bufidx;
+    float store = filterstore;
+    const float fb = feedback;
+    const float d1 = damp1;
+    const float d2 = damp2;
+    int f = 0;
+    while (f < frames) {
+      const int rem = frames - f;
+      const int span = size - idx;
+      const int n = (rem < span) ? rem : span;
+      float* __restrict__ b = buf + idx;
+      const float* __restrict__ x = in + f;
+      float* __restrict__ y = acc + f;
+      for (int k = 0; k < n; ++k) {
+        const float output = b[k];
+        store = (output * d2) + (store * d1);
+        b[k] = x[k] + (store * fb);
+        y[k] += output;
+      }
+      idx += n;
+      if (idx >= size) idx = 0;
+      f += n;
+    }
+    if (fabsf(store) < 1e-20f) store = 0.0f;
+    bufidx = idx;
+    filterstore = store;
+  }
+
   AUDIO_INLINE float process(float input) {
     if (!buffer) return 0.0f;
     
@@ -886,6 +926,40 @@ public:
 
   void setfeedback(float val) {
     feedback = val;
+  }
+
+  AUDIO_INLINE float processFast(float input) {
+    float bufout = buffer[bufidx];
+    float output = -input + bufout;
+    buffer[bufidx] = input + (bufout * feedback);
+    if (++bufidx >= bufsize) bufidx = 0;
+    return output;
+  }
+
+  AUDIO_INLINE void processBlockInPlace(float* __restrict__ io, int frames) {
+    float* __restrict__ buf = buffer;
+    const int size = bufsize;
+    if (!buf || size <= 0 || frames <= 0) return;
+    int idx = bufidx;
+    const float fb = feedback;
+    int f = 0;
+    while (f < frames) {
+      const int rem = frames - f;
+      const int span = size - idx;
+      const int n = (rem < span) ? rem : span;
+      float* __restrict__ b = buf + idx;
+      float* __restrict__ y = io + f;
+      for (int k = 0; k < n; ++k) {
+        const float input = y[k];
+        const float bufout = b[k];
+        y[k] = bufout - input;
+        b[k] = input + (bufout * fb);
+      }
+      idx += n;
+      if (idx >= size) idx = 0;
+      f += n;
+    }
+    bufidx = idx;
   }
 
   AUDIO_INLINE float process(float input) {
@@ -946,12 +1020,6 @@ private:
     Allpass allpassL[numallpasses];
     Allpass allpassR[numallpasses];
     
-    // Pointers to buffers for manual allocation logic
-    float* combLBuf[numcombs];
-    float* combRBuf[numcombs];
-    float* allpassLBuf[numallpasses];
-    float* allpassRBuf[numallpasses];
-    
     float gain;
     float roomsize, roomsize1;
     float damp, damp1;
@@ -965,10 +1033,12 @@ private:
 
 public:
     FreeverbEngine(float fs);
-    ~FreeverbEngine();
+    FreeverbEngine(const FreeverbEngine&) = delete;
+    FreeverbEngine& operator=(const FreeverbEngine&) = delete;
     
     void mute();
     void processStereo(float inL, float inR, float* outL, float* outR);
+    void processStereoBlock(const float* inL, const float* inR, float* outL, float* outR, int frames);
     
     void setRoomSize(float value);
     void setDamping(float value);

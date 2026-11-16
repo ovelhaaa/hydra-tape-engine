@@ -34,6 +34,12 @@ struct TapeParams {
   float springDecay = 60.0f;
   float springDamping = 45.0f;
   float springMix = 50.0f;
+  bool warpActive = false;
+  float warpSpeed = 1.0f;
+  float warpGrainMs = 80.0f;
+  float warpStereo = 0.5f;
+  float warpFeedback = 0.0f;
+  int warpMode = 0;
 };
 
 class TapeCore {
@@ -47,6 +53,7 @@ public:
   const TapeParams& params() const;
   float process(float input);
   void processStereo(float inL, float inR, float* outL, float* outR);
+  void processStereoBlock(const float* inL, const float* inR, float* outL, float* outR, uint32_t frames);
 
 private:
   struct Impl;

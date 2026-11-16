@@ -101,7 +101,7 @@ void apply_base_params(hydra_dsp_handle* h) {
   p.springDecay = 60.0f;
   p.springDamping = 45.0f;
   p.springMix = 0.0f;
-  CHECK(hydra_dsp_set_params(h, &p) == 0);
+  CHECK(hydra_dsp_set_params_v1_3(h, &p) == 0);
   CHECK(hydra_dsp_commit(h) == 0);
 }
 

@@ -41,7 +41,7 @@ jobs:
       - name: Build native core targets
         run: >-
           cmake --build build-native --config ${CMAKE_BUILD_TYPE} -j
-          --target hydra_dsp_core hydra_render_trace_native hydra_golden_regression_native hydra_listen_native
+          --target hydra_dsp_core hydra_render_trace_native hydra_golden_regression_native hydra_listen_native hydra_warp_core_test
 
       - name: Upload native build artifacts
         uses: actions/upload-artifact@v4
@@ -87,6 +87,47 @@ jobs:
         with:
           name: native-core-test-reports
           path: ci-reports/native
+
+  validate_warp:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install validation dependencies
+        run: python -m pip install numpy scipy
+      - name: Build native runner
+        run: |
+          cmake -S . -B build-native -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=ON
+          cmake --build build-native -j --target hydra_listen_native
+      - name: Check persistent Python state
+        run: python scripts/test_validate_warp_prototype.py
+      - name: Render and validate Warp scenarios
+        run: >-
+          python scripts/validate_warp_prototype.py --listen build-native/hydra_listen_native
+          --native-commit "$(git rev-parse HEAD)" --native-build-profile "$CMAKE_BUILD_TYPE"
+          --output-dir artifacts/warp-ab
+      - name: Upload Warp A/B renders and manifest
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: accidental-warp-ab
+          path: artifacts/warp-ab
+      - name: Verify ABI against frozen C 1.2 consumer with AddressSanitizer
+        if: ${{ !cancelled() }}
+        run: |
+          cmake -S . -B build/abi-asan -DCMAKE_BUILD_TYPE=RelWithDebInfo -DBUILD_TESTING=ON \
+            -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ \
+            -DCMAKE_C_FLAGS="-fsanitize=address -fno-omit-frame-pointer" \
+            -DCMAKE_CXX_FLAGS="-fsanitize=address -fno-omit-frame-pointer"
+          cmake --build build/abi-asan -j --target hydra_abi_legacy_consumer hydra_warp_core_test
+          ctest --test-dir build/abi-asan --output-on-failure -R '^(core_abi_legacy_consumer|core_warp_test)$'
 
   build_wasm_core:
     runs-on: ubuntu-latest
@@ -249,6 +290,7 @@ jobs:
           python3 tests/core/listening_review.py \
             --native build-native/hydra_listen_native \
             --wasm-js build-wasm/wasm-tests/hydra_listen.js \
+            --dsp-commit "$GITHUB_SHA" --build-profile "$CMAKE_BUILD_TYPE" \
             --output-dir ci-reports/listening
 
       - name: Upload listening renders
@@ -256,3 +298,61 @@ jobs:
         with:
           name: listening-review
           path: ci-reports/listening
+
+  magnetic_bias_review:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Build the five listening runners
+        run: |
+          baseline=f8d2851c663d62ae4850087dc5bb255bd8b818be
+          original=3bbcd720a2302cdd8b38d5d1e690d8ee521a9efb
+          git fetch --no-tags --depth=1 origin "$baseline" "$original"
+          git worktree add --detach "$RUNNER_TEMP/bias-baseline" "$baseline"
+          git worktree add --detach "$RUNNER_TEMP/bias-original" "$original"
+          build_listen() {
+            local src=$1 output=$2
+            shift 2
+            g++ -std=c++17 -DNDEBUG "$@" -I"$src/include" -I"$src/dsp/core" \
+              "$src/dsp/core/tape_core.cpp" "$src/dsp/core/hydra_dsp_c_api.cpp" \
+              "$src/tests/core/listen.cpp" -o "$RUNNER_TEMP/$output"
+          }
+          build_listen "$RUNNER_TEMP/bias-baseline" baseline -O3
+          build_listen "$RUNNER_TEMP/bias-original" original-strict -O2 -fno-fast-math
+          build_listen "$RUNNER_TEMP/bias-original" original-fast -O2 -ffast-math -fno-finite-math-only
+          build_listen . corrected-strict -O2 -fno-fast-math
+          build_listen . corrected-fast -O2 -ffast-math -fno-finite-math-only
+      - name: Render synchronized A/B audio
+        run: |
+          python -m pip install numpy scipy soundfile
+          python scripts/render_magnetic_bias_review.py \
+            --baseline "$RUNNER_TEMP/baseline" \
+            --original-strict "$RUNNER_TEMP/original-strict" \
+            --original-fast "$RUNNER_TEMP/original-fast" \
+            --corrected-strict "$RUNNER_TEMP/corrected-strict" \
+            --corrected-fast "$RUNNER_TEMP/corrected-fast" \
+            --corrected-commit "$(git rev-parse HEAD)" \
+            --output-dir ci-reports/magnetic-bias-declick
+      - uses: actions/upload-artifact@v4
+        with:
+          name: magnetic-bias-declick-v1.3
+          path: ci-reports/magnetic-bias-declick
+
+  build_esp32_s3:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install PlatformIO
+        run: pip install platformio
+      - name: Build ESP32-S3 Firmware
+        run: pio run -e esp32-s3-devkitc-1

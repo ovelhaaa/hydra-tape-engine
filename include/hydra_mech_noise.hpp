@@ -4,7 +4,11 @@
 #include <cstdint>
 
 #ifndef HYDRA_AUDIO_INLINE
+#if defined(__GNUC__) || defined(__clang__)
+#define HYDRA_AUDIO_INLINE __attribute__((always_inline)) inline
+#else
 #define HYDRA_AUDIO_INLINE inline
+#endif
 #endif
 
 namespace hydra { namespace dsp {

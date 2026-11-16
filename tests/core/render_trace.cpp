@@ -116,7 +116,7 @@ int main(int argc, char** argv) {
   p.springDamping = 45.0f;
   p.springMix = 0.0f;
 
-  CHECK(hydra_dsp_set_params(h, &p) == 0);
+  CHECK(hydra_dsp_set_params_v1_3(h, &p) == 0);
   CHECK(hydra_dsp_commit(h) == 0);
 
   std::vector<float> inL(totalFrames), inR(totalFrames), outL(totalFrames), outR(totalFrames);

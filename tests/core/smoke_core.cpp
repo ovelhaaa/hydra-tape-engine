@@ -5,7 +5,7 @@
 
 int main() {
   CHECK(hydra_dsp_get_api_version() == HYDRA_DSP_API_VERSION);
-  CHECK(HYDRA_DSP_API_VERSION_MINOR == 2);
+  CHECK(HYDRA_DSP_API_VERSION_MINOR >= 2);
   CHECK(hydra_dsp_get_param_count() == HYDRA_DSP_PARAM_COUNT);
 
   hydra_dsp_param_spec spec{};
@@ -14,6 +14,12 @@ int main() {
   CHECK(spec.min_value == 10.0f);
   CHECK(spec.max_value == 2000.0f);
   CHECK((spec.flags & HYDRA_DSP_PARAM_SPEC_FLAG_RUNTIME_MAX) != 0u);
+
+  hydra_dsp_param_spec warpSpec{};
+  CHECK(hydra_dsp_get_param_spec(HYDRA_DSP_PARAM_WARP_ACTIVE, &warpSpec) == 0);
+  CHECK(warpSpec.id == HYDRA_DSP_PARAM_WARP_ACTIVE);
+  CHECK(warpSpec.min_value == 0.0f);
+  CHECK(warpSpec.max_value == 1.0f);
 
   hydra_dsp_handle* h = nullptr;
   CHECK(hydra_dsp_create(44100.0f, 2000.0f, &h) == 0);
@@ -31,7 +37,7 @@ int main() {
   params.activeHeads = 7.0f;
   params.headsMusical = 1.0f;
   params.bpm = 120.0f;
-  CHECK(hydra_dsp_set_params(h, &params) == 0);
+  CHECK(hydra_dsp_set_params_v1_3(h, &params) == 0);
   CHECK(hydra_dsp_commit(h) == 0);
 
   std::vector<float> inL(8, 0.1f), inR(8, -0.1f), outL(8), outR(8);

@@ -88,3 +88,22 @@ test('partial preset uses defaults and clamps out-of-range values', () => {
   assert.equal(imported.controlState.dryWet, DEFAULT_CONTROL_STATE.dryWet);
   assert.equal(imported.controlState.wowDepth, DEFAULT_CONTROL_STATE.wowDepth);
 });
+
+test('accurately serializes and deserializes Accidental Warp V1.1 parameters', () => {
+  const exported = serializePreset({
+    warpActive: 1,
+    warpMode: 2,
+    warpSpeed: 1.5,
+    warpGrainMs: 120,
+    warpStereo: 0.75,
+    warpFeedback: 80
+  }, { name: 'Warp Preset' });
+
+  const imported = deserializePresetFromText(exported);
+  assert.equal(imported.controlState.warpActive, 1);
+  assert.equal(imported.controlState.warpMode, 2);
+  assert.equal(imported.controlState.warpSpeed, 1.5);
+  assert.equal(imported.controlState.warpGrainMs, 120);
+  assert.equal(imported.controlState.warpStereo, 0.75);
+  assert.equal(imported.controlState.warpFeedback, 80);
+});

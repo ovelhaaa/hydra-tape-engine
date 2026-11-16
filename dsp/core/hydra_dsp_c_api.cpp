@@ -2,7 +2,15 @@
 #include "tape_core.hpp"
 
 #include <algorithm>
+#include <cstring>
 #include <new>
+
+#if defined(ARDUINO_ARCH_ESP32) || defined(ESP_PLATFORM)
+#include "esp_attr.h"
+#define HYDRA_DSP_IRAM IRAM_ATTR
+#else
+#define HYDRA_DSP_IRAM
+#endif
 
 struct hydra_dsp_handle {
   hydra::dsp::TapeCore* core;
@@ -42,6 +50,12 @@ static const hydra_dsp_param_spec kParamSpecs[HYDRA_DSP_PARAM_COUNT] = {
     {HYDRA_DSP_PARAM_SPRING_DAMPING, "springDamping", 0.0f, 100.0f, 45.0f, HYDRA_DSP_SMOOTHING_BLOCK_EDGE, HYDRA_DSP_PARAM_SPEC_FLAG_NONE},
     {HYDRA_DSP_PARAM_SPRING_MIX, "springMix", 0.0f, 100.0f, 50.0f, HYDRA_DSP_SMOOTHING_BLOCK_EDGE, HYDRA_DSP_PARAM_SPEC_FLAG_NONE},
     {HYDRA_DSP_PARAM_RESET, "reset", 0.0f, 1.0f, 0.0f, HYDRA_DSP_SMOOTHING_NONE, HYDRA_DSP_PARAM_SPEC_FLAG_NONE},
+    {HYDRA_DSP_PARAM_WARP_ACTIVE, "warpActive", 0.0f, 1.0f, 0.0f, HYDRA_DSP_SMOOTHING_NONE, HYDRA_DSP_PARAM_SPEC_FLAG_NONE},
+    {HYDRA_DSP_PARAM_WARP_SPEED, "warpSpeed", 0.0f, 2.0f, 1.0f, HYDRA_DSP_SMOOTHING_BLOCK_EDGE, HYDRA_DSP_PARAM_SPEC_FLAG_NONE},
+    {HYDRA_DSP_PARAM_WARP_GRAIN_MS, "warpGrainMs", 20.0f, 400.0f, 80.0f, HYDRA_DSP_SMOOTHING_BLOCK_EDGE, HYDRA_DSP_PARAM_SPEC_FLAG_NONE},
+    {HYDRA_DSP_PARAM_WARP_STEREO, "warpStereo", 0.0f, 1.0f, 0.5f, HYDRA_DSP_SMOOTHING_BLOCK_EDGE, HYDRA_DSP_PARAM_SPEC_FLAG_NONE},
+    {HYDRA_DSP_PARAM_WARP_FEEDBACK, "warpFeedback", 0.0f, 100.0f, 0.0f, HYDRA_DSP_SMOOTHING_BLOCK_EDGE, HYDRA_DSP_PARAM_SPEC_FLAG_NONE},
+    {HYDRA_DSP_PARAM_WARP_MODE, "warpMode", 0.0f, 3.0f, 0.0f, HYDRA_DSP_SMOOTHING_NONE, HYDRA_DSP_PARAM_SPEC_FLAG_NONE},
 };
 
 static hydra_dsp_param_spec resolve_runtime_spec(const hydra_dsp_handle* handle, hydra_dsp_param_id param_id) {
@@ -83,6 +97,12 @@ static void from_c(const hydra_dsp_params& in, hydra::dsp::TapeParams* out) {
   out->springDecay = in.springDecay;
   out->springDamping = in.springDamping;
   out->springMix = in.springMix;
+  out->warpActive = in.warpActive > 0.5f;
+  out->warpSpeed = in.warpSpeed;
+  out->warpGrainMs = in.warpGrainMs;
+  out->warpStereo = in.warpStereo;
+  out->warpFeedback = in.warpFeedback;
+  out->warpMode = (int)in.warpMode;
 }
 
 static int set_param(hydra_dsp_handle* h, hydra_dsp_param_id id, float v) {
@@ -116,6 +136,12 @@ static int set_param(hydra_dsp_handle* h, hydra_dsp_param_id id, float v) {
     case HYDRA_DSP_PARAM_SPRING_DECAY: h->params.springDecay = v; break;
     case HYDRA_DSP_PARAM_SPRING_DAMPING: h->params.springDamping = v; break;
     case HYDRA_DSP_PARAM_SPRING_MIX: h->params.springMix = v; break;
+    case HYDRA_DSP_PARAM_WARP_ACTIVE: h->params.warpActive = v > 0.5f; break;
+    case HYDRA_DSP_PARAM_WARP_SPEED: h->params.warpSpeed = v; break;
+    case HYDRA_DSP_PARAM_WARP_GRAIN_MS: h->params.warpGrainMs = v; break;
+    case HYDRA_DSP_PARAM_WARP_STEREO: h->params.warpStereo = v; break;
+    case HYDRA_DSP_PARAM_WARP_FEEDBACK: h->params.warpFeedback = v; break;
+    case HYDRA_DSP_PARAM_WARP_MODE: h->params.warpMode = (int)v; break;
     default: return -2;
   }
   h->dirty = true;
@@ -216,16 +242,53 @@ int hydra_dsp_get_parameter(hydra_dsp_handle* handle, hydra_dsp_param_id param_i
     case HYDRA_DSP_PARAM_SPRING_DAMPING: *out_value = handle->params.springDamping; break;
     case HYDRA_DSP_PARAM_SPRING_MIX: *out_value = handle->params.springMix; break;
     case HYDRA_DSP_PARAM_RESET: *out_value = 0.0f; break;
+    case HYDRA_DSP_PARAM_WARP_ACTIVE: *out_value = handle->params.warpActive ? 1.0f : 0.0f; break;
+    case HYDRA_DSP_PARAM_WARP_SPEED: *out_value = handle->params.warpSpeed; break;
+    case HYDRA_DSP_PARAM_WARP_GRAIN_MS: *out_value = handle->params.warpGrainMs; break;
+    case HYDRA_DSP_PARAM_WARP_STEREO: *out_value = handle->params.warpStereo; break;
+    case HYDRA_DSP_PARAM_WARP_FEEDBACK: *out_value = handle->params.warpFeedback; break;
+    case HYDRA_DSP_PARAM_WARP_MODE: *out_value = (float)handle->params.warpMode; break;
     default: return -2;
   }
   return 0;
 }
 
-int hydra_dsp_set_params(hydra_dsp_handle* handle, const hydra_dsp_params* params) {
+int hydra_dsp_set_params_sized(hydra_dsp_handle* handle, const void* params, size_t struct_size) {
   if (!handle || !params) return -1;
-  from_c(*params, &handle->params);
+  if (struct_size < HYDRA_DSP_PARAMS_SIZE_V1_2) return -2;
+
+  hydra_dsp_params local{};
+  // Provide safe defaults for unpopulated fields (e.g., when called with V1.2 size)
+  local.warpActive = 0.0f;
+  local.warpSpeed = 1.0f;
+  local.warpGrainMs = 80.0f;
+  local.warpStereo = 0.5f;
+  local.warpFeedback = 0.0f;
+  local.warpMode = 0.0f;
+
+  static_assert(sizeof(hydra_dsp_params_v1_2) == HYDRA_DSP_PARAMS_SIZE_V1_2);
+  static_assert(sizeof(hydra_dsp_params) == HYDRA_DSP_PARAMS_SIZE_V1_3);
+  static_assert(offsetof(hydra_dsp_params, warpActive) == HYDRA_DSP_PARAMS_SIZE_V1_2);
+  const size_t copy_size = struct_size >= HYDRA_DSP_PARAMS_SIZE_V1_3
+      ? HYDRA_DSP_PARAMS_SIZE_V1_3
+      : HYDRA_DSP_PARAMS_SIZE_V1_2;
+  std::memcpy(&local, params, copy_size);
+
+  from_c(local, &handle->params);
   handle->dirty = true;
   return 0;
+}
+
+int hydra_dsp_set_params(hydra_dsp_handle* handle, const hydra_dsp_params_v1_2* params) {
+  return hydra_dsp_set_params_sized(handle, params, sizeof(hydra_dsp_params_v1_2));
+}
+
+int hydra_dsp_set_params_v1_3(hydra_dsp_handle* handle, const hydra_dsp_params* params) {
+  return hydra_dsp_set_params_sized(handle, params, sizeof(hydra_dsp_params));
+}
+
+int hydra_dsp_set_params_v1_2(hydra_dsp_handle* handle, const hydra_dsp_params_v1_2* params) {
+  return hydra_dsp_set_params(handle, params);
 }
 
 int hydra_dsp_commit(hydra_dsp_handle* handle) {
@@ -237,7 +300,7 @@ int hydra_dsp_commit(hydra_dsp_handle* handle) {
   return 0;
 }
 
-int hydra_dsp_process(hydra_dsp_handle* handle,
+HYDRA_DSP_IRAM int hydra_dsp_process(hydra_dsp_handle* handle,
                       const float* in_l,
                       const float* in_r,
                       float* out_l,
@@ -245,9 +308,7 @@ int hydra_dsp_process(hydra_dsp_handle* handle,
                       uint32_t frames) {
   if (!handle || !out_l || !out_r || !in_l || !in_r) return -1;
   if (handle->dirty) handle->core->updateParams(handle->params), handle->dirty = false;
-  for (uint32_t i = 0; i < frames; ++i) {
-    handle->core->processStereo(in_l[i], in_r[i], &out_l[i], &out_r[i]);
-  }
+  handle->core->processStereoBlock(in_l, in_r, out_l, out_r, frames);
   return 0;
 }
 }

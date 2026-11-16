@@ -41,7 +41,14 @@ export const DEFAULT_CONTROL_STATE = {
   spring: 0,
   springDecay: 60,
   springDamping: 45,
-  springMix: 50
+  springMix: 50,
+  // Accidental Warp
+  warpActive: 0,
+  warpSpeed: 1.0,
+  warpGrainMs: 80,
+  warpStereo: 0.5,
+  warpFeedback: 0,
+  warpMode: 0
 };
 
 const RANGE_BY_PARAM = {
@@ -78,7 +85,14 @@ const RANGE_BY_PARAM = {
   spring: { min: 0, max: 1, isBoolean: true },
   springDecay: { min: 0, max: 100 },
   springDamping: { min: 0, max: 100 },
-  springMix: { min: 0, max: 100 }
+  springMix: { min: 0, max: 100 },
+  // Accidental Warp
+  warpActive: { min: 0, max: 1, isBoolean: true },
+  warpSpeed: { min: 0.0, max: 2.0 },
+  warpGrainMs: { min: 20, max: 400 },
+  warpStereo: { min: 0.0, max: 1.0 },
+  warpFeedback: { min: 0, max: 100 },
+  warpMode: { min: 0, max: 3 }
 };
 
 function isObject(value) {

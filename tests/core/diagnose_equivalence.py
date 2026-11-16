@@ -53,7 +53,7 @@ static int audit_frame = -1;
          '    AUDIT("conditionedInput",frame.conditionedInput); AUDIT("readModulation",mod);'),
         ("    return impl_->outputLimiter", '    AUDIT("recordedSample",buffer[impl_->writeHead]);'),
         ("    // --- dropout/gap loss ---", '    AUDIT("texture",textureSig); AUDIT("delay",delaySig);'),
-        ("    // --- playback head EQ ---", '    AUDIT("prePlayback",tapeSig);'),
+        ("    frame.tapeOutput=outputGapLossFilter.process(", '    AUDIT("prePlayback",tapeSig);'),
         ("    return frame;", '    AUDIT("tapeOutput",frame.tapeOutput);'),
         ("    // --- magnetic saturation/write ---", '    AUDIT("recordInput",recSig);'),
     ]:
@@ -151,10 +151,10 @@ def main():
                              "dsp/core/tape_core.hpp", "dsp/core/tape_core.cpp",
                              "dsp/core/hydra_dsp_c_api.cpp", "tests/core/render_trace.cpp"):
                 (work / Path(filename).name).write_text(source(revision, filename), encoding="utf-8")
-            if name == "head":
-                (work / "check.h").write_text(source(revision, "tests/core/check.h"), encoding="utf-8")
             core = (work / "tape_core.cpp").read_text(encoding="utf-8")
             trace = (work / "render_trace.cpp").read_text(encoding="utf-8")
+            if '#include "check.h"' in trace:
+                (work / "check.h").write_text(source(revision, "tests/core/check.h"), encoding="utf-8")
             configurations = [("release", False, False, False)]
             if name == "head":
                 configurations += [("instrumented", True, False, False),

@@ -1,0 +1,1777 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Accidental Warp Delay — Simulador DSP</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #09090b;
+            color: #e4e4e7;
+            user-select: none;
+        }
+        .font-mono {
+            font-family: 'JetBrains Mono', monospace;
+        }
+        /* Custom Range Sliders */
+        input[type="range"] {
+            -webkit-appearance: none;
+            appearance: none;
+            background: transparent;
+            cursor: pointer;
+        }
+        input[type="range"]::-webkit-slider-runnable-track {
+            height: 6px;
+            border-radius: 999px;
+            background: #27272a;
+            border: 1px solid #3f3f46;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            height: 18px;
+            width: 18px;
+            border-radius: 50%;
+            background: #f59e0b;
+            border: 2px solid #09090b;
+            margin-top: -7px;
+            box-shadow: 0 0 10px rgba(245, 158, 11, 0.5);
+            transition: transform 0.1s ease, background-color 0.15s ease;
+        }
+        input[type="range"]:hover::-webkit-slider-thumb {
+            transform: scale(1.15);
+            background: #fbbf24;
+        }
+        input[type="range"].cyan-slider::-webkit-slider-thumb {
+            background: #06b6d4;
+            box-shadow: 0 0 10px rgba(6, 182, 212, 0.5);
+        }
+        input[type="range"].cyan-slider:hover::-webkit-slider-thumb {
+            background: #22d3ee;
+        }
+        .panel-glass {
+            background: linear-gradient(145deg, #18181b 0%, #121215 100%);
+            border: 1px solid #27272a;
+            box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.7), inset 0 1px 0 0 rgba(255, 255, 255, 0.05);
+        }
+        .led-glow-amber {
+            box-shadow: 0 0 8px #f59e0b, 0 0 16px rgba(245, 158, 11, 0.4);
+        }
+        .led-glow-cyan {
+            box-shadow: 0 0 8px #06b6d4, 0 0 16px rgba(6, 182, 212, 0.4);
+        }
+        .led-glow-emerald {
+            box-shadow: 0 0 8px #10b981, 0 0 16px rgba(16, 185, 129, 0.4);
+        }
+        .led-glow-rose {
+            box-shadow: 0 0 8px #f43f5e, 0 0 16px rgba(244, 63, 94, 0.4);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between p-3 sm:p-6">
+
+    <!-- Header / Hardware Faceplate Top -->
+    <header class="max-w-6xl w-full mx-auto mb-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-zinc-800 pb-4">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center">
+                <svg class="w-6 h-6 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+            </div>
+            <div>
+                <div class="flex items-center gap-2">
+                    <h1 class="text-lg sm:text-xl font-bold tracking-tight text-zinc-100">ACCIDENTAL WARP DELAY</h1>
+                    <span class="px-2 py-0.5 text-[10px] font-mono font-bold uppercase tracking-wider bg-amber-500/20 text-amber-300 border border-amber-500/30 rounded-md">ESP32-S3 DSP PORT</span>
+                </div>
+                <p class="text-xs text-zinc-400">Simulador em tempo real do deslocamento duplo de ponteiro (Buffer Warp / Sub-Octave Cascading)</p>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-3 w-full sm:w-auto justify-end">
+            <div class="hidden md:flex flex-col items-end mr-2 font-mono text-[11px] text-zinc-400">
+                <span id="srReadout">FS: 48000 Hz</span>
+                <span id="bufferStatsReadout" class="text-amber-400/90">DELAY: 750ms (36000 smp)</span>
+            </div>
+            <button id="btnAudioEngine" class="flex-1 sm:flex-none px-4 py-2.5 rounded-xl font-semibold text-sm bg-emerald-500 hover:bg-emerald-400 text-zinc-950 transition-all flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20">
+                <span id="engineLed" class="w-2.5 h-2.5 rounded-full bg-zinc-950"></span>
+                <span id="engineBtnText">LIGAR MOTOR DE ÁUDIO</span>
+            </button>
+            <button id="btnPanic" title="Limpar Buffer de Delay (Zerar Feedback)" class="px-3.5 py-2.5 rounded-xl font-mono text-xs font-bold bg-zinc-800 hover:bg-rose-950/70 text-zinc-300 hover:text-rose-300 border border-zinc-700 hover:border-rose-500/40 transition-all">
+                LIMPAR BUFFER
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Pedalboard Grid -->
+    <main class="max-w-6xl w-full mx-auto grid grid-cols-1 lg:grid-cols-12 gap-5">
+
+        <!-- Left Column: Sound Sources & Visualizers (5 cols) -->
+        <div class="lg:col-span-5 flex flex-col gap-5">
+
+            <!-- Sound Source Panel -->
+            <section class="panel-glass rounded-2xl p-4 sm:p-5">
+                <div class="flex items-center justify-between mb-3">
+                    <h2 class="text-xs font-mono font-bold uppercase tracking-wider text-zinc-400 flex items-center gap-2">
+                        <span class="w-2 h-2 rounded-full bg-cyan-400 led-glow-cyan"></span>
+                        1. Fonte Sonora (Input)
+                    </h2>
+                    <span id="activeSourceBadge" class="text-[11px] font-mono text-cyan-400">MELODY GEN</span>
+                </div>
+
+                <!-- Source Tabs -->
+                <div class="grid grid-cols-3 gap-1.5 p-1 bg-zinc-950 rounded-xl border border-zinc-800 mb-4">
+                    <button data-source="synth" class="source-tab py-2 px-2 rounded-lg text-xs font-semibold bg-zinc-800 text-white transition-all">
+                        Synth Interno
+                    </button>
+                    <button data-source="file" class="source-tab py-2 px-2 rounded-lg text-xs font-semibold text-zinc-400 hover:text-zinc-200 transition-all">
+                        Arquivo WAV/MP3
+                    </button>
+                    <button data-source="mic" class="source-tab py-2 px-2 rounded-lg text-xs font-semibold text-zinc-400 hover:text-zinc-200 transition-all">
+                        Microfone / Line
+                    </button>
+                </div>
+
+                <!-- Tab 1: MelodyGen Synth Controls -->
+                <div id="panel-synth" class="space-y-3">
+                    <div class="flex items-center gap-2">
+                        <button id="btnSynthToggle" class="flex-1 py-2.5 px-3 rounded-xl text-xs font-bold bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-500/40 transition-all flex items-center justify-center gap-2">
+                            <span id="synthLed" class="w-2 h-2 rounded-full bg-cyan-400 led-glow-cyan"></span>
+                            <span id="synthToggleText">PAUSAR MELODIA GENERATIVA</span>
+                        </button>
+                        <button id="btnPluck" class="py-2.5 px-3.5 rounded-xl text-xs font-bold bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 active:scale-95 transition-all" title="Dispara uma nota/acorde curto para testar as repetições isoladas">
+                            DISPARAR NOTA / ACORDE
+                        </button>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2 pt-1">
+                        <div>
+                            <label class="block text-[11px] text-zinc-400 mb-1">Modo / Escala (MelodyGen)</label>
+                            <select id="synthScale" class="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-2.5 py-1.5 text-xs text-zinc-200 focus:outline-none focus:border-cyan-500">
+                                <option value="MINOR" selected>Sequencer: Menor (E Minor)</option>
+                                <option value="PENTATONIC_MIN">Sequencer: Pentatônica Menor</option>
+                                <option value="MAJOR">Sequencer: Maior (E Major)</option>
+                                <option value="BLUES">Sequencer: Blues</option>
+                                <option value="ENO">Drone / Pad: Ambient (Eno)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-[11px] text-zinc-400 mb-1">Densidade Rítmica</label>
+                            <div class="flex items-center gap-2 h-[30px]">
+                                <input id="synthDensity" type="range" min="0.2" max="1.0" step="0.05" value="0.65" class="w-full cyan-slider">
+                                <span id="synthDensityVal" class="font-mono text-[11px] text-zinc-300 w-9 text-right">65%</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab 2: File Upload Controls -->
+                <div id="panel-file" class="hidden space-y-3">
+                    <label class="flex flex-col items-center justify-center w-full h-20 border-2 border-dashed border-zinc-700 hover:border-cyan-500/50 rounded-xl cursor-pointer bg-zinc-900/50 transition-all">
+                        <span class="text-xs font-medium text-zinc-300" id="fileNameDisplay">Clique para carregar WAV, MP3 ou OGG</span>
+                        <span class="text-[10px] text-zinc-500 mt-0.5">Processado localmente no navegador</span>
+                        <input id="audioFileInput" type="file" accept="audio/*" class="hidden">
+                    </label>
+                    <div class="flex items-center gap-2">
+                        <button id="btnFilePlay" disabled class="flex-1 py-2 rounded-xl text-xs font-bold bg-zinc-800 text-zinc-400 disabled:opacity-50 transition-all">
+                            PLAY / PAUSE
+                        </button>
+                        <label class="flex items-center gap-1.5 text-xs text-zinc-300 bg-zinc-900 px-3 py-2 rounded-xl border border-zinc-800 cursor-pointer">
+                            <input id="chkFileLoop" type="checkbox" checked class="accent-cyan-500">
+                            Loop
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Tab 3: Microphone Controls -->
+                <div id="panel-mic" class="hidden space-y-2.5">
+                    <div class="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-[11px] text-amber-200/90 leading-relaxed">
+                        <strong>Atenção:</strong> Use fones de ouvido para evitar microfonia acústica ao ativar o microfone ou interface de áudio.
+                    </div>
+                    <button id="btnMicEnable" class="w-full py-2.5 rounded-xl text-xs font-bold bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border border-rose-500/40 transition-all">
+                        ATIVAR ENTRADA DE MICROFONE
+                    </button>
+                </div>
+            </section>
+
+            <!-- Circular Buffer & Pointer Visualizer -->
+            <section class="panel-glass rounded-2xl p-4 sm:p-5 flex-1 flex flex-col justify-between">
+                <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
+                    <h2 class="text-xs font-mono font-bold uppercase tracking-wider text-zinc-400">
+                        2. Anatomia do Buffer Circular
+                    </h2>
+                    <div class="flex items-center gap-3 text-[10px] font-mono">
+                        <span class="flex items-center gap-1 text-emerald-400">
+                            <span class="w-2 h-2 rounded-full bg-emerald-400"></span> Write (1x)
+                        </span>
+                        <span class="flex items-center gap-1 text-amber-400">
+                            <span class="w-2 h-2 rounded-full bg-amber-400"></span> Tap 1 (<span id="readSpeedLabel">2.0x</span>)
+                        </span>
+                        <span id="tap2Legend" class="flex items-center gap-1 text-cyan-400">
+                            <span class="w-2 h-2 rounded-full bg-cyan-400"></span> Tap 2 (180°)
+                        </span>
+                    </div>
+                </div>
+
+                <div class="relative w-full aspect-[16/10] bg-zinc-950 rounded-xl border border-zinc-800 overflow-hidden flex items-center justify-center">
+                    <canvas id="bufferCanvas" class="w-full h-full block"></canvas>
+                    <div class="absolute bottom-2 left-2.5 right-2.5 flex justify-between text-[10px] font-mono text-zinc-500 pointer-events-none">
+                        <span id="collisionReadout">Cruzamentos/seg: 2.67 Hz</span>
+                        <span id="pitchShiftReadout">Velocidade Leitura: 2.00x</span>
+                    </div>
+                </div>
+
+                <!-- Mini Output Oscilloscope & Spectrum -->
+                <div class="mt-3">
+                    <div class="flex justify-between text-[10px] font-mono text-zinc-500 mb-1">
+                        <span>OSCILOSCÓPIO + ESPECTRO DE SUB-OITAVAS</span>
+                        <span id="clipIndicator" class="text-zinc-600">OK</span>
+                    </div>
+                    <div class="h-16 w-full bg-zinc-950 rounded-xl border border-zinc-800 overflow-hidden">
+                        <canvas id="scopeCanvas" class="w-full h-full block"></canvas>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- Right Column: Warp Delay DSP Controls (7 cols) -->
+        <div class="lg:col-span-7 flex flex-col gap-5">
+
+            <!-- Main DSP Parameters -->
+            <section class="panel-glass rounded-2xl p-4 sm:p-6 space-y-5">
+                <!-- Architecture Master Switch -->
+                <div class="bg-zinc-950 p-3 rounded-2xl border border-zinc-800 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+                    <div>
+                        <span class="text-[10px] font-mono font-bold uppercase tracking-wider text-zinc-500 block">ARQUITETURA DO MOTOR DSP</span>
+                        <span id="archSubtitle" class="text-xs font-semibold text-cyan-300">2-Taps Defasados 180° + Sincronia BPM + HPF/Drive</span>
+                    </div>
+                    <div class="grid grid-cols-2 gap-1.5 bg-zinc-900 p-1 rounded-xl border border-zinc-800 shrink-0">
+                        <button id="btnArch1Tap" class="px-3 py-2 rounded-lg text-xs font-mono font-bold text-zinc-400 hover:text-zinc-200 transition-all">
+                            1-TAP (BUG CRU)
+                        </button>
+                        <button id="btnArch2Tap" class="px-3 py-2 rounded-lg text-xs font-mono font-bold bg-cyan-500 text-zinc-950 shadow-lg shadow-cyan-500/20 transition-all">
+                            2-TAPS (MUSICAL)
+                        </button>
+                    </div>
+                </div>
+
+                <div class="flex flex-wrap items-center justify-between gap-2 border-b border-zinc-800 pb-3">
+                    <div>
+                        <h2 class="text-xs font-mono font-bold uppercase tracking-wider text-amber-400 flex items-center gap-2">
+                            <span class="w-2 h-2 rounded-full bg-amber-400 led-glow-amber"></span>
+                            3. Parâmetros do Algoritmo Warp Delay
+                        </h2>
+                        <p class="text-[11px] text-zinc-400 mt-0.5">Compare a leitura bruta original com o janelamento contínuo aprimorado</p>
+                    </div>
+
+                    <!-- Mode Switch: Raw Int Cast vs Smooth Hermite -->
+                    <div class="flex items-center gap-1.5 bg-zinc-950 p-1 rounded-xl border border-zinc-800">
+                        <button id="btnModeHermite" class="px-2.5 py-1 rounded-lg text-[11px] font-mono font-bold bg-amber-500 text-zinc-950 transition-all">
+                            HERMITE 4-PT
+                        </button>
+                        <button id="btnModeRawInt" class="px-2.5 py-1 rounded-lg text-[11px] font-mono font-bold text-zinc-400 hover:text-zinc-200 transition-all" title="Ativa o cast (int)relativeDelay original, gerando aliasing e textura digital rasgada">
+                            CAST (INT) CRU
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Quick Presets Bar -->
+                <div>
+                    <span class="block text-[11px] font-mono text-zinc-400 mb-2">PRESETS DE COMPARAÇÃO & TEXTURAS:</span>
+                    <div class="grid grid-cols-2 sm:grid-cols-5 gap-2">
+                        <button data-preset="original" class="preset-btn p-2 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-left transition-all">
+                            <div class="text-[11px] font-bold text-rose-400">Bug Original Cru</div>
+                            <div class="text-[9px] font-mono text-zinc-400">1-Tap • Int • Estalos</div>
+                        </button>
+                        <button data-preset="octaver2tap" class="preset-btn p-2 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-cyan-500/50 text-left transition-all">
+                            <div class="text-[11px] font-bold text-cyan-400">Oitavador 2-Tap</div>
+                            <div class="text-[9px] font-mono text-zinc-400">2-Taps • Sem Buracos</div>
+                        </button>
+                        <button data-preset="subcascade" class="preset-btn p-2 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-left transition-all">
+                            <div class="text-[11px] font-bold text-amber-400">Cascata Sub-Grave</div>
+                            <div class="text-[9px] font-mono text-zinc-400">FB 80% • HPF • Drive</div>
+                        </button>
+                        <button data-preset="stutter16" class="preset-btn p-2 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-left transition-all">
+                            <div class="text-[11px] font-bold text-emerald-400">Stutter Rítmico 1/16</div>
+                            <div class="text-[9px] font-mono text-zinc-400">2-Taps • Sync 1/16</div>
+                        </button>
+                        <button data-preset="freeze" class="preset-btn p-2 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-left transition-all col-span-2 sm:col-span-1">
+                            <div class="text-[11px] font-bold text-purple-400">Granular Freeze</div>
+                            <div class="text-[9px] font-mono text-zinc-400">Speed 0.5x • Pad</div>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Sliders Grid -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-5 gap-y-4">
+
+                    <!-- BPM + Subdivision -->
+                    <div class="bg-zinc-900/50 p-3.5 rounded-xl border border-zinc-800/80">
+                        <div class="flex justify-between items-baseline mb-2">
+                            <label class="text-xs font-semibold text-zinc-200">BPM & Subdivisão</label>
+                            <span id="valBpm" class="font-mono text-xs font-bold text-amber-400">80 BPM (750 ms)</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <input id="paramBpm" type="range" min="60" max="160" step="1" value="80" class="flex-1">
+                            <select id="paramSubdiv" class="bg-zinc-950 border border-zinc-700 rounded-lg px-2 py-1 text-[11px] font-mono text-cyan-300 focus:outline-none focus:border-cyan-500">
+                                <option value="1.0" selected>1/4 (Semínima)</option>
+                                <option value="0.75">1/8. (Pontuada)</option>
+                                <option value="0.5">1/8 (Colcheia)</option>
+                                <option value="0.333333">1/12 (Tercina)</option>
+                                <option value="0.25">1/16 (Semicolch.)</option>
+                            </select>
+                        </div>
+                        <p id="subdivHint" class="text-[10px] text-zinc-500 mt-1.5">Modo 2-Taps trava o tamanho exato do buffer na subdivisão (sem +1000 smp).</p>
+                    </div>
+
+                    <!-- Speed Multiplier -->
+                    <div class="bg-zinc-900/50 p-3.5 rounded-xl border border-zinc-800/80">
+                        <div class="flex justify-between items-baseline mb-2">
+                            <label class="text-xs font-semibold text-zinc-200">Speed Multiplier / Warp</label>
+                            <div class="flex items-center gap-1.5">
+                                <span id="valSpeed" class="font-mono text-xs font-bold text-amber-400">1.00x (-1 Oitava)</span>
+                                <button id="btnSnapOctave" class="px-1.5 py-0.5 rounded bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 font-mono text-[9px] font-bold border border-amber-500/30" title="Voltar para 1.00x (-1 Oitava)">1.0x</button>
+                            </div>
+                        </div>
+                        <input id="paramSpeed" type="range" min="0.25" max="2.00" step="0.01" value="1.00" class="w-full">
+                        <p class="text-[10px] text-zinc-500 mt-1.5"><code>0.5x</code> congela/estica | <code>1.0x</code> cai 1 oitava | <code>1.5x</code> quinta/warp.</p>
+                    </div>
+
+                    <!-- Feedback -->
+                    <div class="bg-zinc-900/50 p-3.5 rounded-xl border border-zinc-800/80">
+                        <div class="flex justify-between items-baseline mb-2">
+                            <label class="text-xs font-semibold text-zinc-200">Feedback (Cascata)</label>
+                            <span id="valFeedback" class="font-mono text-xs font-bold text-amber-400">65%</span>
+                        </div>
+                        <input id="paramFeedback" type="range" min="0" max="0.95" step="0.01" value="0.65" class="w-full">
+                        <p class="text-[10px] text-zinc-500 mt-1.5">Realimenta as repetições descendentes (-12st, -24st, -36st...).</p>
+                    </div>
+
+                    <!-- Dry/Wet Mix -->
+                    <div class="bg-zinc-900/50 p-3.5 rounded-xl border border-zinc-800/80">
+                        <div class="flex justify-between items-baseline mb-2">
+                            <label class="text-xs font-semibold text-zinc-200">Dry / Wet Mix</label>
+                            <span id="valDryWet" class="font-mono text-xs font-bold text-cyan-400">60% Wet</span>
+                        </div>
+                        <input id="paramDryWet" type="range" min="0" max="1" step="0.01" value="0.60" class="w-full cyan-slider">
+                        <p class="text-[10px] text-zinc-500 mt-1.5"><code>100% Wet</code> isola o sinal processado pelo buffer warp.</p>
+                    </div>
+
+                    <!-- Feedback HPF Cutoff -->
+                    <div class="bg-zinc-900/50 p-3.5 rounded-xl border border-zinc-800/80">
+                        <div class="flex justify-between items-baseline mb-2">
+                            <label class="text-xs font-semibold text-zinc-200">Feedback HPF (Limpa Grave)</label>
+                            <span id="valHpf" class="font-mono text-xs font-bold text-cyan-400">120 Hz</span>
+                        </div>
+                        <input id="paramHpf" type="range" min="40" max="400" step="5" value="120" class="w-full cyan-slider">
+                        <p class="text-[10px] text-zinc-500 mt-1.5">Evita que sub-oitavas acumuladas embolem o mix (Modo 2-Taps).</p>
+                    </div>
+
+                    <!-- Feedback LPF Cutoff -->
+                    <div class="bg-zinc-900/50 p-3.5 rounded-xl border border-zinc-800/80">
+                        <div class="flex justify-between items-baseline mb-2">
+                            <label class="text-xs font-semibold text-zinc-200">Feedback LPF (Escurecer)</label>
+                            <span id="valLpf" class="font-mono text-xs font-bold text-cyan-400">2200 Hz</span>
+                        </div>
+                        <input id="paramLpf" type="range" min="500" max="8000" step="50" value="2200" class="w-full cyan-slider">
+                        <p class="text-[10px] text-zinc-500 mt-1.5">Corta agudos e aliasing digital a cada repetição no loop.</p>
+                    </div>
+
+                    <!-- Feedback Drive / Saturation -->
+                    <div class="bg-zinc-900/50 p-3.5 rounded-xl border border-zinc-800/80">
+                        <div class="flex justify-between items-baseline mb-2">
+                            <label class="text-xs font-semibold text-zinc-200">Feedback Drive (tanh)</label>
+                            <span id="valDrive" class="font-mono text-xs font-bold text-amber-400">1.6x</span>
+                        </div>
+                        <input id="paramDrive" type="range" min="1.0" max="4.0" step="0.05" value="1.60" class="w-full">
+                        <p class="text-[10px] text-zinc-500 mt-1.5">Saturação suave que gera harmônicos audíveis nas oitavas graves.</p>
+                    </div>
+
+                    <!-- Contextual Control: Stereo Warp (2-Taps) OR Declick Window (1-Tap) -->
+                    <div id="boxStereoWarp" class="bg-zinc-900/50 p-3.5 rounded-xl border border-cyan-500/30">
+                        <div class="flex justify-between items-baseline mb-2">
+                            <label class="text-xs font-semibold text-cyan-300">Stereo Warp / Detune L-R</label>
+                            <span id="valStereoWarp" class="font-mono text-xs font-bold text-cyan-400">35%</span>
+                        </div>
+                        <input id="paramStereoWarp" type="range" min="0" max="1" step="0.01" value="0.35" class="w-full cyan-slider">
+                        <p class="text-[10px] text-zinc-500 mt-1.5">Desalinha fase e velocidade do canal R para largura estéreo.</p>
+                    </div>
+
+                    <div id="boxDeclick" class="hidden bg-zinc-900/50 p-3.5 rounded-xl border border-rose-500/30">
+                        <div class="flex justify-between items-baseline mb-2">
+                            <label class="text-xs font-semibold text-rose-300">Declick Window (1-Tap)</label>
+                            <span id="valDeclick" class="font-mono text-xs font-bold text-rose-400">5%</span>
+                        </div>
+                        <input id="paramDeclick" type="range" min="0" max="0.25" step="0.005" value="0.05" class="w-full">
+                        <p class="text-[10px] text-zinc-500 mt-1.5"><code>0%</code> mantém o clique cru original | Valores altos criam tremolo.</p>
+                    </div>
+
+                </div>
+
+                <!-- Master Volume -->
+                <div class="pt-2 border-t border-zinc-800 flex items-center justify-between gap-4">
+                    <span class="text-xs font-mono font-bold text-zinc-400">MASTER OUT</span>
+                    <input id="paramMaster" type="range" min="0" max="1" step="0.01" value="0.80" class="flex-1">
+                    <span id="valMaster" class="font-mono text-xs font-bold text-zinc-200 w-10 text-right">80%</span>
+                </div>
+            </section>
+
+            <!-- Live C++ Math Inspector -->
+            <section class="panel-glass rounded-2xl p-4 sm:p-5">
+                <h3 class="text-xs font-mono font-bold uppercase tracking-wider text-zinc-400 mb-2">
+                    4. Diagnóstico DSP em Tempo Real:
+                </h3>
+                <div id="mathInspectorBox" class="bg-zinc-950 rounded-xl p-3.5 border border-zinc-800 font-mono text-xs leading-relaxed text-zinc-300 space-y-1">
+                    <div class="text-cyan-400">// MODO MUSICAL 2-TAPS (DUAL-TAP TRIANGULAR CROSSFADE):</div>
+                    <div>
+                        <span class="text-amber-400">tap1</span> + <span class="text-cyan-400">tap2 (+180°)</span> → <span class="text-emerald-400">gain1 + gain2 = 1.00</span> (amplitude constante)
+                    </div>
+                    <div>
+                        <span class="text-zinc-400">Feedback Chain:</span> HPF(<span id="diagHpf">120</span>Hz) → LPF(<span id="diagLpf">2200</span>Hz) → tanhf(x * <span id="diagDrive">1.6</span>)
+                    </div>
+                    <div id="mathExplanationText" class="pt-1.5 text-[11px] font-sans text-zinc-400 border-t border-zinc-900 mt-1.5">
+                        Enquanto um ponteiro cruza a borda do buffer com volume zero, o outro está no centro com volume máximo. Resultado: <strong>oitava grave contínua, sem estalos e sem buracos rítmicos</strong>.
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <footer class="max-w-6xl w-full mx-auto mt-6 pt-4 border-t border-zinc-900 flex flex-col sm:flex-row justify-between items-center text-[11px] text-zinc-500 gap-2">
+        <span>DSP Engine: Web Audio API AudioWorklet (Hermite 4-pt + Dual-Tap Crossfade + Biquad HPF/LPF + Tanh Drive)</span>
+        <span>Baseado no código C++ ESP32-S3 TapeModel</span>
+    </footer>
+
+    <!-- AudioWorklet DSP Processor Code (Embedded via Blob) -->
+    <script id="dsp-worklet-code" type="javascript/worker">
+        const TWO_PI = 6.28318530718;
+
+        class DCBlocker {
+            constructor() {
+                this.x1 = 0.0;
+                this.y1 = 0.0;
+                this.R = 0.995;
+            }
+            process(input) {
+                const output = input - this.x1 + this.R * this.y1;
+                this.x1 = input;
+                this.y1 = output;
+                return output;
+            }
+            reset() {
+                this.x1 = 0.0;
+                this.y1 = 0.0;
+            }
+        }
+
+        class BiquadFilter {
+            constructor() {
+                this.b0 = 1; this.b1 = 0; this.b2 = 0;
+                this.a1 = 0; this.a2 = 0;
+                this.z1 = 0; this.z2 = 0;
+            }
+            setLowpass(fs, freq, Q) {
+                const safeFreq = Math.max(20, Math.min(freq, fs * 0.45));
+                const w0 = TWO_PI * safeFreq / fs;
+                const cosw0 = Math.cos(w0);
+                const sinw0 = Math.sin(w0);
+                const alpha = sinw0 / (2.0 * Q);
+                const a0 = 1.0 + alpha;
+                this.b0 = ((1.0 - cosw0) / 2.0) / a0;
+                this.b1 = (1.0 - cosw0) / a0;
+                this.b2 = this.b0;
+                this.a1 = (-2.0 * cosw0) / a0;
+                this.a2 = (1.0 - alpha) / a0;
+            }
+            setHighpass(fs, freq, Q) {
+                const safeFreq = Math.max(20, Math.min(freq, fs * 0.45));
+                const w0 = TWO_PI * safeFreq / fs;
+                const cosw0 = Math.cos(w0);
+                const sinw0 = Math.sin(w0);
+                const alpha = sinw0 / (2.0 * Q);
+                const a0 = 1.0 + alpha;
+                this.b0 = ((1.0 + cosw0) / 2.0) / a0;
+                this.b1 = -(1.0 + cosw0) / a0;
+                this.b2 = this.b0;
+                this.a1 = (-2.0 * cosw0) / a0;
+                this.a2 = (1.0 - alpha) / a0;
+            }
+            process(input) {
+                const output = this.b0 * input + this.z1;
+                this.z1 = this.b1 * input - this.a1 * output + this.z2;
+                this.z2 = this.b2 * input - this.a2 * output;
+                if (Math.abs(this.z1) < 1e-20) this.z1 = 0.0;
+                if (Math.abs(this.z2) < 1e-20) this.z2 = 0.0;
+                return output;
+            }
+            reset() {
+                this.z1 = 0; this.z2 = 0;
+            }
+        }
+
+        class DelayLine {
+            constructor(maxSamples) {
+                this.bufferSize = maxSamples;
+                this.buffer = new Float32Array(maxSamples);
+                this.writeIdx = 0;
+            }
+            clear() {
+                this.buffer.fill(0);
+            }
+            readHermite(delaySamples, activeSize) {
+                const maxD = activeSize - 4;
+                if (delaySamples < 2.0) delaySamples = 2.0;
+                if (delaySamples > maxD) delaySamples = maxD;
+
+                let readPos = this.writeIdx - delaySamples;
+                while (readPos < 0) readPos += activeSize;
+                while (readPos >= activeSize) readPos -= activeSize;
+
+                const idx1 = Math.floor(readPos);
+                const idx0 = (idx1 - 1 + activeSize) % activeSize;
+                const idx2 = (idx1 + 1) % activeSize;
+                const idx3 = (idx1 + 2) % activeSize;
+                const frac = readPos - idx1;
+
+                const y0 = this.buffer[idx0];
+                const y1 = this.buffer[idx1];
+                const y2 = this.buffer[idx2];
+                const y3 = this.buffer[idx3];
+
+                const c0 = y1;
+                const c1 = 0.5 * (y2 - y0);
+                const c2 = y0 - 2.5 * y1 + 2.0 * y2 - 0.5 * y3;
+                const c3 = 0.5 * (y3 - y0) + 1.5 * (y1 - y2);
+
+                return ((c3 * frac + c2) * frac + c1) * frac + c0;
+            }
+        }
+
+        // Port of MelodyGen from C++ with Manual Chord/Note Trigger
+        class MelodyGen {
+            constructor(fs) {
+                this.sampleRate = fs;
+                this.oscSin = 0.0; this.oscCos = 1.0;
+                this.sinInc = 0.0; this.cosInc = 1.0;
+                this.uniSin = 0.0; this.uniCos = 1.0;
+                this.uniSinInc = 0.0; this.uniCosInc = 1.0;
+                this.tri = 0.0;
+                this.normCounter = 0;
+
+                this.frequency = 440.0;
+                this.targetFrequency = 440.0;
+                this.timer = 0;
+                this.scale = 'MINOR';
+                this.rootKey = 4; // E
+                this.bpm = 80.0;
+                this.rhythmDensity = 0.65;
+
+                this.currentDurationSamples = 12000;
+                this.currentScaleDegree = 0;
+                this.currentOctave = 4;
+                this.frequencySmoothing = 0.998;
+
+                this.motif = [0, 2, 0, -1];
+                this.motifIndex = 0;
+                this.rhythmPattern = [1.0, 0.5, 0.5, 1.0];
+                this.rhythmIndex = 0;
+                this.phraseCounter = 0;
+                this.currentAccent = 1.0;
+
+                this.detune = 0.0;
+                this.timbre = 0.0;
+                this.timbreTarget = 0.0;
+                this.tone = 0.5;
+                this.toneState = 0.0;
+                this.drift = 1.0;
+
+                this.env = 0.0;
+                this.envTarget = 1.0;
+                this.envAttack = 0.005;
+                this.envRelease = 0.001;
+                this.stereoDrift = 0.0;
+                this.isResting = false;
+                this.enabled = true;
+                this.manualHoldSamples = 0;
+
+                this.pickNextNote();
+                this.isResting = false;
+                this.envTarget = 1.0;
+            }
+
+            mtof(midi) {
+                return 440.0 * Math.pow(2.0, (midi - 69) / 12.0);
+            }
+
+            getInterval(scale, degree) {
+                const scales = {
+                    MAJOR: [0, 2, 4, 5, 7, 9, 11],
+                    MINOR: [0, 2, 3, 5, 7, 8, 10],
+                    PENTATONIC_MIN: [0, 3, 5, 7, 10],
+                    BLUES: [0, 3, 5, 6, 7, 10],
+                    ENO: [0, 2, 3, 5, 7, 8, 10]
+                };
+                const intervals = scales[scale] || scales.MINOR;
+                const count = intervals.length;
+                let octaveOffset = 0;
+                let safeDegree = degree;
+
+                if (degree >= 0) {
+                    octaveOffset = Math.floor(degree / count) * 12;
+                    safeDegree = degree % count;
+                } else {
+                    octaveOffset = Math.floor((degree - count + 1) / count) * 12;
+                    safeDegree = degree % count;
+                    if (safeDegree < 0) safeDegree += count;
+                }
+                return intervals[safeDegree] + octaveOffset;
+            }
+
+            triggerManualPluck() {
+                this.isResting = false;
+                this.envTarget = 1.0;
+                this.env = 0.98;
+                this.envAttack = 0.05;
+                this.envRelease = 0.00028;
+                this.currentAccent = 1.0;
+                this.detune = 0.004; // Rich fifth/detune feel
+                this.timbre = 0.45;
+                this.timbreTarget = 0.2;
+                const degrees = [0, 2, 4, 7, 9];
+                const deg = degrees[Math.floor(Math.random() * degrees.length)];
+                const midi = this.rootKey + (4 * 12) + this.getInterval(this.scale, deg);
+                this.targetFrequency = this.mtof(midi);
+                this.frequency = this.targetFrequency;
+                this.updateOscIncrements();
+                this.timer = 0;
+                this.manualHoldSamples = Math.floor(this.sampleRate * 0.45);
+                this.currentDurationSamples = Math.floor((this.sampleRate * 60.0) / this.bpm);
+            }
+
+            updateOscIncrements() {
+                const pInc = TWO_PI * this.targetFrequency / this.sampleRate;
+                this.sinInc = Math.sin(pInc);
+                this.cosInc = Math.cos(pInc);
+                const uInc = pInc * (1.0 + this.detune);
+                this.uniSinInc = Math.sin(uInc);
+                this.uniCosInc = Math.cos(uInc);
+            }
+
+            pickNextNote() {
+                this.envTarget = 1.0;
+                this.isResting = false;
+                this.detune = (Math.random() - 0.5) * 0.003;
+                const rT = Math.random();
+                if (rT < 0.3) this.timbreTarget = 0.0;
+                else if (rT < 0.6) this.timbreTarget = 1.0;
+                else this.timbreTarget = Math.random();
+
+                this.tone = 0.45;
+                this.stereoDrift = (Math.random() - 0.5) * 0.35;
+                this.drift = 1.0 + Math.sin(Math.random() * 65535) * 0.002;
+
+                const samplesPerBeat = (this.sampleRate * 60.0) / this.bpm;
+
+                if (this.scale === 'ENO') {
+                    if (Math.random() > 0.55) {
+                        this.isResting = true;
+                        this.envTarget = 0.0;
+                        this.currentDurationSamples = Math.floor(samplesPerBeat * (1 + Math.floor(Math.random() * 2)));
+                        return;
+                    }
+                    this.currentAccent = 0.7;
+                    this.currentDurationSamples = Math.floor(samplesPerBeat * (2 + Math.floor(Math.random() * 3)));
+                    this.envAttack = 0.00012;
+                    this.envRelease = 0.00018;
+                    if (Math.random() < 0.4) this.currentScaleDegree += Math.random() > 0.5 ? 1 : -1;
+                    this.currentScaleDegree = Math.max(-3, Math.min(3, this.currentScaleDegree));
+                    this.currentOctave = 3 + Math.floor(Math.random() * 2);
+                    const midi = this.rootKey + (this.currentOctave * 12) + this.getInterval('MINOR', this.currentScaleDegree);
+                    this.targetFrequency = this.mtof(midi);
+                    this.updateOscIncrements();
+                    return;
+                }
+
+                if (this.rhythmIndex === 0 && (this.phraseCounter++ % 2 === 0)) {
+                    this.currentOctave = 3;
+                } else if (this.rhythmIndex === 0) {
+                    this.currentOctave = 4;
+                }
+
+                this.envAttack = (this.currentOctave <= 3) ? 0.002 : 0.008;
+                this.envRelease = 0.0015;
+
+                if (this.rhythmIndex >= 4) {
+                    this.rhythmIndex = 0;
+                    if (Math.random() < 0.25) {
+                        this.isResting = true;
+                        this.envTarget = 0.0;
+                        this.currentDurationSamples = Math.floor(samplesPerBeat * 1.5);
+                        return;
+                    }
+                    const p = Math.floor(Math.random() * 3);
+                    if (p === 0) this.rhythmPattern = [1.0, 1.0, 1.0, 1.0];
+                    else if (p === 1) this.rhythmPattern = [1.5, 0.5, 1.0, 1.0];
+                    else this.rhythmPattern = [0.5, 0.5, 0.5, 0.5];
+                }
+
+                let beatMult = this.rhythmPattern[this.rhythmIndex++] * this.rhythmDensity;
+                if (beatMult < 0.25) beatMult = 0.25;
+                this.currentDurationSamples = Math.floor(samplesPerBeat * beatMult);
+
+                const isStrongBeat = (this.rhythmIndex === 1 || this.rhythmIndex === 3);
+                if (!isStrongBeat && Math.random() < 0.45) {
+                    this.isResting = true;
+                    this.envTarget = 0.0;
+                    return;
+                }
+
+                if (this.motifIndex >= 4) this.motifIndex = 0;
+                let step = this.motif[this.motifIndex++];
+                const v = Math.random();
+                if (v < 0.2) step = -step;
+                else if (v > 0.8) this.motif[this.motifIndex % 4] = Math.floor(Math.random() * 5) - 2;
+
+                this.currentScaleDegree += step;
+                if (this.currentScaleDegree > 7) this.currentScaleDegree -= 7;
+                if (this.currentScaleDegree < -7) this.currentScaleDegree += 7;
+
+                this.currentAccent = isStrongBeat ? 1.0 : 0.72;
+                const noteInScale = this.getInterval(this.scale, this.currentScaleDegree);
+                let midiNote = this.rootKey + (this.currentOctave * 12) + noteInScale;
+                midiNote = Math.max(36, Math.min(84, midiNote));
+                this.targetFrequency = this.mtof(midiNote);
+                this.updateOscIncrements();
+            }
+
+            nextStereo(out) {
+                if (this.manualHoldSamples > 0) {
+                    this.manualHoldSamples--;
+                    if (this.manualHoldSamples === 0 && !this.enabled) {
+                        this.envTarget = 0.0;
+                    }
+                } else if (this.enabled) {
+                    if (++this.timer >= this.currentDurationSamples && this.currentDurationSamples > 0) {
+                        this.timer = 0;
+                        this.pickNextNote();
+                    }
+                } else {
+                    this.envTarget = 0.0;
+                }
+
+                if (this.isResting) this.envTarget = 0.0;
+
+                this.frequency = this.frequency * this.frequencySmoothing + this.targetFrequency * (1.0 - this.frequencySmoothing);
+
+                const newSin = this.oscSin * this.cosInc + this.oscCos * this.sinInc;
+                const newCos = this.oscCos * this.cosInc - this.oscSin * this.sinInc;
+                this.oscSin = newSin;
+                this.oscCos = newCos;
+
+                const newUniSin = this.uniSin * this.uniCosInc + this.uniCos * this.uniSinInc;
+                const newUniCos = this.uniCos * this.uniCosInc - this.uniSin * this.uniSinInc;
+                this.uniSin = newUniSin;
+                this.uniCos = newUniCos;
+
+                if (++this.normCounter > 1024) {
+                    this.normCounter = 0;
+                    const mag = Math.hypot(this.oscSin, this.oscCos);
+                    if (mag > 0) { this.oscSin /= mag; this.oscCos /= mag; }
+                    const uMag = Math.hypot(this.uniSin, this.uniCos);
+                    if (uMag > 0) { this.uniSin /= uMag; this.uniCos /= uMag; }
+                }
+
+                const triInc = (this.frequency * this.drift * 4.0) / this.sampleRate;
+                if (this.oscSin >= 0) this.tri += triInc; else this.tri -= triInc;
+                this.tri = Math.max(-1.0, Math.min(1.0, this.tri));
+
+                if (this.env < this.envTarget) this.env += this.envAttack * (this.envTarget - this.env);
+                else this.env += this.envRelease * (this.envTarget - this.env);
+
+                const shapedEnv = this.env * this.env;
+                if (shapedEnv <= 0.0001 && this.envTarget === 0.0) {
+                    out[0] = 0.0;
+                    out[1] = 0.0;
+                    return;
+                }
+
+                this.timbre += 0.0005 * (this.timbreTarget - this.timbre);
+                const s = 0.6 * this.oscSin + 0.4 * this.uniSin;
+                let outMono = (1.0 - this.timbre) * s + this.timbre * this.tri;
+                outMono = Math.max(-1.0, Math.min(1.0, outMono * 1.2));
+                this.toneState += this.tone * (outMono - this.toneState);
+                outMono = this.toneState;
+
+                const sig = outMono * shapedEnv * this.currentAccent * 0.55;
+                const panL = 1.0 + this.stereoDrift;
+                const panR = 1.0 - this.stereoDrift;
+                let norm = 1.0;
+                if (panL > 1.0) norm = 1.0 / panL;
+                if (panR > 1.0 && (1.0 / panR) < norm) norm = 1.0 / panR;
+
+                out[0] = sig * panL * norm;
+                out[1] = sig * panR * norm;
+            }
+        }
+
+        class AccidentalWarpProcessor extends AudioWorkletProcessor {
+            constructor() {
+                super();
+                this.fs = sampleRate;
+                const maxSamples = Math.ceil(this.fs * 2.5);
+                this.delayL = new DelayLine(maxSamples);
+                this.delayR = new DelayLine(maxSamples);
+
+                this.fbLpfL = new BiquadFilter();
+                this.fbLpfR = new BiquadFilter();
+                this.fbHpfL = new BiquadFilter();
+                this.fbHpfR = new BiquadFilter();
+                this.dcL = new DCBlocker();
+                this.dcR = new DCBlocker();
+
+                this.melody = new MelodyGen(this.fs);
+                this.synthOut = [0, 0];
+
+                // Parameters
+                this.isMusical2Tap = true;
+                this.bpm = 80.0;
+                this.subdiv = 1.0;
+                this.feedback = 0.65;
+                this.dryWet = 0.60;
+                this.speedMultiplier = 1.0;
+                this.declickAmount = 0.05;
+                this.hpfCutoff = 120.0;
+                this.lpfCutoff = 2200.0;
+                this.fbDrive = 1.60;
+                this.stereoWarp = 0.35;
+                this.masterVolume = 0.80;
+                this.rawIntCast = false;
+                this.useExternalInput = false;
+
+                this.writePos = 0.0;
+                this.recalcBufferTiming();
+
+                this.fbLpfL.setLowpass(this.fs, this.lpfCutoff, 0.707);
+                this.fbLpfR.setLowpass(this.fs, this.lpfCutoff, 0.707);
+                this.fbHpfL.setHighpass(this.fs, this.hpfCutoff, 0.707);
+                this.fbHpfR.setHighpass(this.fs, this.hpfCutoff, 0.707);
+
+                this.telemetryCounter = 0;
+
+                this.port.onmessage = (e) => {
+                    const msg = e.data;
+                    if (msg.type === 'param') {
+                        this[msg.key] = msg.value;
+                        if (msg.key === 'bpm' || msg.key === 'subdiv' || msg.key === 'isMusical2Tap') {
+                            this.melody.bpm = this.bpm;
+                            this.recalcBufferTiming();
+                        } else if (msg.key === 'lpfCutoff') {
+                            this.fbLpfL.setLowpass(this.fs, this.lpfCutoff, 0.707);
+                            this.fbLpfR.setLowpass(this.fs, this.lpfCutoff, 0.707);
+                        } else if (msg.key === 'hpfCutoff') {
+                            this.fbHpfL.setHighpass(this.fs, this.hpfCutoff, 0.707);
+                            this.fbHpfR.setHighpass(this.fs, this.hpfCutoff, 0.707);
+                        } else if (msg.key === 'synthEnabled') {
+                            this.melody.enabled = msg.value;
+                        } else if (msg.key === 'synthScale') {
+                            this.melody.scale = msg.value;
+                        } else if (msg.key === 'synthDensity') {
+                            this.melody.rhythmDensity = msg.value;
+                        }
+                    } else if (msg.type === 'pluck') {
+                        this.melody.triggerManualPluck();
+                    } else if (msg.type === 'clear') {
+                        this.delayL.clear();
+                        this.delayR.clear();
+                        this.fbLpfL.reset();
+                        this.fbLpfR.reset();
+                        this.fbHpfL.reset();
+                        this.fbHpfR.reset();
+                        this.dcL.reset();
+                        this.dcR.reset();
+                    }
+                };
+            }
+
+            recalcBufferTiming() {
+                const beatSamples = (60.0 / this.bpm) * this.fs * this.subdiv;
+                this.delaySamples = Math.max(64, Math.floor(beatSamples));
+                // In 1-Tap Original mode, keep the +1000 sample offset quirk;
+                // In 2-Tap Musical mode, lock delaySize strictly to rhythmic subdivision!
+                this.delaySize = this.isMusical2Tap ? this.delaySamples : (this.delaySamples + 1000);
+                if (this.writePos >= this.delaySize) this.writePos = 0.0;
+                if (this.delayL.writeIdx >= this.delaySize) this.delayL.writeIdx = 0;
+                if (this.delayR.writeIdx >= this.delaySize) this.delayR.writeIdx = 0;
+            }
+
+            process(inputs, outputs) {
+                const output = outputs[0];
+                if (!output || output.length === 0) return true;
+
+                const outL = output[0];
+                const outR = output[1] || output[0];
+                const input = inputs[0];
+                const hasExt = this.useExternalInput && input && input.length > 0;
+                const inL = hasExt ? input[0] : null;
+                const inR = hasExt ? (input[1] || input[0]) : null;
+
+                const dSize = this.delaySize;
+                const dSamples = this.delaySamples;
+                const speedMult = this.speedMultiplier;
+                const declick = this.declickAmount;
+                const fb = this.feedback;
+                const dw = this.dryWet;
+                const master = this.masterVolume;
+                const rawInt = this.rawIntCast;
+                const is2Tap = this.isMusical2Tap;
+                const drive = this.fbDrive;
+                const sWarp = this.stereoWarp;
+
+                let lastPhase1 = 0;
+                let lastPhase2 = 0.5;
+                let lastGain1 = 1.0;
+                let lastGain2 = 0.0;
+
+                for (let i = 0; i < outL.length; i++) {
+                    this.melody.nextStereo(this.synthOut);
+                    let dryL = this.synthOut[0];
+                    let dryR = this.synthOut[1];
+
+                    if (hasExt && inL) {
+                        dryL += inL[i];
+                        dryR += inR[i];
+                    }
+
+                    let wetL = 0.0;
+                    let wetR = 0.0;
+                    let fbL = 0.0;
+                    let fbR = 0.0;
+
+                    if (!is2Tap) {
+                        // ====================================================
+                        // MODE A: ORIGINAL 1-TAP BUG (Single Pointer + Window)
+                        // ====================================================
+                        let readPos = this.writePos + dSamples;
+                        while (readPos >= dSize) readPos -= dSize;
+                        while (readPos < 0.0) readPos += dSize;
+
+                        let relativeDelay = dSize - readPos;
+                        if (rawInt) relativeDelay = Math.floor(relativeDelay);
+
+                        wetL = this.delayL.readHermite(relativeDelay, dSize);
+                        wetR = this.delayR.readHermite(relativeDelay, dSize);
+
+                        const normPos = relativeDelay / dSize;
+                        let env = 1.0;
+                        if (declick > 0.0) {
+                            if (normPos < declick) env = normPos / declick;
+                            else if (normPos > (1.0 - declick)) env = (1.0 - normPos) / declick;
+                        }
+                        wetL *= env;
+                        wetR *= env;
+
+                        lastPhase1 = normPos;
+                        lastGain1 = env;
+
+                        fbL = this.fbLpfL.process(wetL) * fb;
+                        fbR = this.fbLpfR.process(wetR) * fb;
+                    } else {
+                        // ====================================================
+                        // MODE B: MUSICAL 2-TAPS (180° Dual-Tap Crossfade + Stereo)
+                        // ====================================================
+                        let basePos = this.writePos + dSamples;
+                        while (basePos >= dSize) basePos -= dSize;
+                        while (basePos < 0.0) basePos += dSize;
+
+                        const phase1 = basePos / dSize;
+                        const phase2 = (phase1 + 0.5) >= 1.0 ? (phase1 - 0.5) : (phase1 + 0.5);
+
+                        // Continuous triangular crossfade (gain1 + gain2 === 1.0)
+                        const gain1 = 1.0 - Math.abs(2.0 * phase1 - 1.0);
+                        const gain2 = 1.0 - Math.abs(2.0 * phase2 - 1.0);
+
+                        let relD1_L = (1.0 - phase1) * dSize;
+                        let relD2_L = (1.0 - phase2) * dSize;
+                        if (rawInt) {
+                            relD1_L = Math.floor(relD1_L);
+                            relD2_L = Math.floor(relD2_L);
+                        }
+
+                        wetL = this.delayL.readHermite(relD1_L, dSize) * gain1 +
+                               this.delayL.readHermite(relD2_L, dSize) * gain2;
+
+                        // Channel R stereo offset & micro-detune warp
+                        const rOffset = sWarp * 0.25;
+                        let phase1_R = phase1 + rOffset;
+                        if (phase1_R >= 1.0) phase1_R -= 1.0;
+                        const phase2_R = (phase1_R + 0.5) >= 1.0 ? (phase1_R - 0.5) : (phase1_R + 0.5);
+
+                        const gain1_R = 1.0 - Math.abs(2.0 * phase1_R - 1.0);
+                        const gain2_R = 1.0 - Math.abs(2.0 * phase2_R - 1.0);
+
+                        let relD1_R = (1.0 - phase1_R) * dSize;
+                        let relD2_R = (1.0 - phase2_R) * dSize;
+                        if (rawInt) {
+                            relD1_R = Math.floor(relD1_R);
+                            relD2_R = Math.floor(relD2_R);
+                        }
+
+                        wetR = this.delayR.readHermite(relD1_R, dSize) * gain1_R +
+                               this.delayR.readHermite(relD2_R, dSize) * gain2_R;
+
+                        lastPhase1 = 1.0 - phase1;
+                        lastPhase2 = 1.0 - phase2;
+                        lastGain1 = gain1;
+                        lastGain2 = gain2;
+
+                        // Musical Feedback Chain: HPF -> LPF -> Soft Saturation (tanh)
+                        let procL = this.fbLpfL.process(this.fbHpfL.process(wetL));
+                        let procR = this.fbLpfR.process(this.fbHpfR.process(wetR));
+
+                        if (drive > 1.01) {
+                            procL = Math.tanh(procL * drive) / drive;
+                            procR = Math.tanh(procR * drive) / drive;
+                        }
+
+                        fbL = procL * fb;
+                        fbR = procR * fb;
+                    }
+
+                    // Write to circular buffer with DC Blocker
+                    this.delayL.buffer[this.delayL.writeIdx] = this.dcL.process(dryL + fbL);
+                    this.delayL.writeIdx = (this.delayL.writeIdx + 1) % dSize;
+
+                    this.delayR.buffer[this.delayR.writeIdx] = this.dcR.process(dryR + fbR);
+                    this.delayR.writeIdx = (this.delayR.writeIdx + 1) % dSize;
+
+                    // Advance warped writePos counter
+                    this.writePos += speedMult;
+                    if (this.writePos >= dSize) this.writePos -= dSize;
+
+                    // Final Dry/Wet Mix
+                    outL[i] = (dryL * (1.0 - dw) + wetL * dw) * master;
+                    outR[i] = (dryR * (1.0 - dw) + wetR * dw) * master;
+                }
+
+                // Telemetry at ~60fps
+                this.telemetryCounter += outL.length;
+                if (this.telemetryCounter >= 750) {
+                    this.telemetryCounter = 0;
+                    const writeNorm = this.delayL.writeIdx / dSize;
+                    let r1Idx = this.delayL.writeIdx - (lastPhase1 * dSize);
+                    while (r1Idx < 0) r1Idx += dSize;
+                    let r2Idx = this.delayL.writeIdx - (lastPhase2 * dSize);
+                    while (r2Idx < 0) r2Idx += dSize;
+
+                    this.port.postMessage({
+                        type: 'telemetry',
+                        writeNorm,
+                        read1Norm: r1Idx / dSize,
+                        read2Norm: r2Idx / dSize,
+                        gain1: lastGain1,
+                        gain2: lastGain2,
+                        delaySamples: dSamples,
+                        delaySize: dSize,
+                        sampleRate: this.fs
+                    });
+                }
+
+                return true;
+            }
+        }
+
+        registerProcessor('accidental-warp-processor', AccidentalWarpProcessor);
+    </script>
+
+    <!-- Main UI & Visualization Logic -->
+    <script>
+        let audioCtx = null;
+        let workletNode = null;
+        let analyserNode = null;
+        let fileAudioEl = null;
+        let fileSourceNode = null;
+        let micStream = null;
+        let micSourceNode = null;
+
+        let isRunning = false;
+        let synthActive = true;
+        let activeSourceTab = 'synth';
+        let isMusical2Tap = true;
+
+        let visState = {
+            writeNorm: 0,
+            read1Norm: 0.5,
+            read2Norm: 0.0,
+            gain1: 1.0,
+            gain2: 0.0,
+            delaySamples: 36000,
+            delaySize: 36000,
+            sampleRate: 48000
+        };
+
+        // DOM Elements
+        const btnAudioEngine = document.getElementById('btnAudioEngine');
+        const engineLed = document.getElementById('engineLed');
+        const engineBtnText = document.getElementById('engineBtnText');
+        const btnPanic = document.getElementById('btnPanic');
+
+        // Init AudioContext & Worklet
+        async function initAudio() {
+            if (audioCtx) {
+                if (audioCtx.state === 'suspended') {
+                    await audioCtx.resume();
+                }
+                return;
+            }
+
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const workletCode = document.getElementById('dsp-worklet-code').textContent;
+            const blob = new Blob([workletCode], { type: 'application/javascript' });
+            const url = URL.createObjectURL(blob);
+
+            await audioCtx.audioWorklet.addModule(url);
+            workletNode = new AudioWorkletNode(audioCtx, 'accidental-warp-processor', {
+                numberOfInputs: 1,
+                numberOfOutputs: 1,
+                outputChannelCount: [2]
+            });
+
+            analyserNode = audioCtx.createAnalyser();
+            analyserNode.fftSize = 2048;
+            analyserNode.smoothingTimeConstant = 0.82;
+
+            workletNode.connect(analyserNode);
+            analyserNode.connect(audioCtx.destination);
+
+            workletNode.port.onmessage = (e) => {
+                if (e.data.type === 'telemetry') {
+                    Object.assign(visState, e.data);
+                }
+            };
+
+            document.getElementById('srReadout').textContent = `FS: ${audioCtx.sampleRate} Hz`;
+            syncAllParamsToWorklet();
+            isRunning = true;
+            updateEngineButtonUI();
+        }
+
+        function updateEngineButtonUI() {
+            if (isRunning && audioCtx && audioCtx.state === 'running') {
+                btnAudioEngine.className = 'flex-1 sm:flex-none px-4 py-2.5 rounded-xl font-semibold text-sm bg-zinc-800 hover:bg-zinc-700 text-emerald-400 border border-emerald-500/40 transition-all flex items-center justify-center gap-2';
+                engineLed.className = 'w-2.5 h-2.5 rounded-full bg-emerald-400 led-glow-emerald';
+                engineBtnText.textContent = 'ÁUDIO ATIVO';
+            } else {
+                btnAudioEngine.className = 'flex-1 sm:flex-none px-4 py-2.5 rounded-xl font-semibold text-sm bg-emerald-500 hover:bg-emerald-400 text-zinc-950 transition-all flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20';
+                engineLed.className = 'w-2.5 h-2.5 rounded-full bg-zinc-950';
+                engineBtnText.textContent = 'LIGAR MOTOR DE ÁUDIO';
+            }
+        }
+
+        btnAudioEngine.addEventListener('click', async () => {
+            if (!audioCtx) {
+                await initAudio();
+            } else if (audioCtx.state === 'running') {
+                await audioCtx.suspend();
+                isRunning = false;
+                updateEngineButtonUI();
+            } else {
+                await audioCtx.resume();
+                isRunning = true;
+                updateEngineButtonUI();
+            }
+        });
+
+        btnPanic.addEventListener('click', () => {
+            if (workletNode) {
+                workletNode.port.postMessage({ type: 'clear' });
+            }
+        });
+
+        function sendParam(key, value) {
+            if (workletNode) {
+                workletNode.port.postMessage({ type: 'param', key, value });
+            }
+        }
+
+        // Parameter Controls Binding
+        const paramBpm = document.getElementById('paramBpm');
+        const paramSubdiv = document.getElementById('paramSubdiv');
+        const paramSpeed = document.getElementById('paramSpeed');
+        const paramFeedback = document.getElementById('paramFeedback');
+        const paramDryWet = document.getElementById('paramDryWet');
+        const paramHpf = document.getElementById('paramHpf');
+        const paramLpf = document.getElementById('paramLpf');
+        const paramDrive = document.getElementById('paramDrive');
+        const paramStereoWarp = document.getElementById('paramStereoWarp');
+        const paramDeclick = document.getElementById('paramDeclick');
+        const paramMaster = document.getElementById('paramMaster');
+
+        function setArchitectureMode(musical2Tap) {
+            isMusical2Tap = musical2Tap;
+            sendParam('isMusical2Tap', isMusical2Tap);
+
+            const btn1 = document.getElementById('btnArch1Tap');
+            const btn2 = document.getElementById('btnArch2Tap');
+            const boxStereo = document.getElementById('boxStereoWarp');
+            const boxDeclick = document.getElementById('boxDeclick');
+            const tap2Legend = document.getElementById('tap2Legend');
+            const archSub = document.getElementById('archSubtitle');
+            const diagBox = document.getElementById('mathInspectorBox');
+
+            if (isMusical2Tap) {
+                btn2.className = 'px-3 py-2 rounded-lg text-xs font-mono font-bold bg-cyan-500 text-zinc-950 shadow-lg shadow-cyan-500/20 transition-all';
+                btn1.className = 'px-3 py-2 rounded-lg text-xs font-mono font-bold text-zinc-400 hover:text-zinc-200 transition-all';
+                boxStereo.classList.remove('hidden');
+                boxDeclick.classList.add('hidden');
+                tap2Legend.classList.remove('hidden');
+                archSub.textContent = '2-Taps Defasados 180° + Sincronia BPM + HPF/Drive';
+                archSub.className = 'text-xs font-semibold text-cyan-300';
+                diagBox.innerHTML = `
+                    <div class="text-cyan-400">// MODO MUSICAL 2-TAPS (DUAL-TAP TRIANGULAR CROSSFADE):</div>
+                    <div><span class="text-amber-400">tap1</span> + <span class="text-cyan-400">tap2 (+180°)</span> → <span class="text-emerald-400">gain1 + gain2 = 1.00</span> (amplitude constante)</div>
+                    <div><span class="text-zinc-400">Feedback Chain:</span> HPF(<span id="diagHpf">${paramHpf.value}</span>Hz) → LPF(<span id="diagLpf">${paramLpf.value}</span>Hz) → tanhf(x * <span id="diagDrive">${parseFloat(paramDrive.value).toFixed(1)}</span>)</div>
+                    <div class="pt-1.5 text-[11px] font-sans text-zinc-400 border-t border-zinc-900 mt-1.5">
+                        Enquanto um ponteiro cruza a borda do buffer com volume zero, o outro está no centro com volume máximo. Resultado: <strong>oitava grave contínua, sem estalos e sem buracos rítmicos</strong>.
+                    </div>
+                `;
+            } else {
+                btn1.className = 'px-3 py-2 rounded-lg text-xs font-mono font-bold bg-rose-500 text-zinc-950 shadow-lg shadow-rose-500/20 transition-all';
+                btn2.className = 'px-3 py-2 rounded-lg text-xs font-mono font-bold text-zinc-400 hover:text-zinc-200 transition-all';
+                boxStereo.classList.add('hidden');
+                boxDeclick.classList.remove('hidden');
+                tap2Legend.classList.add('hidden');
+                archSub.textContent = '1-Tap Original (+1000 smp offset • Sem HPF • Janela Única)';
+                archSub.className = 'text-xs font-semibold text-rose-300';
+                diagBox.innerHTML = `
+                    <div class="text-rose-400">// MODO ORIGINAL 1-TAP (ACIDENTE DE PONTEIRO DO C++):</div>
+                    <div><span class="text-emerald-400">writeIdx</span> (+1 smp) vs <span class="text-amber-400">readIdx</span> (+<span id="mathVelocityTag">${(1 + parseFloat(paramSpeed.value)).toFixed(2)}</span> smp/ciclo)</div>
+                    <div><span class="text-zinc-400">Buffer Size:</span> delaySamples + <span class="text-rose-400">1000 samples</span> (assíncrono)</div>
+                    <div class="pt-1.5 text-[11px] font-sans text-zinc-400 border-t border-zinc-900 mt-1.5">
+                        Leitura única que atropela a gravação periodicamente. Com <strong>Declick = 0%</strong> e <strong>Cast (Int)</strong>, reproduz fielmente os estalos e a aspereza digital do código original.
+                    </div>
+                `;
+            }
+            updateReadoutsAndMath();
+        }
+
+        document.getElementById('btnArch1Tap').addEventListener('click', () => setArchitectureMode(false));
+        document.getElementById('btnArch2Tap').addEventListener('click', () => setArchitectureMode(true));
+
+        function updateReadoutsAndMath() {
+            const bpm = parseFloat(paramBpm.value);
+            const subdiv = parseFloat(paramSubdiv.value);
+            const speed = parseFloat(paramSpeed.value);
+            const fb = parseFloat(paramFeedback.value);
+            const dw = parseFloat(paramDryWet.value);
+            const hpf = parseFloat(paramHpf.value);
+            const lpf = parseFloat(paramLpf.value);
+            const drive = parseFloat(paramDrive.value);
+            const sWarp = parseFloat(paramStereoWarp.value);
+            const declick = parseFloat(paramDeclick.value);
+            const master = parseFloat(paramMaster.value);
+
+            const ms = Math.round((60000 / bpm) * subdiv);
+            const sr = audioCtx ? audioCtx.sampleRate : 48000;
+            const smp = Math.floor(((60 / bpm) * subdiv) * sr);
+            const actualBuf = isMusical2Tap ? smp : (smp + 1000);
+
+            document.getElementById('valBpm').textContent = `${bpm} BPM (${ms} ms)`;
+            document.getElementById('bufferStatsReadout').textContent = `BUFFER: ${ms}ms (${actualBuf} smp)`;
+
+            const readVel = 1.0 + speed;
+            let pitchDesc = '';
+            if (Math.abs(speed - 0.5) < 0.03) pitchDesc = 'Freeze / Stutter';
+            else if (Math.abs(speed - 1.0) < 0.03) pitchDesc = '-1 Oitava';
+            else if (Math.abs(speed - 1.5) < 0.03) pitchDesc = 'Quinta / Warp';
+            else if (speed < 1.0) pitchDesc = 'Stretch / Lento';
+            else pitchDesc = 'Warp Acelerado';
+
+            document.getElementById('valSpeed').textContent = `${speed.toFixed(2)}x (${pitchDesc})`;
+            document.getElementById('readSpeedLabel').textContent = `${readVel.toFixed(2)}x`;
+            document.getElementById('pitchShiftReadout').textContent = `Velocidade Leitura: ${readVel.toFixed(2)}x`;
+
+            const crossHz = ((speed * sr) / actualBuf).toFixed(2);
+            document.getElementById('collisionReadout').textContent = `Cruzamentos/seg: ${crossHz} Hz`;
+
+            document.getElementById('valFeedback').textContent = `${Math.round(fb * 100)}%`;
+            document.getElementById('valDryWet').textContent = `${Math.round(dw * 100)}% Wet`;
+            document.getElementById('valHpf').textContent = `${hpf} Hz`;
+            document.getElementById('valLpf').textContent = `${lpf} Hz`;
+            document.getElementById('valDrive').textContent = `${drive.toFixed(2)}x`;
+            document.getElementById('valStereoWarp').textContent = `${Math.round(sWarp * 100)}%`;
+            document.getElementById('valDeclick').textContent = `${Math.round(declick * 100)}%`;
+            document.getElementById('valMaster').textContent = `${Math.round(master * 100)}%`;
+
+            const diagHpf = document.getElementById('diagHpf');
+            const diagLpf = document.getElementById('diagLpf');
+            const diagDrive = document.getElementById('diagDrive');
+            const mathVelTag = document.getElementById('mathVelocityTag');
+            if (diagHpf) diagHpf.textContent = hpf;
+            if (diagLpf) diagLpf.textContent = lpf;
+            if (diagDrive) diagDrive.textContent = drive.toFixed(1);
+            if (mathVelTag) mathVelTag.textContent = readVel.toFixed(2);
+        }
+
+        function syncAllParamsToWorklet() {
+            sendParam('isMusical2Tap', isMusical2Tap);
+            sendParam('bpm', parseFloat(paramBpm.value));
+            sendParam('subdiv', parseFloat(paramSubdiv.value));
+            sendParam('speedMultiplier', parseFloat(paramSpeed.value));
+            sendParam('feedback', parseFloat(paramFeedback.value));
+            sendParam('dryWet', parseFloat(paramDryWet.value));
+            sendParam('hpfCutoff', parseFloat(paramHpf.value));
+            sendParam('lpfCutoff', parseFloat(paramLpf.value));
+            sendParam('fbDrive', parseFloat(paramDrive.value));
+            sendParam('stereoWarp', parseFloat(paramStereoWarp.value));
+            sendParam('declickAmount', parseFloat(paramDeclick.value));
+            sendParam('masterVolume', parseFloat(paramMaster.value));
+            sendParam('synthEnabled', synthActive && activeSourceTab === 'synth');
+            sendParam('synthScale', document.getElementById('synthScale').value);
+            sendParam('synthDensity', parseFloat(document.getElementById('synthDensity').value));
+        }
+
+        paramBpm.addEventListener('input', () => { updateReadoutsAndMath(); sendParam('bpm', parseFloat(paramBpm.value)); });
+        paramSubdiv.addEventListener('change', () => { updateReadoutsAndMath(); sendParam('subdiv', parseFloat(paramSubdiv.value)); });
+        paramSpeed.addEventListener('input', () => { updateReadoutsAndMath(); sendParam('speedMultiplier', parseFloat(paramSpeed.value)); });
+        document.getElementById('btnSnapOctave').addEventListener('click', () => {
+            paramSpeed.value = 1.00;
+            updateReadoutsAndMath();
+            sendParam('speedMultiplier', 1.00);
+        });
+        paramFeedback.addEventListener('input', () => { updateReadoutsAndMath(); sendParam('feedback', parseFloat(paramFeedback.value)); });
+        paramDryWet.addEventListener('input', () => { updateReadoutsAndMath(); sendParam('dryWet', parseFloat(paramDryWet.value)); });
+        paramHpf.addEventListener('input', () => { updateReadoutsAndMath(); sendParam('hpfCutoff', parseFloat(paramHpf.value)); });
+        paramLpf.addEventListener('input', () => { updateReadoutsAndMath(); sendParam('lpfCutoff', parseFloat(paramLpf.value)); });
+        paramDrive.addEventListener('input', () => { updateReadoutsAndMath(); sendParam('fbDrive', parseFloat(paramDrive.value)); });
+        paramStereoWarp.addEventListener('input', () => { updateReadoutsAndMath(); sendParam('stereoWarp', parseFloat(paramStereoWarp.value)); });
+        paramDeclick.addEventListener('input', () => { updateReadoutsAndMath(); sendParam('declickAmount', parseFloat(paramDeclick.value)); });
+        paramMaster.addEventListener('input', () => { updateReadoutsAndMath(); sendParam('masterVolume', parseFloat(paramMaster.value)); });
+
+        // Hermite vs Raw Int Cast Toggle
+        const btnModeHermite = document.getElementById('btnModeHermite');
+        const btnModeRawInt = document.getElementById('btnModeRawInt');
+
+        function setRawIntMode(isRaw) {
+            sendParam('rawIntCast', isRaw);
+            if (isRaw) {
+                btnModeRawInt.className = 'px-2.5 py-1 rounded-lg text-[11px] font-mono font-bold bg-rose-500 text-zinc-950 transition-all';
+                btnModeHermite.className = 'px-2.5 py-1 rounded-lg text-[11px] font-mono font-bold text-zinc-400 hover:text-zinc-200 transition-all';
+            } else {
+                btnModeHermite.className = 'px-2.5 py-1 rounded-lg text-[11px] font-mono font-bold bg-amber-500 text-zinc-950 transition-all';
+                btnModeRawInt.className = 'px-2.5 py-1 rounded-lg text-[11px] font-mono font-bold text-zinc-400 hover:text-zinc-200 transition-all';
+            }
+        }
+
+        btnModeHermite.addEventListener('click', () => setRawIntMode(false));
+        btnModeRawInt.addEventListener('click', () => setRawIntMode(true));
+
+        // Presets
+        document.querySelectorAll('.preset-btn').forEach(btn => {
+            btn.addEventListener('click', async () => {
+                await initAudio();
+                const p = btn.dataset.preset;
+                document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('border-cyan-500/50', 'border-amber-500/50'));
+                btn.classList.add('border-cyan-500/50');
+
+                if (p === 'original') {
+                    setArchitectureMode(false);
+                    paramSubdiv.value = '1.0';
+                    paramSpeed.value = 1.00;
+                    paramFeedback.value = 0.55;
+                    paramDryWet.value = 0.60;
+                    paramDeclick.value = 0.00;
+                    paramLpf.value = 2000;
+                    setRawIntMode(true);
+                } else if (p === 'octaver2tap') {
+                    setArchitectureMode(true);
+                    paramSubdiv.value = '0.5';
+                    paramSpeed.value = 1.00;
+                    paramFeedback.value = 0.45;
+                    paramDryWet.value = 0.60;
+                    paramHpf.value = 110;
+                    paramLpf.value = 2600;
+                    paramDrive.value = 1.45;
+                    paramStereoWarp.value = 0.35;
+                    setRawIntMode(false);
+                } else if (p === 'subcascade') {
+                    setArchitectureMode(true);
+                    paramSubdiv.value = '1.0';
+                    paramSpeed.value = 1.00;
+                    paramFeedback.value = 0.80;
+                    paramDryWet.value = 0.65;
+                    paramHpf.value = 135;
+                    paramLpf.value = 1750;
+                    paramDrive.value = 2.15;
+                    paramStereoWarp.value = 0.55;
+                    setRawIntMode(false);
+                } else if (p === 'stutter16') {
+                    setArchitectureMode(true);
+                    paramSubdiv.value = '0.25';
+                    paramSpeed.value = 1.00;
+                    paramFeedback.value = 0.72;
+                    paramDryWet.value = 0.65;
+                    paramHpf.value = 150;
+                    paramLpf.value = 3400;
+                    paramDrive.value = 1.60;
+                    paramStereoWarp.value = 0.65;
+                    setRawIntMode(false);
+                } else if (p === 'freeze') {
+                    setArchitectureMode(true);
+                    paramSubdiv.value = '0.5';
+                    paramSpeed.value = 0.50;
+                    paramFeedback.value = 0.88;
+                    paramDryWet.value = 0.75;
+                    paramHpf.value = 120;
+                    paramLpf.value = 2800;
+                    paramDrive.value = 1.50;
+                    paramStereoWarp.value = 0.70;
+                    setRawIntMode(false);
+                }
+                updateReadoutsAndMath();
+                syncAllParamsToWorklet();
+            });
+        });
+
+        // Sound Source Tabs
+        const sourceTabs = document.querySelectorAll('.source-tab');
+        sourceTabs.forEach(tab => {
+            tab.addEventListener('click', async () => {
+                await initAudio();
+                activeSourceTab = tab.dataset.source;
+
+                sourceTabs.forEach(t => {
+                    t.className = 'source-tab py-2 px-2 rounded-lg text-xs font-semibold text-zinc-400 hover:text-zinc-200 transition-all';
+                });
+                tab.className = 'source-tab py-2 px-2 rounded-lg text-xs font-semibold bg-zinc-800 text-white transition-all';
+
+                document.getElementById('panel-synth').classList.toggle('hidden', activeSourceTab !== 'synth');
+                document.getElementById('panel-file').classList.toggle('hidden', activeSourceTab !== 'file');
+                document.getElementById('panel-mic').classList.toggle('hidden', activeSourceTab !== 'mic');
+
+                const badgeMap = { synth: 'MELODY GEN', file: 'AUDIO FILE', mic: 'LIVE INPUT' };
+                document.getElementById('activeSourceBadge').textContent = badgeMap[activeSourceTab];
+
+                sendParam('synthEnabled', synthActive && activeSourceTab === 'synth');
+                sendParam('useExternalInput', activeSourceTab !== 'synth');
+            });
+        });
+
+        // Synth Controls
+        const btnSynthToggle = document.getElementById('btnSynthToggle');
+        const synthLed = document.getElementById('synthLed');
+        const synthToggleText = document.getElementById('synthToggleText');
+
+        btnSynthToggle.addEventListener('click', async () => {
+            await initAudio();
+            synthActive = !synthActive;
+            sendParam('synthEnabled', synthActive);
+            if (synthActive) {
+                synthLed.className = 'w-2 h-2 rounded-full bg-cyan-400 led-glow-cyan';
+                synthToggleText.textContent = 'PAUSAR MELODIA GENERATIVA';
+            } else {
+                synthLed.className = 'w-2 h-2 rounded-full bg-zinc-600';
+                synthToggleText.textContent = 'INICIAR MELODIA GENERATIVA';
+            }
+        });
+
+        document.getElementById('btnPluck').addEventListener('click', async () => {
+            await initAudio();
+            if (workletNode) workletNode.port.postMessage({ type: 'pluck' });
+        });
+
+        document.getElementById('synthScale').addEventListener('change', (e) => {
+            sendParam('synthScale', e.target.value);
+        });
+
+        const synthDensity = document.getElementById('synthDensity');
+        synthDensity.addEventListener('input', () => {
+            const val = parseFloat(synthDensity.value);
+            document.getElementById('synthDensityVal').textContent = `${Math.round(val * 100)}%`;
+            sendParam('synthDensity', val);
+        });
+
+        // File Upload & Playback
+        const audioFileInput = document.getElementById('audioFileInput');
+        const btnFilePlay = document.getElementById('btnFilePlay');
+        const chkFileLoop = document.getElementById('chkFileLoop');
+
+        audioFileInput.addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            await initAudio();
+
+            document.getElementById('fileNameDisplay').textContent = file.name;
+            if (fileAudioEl) {
+                fileAudioEl.pause();
+            }
+
+            const objUrl = URL.createObjectURL(file);
+            fileAudioEl = new Audio(objUrl);
+            fileAudioEl.loop = chkFileLoop.checked;
+            fileAudioEl.crossOrigin = 'anonymous';
+
+            if (!fileSourceNode) {
+                fileSourceNode = audioCtx.createMediaElementSource(fileAudioEl);
+                fileSourceNode.connect(workletNode);
+            }
+
+            btnFilePlay.disabled = false;
+            btnFilePlay.className = 'flex-1 py-2 rounded-xl text-xs font-bold bg-cyan-500 text-zinc-950 transition-all';
+            fileAudioEl.play();
+            btnFilePlay.textContent = 'PAUSAR ÁUDIO';
+        });
+
+        btnFilePlay.addEventListener('click', async () => {
+            if (!fileAudioEl) return;
+            await initAudio();
+            if (fileAudioEl.paused) {
+                fileAudioEl.play();
+                btnFilePlay.textContent = 'PAUSAR ÁUDIO';
+            } else {
+                fileAudioEl.pause();
+                btnFilePlay.textContent = 'REPRODUZIR ÁUDIO';
+            }
+        });
+
+        chkFileLoop.addEventListener('change', () => {
+            if (fileAudioEl) fileAudioEl.loop = chkFileLoop.checked;
+        });
+
+        // Microphone Input
+        const btnMicEnable = document.getElementById('btnMicEnable');
+        btnMicEnable.addEventListener('click', async () => {
+            await initAudio();
+            if (micStream) {
+                micStream.getTracks().forEach(t => t.stop());
+                micStream = null;
+                btnMicEnable.textContent = 'ATIVAR ENTRADA DE MICROFONE';
+                return;
+            }
+            try {
+                micStream = await navigator.mediaDevices.getUserMedia({
+                    audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false }
+                });
+                micSourceNode = audioCtx.createMediaStreamSource(micStream);
+                micSourceNode.connect(workletNode);
+                btnMicEnable.textContent = 'DESATIVAR MICROFONE (ATIVO)';
+            } catch (err) {
+                btnMicEnable.textContent = 'ERRO AO ACESSAR MICROFONE';
+            }
+        });
+
+        // ====================================================================
+        // VISUALIZERS (Circular Ring Buffer + Oscilloscope/Spectrum)
+        // ====================================================================
+        const bufferCanvas = document.getElementById('bufferCanvas');
+        const bCtx = bufferCanvas.getContext('2d');
+        const scopeCanvas = document.getElementById('scopeCanvas');
+        const sCtx = scopeCanvas.getContext('2d');
+
+        function resizeCanvases() {
+            const dpr = window.devicePixelRatio || 1;
+            [bufferCanvas, scopeCanvas].forEach(c => {
+                const rect = c.getBoundingClientRect();
+                c.width = rect.width * dpr;
+                c.height = rect.height * dpr;
+            });
+        }
+        window.addEventListener('resize', resizeCanvases);
+        resizeCanvases();
+
+        let simWrite = 0;
+        const scopeData = new Float32Array(512);
+        const freqData = new Uint8Array(256);
+
+        function renderVisuals() {
+            const dpr = window.devicePixelRatio || 1;
+
+            // --- 1. Circular Buffer Ring Visualizer ---
+            const bw = bufferCanvas.width;
+            const bh = bufferCanvas.height;
+            bCtx.clearRect(0, 0, bw, bh);
+
+            const cx = bw * 0.5;
+            const cy = bh * 0.47;
+            const radius = Math.min(bw, bh) * 0.34;
+
+            let wNorm = visState.writeNorm;
+            let r1Norm = visState.read1Norm;
+            let r2Norm = visState.read2Norm;
+            let g1 = visState.gain1;
+            let g2 = visState.gain2;
+
+            if (!isRunning) {
+                const speed = parseFloat(paramSpeed.value);
+                simWrite = (simWrite + 0.004) % 1.0;
+                wNorm = simWrite;
+                const p1 = (simWrite * speed + 0.5) % 1.0;
+                const p2 = (p1 + 0.5) % 1.0;
+                r1Norm = (wNorm - (1.0 - p1) + 1.0) % 1.0;
+                r2Norm = (wNorm - (1.0 - p2) + 1.0) % 1.0;
+                g1 = 1.0 - Math.abs(2.0 * p1 - 1.0);
+                g2 = 1.0 - Math.abs(2.0 * p2 - 1.0);
+            }
+
+            // Outer ring track
+            bCtx.beginPath();
+            bCtx.arc(cx, cy, radius, 0, Math.PI * 2);
+            bCtx.strokeStyle = '#27272a';
+            bCtx.lineWidth = 10 * dpr;
+            bCtx.stroke();
+
+            const wAngle = wNorm * Math.PI * 2 - Math.PI / 2;
+            const r1Angle = r1Norm * Math.PI * 2 - Math.PI / 2;
+            const r2Angle = r2Norm * Math.PI * 2 - Math.PI / 2;
+
+            // Crossfade Gain Arcs around the outer ring
+            if (isMusical2Tap) {
+                // Tap 1 Gain Halo (Amber)
+                bCtx.beginPath();
+                bCtx.arc(cx, cy, radius + 9 * dpr, r1Angle - 0.35, r1Angle + 0.35);
+                bCtx.strokeStyle = `rgba(245, 158, 11, ${0.15 + g1 * 0.75})`;
+                bCtx.lineWidth = 4 * dpr;
+                bCtx.stroke();
+
+                // Tap 2 Gain Halo (Cyan)
+                bCtx.beginPath();
+                bCtx.arc(cx, cy, radius + 9 * dpr, r2Angle - 0.35, r2Angle + 0.35);
+                bCtx.strokeStyle = `rgba(6, 182, 212, ${0.15 + g2 * 0.75})`;
+                bCtx.lineWidth = 4 * dpr;
+                bCtx.stroke();
+            } else {
+                // De-click danger zone marker at index 0 (top of circle)
+                const declick = parseFloat(paramDeclick.value);
+                if (declick > 0) {
+                    const zSpan = declick * Math.PI * 2;
+                    bCtx.beginPath();
+                    bCtx.arc(cx, cy, radius, -Math.PI / 2 - zSpan, -Math.PI / 2 + zSpan);
+                    bCtx.strokeStyle = 'rgba(244, 63, 94, 0.45)';
+                    bCtx.lineWidth = 12 * dpr;
+                    bCtx.stroke();
+                }
+            }
+
+            // Index 0 tick
+            bCtx.beginPath();
+            bCtx.moveTo(cx, cy - radius - 8 * dpr);
+            bCtx.lineTo(cx, cy - radius + 8 * dpr);
+            bCtx.strokeStyle = '#52525b';
+            bCtx.lineWidth = 2 * dpr;
+            bCtx.stroke();
+
+            // Write Pointer (Emerald)
+            const wx = cx + Math.cos(wAngle) * radius;
+            const wy = cy + Math.sin(wAngle) * radius;
+            bCtx.beginPath();
+            bCtx.arc(wx, wy, 6 * dpr, 0, Math.PI * 2);
+            bCtx.fillStyle = '#10b981';
+            bCtx.fill();
+
+            // Read Pointer 1 (Amber - scaled by its crossfade gain)
+            const r1x = cx + Math.cos(r1Angle) * radius;
+            const r1y = cy + Math.sin(r1Angle) * radius;
+            bCtx.beginPath();
+            bCtx.arc(r1x, r1y, (4 + g1 * 4) * dpr, 0, Math.PI * 2);
+            bCtx.fillStyle = `rgba(245, 158, 11, ${0.35 + g1 * 0.65})`;
+            bCtx.fill();
+
+            // Read Pointer 2 (Cyan - 180° out of phase in 2-Tap mode)
+            if (isMusical2Tap) {
+                const r2x = cx + Math.cos(r2Angle) * radius;
+                const r2y = cy + Math.sin(r2Angle) * radius;
+                bCtx.beginPath();
+                bCtx.arc(r2x, r2y, (4 + g2 * 4) * dpr, 0, Math.PI * 2);
+                bCtx.fillStyle = `rgba(6, 182, 212, ${0.35 + g2 * 0.65})`;
+                bCtx.fill();
+
+                // Dashed chord connecting Tap 1 & Tap 2
+                bCtx.beginPath();
+                bCtx.moveTo(r1x, r1y);
+                bCtx.lineTo(r2x, r2y);
+                bCtx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
+                bCtx.setLineDash([4 * dpr, 4 * dpr]);
+                bCtx.lineWidth = 1.5 * dpr;
+                bCtx.stroke();
+                bCtx.setLineDash([]);
+            }
+
+            // Detect pointer collision (when Tap 1 overtakes Write)
+            const dist1 = Math.abs(wNorm - r1Norm);
+            const isColliding = dist1 < 0.03 || dist1 > 0.97;
+            if (isColliding) {
+                bCtx.beginPath();
+                bCtx.arc(r1x, r1y, 14 * dpr, 0, Math.PI * 2);
+                bCtx.strokeStyle = isMusical2Tap ? 'rgba(6, 182, 212, 0.7)' : '#f43f5e';
+                bCtx.lineWidth = 2 * dpr;
+                bCtx.stroke();
+            }
+
+            // Center Info
+            bCtx.fillStyle = isColliding ? (isMusical2Tap ? '#22d3ee' : '#fb7185') : '#a1a1aa';
+            bCtx.font = `bold ${10.5 * dpr}px "JetBrains Mono", monospace`;
+            bCtx.textAlign = 'center';
+            const statusText = isColliding
+                ? (isMusical2Tap ? 'CROSSFADE SUAVE' : 'SALTO DE PONTEIRO!')
+                : (isMusical2Tap ? '2-TAPS SYNC' : '1-TAP CRU');
+            bCtx.fillText(statusText, cx, cy - 5 * dpr);
+
+            bCtx.fillStyle = '#71717a';
+            bCtx.font = `${9.5 * dpr}px "JetBrains Mono", monospace`;
+            if (isMusical2Tap) {
+                bCtx.fillText(`T1:${Math.round(g1 * 100)}% | T2:${Math.round(g2 * 100)}%`, cx, cy + 11 * dpr);
+            } else {
+                bCtx.fillText(`${visState.delaySize} smp`, cx, cy + 11 * dpr);
+            }
+
+            // --- 2. Output Oscilloscope + Low-End Sub-Octave Spectrum ---
+            const sw = scopeCanvas.width;
+            const sh = scopeCanvas.height;
+            sCtx.clearRect(0, 0, sw, sh);
+
+            if (analyserNode && isRunning) {
+                // Background Low-End Frequency Bars (Sub-octaves 30Hz - 800Hz)
+                analyserNode.getByteFrequencyData(freqData);
+                const subBins = 48;
+                const barW = sw / subBins;
+                for (let b = 0; b < subBins; b++) {
+                    const mag = freqData[b] / 255.0;
+                    const barH = mag * sh * 0.85;
+                    sCtx.fillStyle = b < 12 ? 'rgba(245, 158, 11, 0.22)' : 'rgba(6, 182, 212, 0.14)';
+                    sCtx.fillRect(b * barW, sh - barH, barW - 1, barH);
+                }
+
+                // Foreground Waveform
+                analyserNode.getFloatTimeDomainData(scopeData);
+                sCtx.beginPath();
+                let peak = 0;
+                for (let i = 0; i < scopeData.length; i++) {
+                    const v = scopeData[i];
+                    if (Math.abs(v) > peak) peak = Math.abs(v);
+                    const x = (i / (scopeData.length - 1)) * sw;
+                    const y = (0.5 - v * 0.45) * sh;
+                    if (i === 0) sCtx.moveTo(x, y);
+                    else sCtx.lineTo(x, y);
+                }
+                sCtx.strokeStyle = isMusical2Tap ? '#22d3ee' : '#fb7185';
+                sCtx.lineWidth = 2 * dpr;
+                sCtx.stroke();
+
+                const clipEl = document.getElementById('clipIndicator');
+                if (peak > 0.98) {
+                    clipEl.textContent = 'CLIP!';
+                    clipEl.className = 'text-rose-400 font-bold';
+                } else {
+                    clipEl.textContent = `${(20 * Math.log10(Math.max(peak, 0.0001))).toFixed(1)} dB`;
+                    clipEl.className = 'text-zinc-500';
+                }
+            }
+
+            requestAnimationFrame(renderVisuals);
+        }
+
+        setArchitectureMode(true);
+        requestAnimationFrame(renderVisuals);
+    </script>
+</body>
+</html>

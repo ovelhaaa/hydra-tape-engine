@@ -33,7 +33,13 @@ const PARAM = {
   springDecay: 26,
   springDamping: 27,
   springMix: 28,
-  reset: 29
+  reset: 29,
+  warpActive: 30,
+  warpSpeed: 31,
+  warpGrainMs: 32,
+  warpStereo: 33,
+  warpFeedback: 34,
+  warpMode: 35
 };
 
 const ALL_PARAM_IDS = Object.keys(PARAM).filter(id => id !== 'reset');
@@ -42,7 +48,8 @@ const CONTINUOUS_PARAM_IDS = new Set([
   'flutterDepth', 'wowDepth', 'dropoutSeverity', 'drive', 'noise',
   'tapeSpeed', 'tapeAge', 'headBumpAmount', 'azimuthError',
   'flutterRate', 'wowRate', 'delayTimeMs', 'feedback', 'dryWet', 'delayWet',
-  'bpm', 'tone', 'springDecay', 'springDamping', 'springMix'
+  'bpm', 'tone', 'springDecay', 'springDamping', 'springMix',
+  'warpSpeed', 'warpGrainMs', 'warpStereo', 'warpFeedback'
 ]);
 
 const PARAM_METADATA = {
@@ -74,7 +81,13 @@ const PARAM_METADATA = {
   spring: { group: 'Reverb Toggle', engineParamId: PARAM.spring, layer: 'MessagePort (Toggle)' },
   springDecay: { group: 'Spring Length', engineParamId: PARAM.springDecay, layer: 'AudioParam (Smooth)' },
   springDamping: { group: 'Spring Filter', engineParamId: PARAM.springDamping, layer: 'AudioParam (Smooth)' },
-  springMix: { group: 'Reverb Mix', engineParamId: PARAM.springMix, layer: 'AudioParam (Smooth)' }
+  springMix: { group: 'Reverb Mix', engineParamId: PARAM.springMix, layer: 'AudioParam (Smooth)' },
+  warpActive: { group: 'Warp Mode', engineParamId: PARAM.warpActive, layer: 'MessagePort (Toggle)' },
+  warpSpeed: { group: 'Warp Pitch', engineParamId: PARAM.warpSpeed, layer: 'AudioParam (Smooth)' },
+  warpGrainMs: { group: 'Warp Grain', engineParamId: PARAM.warpGrainMs, layer: 'AudioParam (Smooth)' },
+  warpStereo: { group: 'Warp Stereo', engineParamId: PARAM.warpStereo, layer: 'AudioParam (Smooth)' },
+  warpFeedback: { group: 'Warp Feedback', engineParamId: PARAM.warpFeedback, layer: 'AudioParam (Smooth)' },
+  warpMode: { group: 'Warp Mode', engineParamId: PARAM.warpMode, layer: 'MessagePort (Int Enum)' }
 };
 
 const DEBUG_ROUNDTRIP = false;
@@ -477,11 +490,11 @@ resetBtn.addEventListener('click', () => {
   setActionFeedback('DSP buffers cleared', 'success');
 });
 
-// Setup listener bindings for all 28 configuration variables
+// Setup listener bindings for all 34 configuration variables
 ALL_PARAM_IDS.forEach((id) => {
   const el = document.getElementById(id);
   if (!el) return;
-  el.addEventListener('input', () => {
+  const onInput = () => {
     const value = el.type === 'checkbox' ? (el.checked ? 1 : 0) : Number(el.value);
     uiState[id] = value;
     if (CONTINUOUS_PARAM_IDS.has(id)) {
@@ -490,7 +503,9 @@ ALL_PARAM_IDS.forEach((id) => {
       post({ type: 'command', command: id, value });
     }
     requestUIFlush();
-  });
+  };
+  el.addEventListener('input', onInput);
+  el.addEventListener('change', onInput);
 });
 
 exportPresetBtn.addEventListener('click', () => {

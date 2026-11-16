@@ -52,7 +52,11 @@ const CONTINUOUS_PARAM_SPECS = [
   { name: 'p_20', defaultValue: 50, minValue: 0, maxValue: 100 },  // tone
   { name: 'p_26', defaultValue: 60, minValue: 0, maxValue: 100 },  // springDecay
   { name: 'p_27', defaultValue: 45, minValue: 0, maxValue: 100 },  // springDamping
-  { name: 'p_28', defaultValue: 50, minValue: 0, maxValue: 100 }   // springMix
+  { name: 'p_28', defaultValue: 50, minValue: 0, maxValue: 100 },  // springMix
+  { name: 'p_31', defaultValue: 1.0, minValue: 0, maxValue: 2.0 },  // warpSpeed
+  { name: 'p_32', defaultValue: 80, minValue: 20, maxValue: 400 },  // warpGrainMs
+  { name: 'p_33', defaultValue: 0.5, minValue: 0, maxValue: 1.0 },  // warpStereo
+  { name: 'p_34', defaultValue: 0, minValue: 0, maxValue: 100 }     // warpFeedback
 ];
 
 class HydraProcessor extends AudioWorkletProcessor {
@@ -221,7 +225,9 @@ class HydraProcessor extends AudioWorkletProcessor {
         freeze: 22,
         reverse: 23,
         reverseSmear: 24,
-        spring: 25
+        spring: 25,
+        warpActive: 30,
+        warpMode: 35
       };
 
       const paramId = commandMap[command];

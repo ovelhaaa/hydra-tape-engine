@@ -20,6 +20,7 @@ test_07_reverse_reverb.wav
 /build-web/
 /ci-reports/
 /artifacts/
+/tests/output/warp_ab_validation/
 
 # Local caches and editor backups
 __pycache__/

@@ -10,6 +10,9 @@ import sys
 import tempfile
 import wave
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "scripts"))
+import audio_provenance
+
 RATE = 48_000
 SECONDS = 12
 BLOCK = 128
@@ -242,6 +245,8 @@ def main():
     parser.add_argument("--excerpt-wav", type=Path)
     parser.add_argument("--characterize-only", action="store_true")
     parser.add_argument("--output-dir", type=Path, required=True)
+    parser.add_argument("--dsp-commit", help="Verified source revision used to build both runners")
+    parser.add_argument("--build-profile", help="Verified build profile for both runners")
     args = parser.parse_args()
     excerpt = load_excerpt(args.excerpt_wav) if args.excerpt_wav else None
     commands = {"native": [args.native.resolve()]}
@@ -250,6 +255,7 @@ def main():
     report = {"rate": RATE, "block": BLOCK, "scenes": [],
               "excerpt": args.excerpt_wav.name if excerpt is not None else "generated stereo performance"}
     args.output_dir.mkdir(parents=True, exist_ok=True)
+    renders = {}
     with tempfile.TemporaryDirectory() as directory:
         work = Path(directory)
         input_path = work / "input.f32"
@@ -274,9 +280,16 @@ def main():
                 folder.mkdir(exist_ok=True)
                 write_wav(folder / "dry.wav", stimulus)
                 for name, samples in audio.items():
-                    write_wav(folder / f"{name}.wav", samples)
+                    path = f"{scene.name}/{name}.wav"
+                    write_wav(args.output_dir / path, samples)
+                    renders[path] = audio_provenance.render(
+                        args.output_dir, path, scene.name, name, name, RATE, f"{scene.name}/dry.wav"
+                    )
                     record[f"{name}_peak"] = max(map(abs, samples))
             report["scenes"].append(record)
+    report["provenance"] = audio_provenance.manifest(
+        __file__, renders, dsp_commit=args.dsp_commit, build_profile=args.build_profile
+    )
     (args.output_dir / "review.json").write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
     print(f"Rendered {len(report['scenes'])} cases to {args.output_dir}")
 

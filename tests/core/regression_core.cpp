@@ -1,11 +1,13 @@
 #include "check.h"
 #include "hydra_dsp.h"
+#include "hydra_pcm.hpp"
 
 #include <algorithm>
 #include <array>
 #include <cmath>
 #include <cstdint>
 #include <iostream>
+#include <limits>
 #include <vector>
 
 namespace {
@@ -52,7 +54,7 @@ void configure_deterministic(hydra_dsp_handle* h) {
   p.springDecay = 60.0f;
   p.springDamping = 45.0f;
   p.springMix = 0.0f;
-  CHECK(hydra_dsp_set_params(h, &p) == 0);
+  CHECK(hydra_dsp_set_params_v1_3(h, &p) == 0);
   CHECK(hydra_dsp_commit(h) == 0);
 }
 
@@ -87,7 +89,7 @@ void configure_silent_wet_delay(hydra_dsp_handle* h, float drive = 0.0f) {
   p.springDecay = 0.0f;
   p.springDamping = 0.0f;
   p.springMix = 0.0f;
-  CHECK(hydra_dsp_set_params(h, &p) == 0);
+  CHECK(hydra_dsp_set_params_v1_3(h, &p) == 0);
   CHECK(hydra_dsp_commit(h) == 0);
 }
 
@@ -136,7 +138,7 @@ void configure_ping_pong_delay(hydra_dsp_handle* h, bool pingPong) {
   p.springDecay = 0.0f;
   p.springDamping = 0.0f;
   p.springMix = 0.0f;
-  CHECK(hydra_dsp_set_params(h, &p) == 0);
+  CHECK(hydra_dsp_set_params_v1_3(h, &p) == 0);
   CHECK(hydra_dsp_commit(h) == 0);
 }
 
@@ -382,7 +384,7 @@ void test_reenabled_delay_clears_magnetic_state() {
   disabled.delayTimeMs = 10.0f;
   disabled.activeHeads = 4.0f;
   disabled.tone = 100.0f;
-  CHECK(hydra_dsp_set_params(h, &disabled) == 0);
+  CHECK(hydra_dsp_set_params_v1_3(h, &disabled) == 0);
   CHECK(hydra_dsp_commit(h) == 0);
 
   configure_silent_wet_delay(h);
@@ -394,9 +396,26 @@ void test_reenabled_delay_clears_magnetic_state() {
   hydra_dsp_destroy(h);
 }
 
+void test_pcm32_pack_saturates_outside_integer_range() {
+  using hydra::dsp::saturatePcm32;
+  constexpr float edge = 2147483648.0f;
+  const float lastPositive = std::nextafter(edge, 0.0f);
+  const float infinity = std::numeric_limits<float>::infinity();
+  CHECK(saturatePcm32(lastPositive) == 2147483520);
+  CHECK(saturatePcm32(edge) == INT32_MAX);
+  CHECK(saturatePcm32(-edge) == INT32_MIN);
+  CHECK(saturatePcm32(std::nextafter(-edge, -infinity)) == INT32_MIN);
+  CHECK(saturatePcm32(42.75f) == 42);
+  CHECK(saturatePcm32(-42.75f) == -42);
+  CHECK(saturatePcm32(infinity) == INT32_MAX);
+  CHECK(saturatePcm32(-infinity) == INT32_MIN);
+  CHECK(saturatePcm32(std::numeric_limits<float>::quiet_NaN()) == 0);
+}
+
 }  // namespace
 
 int main() {
+  test_pcm32_pack_saturates_outside_integer_range();
   test_known_buffer();
   test_freeze_preserves_recording_until_released();
   test_reverse_stereo_channel_isolation();

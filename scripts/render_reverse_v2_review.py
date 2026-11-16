@@ -439,12 +439,6 @@ def main():
         print(f"Rendered {sc_id} -> RMSE={metrics['rmse']:.6f}, MaxAbs={metrics['max_abs']:.4f}")
 
     manifest.update(manifest_scenarios)
-    manifest["provenance"] = {
-        "git_commit": git_commit,
-        "hashes": provenance_hashes,
-        "sample_rate_hz": RATE,
-    }
-
     manifest_path = out_dir / "manifest.json"
     with manifest_path.open("w", encoding="utf-8") as f:
         json.dump(manifest, f, indent=2)

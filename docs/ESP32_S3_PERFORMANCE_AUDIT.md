@@ -183,3 +183,5 @@ Todos os critérios mínimos e de margem de segurança (`P99 < 2.032 µs` / `< 7
 - **Equivalência Native ↔ WASM (`tests/core/compare_native_wasm.py`):**
   - Baseline `main` (`e4cae43`): `max_abs = 7,436e-6 <= 1e-5` (PASS) e `RMSE = 2,49805e-6 > 1e-6` (FAIL pré-existente).
   - HEAD pós-otimização (`c9bc17e`): `max_abs = 8,479e-6 <= 1e-5` (PASS) e `RMSE = 2,74890e-6 > 1e-6` (FAIL pré-existente nos mesmos limites). Os thresholds originais foram mantidos inalterados.
+
+O [gate de release](ACCIDENTAL_WARP_RELEASE_GATE.md) reúne a revalidação posterior, os resultados do GitHub Actions e a auditoria de saída PCM e Freeverb.

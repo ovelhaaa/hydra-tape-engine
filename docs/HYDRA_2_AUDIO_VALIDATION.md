@@ -42,7 +42,7 @@ O TapeCore inclui saturação magnética, EQ, interpolação sobre outro anel, f
 
 ## Avaliação perceptual
 
-A escuta A/B está pendente. Use os WAVs do mesmo cenário, variante e entrada, com níveis ajustados para comparação. Registre diferenças de ritmo, textura granular, brilho, saturação, degradação das repetições e musicalidade da cascata. A verificação de pico, decaimento e NaN/Inf cobre propriedades numéricas.
+A escuta A/B está pendente. O [registro de escuta](ACCIDENTAL_WARP_LISTENING_SIGNOFF.md) lista os pares originais e com nível compensado, as métricas, os trechos para escuta e os campos de decisão.
 
 ## Web e ESP32-S3
 
@@ -56,4 +56,4 @@ Na investigação de desempenho subsequente (commits `16bc1cc` a `c9bc17e`, desc
 
 ## Native ↔ WASM
 
-O teste de equivalência usa `max_abs <= 1e-5` e `RMSE <= 1e-6` com thresholds preservados integralmente. No baseline `main` (`e4cae43`), a execução local em Release já media `max_abs = 7,436e-6` (PASS) e `RMSE = 2,49805e-6` (FAIL). Após as otimizações em `c9bc17e`, a execução local com o mesmo toolchain mede `max_abs = 8,479e-6 <= 1e-5` (PASS) e `RMSE = 2,74890e-6 > 1e-6` (FAIL pré-existente). Os resultados do GitHub Actions devem ser verificados no HEAD da PR separadamente.
+O teste de equivalência usa `max_abs <= 1e-5` e `RMSE <= 1e-6`. A `main` (`e4cae43`) e a PR (`d942a7b`) excederam ambos os limites no GitHub Actions. Na reprodução Windows, ambas excederam apenas o limite de RMSE. O [gate de release](ACCIDENTAL_WARP_RELEASE_GATE.md#ci-e-proposta-de-exceção) reúne os valores, a reprodução, o diagnóstico e a proposta de exceção para revisão humana.

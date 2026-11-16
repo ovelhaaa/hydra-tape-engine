@@ -10,6 +10,15 @@
 // Reimplemented for ESP32S3 SPIRAM
 // ============================================================================
 
+namespace {
+float* allocateFilterBuffer(int samples) {
+    const size_t bytes = samples * sizeof(float);
+    auto* buffer = static_cast<float*>(heap_caps_malloc(bytes, MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT));
+    if (!buffer) buffer = static_cast<float*>(heap_caps_malloc(bytes, MALLOC_CAP_SPIRAM));
+    return buffer;
+}
+}
+
 FreeverbEngine::FreeverbEngine(float fs) : sampleRate(fs), allocated(false) {
     sampleRateRatio = fs / 44100.0f; // Assuming tunings are for 44.1kHz
 
@@ -18,28 +27,17 @@ FreeverbEngine::FreeverbEngine(float fs) : sampleRate(fs), allocated(false) {
         int sizeL = (int)(combTuningsL[i] * sampleRateRatio);
         int sizeR = (int)((combTuningsL[i] + STEREO_SPREAD) * sampleRateRatio);
         
-        // Try Internal RAM first for speed/bandwidth
-        combLBuf[i] = (float*)heap_caps_malloc(sizeL * sizeof(float), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
-        if (!combLBuf[i]) {
-            combLBuf[i] = (float*)heap_caps_malloc(sizeL * sizeof(float), MALLOC_CAP_SPIRAM);
-        }
-
-        combRBuf[i] = (float*)heap_caps_malloc(sizeR * sizeof(float), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
-        if (!combRBuf[i]) {
-            combRBuf[i] = (float*)heap_caps_malloc(sizeR * sizeof(float), MALLOC_CAP_SPIRAM);
-        }
-
-        if (combLBuf[i] && combRBuf[i]) {
-            combL[i].setbuffer(combLBuf[i], sizeL);
-            combR[i].setbuffer(combRBuf[i], sizeR);
-            combL[i].mute();
-            combR[i].mute();
-        } else {
-            // Handle allocation failure
+        auto* bufferL = allocateFilterBuffer(sizeL);
+        auto* bufferR = allocateFilterBuffer(sizeR);
+        // Each filter owns its buffer, including when the other allocation fails.
+        combL[i].setbuffer(bufferL, sizeL);
+        combR[i].setbuffer(bufferR, sizeR);
+        if (!bufferL || !bufferR) {
             Serial.printf("FreeverbEngine: Failed to allocate comb buffer %d\n", i);
-            allocated = false;
             return;
         }
+        combL[i].mute();
+        combR[i].mute();
     }
 
     // Allocate buffers for allpasses
@@ -47,28 +45,16 @@ FreeverbEngine::FreeverbEngine(float fs) : sampleRate(fs), allocated(false) {
         int sizeL = (int)(allpassTuningsL[i] * sampleRateRatio);
         int sizeR = (int)((allpassTuningsL[i] + STEREO_SPREAD) * sampleRateRatio);
 
-        // Try Internal RAM first
-        allpassLBuf[i] = (float*)heap_caps_malloc(sizeL * sizeof(float), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
-        if (!allpassLBuf[i]) {
-            allpassLBuf[i] = (float*)heap_caps_malloc(sizeL * sizeof(float), MALLOC_CAP_SPIRAM);
-        }
-
-        allpassRBuf[i] = (float*)heap_caps_malloc(sizeR * sizeof(float), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
-        if (!allpassRBuf[i]) {
-            allpassRBuf[i] = (float*)heap_caps_malloc(sizeR * sizeof(float), MALLOC_CAP_SPIRAM);
-        }
-
-        if (allpassLBuf[i] && allpassRBuf[i]) {
-            allpassL[i].setbuffer(allpassLBuf[i], sizeL);
-            allpassR[i].setbuffer(allpassRBuf[i], sizeR);
-            allpassL[i].mute();
-            allpassR[i].mute();
-        } else {
-            // Handle allocation failure
+        auto* bufferL = allocateFilterBuffer(sizeL);
+        auto* bufferR = allocateFilterBuffer(sizeR);
+        allpassL[i].setbuffer(bufferL, sizeL);
+        allpassR[i].setbuffer(bufferR, sizeR);
+        if (!bufferL || !bufferR) {
             Serial.printf("FreeverbEngine: Failed to allocate allpass buffer %d\n", i);
-            allocated = false;
             return;
         }
+        allpassL[i].mute();
+        allpassR[i].mute();
     }
 
     allocated = true;
@@ -79,17 +65,6 @@ FreeverbEngine::FreeverbEngine(float fs) : sampleRate(fs), allocated(false) {
     setDry(70.0f);
     setWidth(100.0f);
     update();
-}
-
-FreeverbEngine::~FreeverbEngine() {
-    for (int i = 0; i < numcombs; ++i) {
-        if (combLBuf[i]) heap_caps_free(combLBuf[i]);
-        if (combRBuf[i]) heap_caps_free(combRBuf[i]);
-    }
-    for (int i = 0; i < numallpasses; ++i) {
-        if (allpassLBuf[i]) heap_caps_free(allpassLBuf[i]);
-        if (allpassRBuf[i]) heap_caps_free(allpassRBuf[i]);
-    }
 }
 
 void FreeverbEngine::mute() {

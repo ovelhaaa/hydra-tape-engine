@@ -1,11 +1,13 @@
 #include "check.h"
 #include "hydra_dsp.h"
+#include "hydra_pcm.hpp"
 
 #include <algorithm>
 #include <array>
 #include <cmath>
 #include <cstdint>
 #include <iostream>
+#include <limits>
 #include <vector>
 
 namespace {
@@ -394,9 +396,26 @@ void test_reenabled_delay_clears_magnetic_state() {
   hydra_dsp_destroy(h);
 }
 
+void test_pcm32_pack_saturates_outside_integer_range() {
+  using hydra::dsp::saturatePcm32;
+  constexpr float edge = 2147483648.0f;
+  const float lastPositive = std::nextafter(edge, 0.0f);
+  const float infinity = std::numeric_limits<float>::infinity();
+  CHECK(saturatePcm32(lastPositive) == 2147483520);
+  CHECK(saturatePcm32(edge) == INT32_MAX);
+  CHECK(saturatePcm32(-edge) == INT32_MIN);
+  CHECK(saturatePcm32(std::nextafter(-edge, -infinity)) == INT32_MIN);
+  CHECK(saturatePcm32(42.75f) == 42);
+  CHECK(saturatePcm32(-42.75f) == -42);
+  CHECK(saturatePcm32(infinity) == INT32_MAX);
+  CHECK(saturatePcm32(-infinity) == INT32_MIN);
+  CHECK(saturatePcm32(std::numeric_limits<float>::quiet_NaN()) == 0);
+}
+
 }  // namespace
 
 int main() {
+  test_pcm32_pack_saturates_outside_integer_range();
   test_known_buffer();
   test_freeze_preserves_recording_until_released();
   test_reverse_stereo_channel_isolation();

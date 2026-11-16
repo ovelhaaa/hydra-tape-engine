@@ -7,6 +7,7 @@
 #include "MelodyGen.h"
 #include "TapeDelay.h"
 #include "hydra_dsp_esp32_adapter.h"
+#include "hydra_pcm.hpp"
 #include "DisplayUI.h"
 #include "ParamDefs.h"
 
@@ -462,8 +463,8 @@ public:
   void writeStereoBlock(const float *bufL, const float *bufR, int32_t *buffer, int frames) {
     const float scale = masterVolume * (float)(2147483647.0 * 0.90f);
     for (int i = 0; i < frames; ++i) {
-      buffer[i * 2] = (int32_t)(bufL[i] * scale);
-      buffer[i * 2 + 1] = (int32_t)(bufR[i] * scale);
+      buffer[i * 2] = hydra::dsp::saturatePcm32(bufL[i] * scale);
+      buffer[i * 2 + 1] = hydra::dsp::saturatePcm32(bufR[i] * scale);
     }
   }
 };
@@ -513,6 +514,8 @@ void audioTask(void *parameter) {
     freeverb->updateParams(globalFreeverbParams);
     Serial.println("Audio Task: FreeverbEngine allocated (~100KB)");
   } else {
+    delete freeverb;
+    freeverb = nullptr;
     Serial.println("WARN: FreeverbEngine allocation failed - Freeverb unavailable");
   }
 

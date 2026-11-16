@@ -1020,12 +1020,6 @@ private:
     Allpass allpassL[numallpasses];
     Allpass allpassR[numallpasses];
     
-    // Pointers to buffers for manual allocation logic
-    float* combLBuf[numcombs];
-    float* combRBuf[numcombs];
-    float* allpassLBuf[numallpasses];
-    float* allpassRBuf[numallpasses];
-    
     float gain;
     float roomsize, roomsize1;
     float damp, damp1;
@@ -1039,7 +1033,8 @@ private:
 
 public:
     FreeverbEngine(float fs);
-    ~FreeverbEngine();
+    FreeverbEngine(const FreeverbEngine&) = delete;
+    FreeverbEngine& operator=(const FreeverbEngine&) = delete;
     
     void mute();
     void processStereo(float inL, float inR, float* outL, float* outR);

@@ -51,6 +51,15 @@ if(BUILD_TESTING)
   target_link_libraries(hydra_reverse_core_test PRIVATE hydra_dsp_core)
   add_test(NAME core_reverse_test COMMAND hydra_reverse_core_test)
 
+  add_executable(
+    hydra_transport_clock_test
+    tests/core/transport_clock_test.cpp
+    host/native/esp32/hydra_dsp_esp32_adapter.cpp
+  )
+  target_include_directories(hydra_transport_clock_test PRIVATE host/native/esp32)
+  target_link_libraries(hydra_transport_clock_test PRIVATE hydra_dsp_core)
+  add_test(NAME core_transport_clock_test COMMAND hydra_transport_clock_test)
+
   add_test(
     NAME web_param_ids
     COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/tests/core/web_param_ids_check.py

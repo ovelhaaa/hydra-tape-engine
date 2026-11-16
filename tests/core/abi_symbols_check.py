@@ -23,6 +23,14 @@ EXPECTED = {
     "hydra_dsp_set_params_sized",
     "hydra_dsp_commit",
     "hydra_dsp_process",
+    "hydra_dsp_transport_play",
+    "hydra_dsp_transport_pause",
+    "hydra_dsp_transport_stop",
+    "hydra_dsp_transport_reset",
+    "hydra_dsp_transport_locate",
+    "hydra_dsp_transport_set_bpm",
+    "hydra_dsp_transport_set_time_signature",
+    "hydra_dsp_transport_get_state",
 }
 
 

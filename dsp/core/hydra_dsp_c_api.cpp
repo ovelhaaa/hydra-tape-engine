@@ -346,6 +346,68 @@ int hydra_dsp_get_reverse_status(const hydra_dsp_handle* handle, float* out_effe
   return 0;
 }
 
+int hydra_dsp_transport_play(hydra_dsp_handle* handle) {
+  if (!handle || !handle->core) return -1;
+  handle->core->transport().play();
+  return 0;
+}
+
+int hydra_dsp_transport_pause(hydra_dsp_handle* handle) {
+  if (!handle || !handle->core) return -1;
+  handle->core->transport().pause();
+  return 0;
+}
+
+int hydra_dsp_transport_stop(hydra_dsp_handle* handle) {
+  if (!handle || !handle->core) return -1;
+  handle->core->transport().stop();
+  return 0;
+}
+
+int hydra_dsp_transport_reset(hydra_dsp_handle* handle) {
+  if (!handle || !handle->core) return -1;
+  handle->core->transport().reset();
+  return 0;
+}
+
+int hydra_dsp_transport_locate(hydra_dsp_handle* handle, double musical_pos, uint64_t sample_pos) {
+  if (!handle || !handle->core) return -1;
+  handle->core->transport().locate(musical_pos, sample_pos);
+  return 0;
+}
+
+int hydra_dsp_transport_set_bpm(hydra_dsp_handle* handle, float bpm) {
+  if (!handle || !handle->core) return -1;
+  handle->core->transport().setBpm(bpm);
+  handle->params.bpm = static_cast<float>(handle->core->transport().bpm());
+  handle->core->updateParams(handle->params);
+  return 0;
+}
+
+int hydra_dsp_transport_set_time_signature(hydra_dsp_handle* handle, uint32_t numerator, uint32_t denominator) {
+  if (!handle || !handle->core) return -1;
+  handle->core->transport().setTimeSignature(numerator, denominator);
+  return 0;
+}
+
+int hydra_dsp_transport_get_state(const hydra_dsp_handle* handle, hydra_dsp_transport_state* out_state) {
+  if (!handle || !handle->core || !out_state) return -1;
+  const auto& t = handle->core->transport();
+  out_state->bpm = static_cast<float>(t.bpm());
+  out_state->beat_phase = t.beatPhase();
+  out_state->bar_phase = t.barPhase();
+  out_state->musical_position = t.musicalPosition();
+  out_state->absolute_sample_position = t.absoluteSamplePosition();
+  out_state->transport_sample_position = t.transportSamplePosition();
+  out_state->beat_index = t.beatIndex();
+  out_state->bar_index = t.barIndex();
+  out_state->time_signature_numerator = t.timeSignatureNumerator();
+  out_state->time_signature_denominator = t.timeSignatureDenominator();
+  out_state->playing = t.isPlaying() ? 1 : 0;
+  out_state->generation = t.generation();
+  return 0;
+}
+
 HYDRA_DSP_IRAM int hydra_dsp_process(hydra_dsp_handle* handle,
                       const float* in_l,
                       const float* in_r,

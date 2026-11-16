@@ -44,27 +44,23 @@ flowchart LR
 ---
 
 ### FASE 2 — Reverse Tape Echo Correction (Mode B)
-- **Status:** PLANEJADO.
-- **Objetivos:**
-  - Eliminar o contador de reversão compartilhado assimetricamente entre canais estéreo.
-  - Implementar dois leitores reversos sobrepostos com janelamento suave (Hann ou senoidal) para mitigar descontinuidades na fronteira dos ciclos.
-  - Garantir inversão temporal estrita (ataques crescentes / swell) com preservação de fase estéreo.
-  - Sincronização da extensão da janela de reversão com o andamento musical.
-- **Critério de Saída:** Teste acústico de impulso confirmando rampa temporal invertida e ausência de estalos transitórios.
+- **Status:** CONCLUÍDO & MERGED na main em 16/11/2026 pela [PR #49](https://github.com/ovelhaaa/hydra-tape-engine/pull/49), commit de merge `4e39f60`.
+- **Entregáveis:** Leitores reversos sobrepostos com janelamento smoothstep e modos Rhythmic, Free e Legacy em `dsp/core/reverse_windows.hpp`. Aprovado por unanimidade (10/10) na escuta cega humana do Hydra Listening Lab ([docs/REVERSE_V2_LISTENING_SIGNOFF.md](REVERSE_V2_LISTENING_SIGNOFF.md)).
+- **Critério de Saída:** Validação de áudio, 100% de aprovação na escuta e integração completa na C-API 1.4, Web UI e firmware ESP32-S3.
 
 ---
 
-### FASE 3 — Tap Tempo Compartilhado & Sistema Rítmico de 3 Cabeças
-- **Status:** PLANEJADO.
-- **Objetivos:**
-  - Implementar o controlador de transporte e tap tempo centralizado (`hydra_tempo_controller`).
-  - Debounce inteligente de cliques manuais e cálculo de média ponderada com rejeição de outliers.
-  - Suporte a dois modos de transição de andamento:
-    - **Tape Slew:** Variação física de pitch idêntica à alteração de rotação do motor da fita.
-    - **Clean Sync:** Crossfade cruzado asséptico sem desvio acentuado de afinação.
-  - Subdivisões musicais por cabeça (1/4, 1/8, 1/8D, 1/8T, 1/16).
-  - Sincronização do período dos grãos do Warp e da janela do Reverse ao relógio mestre.
-- **Critério de Saída:** Transições de tempo estáveis sem cliques ou travamento do buffer.
+### FASE 3 — Global Transport Clock & Sincronização Musical
+- **Status:** IMPLEMENTADO & VALIDADO (branch `feature/global-transport-clock`).
+- **Objetivos Cumpridos:**
+  - Infraestrutura temporal centralizada com resolução sample-accurate e zero deriva acumulada (`dsp/core/global_transport_clock.hpp`).
+  - Suporte a 10 subdivisões rítmicas racionais, métricas 4/4, 3/4 e 6/8, e dinâmica completa de transporte (Play, Pause, Stop, Reset, Locate).
+  - Preservação estrita de fase musical durante variações de BPM em tempo real sem saltos ou cliques.
+  - Sincronização de fase do Reverse Tape Echo V2 em modo Rhythmic com alinhamento na grade global.
+  - Expansão da C-API para versão 1.5.0 com funções dedicadas de transporte preservando estritamente a ABI (116, 140 e 148 bytes).
+  - Telemetria integrada na Web UI (AudioWorklet + display visual de beats) e na CLI do ESP32-S3 (`tempo`, `transport play|pause|stop|reset|status`).
+  - Pacote de 10 cenários objetivos gerado no Hydra Listening Lab (`artifacts/listening-lab/gtc-reverse-sync/`).
+- **Critério de Saída:** 13/13 testes CTest aprovados, 21/21 testes web aprovados, zero regressão e documentação definitiva em [docs/GLOBAL_TRANSPORT_CLOCK.md](GLOBAL_TRANSPORT_CLOCK.md).
 
 ---
 

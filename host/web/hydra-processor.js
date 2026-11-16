@@ -122,8 +122,16 @@ class HydraProcessor extends AudioWorkletProcessor {
         reset: this.module.cwrap('hydra_dsp_reset', null, ['number']),
         setParameter: this.module.cwrap('hydra_dsp_set_parameter', 'number', ['number', 'number', 'number']),
         commit: this.module.cwrap('hydra_dsp_commit', 'number', ['number']),
-        process: this.module.cwrap('hydra_dsp_process', 'number', ['number', 'number', 'number', 'number', 'number', 'number'])
+        process: this.module.cwrap('hydra_dsp_process', 'number', ['number', 'number', 'number', 'number', 'number', 'number']),
+        transportPlay: this.module.cwrap('hydra_dsp_transport_play', 'number', ['number']),
+        transportPause: this.module.cwrap('hydra_dsp_transport_pause', 'number', ['number']),
+        transportStop: this.module.cwrap('hydra_dsp_transport_stop', 'number', ['number']),
+        transportReset: this.module.cwrap('hydra_dsp_transport_reset', 'number', ['number']),
+        transportSetBpm: this.module.cwrap('hydra_dsp_transport_set_bpm', 'number', ['number', 'number']),
+        transportGetState: this.module.cwrap('hydra_dsp_transport_get_state', 'number', ['number', 'number'])
       };
+
+      this.transportStatePtr = this.module._malloc(72);
 
       const handlePtr = this.module._malloc(4);
       const res = this.api.create(sampleRate, 4000.0, 16100.0, handlePtr);
@@ -183,7 +191,8 @@ class HydraProcessor extends AudioWorkletProcessor {
       if (this.inR) this.module._free(this.inR);
       if (this.outL) this.module._free(this.outL);
       if (this.outR) this.module._free(this.outR);
-      this.inL = this.inR = this.outL = this.outR = 0;
+      if (this.transportStatePtr) this.module._free(this.transportStatePtr);
+      this.inL = this.inR = this.outL = this.outR = this.transportStatePtr = 0;
     }
   }
 
@@ -239,6 +248,16 @@ class HydraProcessor extends AudioWorkletProcessor {
         this.api.commit(this.handle);
         this.port.postMessage({ type: 'stateAck', key: command, value });
       }
+    } else if (msg.type === 'transportPlay') {
+      if (this.api.transportPlay) this.api.transportPlay(this.handle);
+    } else if (msg.type === 'transportPause') {
+      if (this.api.transportPause) this.api.transportPause(this.handle);
+    } else if (msg.type === 'transportStop') {
+      if (this.api.transportStop) this.api.transportStop(this.handle);
+    } else if (msg.type === 'transportReset') {
+      if (this.api.transportReset) this.api.transportReset(this.handle);
+    } else if (msg.type === 'transportSetBpm') {
+      if (this.api.transportSetBpm) this.api.transportSetBpm(this.handle, Number(msg.bpm));
     }
   }
 
@@ -287,6 +306,40 @@ class HydraProcessor extends AudioWorkletProcessor {
       const dry = 1.0 - wet;
       outL[i] = dspL[i] * wet + inL[i] * dry;
       outR[i] = dspR[i] * wet + inR[i] * dry;
+    }
+
+    this.telemetryTick = (this.telemetryTick || 0) + 1;
+    if (this.telemetryTick >= 16 && this.transportStatePtr && this.api.transportGetState) {
+      this.telemetryTick = 0;
+      if (this.api.transportGetState(this.handle, this.transportStatePtr) === 0) {
+        const f32 = new Float32Array(this.module.HEAPF32.buffer, this.transportStatePtr, 3);
+        const bpm = f32[0];
+        const beatPhase = f32[1];
+        const barPhase = f32[2];
+        const f64 = new Float64Array(this.module.HEAPF64.buffer, this.transportStatePtr + 16, 1);
+        const musicalPos = f64[0];
+        const i32 = new Int32Array(this.module.HEAP32.buffer, this.transportStatePtr + 40, 8);
+        const beatIndex = i32[0];
+        const barIndex = i32[2];
+        const num = i32[4];
+        const den = i32[5];
+        const playing = i32[6];
+        const generation = i32[7];
+
+        this.port.postMessage({
+          type: 'transportTelemetry',
+          bpm,
+          beatPhase,
+          barPhase,
+          musicalPos,
+          beatIndex,
+          barIndex,
+          num,
+          den,
+          playing,
+          generation
+        });
+      }
     }
 
     return true;

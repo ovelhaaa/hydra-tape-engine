@@ -442,6 +442,45 @@ int hydra_dsp_transport_get_state(const hydra_dsp_handle* handle, hydra_dsp_tran
   return 0;
 }
 
+int hydra_dsp_tap_tempo_event(hydra_dsp_handle* handle, uint64_t timestamp_frames) {
+  if (!handle || !handle->core) return -1;
+  const int res = handle->core->tapTempoEvent(timestamp_frames);
+  if (res == 0) {
+    handle->params.bpm = static_cast<float>(handle->core->transport().bpm());
+  }
+  return res;
+}
+
+int hydra_dsp_tap_tempo_get_state(const hydra_dsp_handle* handle, hydra_dsp_tap_tempo_state* out_state) {
+  if (!handle || !handle->core || !out_state) return -1;
+  static_assert(sizeof(hydra_dsp_tap_tempo_state) == 32, "hydra_dsp_tap_tempo_state size must be 32 bytes");
+  static_assert(offsetof(hydra_dsp_tap_tempo_state, estimated_bpm) == 0, "estimated_bpm offset mismatch");
+  static_assert(offsetof(hydra_dsp_tap_tempo_state, applied_bpm) == 4, "applied_bpm offset mismatch");
+  static_assert(offsetof(hydra_dsp_tap_tempo_state, tap_count) == 8, "tap_count offset mismatch");
+  static_assert(offsetof(hydra_dsp_tap_tempo_state, confidence) == 12, "confidence offset mismatch");
+  static_assert(offsetof(hydra_dsp_tap_tempo_state, time_since_last_tap_s) == 16, "time_since_last_tap_s offset mismatch");
+  static_assert(offsetof(hydra_dsp_tap_tempo_state, is_timed_out) == 20, "is_timed_out offset mismatch");
+  static_assert(offsetof(hydra_dsp_tap_tempo_state, status) == 24, "status offset mismatch");
+  static_assert(offsetof(hydra_dsp_tap_tempo_state, last_rejection) == 28, "last_rejection offset mismatch");
+
+  const auto& tt = handle->core->tapTempo();
+  const uint64_t curPos = handle->core->transport().absoluteSamplePosition();
+  out_state->estimated_bpm = static_cast<float>(tt.estimatedBpm());
+  out_state->applied_bpm = static_cast<float>(tt.appliedBpm());
+  out_state->tap_count = tt.tapCount();
+  out_state->confidence = tt.confidence();
+  out_state->time_since_last_tap_s = tt.timeSinceLastTapSeconds(curPos);
+  out_state->is_timed_out = tt.isTimedOut() ? 1 : 0;
+  out_state->status = static_cast<int>(tt.status());
+  out_state->last_rejection = static_cast<int>(tt.lastRejection());
+  return 0;
+}
+
+int hydra_dsp_tap_tempo_reset(hydra_dsp_handle* handle) {
+  if (!handle || !handle->core) return -1;
+  return handle->core->tapTempoReset();
+}
+
 HYDRA_DSP_IRAM int hydra_dsp_process(hydra_dsp_handle* handle,
                       const float* in_l,
                       const float* in_r,

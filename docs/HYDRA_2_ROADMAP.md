@@ -8,9 +8,9 @@ Este documento estabelece o roteiro técnico detalhado para a evolução do Hydr
 flowchart LR
     F0["Fase 0<br/>Consolidação & Docs"] --> F1["Fase 1<br/>Accidental Warp V1"]
     F1 --> F2["Fase 2<br/>Reverse Correction"]
-    F2 --> F3["Fase 3<br/>Tap Tempo & 3-Head"]
-    F3 --> F4["Fase 4<br/>Warp Creative"]
-    F4 --> F5["Fase 5<br/>UX & Hardware MVP"]
+    F2 --> F3["Fase 3<br/>Global Transport Clock"]
+    F3 --> F4["Fase 4<br/>Tap Tempo V1"]
+    F4 --> F5["Fase 5<br/>Warp Creative & HW MVP"]
 ```
 
 ---
@@ -51,7 +51,7 @@ flowchart LR
 ---
 
 ### FASE 3 — Global Transport Clock & Sincronização Musical
-- **Status:** CONCLUÍDO & AUTORIZADO PARA MERGE NA MAIN (PR #50, branch `feature/global-transport-clock`).
+- **Status:** PHASE 3 — GLOBAL TRANSPORT CLOCK: MERGED na main em 16/11/2026 pela [PR #50](https://github.com/ovelhaaa/hydra-tape-engine/pull/50), commit de merge `77a5225`.
 - **Objetivos Cumpridos:**
   - Infraestrutura temporal centralizada com resolução sample-accurate e zero deriva acumulada (`dsp/core/global_transport_clock.hpp`).
   - Suporte a 10 subdivisões rítmicas racionais, métricas arbitrárias válidas ($1 \dots 32$ com denominadores em $\{2, 4, 8, 16\}$), e dinâmica completa de transporte (Play, Pause, Stop, Reset, Locate).
@@ -69,7 +69,29 @@ flowchart LR
 
 ---
 
-### FASE 4 — Expansão Criativa do Accidental Warp
+### FASE 4 — Tap Tempo V1 — Performance-Ready Musical Tempo Input
+- **Status:** IMPLEMENTADO & PENDENTE DE VALIDAÇÃO FINAL (PR dedicada na branch `feature/tap-tempo-v1`).
+- **Objetivos Cumpridos:**
+  - Componente independente de estimação de andamento em tempo real sem alocações dinâmicas (`dsp/core/tap_tempo.hpp`).
+  - Fonte única autoritativa de tempo musical preservada estritamente no Global Transport Clock (GTC), sem relógios paralelos nem reinicialização da posição musical.
+  - Janela de debounce de 80 ms rejeitando disparos espúrios sem perda da referência temporal do último toque válido.
+  - Estimativa robusta com histórico circular de até 5 intervalos, estimador por mediana e rejeição explícita de outliers relativos (> 20%).
+  - Resposta ágil no 2º tap (estimativa responsiva imediata), confirmação de consistência no 3º tap (travamento) e refinamento progressivo da confiança nos taps subsequentes.
+  - Reconhecimento dinâmico de mudanças intencionais de andamento (2 intervalos consecutivos confirmando a nova cadência e reancorando o histórico).
+  - Timeout de sessão de 3.0 segundos para separação de sequências de taps preservando o último BPM confirmado no GTC.
+  - Convenção explícita de 1 toque = 1 semínima (quarter-note) na faixa nominal estrita de 30 a 300 BPM (2000 ms a 200 ms).
+  - Expansão da C-API para versão 1.6.0 (`hydra_dsp_tap_tempo_event`, `hydra_dsp_tap_tempo_get_state`, `hydra_dsp_tap_tempo_reset`) preservando rigorosamente a ABI existente (116, 140 e 148 bytes).
+  - Integração Web completa (AudioWorklet + botão TAP com suporte a toque, mouse e atalho de teclado 'T', feedback de status `TAP TO SET TEMPO`, `ACQUIRING`, `TEMPO LOCKED`, `TAP REJECTED` e telemetria em tempo real).
+  - Interface CLI no ESP32-S3 (`tap`, `tap status`, `tap reset`) operando sem bloqueios no processamento de áudio.
+  - Arquitetura desacoplada e preparada para footswitch físico de contato momentâneo via GPIO/ISR.
+  - Suíte de 12 testes automatizados em C++ cobrindo todos os cenários funcionais e de borda, 24 testes web e 14/14 testes CTest passando em 100%.
+  - Pacote de 10 cenários objetivos gerado no Hydra Listening Lab (`artifacts/listening-lab/tap-tempo-v1/`).
+  - Validação física em placa real ESP32-S3 N16R8 @ 240 MHz com zero overruns e execução sustentada.
+- **Critério de Saída:** Validação técnica completa e aprovação em escuta humana no Hydra Listening Lab.
+
+---
+
+### FASE 5 — Expansão Criativa do Accidental Warp & MVP Final
 - **Status:** PLANEJADO.
 - **Sub-etapas:**
   1. **Warp Head:** Habilitar uma das 3 cabeças do tape delay clássico para operar simultaneamente como leitor Warp ascendente.

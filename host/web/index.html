@@ -448,6 +448,20 @@
               <span>Global BPM</span>
               <input type="number" id="transportBpmInput" min="30" max="300" step="1" value="120" style="width: 70px; padding: 0.2rem 0.4rem; background: var(--surface-low, #18181b); border: 1px solid var(--border, #27272a); color: var(--text-high, #f8fafc); border-radius: 4px; font-family: var(--font-mono);" />
             </div>
+            <!-- Tap Tempo Control -->
+            <div style="margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px solid var(--border, #27272a); display: flex; flex-direction: column; gap: 0.4rem;">
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span style="font-size: 0.75rem; font-weight: 600;">Tap Tempo</span>
+                <span class="badge" id="tapTempoStatusBadge" data-state="idle" style="font-size: 0.65rem;">TAP TO SET TEMPO</span>
+              </div>
+              <div style="display: flex; gap: 0.5rem; align-items: center;">
+                <button class="btn btn-primary" id="transportTapBtn" style="flex: 1; font-weight: 700; letter-spacing: 0.05rem;" title="Tap tempo (Hotkey: T)">TAP</button>
+                <button class="btn" id="transportTapResetBtn" style="font-size: 0.75rem; padding: 0.35rem 0.6rem;" title="Reset tap sequence">Reset</button>
+              </div>
+              <div id="tapTempoDetail" style="font-size: 0.7rem; font-family: var(--font-mono); color: var(--text-mid, #94a3b8); text-align: center;">
+                Est: -- BPM | Taps: 0 | Conf: 0%
+              </div>
+            </div>
           </div>
         </div>
 

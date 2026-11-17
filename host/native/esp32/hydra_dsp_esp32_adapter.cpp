@@ -157,3 +157,15 @@ int HydraDspEsp32Adapter::transportSetTimeSignature(uint32_t numerator, uint32_t
 int HydraDspEsp32Adapter::transportGetState(hydra_dsp_transport_state* outState) const {
   return handle_ ? hydra_dsp_transport_get_state(handle_, outState) : -1;
 }
+
+int HydraDspEsp32Adapter::tapTempoEvent(uint64_t timestamp_frames) {
+  return handle_ ? hydra_dsp_tap_tempo_event(handle_, timestamp_frames) : -1;
+}
+
+int HydraDspEsp32Adapter::tapTempoGetState(hydra_dsp_tap_tempo_state* outState) const {
+  return handle_ ? hydra_dsp_tap_tempo_get_state(handle_, outState) : -1;
+}
+
+int HydraDspEsp32Adapter::tapTempoReset() {
+  return handle_ ? hydra_dsp_tap_tempo_reset(handle_) : -1;
+}

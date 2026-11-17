@@ -31,6 +31,9 @@ EXPECTED = {
     "hydra_dsp_transport_set_bpm",
     "hydra_dsp_transport_set_time_signature",
     "hydra_dsp_transport_get_state",
+    "hydra_dsp_tap_tempo_event",
+    "hydra_dsp_tap_tempo_get_state",
+    "hydra_dsp_tap_tempo_reset",
 }
 
 

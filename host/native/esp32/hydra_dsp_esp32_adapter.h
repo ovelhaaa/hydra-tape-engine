@@ -30,6 +30,10 @@ public:
   int transportSetTimeSignature(uint32_t numerator, uint32_t denominator);
   int transportGetState(hydra_dsp_transport_state* outState) const;
 
+  int tapTempoEvent(uint64_t timestamp_frames = 0);
+  int tapTempoGetState(hydra_dsp_tap_tempo_state* outState) const;
+  int tapTempoReset();
+
 private:
   bool applyParams(const hydra_dsp_params_v1_4& params, bool force);
 

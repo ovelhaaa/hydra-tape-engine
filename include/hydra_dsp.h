@@ -13,7 +13,7 @@ enum { HYDRA_DSP_CHANNELS_STEREO = 2 };
 
 enum {
   HYDRA_DSP_API_VERSION_MAJOR = 1,
-  HYDRA_DSP_API_VERSION_MINOR = 5,
+  HYDRA_DSP_API_VERSION_MINOR = 6,
   HYDRA_DSP_API_VERSION_PATCH = 0,
   HYDRA_DSP_API_VERSION =
       (HYDRA_DSP_API_VERSION_MAJOR << 16) |
@@ -98,6 +98,31 @@ typedef struct hydra_dsp_transport_state {
   int playing;
   uint32_t generation;
 } hydra_dsp_transport_state;
+
+typedef enum hydra_dsp_tap_status {
+  HYDRA_DSP_TAP_STATUS_IDLE = 0,
+  HYDRA_DSP_TAP_STATUS_ACQUIRING = 1,
+  HYDRA_DSP_TAP_STATUS_LOCKED = 2,
+  HYDRA_DSP_TAP_STATUS_REJECTED = 3
+} hydra_dsp_tap_status;
+
+typedef enum hydra_dsp_tap_rejection_reason {
+  HYDRA_DSP_TAP_REJECT_NONE = 0,
+  HYDRA_DSP_TAP_REJECT_BOUNCE = 1,
+  HYDRA_DSP_TAP_REJECT_OUT_OF_RANGE = 2,
+  HYDRA_DSP_TAP_REJECT_OUT_OF_ORDER = 3
+} hydra_dsp_tap_rejection_reason;
+
+typedef struct hydra_dsp_tap_tempo_state {
+  float estimated_bpm;
+  float applied_bpm;
+  uint32_t tap_count;
+  float confidence;
+  float time_since_last_tap_s;
+  int is_timed_out;
+  int status;
+  int last_rejection;
+} hydra_dsp_tap_tempo_state;
 
 typedef struct hydra_dsp_params_v1_4 {
   hydra_dsp_params v1_3;
@@ -248,6 +273,10 @@ int hydra_dsp_transport_locate(hydra_dsp_handle* handle, double musical_pos, uin
 int hydra_dsp_transport_set_bpm(hydra_dsp_handle* handle, float bpm);
 int hydra_dsp_transport_set_time_signature(hydra_dsp_handle* handle, uint32_t numerator, uint32_t denominator);
 int hydra_dsp_transport_get_state(const hydra_dsp_handle* handle, hydra_dsp_transport_state* out_state);
+
+int hydra_dsp_tap_tempo_event(hydra_dsp_handle* handle, uint64_t timestamp_frames);
+int hydra_dsp_tap_tempo_get_state(const hydra_dsp_handle* handle, hydra_dsp_tap_tempo_state* out_state);
+int hydra_dsp_tap_tempo_reset(hydra_dsp_handle* handle);
 
 int hydra_dsp_process(hydra_dsp_handle* handle,
                       const float* in_l,

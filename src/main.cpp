@@ -1159,6 +1159,7 @@ void printHelp() {
   dualPrintln(" [GLOBAL TRANSPORT CLOCK]");
   dualPrintln("  tempo <bpm> : Set global BPM");
   dualPrintln("  transport <play|pause|stop|reset|status> : Transport controls");
+  dualPrintln("  tap [status|reset] : Tap tempo input, query status, or reset estimator");
   dualPrintln("");
   dualPrintln("  load <preset> : clean, lofi, dub, broken, warp_octave, warp_cascade");
   dualPrintln("  list          : Show Dashboard");
@@ -1613,28 +1614,36 @@ void executeCommand(String line) {
       dualPrintf("Warp Mode: %d\n", p_warpMode);
     }
     else if (cmd == "perf") {
-      printDspPerformanceStats();
+      valStr.trim();
+      if (valStr == "r" || valStr == "reset") {
+        portENTER_CRITICAL(&g_dsp_perf_mux);
+        g_dsp_perf = DspPerformance{};
+        portEXIT_CRITICAL(&g_dsp_perf_mux);
+        dualPrintln("DSP Performance Stats: RESET");
+      } else {
+        printDspPerformanceStats();
+      }
     }
 
     // --- SYSTEM & TRANSPORT ---
     else if (cmd == "bmp" || cmd == "bpm" || cmd == "tempo") {
       p_bpm = constrain(val, 20.0f, 300.0f);
-      if (tape) tape->transportSetBpm(p_bpm);
+      if (tape) tape->postTransportSetBpm(p_bpm);
       dualPrintf("Tempo: %.1f BPM\n", p_bpm);
     }
     else if (cmd == "transport") {
       valStr.trim();
       if (valStr == "play") {
-        if (tape) tape->transportPlay();
+        if (tape) tape->postTransportPlay();
         dualPrintln("Transport: PLAY");
       } else if (valStr == "pause") {
-        if (tape) tape->transportPause();
+        if (tape) tape->postTransportPause();
         dualPrintln("Transport: PAUSE");
       } else if (valStr == "stop") {
-        if (tape) tape->transportStop();
+        if (tape) tape->postTransportStop();
         dualPrintln("Transport: STOP");
       } else if (valStr == "reset") {
-        if (tape) tape->transportReset();
+        if (tape) tape->postTransportReset();
         dualPrintln("Transport: RESET to 0.0");
       } else if (valStr == "status" || valStr.length() == 0) {
         hydra_dsp_transport_state st{};
@@ -1656,6 +1665,59 @@ void executeCommand(String line) {
         }
       } else {
         dualPrintln("Usage: transport [play|pause|stop|reset|status]");
+      }
+    }
+    else if (cmd == "tap") {
+      const int64_t tapArrivalUs = esp_timer_get_time();
+      valStr.trim();
+      if (valStr == "reset") {
+        if (tape) tape->postTapTempoReset();
+        dualPrintln("Tap Tempo: RESET");
+      } else if (valStr == "status") {
+        hydra_dsp_tap_tempo_state st{};
+        if (tape && tape->tapTempoGetState(&st) == 0) {
+          dualPrintln("=== TAP TEMPO STATUS ===");
+          dualPrintf("  Current BPM         : %.1f\n", st.applied_bpm);
+          dualPrintf("  Estimated BPM       : %.1f\n", st.estimated_bpm);
+          dualPrintf("  Tap Count           : %u\n", st.tap_count);
+          dualPrintf("  Confidence          : %.2f (%s)\n", st.confidence,
+                     st.confidence >= 0.8f ? "HIGH" : (st.confidence >= 0.4f ? "MEDIUM" : "LOW"));
+          const char* statusStr = "IDLE";
+          if (st.status == HYDRA_DSP_TAP_STATUS_ACQUIRING) statusStr = "ACQUIRING";
+          else if (st.status == HYDRA_DSP_TAP_STATUS_LOCKED) statusStr = "LOCKED";
+          else if (st.status == HYDRA_DSP_TAP_STATUS_REJECTED) statusStr = "REJECTED";
+          dualPrintf("  Sequence State      : %s%s\n", statusStr, st.is_timed_out ? " (TIMED OUT)" : "");
+          if (st.time_since_last_tap_s >= 0.0f) {
+            dualPrintf("  Time Since Last Tap : %.2f s\n", st.time_since_last_tap_s);
+          }
+        } else {
+          dualPrintln("Tap Tempo: Not initialized");
+        }
+      } else if (valStr.length() == 0) {
+        if (tape) {
+          const bool queued = tape->postTapTempoEvent(0, tapArrivalUs);
+          if (!queued) {
+            dualPrintln("[TAP REJECTED] Command queue overflow");
+          } else {
+            vTaskDelay(pdMS_TO_TICKS(4));
+            hydra_dsp_tap_tempo_state st{};
+            tape->tapTempoGetState(&st);
+            if (st.status != HYDRA_DSP_TAP_STATUS_REJECTED) {
+              p_bpm = st.applied_bpm;
+              dualPrintf("[TAP #%u] Est: %.1f BPM | Applied: %.1f BPM | Conf: %.2f (%s)\n",
+                         st.tap_count, st.estimated_bpm, st.applied_bpm, st.confidence,
+                         st.status == HYDRA_DSP_TAP_STATUS_LOCKED ? "LOCKED" : "ACQUIRING");
+            } else {
+              const char* reason = "UNKNOWN";
+              if (st.last_rejection == HYDRA_DSP_TAP_REJECT_BOUNCE) reason = "BOUNCE (<80ms)";
+              else if (st.last_rejection == HYDRA_DSP_TAP_REJECT_OUT_OF_RANGE) reason = "OUT OF RANGE (30-300 BPM)";
+              else if (st.last_rejection == HYDRA_DSP_TAP_REJECT_OUT_OF_ORDER) reason = "OUT OF ORDER";
+              dualPrintf("[TAP REJECTED] Reason: %s\n", reason);
+            }
+          }
+        }
+      } else {
+        dualPrintln("Usage: tap [status|reset]");
       }
     }
     else if (cmd == "load")

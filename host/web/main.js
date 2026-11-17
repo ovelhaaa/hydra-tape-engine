@@ -546,6 +546,32 @@ function updateTransportUI(data) {
   if (bpmInputEl && document.activeElement !== bpmInputEl) {
     bpmInputEl.value = Math.round(data.bpm);
   }
+
+  if (data.tapTempo) {
+    const tt = data.tapTempo;
+    const badge = document.getElementById('tapTempoStatusBadge');
+    const detail = document.getElementById('tapTempoDetail');
+    if (badge) {
+      if (tt.status === 3) {
+        badge.textContent = 'TAP REJECTED';
+        badge.setAttribute('data-state', 'error');
+      } else if (tt.status === 2) {
+        badge.textContent = 'TEMPO LOCKED';
+        badge.setAttribute('data-state', 'success');
+      } else if (tt.status === 1) {
+        badge.textContent = 'ACQUIRING';
+        badge.setAttribute('data-state', 'warning');
+      } else {
+        badge.textContent = 'TAP TO SET TEMPO';
+        badge.setAttribute('data-state', 'idle');
+      }
+    }
+    if (detail) {
+      const confPct = Math.round((tt.confidence || 0) * 100);
+      const estStr = tt.estimatedBpm > 0 ? tt.estimatedBpm.toFixed(1) : '--';
+      detail.textContent = `Est: ${estStr} BPM | Taps: ${tt.tapCount} | Conf: ${confPct}%`;
+    }
+  }
 }
 
 const transportPlayBtn = document.getElementById('transportPlayBtn');
@@ -553,6 +579,42 @@ const transportPauseBtn = document.getElementById('transportPauseBtn');
 const transportStopBtn = document.getElementById('transportStopBtn');
 const transportResetBtn = document.getElementById('transportResetBtn');
 const transportBpmInput = document.getElementById('transportBpmInput');
+const transportTapBtn = document.getElementById('transportTapBtn');
+const transportTapResetBtn = document.getElementById('transportTapResetBtn');
+
+function triggerTapTempo() {
+  post({ type: 'tapTempoEvent', timestampFrames: 0 });
+  if (transportTapBtn) {
+    transportTapBtn.style.transform = 'scale(0.95)';
+    setTimeout(() => {
+      if (transportTapBtn) transportTapBtn.style.transform = '';
+    }, 80);
+  }
+}
+
+if (transportTapBtn) {
+  transportTapBtn.addEventListener('pointerdown', (e) => {
+    e.preventDefault();
+    triggerTapTempo();
+  });
+}
+
+if (transportTapResetBtn) {
+  transportTapResetBtn.addEventListener('click', () => {
+    post({ type: 'tapTempoReset' });
+    setStatus('Tap Tempo: Reset estimator', 'info');
+  });
+}
+
+window.addEventListener('keydown', (e) => {
+  if (e.repeat) return;
+  const tag = document.activeElement ? document.activeElement.tagName : '';
+  if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+  if (e.key === 't' || e.key === 'T') {
+    e.preventDefault();
+    triggerTapTempo();
+  }
+});
 
 if (transportPlayBtn) {
   transportPlayBtn.addEventListener('click', () => {

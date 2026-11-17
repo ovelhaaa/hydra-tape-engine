@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include "global_transport_clock.hpp"
+#include "tap_tempo.hpp"
 
 namespace hydra::dsp {
 
@@ -61,6 +62,12 @@ public:
   float maxHistoryMs() const;
   GlobalTransportClock& transport();
   const GlobalTransportClock& transport() const;
+  TapTempo& tapTempo();
+  const TapTempo& tapTempo() const;
+  static constexpr uint64_t kTapTempoUseCurrentTime = UINT64_MAX;
+  int tapTempoEvent(uint64_t timestamp_frames = kTapTempoUseCurrentTime);
+  int tapTempoEventNow();
+  int tapTempoReset();
   float process(float input);
   void processStereo(float inL, float inR, float* outL, float* outR);
   void processStereoBlock(const float* inL, const float* inR, float* outL, float* outR, uint32_t frames);

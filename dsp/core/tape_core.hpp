@@ -64,7 +64,9 @@ public:
   const GlobalTransportClock& transport() const;
   TapTempo& tapTempo();
   const TapTempo& tapTempo() const;
-  int tapTempoEvent(uint64_t timestamp_frames);
+  static constexpr uint64_t kTapTempoUseCurrentTime = UINT64_MAX;
+  int tapTempoEvent(uint64_t timestamp_frames = kTapTempoUseCurrentTime);
+  int tapTempoEventNow();
   int tapTempoReset();
   float process(float input);
   void processStereo(float inL, float inR, float* outL, float* outR);

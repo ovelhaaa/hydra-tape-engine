@@ -454,22 +454,26 @@ const TapTempo& TapeCore::tapTempo() const { return impl_->tapTempo; }
 int TapeCore::tapTempoEvent(uint64_t timestamp_frames) {
   if (!impl_) return -1;
   const uint64_t currentSamplePos = impl_->transportClock.absoluteSamplePosition();
-  const uint64_t ts = (timestamp_frames == 0) ? currentSamplePos : timestamp_frames;
+  const uint64_t ts = (timestamp_frames == kTapTempoUseCurrentTime || (timestamp_frames == 0 && currentSamplePos > 0))
+                          ? currentSamplePos
+                          : timestamp_frames;
 
   const uint64_t maxFutureFrames = static_cast<uint64_t>(impl_->sampleRate * 2.0);
   if (currentSamplePos > 0 && ts > currentSamplePos + maxFutureFrames) {
     return -1;
   }
 
-  const bool accepted = impl_->tapTempo.recordTap(ts);
-  if (accepted && (impl_->tapTempo.status() == TapTempoStatus::Acquiring ||
-                   impl_->tapTempo.status() == TapTempoStatus::Locked)) {
-    const double newBpm = impl_->tapTempo.appliedBpm();
+  const TapResult result = impl_->tapTempo.recordTap(ts);
+  if (result.tempoUpdated && static_cast<float>(result.newBpm) != impl_->currentParams.bpm) {
     TapeParams newP = impl_->currentParams;
-    newP.bpm = static_cast<float>(newBpm);
+    newP.bpm = static_cast<float>(result.newBpm);
     updateParams(newP);
   }
-  return accepted ? 0 : -1;
+  return result.accepted ? 0 : -1;
+}
+
+int TapeCore::tapTempoEventNow() {
+  return tapTempoEvent(kTapTempoUseCurrentTime);
 }
 
 int TapeCore::tapTempoReset() {

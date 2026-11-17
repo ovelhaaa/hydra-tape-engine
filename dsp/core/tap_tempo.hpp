@@ -21,6 +21,16 @@ enum class TapRejectionReason : uint8_t {
   OutOfOrder = 3     // timestamp <= lastValidTimestamp
 };
 
+struct TapResult {
+  bool accepted = false;
+  bool tempoUpdated = false;
+  double newBpm = 0.0;
+  TapTempoStatus status = TapTempoStatus::Idle;
+  TapRejectionReason rejection = TapRejectionReason::None;
+
+  explicit operator bool() const noexcept { return accepted; }
+};
+
 class TapTempo {
  public:
   static constexpr double kMinBpm = 30.0;
@@ -66,9 +76,9 @@ class TapTempo {
   }
 
   // Record a tap event at the given timestamp in sample frames.
-  // Returns true if the tap was accepted (valid interval or sequence start),
-  // or false if rejected (bounce, out of range, or out of order).
-  bool recordTap(uint64_t timestampFrames) {
+  // Returns TapResult distinguishing whether tap was accepted, whether tempo was updated,
+  // the new BPM, status, and any rejection reason.
+  TapResult recordTap(uint64_t timestampFrames) {
     lastObservedTimestampFrames_ = timestampFrames;
 
     if (tapCount_ > 0) {
@@ -76,13 +86,14 @@ class TapTempo {
       if (timestampFrames <= lastValidTimestampFrames_) {
         status_ = TapTempoStatus::Rejected;
         lastRejection_ = TapRejectionReason::OutOfOrder;
-        return false;
+        return TapResult{false, false, appliedBpm_, status_, lastRejection_};
       }
 
       const uint64_t deltaFrames = timestampFrames - lastValidTimestampFrames_;
       const double intervalSeconds = static_cast<double>(deltaFrames) / sampleRate_;
 
-      // Check for timeout (> 3.0s) -> ends previous session and starts new sequence
+      // Check for timeout (> 3.0s) -> ends previous session and starts new sequence.
+      // Note: Tap 1 of a new sequence establishes the time base only; tempo is NOT updated.
       if (intervalSeconds > kTimeoutSeconds) {
         resetSequence();
         tapCount_ = 1;
@@ -91,7 +102,7 @@ class TapTempo {
         status_ = TapTempoStatus::Acquiring;
         lastRejection_ = TapRejectionReason::None;
         confidence_ = 0.0f;
-        return true;
+        return TapResult{true, false, appliedBpm_, status_, lastRejection_};
       }
 
       // Check for debounce (< 80ms)
@@ -99,7 +110,7 @@ class TapTempo {
         status_ = TapTempoStatus::Rejected;
         lastRejection_ = TapRejectionReason::Bounce;
         // Do not update lastValidTimestampFrames_ on bounce
-        return false;
+        return TapResult{false, false, appliedBpm_, status_, lastRejection_};
       }
 
       // Check for nominal tempo range (30 to 300 BPM)
@@ -109,7 +120,7 @@ class TapTempo {
         lastRejection_ = TapRejectionReason::OutOfRange;
         // Update lastValidTimestampFrames_ so next tap can measure from here
         lastValidTimestampFrames_ = timestampFrames;
-        return false;
+        return TapResult{false, false, appliedBpm_, status_, lastRejection_};
       }
 
       // Valid interval within range
@@ -128,7 +139,7 @@ class TapTempo {
         confidence_ = 0.40f; // Initial responsive confidence
         status_ = TapTempoStatus::Acquiring;
         consecutiveOutliers_ = 0;
-        return true;
+        return TapResult{true, true, appliedBpm_, status_, lastRejection_};
       }
 
       if (historyCount_ == 1) {
@@ -146,6 +157,7 @@ class TapTempo {
           confidence_ = 0.75f;
           status_ = TapTempoStatus::Locked;
           consecutiveOutliers_ = 0;
+          return TapResult{true, true, appliedBpm_, status_, lastRejection_};
         } else {
           // If second interval deviates significantly from first, adapt to the new cadence
           intervals_[0] = intervalSeconds;
@@ -156,8 +168,8 @@ class TapTempo {
           confidence_ = 0.40f;
           status_ = TapTempoStatus::Acquiring;
           consecutiveOutliers_ = 0;
+          return TapResult{true, true, appliedBpm_, status_, lastRejection_};
         }
-        return true;
       }
 
       // Tap 4+: historyCount_ >= 2
@@ -173,13 +185,15 @@ class TapTempo {
         appliedBpm_ = std::clamp(estimatedBpm_, kMinBpm, kMaxBpm);
         confidence_ = (historyCount_ >= 4) ? 1.0f : 0.85f;
         status_ = TapTempoStatus::Locked;
+        return TapResult{true, true, appliedBpm_, status_, lastRejection_};
       } else {
         // Outlier detected
         consecutiveOutliers_++;
         if (consecutiveOutliers_ == 1) {
-          // Isolated outlier: preserve established BPM, wait for next tap
+          // Isolated outlier: preserve established BPM, wait for next tap. Tempo NOT updated.
           pendingNewTempoInterval_ = intervalSeconds;
           status_ = TapTempoStatus::Locked;
+          return TapResult{true, false, appliedBpm_, status_, lastRejection_};
         } else if (consecutiveOutliers_ >= 2) {
           // Two consecutive intervals indicating a new tempo!
           const double diffBetweenOutliers =
@@ -196,16 +210,18 @@ class TapTempo {
             appliedBpm_ = std::clamp(estimatedBpm_, kMinBpm, kMaxBpm);
             confidence_ = 0.80f;
             status_ = TapTempoStatus::Locked;
+            return TapResult{true, true, appliedBpm_, status_, lastRejection_};
           } else {
             pendingNewTempoInterval_ = intervalSeconds;
             consecutiveOutliers_ = 1;
+            return TapResult{true, false, appliedBpm_, status_, lastRejection_};
           }
         }
       }
-      return true;
+      return TapResult{true, false, appliedBpm_, status_, lastRejection_};
     }
 
-    // Tap 1: Start a new sequence
+    // Tap 1: Start a new sequence. Establish time reference only; tempo is NOT updated.
     tapCount_ = 1;
     lastValidTimestampFrames_ = timestampFrames;
     isTimedOut_ = false;
@@ -213,7 +229,7 @@ class TapTempo {
     lastRejection_ = TapRejectionReason::None;
     confidence_ = 0.0f;
     consecutiveOutliers_ = 0;
-    return true;
+    return TapResult{true, false, appliedBpm_, status_, lastRejection_};
   }
 
   // Periodic update called from audio loop or timer with current engine sample position.

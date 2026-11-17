@@ -1614,28 +1614,36 @@ void executeCommand(String line) {
       dualPrintf("Warp Mode: %d\n", p_warpMode);
     }
     else if (cmd == "perf") {
-      printDspPerformanceStats();
+      valStr.trim();
+      if (valStr == "r" || valStr == "reset") {
+        portENTER_CRITICAL(&g_dsp_perf_mux);
+        g_dsp_perf = DspPerformance{};
+        portEXIT_CRITICAL(&g_dsp_perf_mux);
+        dualPrintln("DSP Performance Stats: RESET");
+      } else {
+        printDspPerformanceStats();
+      }
     }
 
     // --- SYSTEM & TRANSPORT ---
     else if (cmd == "bmp" || cmd == "bpm" || cmd == "tempo") {
       p_bpm = constrain(val, 20.0f, 300.0f);
-      if (tape) tape->transportSetBpm(p_bpm);
+      if (tape) tape->postTransportSetBpm(p_bpm);
       dualPrintf("Tempo: %.1f BPM\n", p_bpm);
     }
     else if (cmd == "transport") {
       valStr.trim();
       if (valStr == "play") {
-        if (tape) tape->transportPlay();
+        if (tape) tape->postTransportPlay();
         dualPrintln("Transport: PLAY");
       } else if (valStr == "pause") {
-        if (tape) tape->transportPause();
+        if (tape) tape->postTransportPause();
         dualPrintln("Transport: PAUSE");
       } else if (valStr == "stop") {
-        if (tape) tape->transportStop();
+        if (tape) tape->postTransportStop();
         dualPrintln("Transport: STOP");
       } else if (valStr == "reset") {
-        if (tape) tape->transportReset();
+        if (tape) tape->postTransportReset();
         dualPrintln("Transport: RESET to 0.0");
       } else if (valStr == "status" || valStr.length() == 0) {
         hydra_dsp_transport_state st{};
@@ -1660,9 +1668,10 @@ void executeCommand(String line) {
       }
     }
     else if (cmd == "tap") {
+      const int64_t tapArrivalUs = esp_timer_get_time();
       valStr.trim();
       if (valStr == "reset") {
-        if (tape) tape->tapTempoReset();
+        if (tape) tape->postTapTempoReset();
         dualPrintln("Tap Tempo: RESET");
       } else if (valStr == "status") {
         hydra_dsp_tap_tempo_state st{};
@@ -1686,20 +1695,25 @@ void executeCommand(String line) {
         }
       } else if (valStr.length() == 0) {
         if (tape) {
-          const int res = tape->tapTempoEvent(0);
-          hydra_dsp_tap_tempo_state st{};
-          tape->tapTempoGetState(&st);
-          if (res == 0) {
-            p_bpm = st.applied_bpm;
-            dualPrintf("[TAP #%u] Est: %.1f BPM | Applied: %.1f BPM | Conf: %.2f (%s)\n",
-                       st.tap_count, st.estimated_bpm, st.applied_bpm, st.confidence,
-                       st.status == HYDRA_DSP_TAP_STATUS_LOCKED ? "LOCKED" : "ACQUIRING");
+          const bool queued = tape->postTapTempoEvent(0, tapArrivalUs);
+          if (!queued) {
+            dualPrintln("[TAP REJECTED] Command queue overflow");
           } else {
-            const char* reason = "UNKNOWN";
-            if (st.last_rejection == HYDRA_DSP_TAP_REJECT_BOUNCE) reason = "BOUNCE (<80ms)";
-            else if (st.last_rejection == HYDRA_DSP_TAP_REJECT_OUT_OF_RANGE) reason = "OUT OF RANGE (30-300 BPM)";
-            else if (st.last_rejection == HYDRA_DSP_TAP_REJECT_OUT_OF_ORDER) reason = "OUT OF ORDER";
-            dualPrintf("[TAP REJECTED] Reason: %s\n", reason);
+            vTaskDelay(pdMS_TO_TICKS(4));
+            hydra_dsp_tap_tempo_state st{};
+            tape->tapTempoGetState(&st);
+            if (st.status != HYDRA_DSP_TAP_STATUS_REJECTED) {
+              p_bpm = st.applied_bpm;
+              dualPrintf("[TAP #%u] Est: %.1f BPM | Applied: %.1f BPM | Conf: %.2f (%s)\n",
+                         st.tap_count, st.estimated_bpm, st.applied_bpm, st.confidence,
+                         st.status == HYDRA_DSP_TAP_STATUS_LOCKED ? "LOCKED" : "ACQUIRING");
+            } else {
+              const char* reason = "UNKNOWN";
+              if (st.last_rejection == HYDRA_DSP_TAP_REJECT_BOUNCE) reason = "BOUNCE (<80ms)";
+              else if (st.last_rejection == HYDRA_DSP_TAP_REJECT_OUT_OF_RANGE) reason = "OUT OF RANGE (30-300 BPM)";
+              else if (st.last_rejection == HYDRA_DSP_TAP_REJECT_OUT_OF_ORDER) reason = "OUT OF ORDER";
+              dualPrintf("[TAP REJECTED] Reason: %s\n", reason);
+            }
           }
         }
       } else {

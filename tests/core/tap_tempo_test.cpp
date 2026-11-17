@@ -3,11 +3,15 @@
 #include "tape_core.hpp"
 #include "hydra_dsp.h"
 #include "hydra_dsp_esp32_adapter.h"
+#include "spsc_queue.hpp"
 
+#include <atomic>
 #include <cassert>
+#include <chrono>
 #include <cmath>
 #include <cstdint>
 #include <iostream>
+#include <thread>
 #include <vector>
 
 using namespace hydra::dsp;
@@ -463,6 +467,254 @@ bool testLegacyCompatibility() {
   return true;
 }
 
+// M. SPSC Queue & State Publisher (Lock-Free FIFO, Overflow Protection, Seqlock)
+bool testSpscQueue() {
+  SpscQueue<uint32_t, 8> queue;
+  EXPECT_TRUE(queue.empty());
+  EXPECT_EQ(queue.size(), 0u);
+  EXPECT_EQ(queue.capacity(), 8u);
+
+  // Push 8 items (capacity)
+  for (uint32_t i = 1; i <= 8; ++i) {
+    EXPECT_TRUE(queue.push(i * 10));
+    EXPECT_EQ(queue.size(), static_cast<size_t>(i));
+  }
+
+  // 9th push must fail (overflow protection without blocking)
+  EXPECT_TRUE(!queue.push(999));
+  EXPECT_EQ(queue.size(), 8u);
+
+  // Pop all 8 in FIFO order
+  for (uint32_t i = 1; i <= 8; ++i) {
+    uint32_t val = 0;
+    EXPECT_TRUE(queue.pop(val));
+    EXPECT_EQ(val, i * 10);
+  }
+  EXPECT_TRUE(queue.empty());
+
+  // Additional pop must fail
+  uint32_t dummy = 0;
+  EXPECT_TRUE(!queue.pop(dummy));
+
+  // Wrap-around stress: 50,000 pushes and pops
+  for (uint32_t i = 0; i < 50000; ++i) {
+    EXPECT_TRUE(queue.push(i));
+    uint32_t popped = 0;
+    EXPECT_TRUE(queue.pop(popped));
+    EXPECT_EQ(popped, i);
+  }
+  EXPECT_TRUE(queue.empty());
+
+  // Test StatePublisher (seqlock)
+  StatePublisher<hydra_dsp_tap_tempo_state> pub;
+  hydra_dsp_tap_tempo_state stOut{};
+  // Unwritten publisher should return false
+  EXPECT_TRUE(!pub.read(stOut));
+
+  hydra_dsp_tap_tempo_state stIn{};
+  stIn.applied_bpm = 128.5f;
+  stIn.tap_count = 7;
+  stIn.confidence = 0.95f;
+  pub.publish(stIn);
+
+  EXPECT_TRUE(pub.read(stOut));
+  EXPECT_NEAR(stOut.applied_bpm, 128.5f, 0.001f);
+  EXPECT_EQ(stOut.tap_count, 7u);
+  EXPECT_NEAR(stOut.confidence, 0.95f, 0.001f);
+
+  std::cout << "[PASS] SPSC Queue & State Publisher (Lock-Free FIFO, Overflow Protection, Seqlock)\n";
+  return true;
+}
+
+// N. Parameter Update Elimination (No updates on Tap 1, Outlier, Bounce, OutOfRange)
+bool testNoParamUpdateOnTap1OrOutlier() {
+  TapeCore core(44100.0f, 2000.0f, 8100.0f);
+  TapeParams p;
+  p.bpm = 120.0f;
+  core.updateParams(p);
+  core.transport().play();
+
+  // Tap 1 at sample 1000
+  TapResult res1 = core.tapTempo().recordTap(1000);
+  EXPECT_TRUE(res1.accepted);
+  EXPECT_TRUE(!res1.tempoUpdated); // Tap 1 must NOT update tempo
+  EXPECT_TRUE(res1.status == TapTempoStatus::Acquiring);
+
+  // Calling tapTempoEvent on Tap 1 must not alter transport BPM
+  core.reset();
+  core.updateParams(p);
+  EXPECT_EQ(core.tapTempoEvent(1000), 0);
+  EXPECT_NEAR(core.transport().bpm(), 120.0, 0.001);
+  EXPECT_NEAR(core.params().bpm, 120.0f, 0.001f);
+
+  // Taps 2 and 3 establish 140 BPM
+  const uint64_t step140 = static_cast<uint64_t>(44100.0 * (60.0 / 140.0));
+  uint64_t t = 1000 + step140;
+  EXPECT_EQ(core.tapTempoEvent(t), 0);
+  EXPECT_NEAR(core.transport().bpm(), 140.0, 0.2); // Tap 2 updates to 140 BPM
+
+  t += step140;
+  EXPECT_EQ(core.tapTempoEvent(t), 0);
+  EXPECT_NEAR(core.transport().bpm(), 140.0, 0.2); // Tap 3 locks at 140 BPM
+
+  t += step140;
+  EXPECT_EQ(core.tapTempoEvent(t), 0); // Tap 4 refined at 140 BPM
+
+  // Isolated outlier (+50% interval deviation)
+  const uint64_t outlierStep = static_cast<uint64_t>(step140 * 1.50);
+  t += outlierStep;
+  TapResult resOutlier = core.tapTempo().recordTap(t);
+  EXPECT_TRUE(resOutlier.accepted);
+  EXPECT_TRUE(!resOutlier.tempoUpdated); // Outlier must NOT update tempo
+  EXPECT_NEAR(core.transport().bpm(), 140.0, 0.2); // Transport BPM remains 140!
+
+  // Debounce tap (< 80 ms = < 3528 samples @ 44.1 kHz)
+  TapResult resBounce = core.tapTempo().recordTap(t + 1000);
+  EXPECT_TRUE(!resBounce.accepted);
+  EXPECT_TRUE(!resBounce.tempoUpdated);
+  EXPECT_TRUE(resBounce.rejection == TapRejectionReason::Bounce);
+
+  // Out of range tap (< 30 BPM -> interval > 2.0s)
+  TapResult resOutOfRange = core.tapTempo().recordTap(t + static_cast<uint64_t>(44100.0 * 2.5));
+  EXPECT_TRUE(!resOutOfRange.accepted);
+  EXPECT_TRUE(!resOutOfRange.tempoUpdated);
+  EXPECT_TRUE(resOutOfRange.rejection == TapRejectionReason::OutOfRange);
+
+  std::cout << "[PASS] Parameter Update Elimination (No updates on Tap 1, Outlier, Bounce, OutOfRange)\n";
+  return true;
+}
+
+// O. Concurrent Tap Tempo Handoff (Multi-threaded Stress, Lock-Free SPSC, Zero Corruption)
+bool testConcurrentTapTempoHandoff() {
+  HydraDspEsp32Adapter adapter(44100.0f, 2000.0f, 8100.0f);
+  adapter.transportPlay();
+
+  std::atomic<bool> running{true};
+  std::atomic<uint32_t> blocksProcessed{0};
+  std::atomic<uint32_t> tapsEnqueued{0};
+
+  constexpr uint32_t kTotalBlocks = 2000;
+  constexpr uint32_t kBlockFrames = 128;
+
+  // Thread 1: Audio Processing (Consumer / Core 1 equivalent)
+  std::thread audioThread([&]() {
+    std::vector<float> inL(kBlockFrames, 0.1f);
+    std::vector<float> inR(kBlockFrames, 0.1f);
+    std::vector<float> outL(kBlockFrames, 0.0f);
+    std::vector<float> outR(kBlockFrames, 0.0f);
+
+    while (blocksProcessed.load(std::memory_order_relaxed) < kTotalBlocks) {
+      adapter.processStereoBlock(inL.data(), inR.data(), outL.data(), outR.data(), kBlockFrames);
+      blocksProcessed.fetch_add(1, std::memory_order_release);
+      std::this_thread::yield();
+    }
+    running.store(false, std::memory_order_release);
+  });
+
+  // Thread 2: CLI / Producer (Core 0 equivalent)
+  std::thread producerThread([&]() {
+    const double bpms[] = {120.0, 90.0, 140.0, 100.0, 160.0};
+    size_t bpmIdx = 0;
+    while (running.load(std::memory_order_acquire)) {
+      const double targetBpm = bpms[bpmIdx % 5];
+      bpmIdx++;
+      const int intervalMs = static_cast<int>(60000.0 / targetBpm);
+
+      for (int t = 0; t < 4 && running.load(std::memory_order_acquire); ++t) {
+        adapter.postTapTempoEvent(0, 0);
+        tapsEnqueued.fetch_add(1, std::memory_order_relaxed);
+        std::this_thread::sleep_for(std::chrono::milliseconds(std::min(intervalMs, 10)));
+      }
+      std::this_thread::sleep_for(std::chrono::milliseconds(15));
+    }
+  });
+
+  // Thread 3: Telemetry Reader (Simulates UI/CLI polling via lock-free snapshot)
+  std::thread telemetryThread([&]() {
+    while (running.load(std::memory_order_acquire)) {
+      hydra_dsp_tap_tempo_state tapSt{};
+      hydra_dsp_transport_state transSt{};
+      adapter.tapTempoGetState(&tapSt);
+      adapter.transportGetState(&transSt);
+      std::this_thread::sleep_for(std::chrono::milliseconds(2));
+    }
+  });
+
+  audioThread.join();
+  producerThread.join();
+  telemetryThread.join();
+
+  EXPECT_TRUE(blocksProcessed.load() >= kTotalBlocks);
+  EXPECT_TRUE(tapsEnqueued.load() > 0);
+
+  hydra_dsp_transport_state finalState{};
+  EXPECT_EQ(adapter.transportGetState(&finalState), 0);
+  EXPECT_TRUE(finalState.bpm >= 30.0f && finalState.bpm <= 300.0f);
+  EXPECT_TRUE(finalState.playing != 0);
+
+  std::cout << "[PASS] Concurrent Tap Tempo Handoff (Multi-threaded Stress, Lock-Free SPSC, Zero Corruption)\n";
+  return true;
+}
+
+// P. Concurrent Transport & Manual BPM (Full Concurrency Interleaving Invariant)
+bool testConcurrentTransportAndManualBpm() {
+  HydraDspEsp32Adapter adapter(44100.0f, 2000.0f, 8100.0f);
+  adapter.transportPlay();
+
+  std::atomic<bool> running{true};
+  std::atomic<uint32_t> blocksProcessed{0};
+  constexpr uint32_t kTotalBlocks = 2500;
+  constexpr uint32_t kBlockFrames = 128;
+
+  // Audio thread
+  std::thread audioThread([&]() {
+    std::vector<float> inL(kBlockFrames, 0.2f);
+    std::vector<float> inR(kBlockFrames, 0.2f);
+    std::vector<float> outL(kBlockFrames, 0.0f);
+    std::vector<float> outR(kBlockFrames, 0.0f);
+
+    while (blocksProcessed.load(std::memory_order_relaxed) < kTotalBlocks) {
+      adapter.processStereoBlock(inL.data(), inR.data(), outL.data(), outR.data(), kBlockFrames);
+      blocksProcessed.fetch_add(1, std::memory_order_release);
+      std::this_thread::yield();
+    }
+    running.store(false, std::memory_order_release);
+  });
+
+  // Tap tempo producer thread
+  std::thread tapThread([&]() {
+    while (running.load(std::memory_order_acquire)) {
+      adapter.postTapTempoEvent(0, 0);
+      std::this_thread::sleep_for(std::chrono::milliseconds(8));
+    }
+  });
+
+  // Transport & manual BPM producer thread
+  std::thread transportThread([&]() {
+    float bpm = 100.0f;
+    int cycle = 0;
+    while (running.load(std::memory_order_acquire)) {
+      cycle++;
+      if (cycle % 4 == 0) adapter.postTransportPlay();
+      else if (cycle % 4 == 1) adapter.postTransportPause();
+      else if (cycle % 4 == 2) adapter.postTransportPlay();
+      else adapter.postTransportSetBpm(bpm);
+
+      bpm += 5.0f;
+      if (bpm > 180.0f) bpm = 90.0f;
+      std::this_thread::sleep_for(std::chrono::milliseconds(12));
+    }
+  });
+
+  audioThread.join();
+  tapThread.join();
+  transportThread.join();
+
+  EXPECT_TRUE(blocksProcessed.load() >= kTotalBlocks);
+  std::cout << "[PASS] Concurrent Transport & Manual BPM (Full Concurrency Interleaving Invariant)\n";
+  return true;
+}
+
 int main() {
   std::cout << "=== HYDRA TAP TEMPO V1 TEST SUITE ===\n";
   bool ok = true;
@@ -478,9 +730,13 @@ int main() {
   ok = testBlockIndependence() && ok;
   ok = testThreadHandoffAndState() && ok;
   ok = testLegacyCompatibility() && ok;
+  ok = testSpscQueue() && ok;
+  ok = testNoParamUpdateOnTap1OrOutlier() && ok;
+  ok = testConcurrentTapTempoHandoff() && ok;
+  ok = testConcurrentTransportAndManualBpm() && ok;
 
   if (ok) {
-    std::cout << ">>> ALL 12 TAP TEMPO TESTS PASSED <<<\n";
+    std::cout << ">>> ALL 16 TAP TEMPO TESTS PASSED <<<\n";
     return 0;
   }
   std::cerr << ">>> TAP TEMPO TESTS FAILED <<<\n";

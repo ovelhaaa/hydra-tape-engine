@@ -13,7 +13,7 @@ enum { HYDRA_DSP_CHANNELS_STEREO = 2 };
 
 enum {
   HYDRA_DSP_API_VERSION_MAJOR = 1,
-  HYDRA_DSP_API_VERSION_MINOR = 6,
+  HYDRA_DSP_API_VERSION_MINOR = 7,
   HYDRA_DSP_API_VERSION_PATCH = 0,
   HYDRA_DSP_API_VERSION =
       (HYDRA_DSP_API_VERSION_MAJOR << 16) |
@@ -123,6 +123,33 @@ typedef struct hydra_dsp_tap_tempo_state {
   int status;
   int last_rejection;
 } hydra_dsp_tap_tempo_state;
+
+typedef enum hydra_dsp_tempo_source {
+  HYDRA_DSP_TEMPO_SOURCE_INTERNAL = 0,
+  HYDRA_DSP_TEMPO_SOURCE_TAP = 1,
+  HYDRA_DSP_TEMPO_SOURCE_MIDI_EXTERNAL = 2
+} hydra_dsp_tempo_source;
+
+typedef enum hydra_dsp_midi_clock_sync_status {
+  HYDRA_DSP_MIDI_CLOCK_DISCONNECTED = 0,
+  HYDRA_DSP_MIDI_CLOCK_ACQUIRING = 1,
+  HYDRA_DSP_MIDI_CLOCK_LOCKED = 2,
+  HYDRA_DSP_MIDI_CLOCK_HOLDOVER = 3,
+  HYDRA_DSP_MIDI_CLOCK_LOST = 4
+} hydra_dsp_midi_clock_sync_status;
+
+typedef struct hydra_dsp_midi_clock_state {
+  uint32_t tempo_source;
+  int sync_status;
+  float estimated_bpm;
+  float applied_bpm;
+  float phase_error_beats;
+  float estimated_jitter_ms;
+  uint64_t pulse_count;
+  uint64_t last_pulse_frame;
+  int is_transport_running;
+  uint32_t missed_pulses;
+} hydra_dsp_midi_clock_state;
 
 typedef struct hydra_dsp_params_v1_4 {
   hydra_dsp_params v1_3;
@@ -277,6 +304,12 @@ int hydra_dsp_transport_get_state(const hydra_dsp_handle* handle, hydra_dsp_tran
 int hydra_dsp_tap_tempo_event(hydra_dsp_handle* handle, uint64_t timestamp_frames);
 int hydra_dsp_tap_tempo_get_state(const hydra_dsp_handle* handle, hydra_dsp_tap_tempo_state* out_state);
 int hydra_dsp_tap_tempo_reset(hydra_dsp_handle* handle);
+
+int hydra_dsp_midi_clock_event(hydra_dsp_handle* handle, uint8_t midi_status, uint64_t timestamp_frames);
+int hydra_dsp_midi_clock_get_state(const hydra_dsp_handle* handle, hydra_dsp_midi_clock_state* out_state);
+int hydra_dsp_midi_clock_reset(hydra_dsp_handle* handle);
+int hydra_dsp_set_tempo_source(hydra_dsp_handle* handle, uint32_t source);
+int hydra_dsp_get_tempo_source(const hydra_dsp_handle* handle, uint32_t* out_source);
 
 int hydra_dsp_process(hydra_dsp_handle* handle,
                       const float* in_l,

@@ -572,6 +572,45 @@ function updateTransportUI(data) {
       detail.textContent = `Est: ${estStr} BPM | Taps: ${tt.tapCount} | Conf: ${confPct}%`;
     }
   }
+
+  if (data.midiClock) {
+    const mc = data.midiClock;
+    const badge = document.getElementById('midiClockStatusBadge');
+    const detail = document.getElementById('midiClockDetail');
+    if (badge) {
+      if (mc.syncStatus === 2) {
+        badge.textContent = 'SYNC: LOCKED';
+        badge.setAttribute('data-state', 'success');
+      } else if (mc.syncStatus === 1) {
+        badge.textContent = 'ACQUIRING';
+        badge.setAttribute('data-state', 'warning');
+      } else if (mc.syncStatus === 3) {
+        badge.textContent = 'HOLDOVER';
+        badge.setAttribute('data-state', 'warning');
+      } else if (mc.syncStatus === 4) {
+        badge.textContent = 'SIGNAL LOST';
+        badge.setAttribute('data-state', 'error');
+      } else {
+        badge.textContent = 'DISCONNECTED';
+        badge.setAttribute('data-state', 'idle');
+      }
+    }
+    if (detail) {
+      const estStr = mc.estimatedBpm > 0 ? mc.estimatedBpm.toFixed(1) : '--';
+      const jitterStr = (mc.estimatedJitterMs || 0).toFixed(1);
+      const phaseStr = (mc.phaseErrorBeats || 0).toFixed(3);
+      detail.textContent = `Ext: ${estStr} BPM | Phase: ${phaseStr} | Jitter: ${jitterStr}ms`;
+    }
+
+    const btnInt = document.getElementById('tempoSourceInternalBtn');
+    const btnTap = document.getElementById('tempoSourceTapBtn');
+    const btnMidi = document.getElementById('tempoSourceMidiBtn');
+    if (btnInt && btnTap && btnMidi) {
+      btnInt.classList.toggle('active', mc.tempoSource === 0);
+      btnTap.classList.toggle('active', mc.tempoSource === 1);
+      btnMidi.classList.toggle('active', mc.tempoSource === 2);
+    }
+  }
 }
 
 const transportPlayBtn = document.getElementById('transportPlayBtn');
@@ -640,6 +679,100 @@ if (transportResetBtn) {
     setStatus('Transport: Reset to beat 0.0', 'info');
   });
 }
+
+const tempoSourceInternalBtn = document.getElementById('tempoSourceInternalBtn');
+const tempoSourceTapBtn = document.getElementById('tempoSourceTapBtn');
+const tempoSourceMidiBtn = document.getElementById('tempoSourceMidiBtn');
+
+if (tempoSourceInternalBtn) {
+  tempoSourceInternalBtn.addEventListener('click', () => {
+    post({ type: 'setTempoSource', source: 0 });
+    setStatus('Tempo Source: Internal', 'info');
+  });
+}
+if (tempoSourceTapBtn) {
+  tempoSourceTapBtn.addEventListener('click', () => {
+    post({ type: 'setTempoSource', source: 1 });
+    setStatus('Tempo Source: Tap', 'info');
+  });
+}
+if (tempoSourceMidiBtn) {
+  tempoSourceMidiBtn.addEventListener('click', () => {
+    post({ type: 'setTempoSource', source: 2 });
+    setStatus('Tempo Source: MIDI External', 'info');
+  });
+}
+
+const midiClockResetBtn = document.getElementById('midiClockResetBtn');
+const midiInputSelect = document.getElementById('midiInputSelect');
+let midiAccess = null;
+let activeMidiInput = null;
+
+function onMidiMessage(event) {
+  const data = event.data;
+  if (!data || data.length === 0) return;
+  for (let i = 0; i < data.length; ++i) {
+    const byte = data[i];
+    if (byte === 0xF8 || byte === 0xFA || byte === 0xFB || byte === 0xFC) {
+      post({ type: 'midiClockEvent', statusByte: byte, timestampFrames: 0 });
+    }
+  }
+}
+
+function updateMidiInputs() {
+  if (!midiAccess || !midiInputSelect) return;
+  const currentVal = midiInputSelect.value;
+  midiInputSelect.innerHTML = '<option value="">(No MIDI Input)</option>';
+  const inputs = Array.from(midiAccess.inputs.values());
+  for (const input of inputs) {
+    const opt = document.createElement('option');
+    opt.value = input.id;
+    opt.textContent = input.name || `MIDI Port (${input.id})`;
+    midiInputSelect.appendChild(opt);
+  }
+  if (currentVal && inputs.some(i => i.id === currentVal)) {
+    midiInputSelect.value = currentVal;
+  }
+}
+
+async function initWebMidi() {
+  if (typeof navigator !== 'undefined' && navigator.requestMIDIAccess) {
+    try {
+      midiAccess = await navigator.requestMIDIAccess({ sysex: false });
+      updateMidiInputs();
+      midiAccess.onstatechange = () => updateMidiInputs();
+    } catch (err) {
+      console.warn('Web MIDI access error:', err);
+    }
+  }
+}
+
+if (midiInputSelect) {
+  midiInputSelect.addEventListener('change', () => {
+    if (activeMidiInput) {
+      activeMidiInput.onmidimessage = null;
+      activeMidiInput = null;
+    }
+    const id = midiInputSelect.value;
+    if (id && midiAccess) {
+      const input = midiAccess.inputs.get(id);
+      if (input) {
+        activeMidiInput = input;
+        activeMidiInput.onmidimessage = onMidiMessage;
+        setStatus(`MIDI connected: ${input.name}`, 'success');
+      }
+    }
+  });
+}
+
+if (midiClockResetBtn) {
+  midiClockResetBtn.addEventListener('click', () => {
+    post({ type: 'midiClockReset' });
+    setStatus('MIDI Clock: Reset estimator', 'info');
+  });
+}
+
+initWebMidi();
 if (transportBpmInput) {
   transportBpmInput.addEventListener('change', () => {
     const val = Number(transportBpmInput.value);

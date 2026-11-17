@@ -93,7 +93,28 @@ flowchart LR
 
 ---
 
-### FASE 5 — Expansão Criativa do Accidental Warp & MVP Final
+### FASE 5 — Sincronização MIDI Clock Externa V1 (Andamento, Fase & Transporte)
+- **Status:** IMPLEMENTADO (PR PENDENTE DE REVISÃO).
+- **Entregas Principais:**
+  - Componente de sincronização em tempo real `MidiClockSync` operando na norma MIDI 1.0 (24 PPQN).
+  - Estimativa de andamento em tempo real com buffer circular de histórico e filtragem estatística de jitter.
+  - PLL digital proporcional de fase mantendo o Global Transport Clock (GTC) rigorosamente alinhado à posição do mestre externo com modulação limitada de slew rate (máx 3% de variação), eliminando artefatos audíveis de wow/flutter ou saltos de pitch.
+  - Máquina de estados de sincronização determinística: `DISCONNECTED`, `ACQUIRING`, `LOCKED`, `HOLDOVER`, `LOST`.
+  - Tratamento musical e determinístico de mensagens de transporte: Start (`0xFA`), Continue (`0xFB`) e Stop (`0xFC`), com preservação de caudas de áudio, feedback e buffers.
+  - Parser de mensagens de tempo real com preservação de `runningStatus` em mensagens intercaladas.
+  - Seleção explícita de fonte de andamento (`TempoSource::Internal`, `TempoSource::Tap`, `TempoSource::MidiExternal`) com todas as 6 transições de modo livres de estalos (*clickless*) e restauração transparente de parâmetros manuais.
+  - Fila dedicada Lock-Free SPSC de eventos MIDI (`SpscQueue<DspMidiEvent, 64>`) no ESP32-S3 com garantia matemática de produtor único e zero contenção de mutexes.
+  - Publicação de telemetria em Triple Buffer (`StatePublisher<hydra_dsp_midi_clock_state>`).
+  - Elevação da C-API para versão 1.7.0 mantendo conformidade e estabilidade estrita de ABI (116, 140 e 148 bytes).
+  - Comandos de terminal serial no firmware ESP32-S3 (`clock source <internal|tap|midi>`, `clock status`, `clock reset`, `clock event <hex>`).
+  - Suporte completo no frontend Web (Web MIDI API, seletor de porta, seletor de fonte, badges e telemetria no AudioWorklet).
+  - Suíte de 16 testes dedicados em C++ (`hydra_midi_clock_test`), 28 testes web em Node.js e 15/15 testes CTest passando.
+  - Pacote de 12 cenários sonoros e temporais no Hydra Listening Lab (`artifacts/listening-lab/midi-clock-external-v1/`).
+- **Critério de Saída:** Código completo, testes 100% aprovados, build ESP32-S3 e WASM validados, e artefatos de escuta gerados.
+
+---
+
+### FASE 6 — Expansão Criativa do Accidental Warp & MVP Final
 - **Status:** PLANEJADO.
 - **Sub-etapas:**
   1. **Warp Head:** Habilitar uma das 3 cabeças do tape delay clássico para operar simultaneamente como leitor Warp ascendente.

@@ -123,6 +123,7 @@ class HydraProcessor extends AudioWorkletProcessor {
         setParameter: this.module.cwrap('hydra_dsp_set_parameter', 'number', ['number', 'number', 'number']),
         commit: this.module.cwrap('hydra_dsp_commit', 'number', ['number']),
         process: this.module.cwrap('hydra_dsp_process', 'number', ['number', 'number', 'number', 'number', 'number', 'number']),
+        getReverseDiagnostics: this.module.cwrap('hydra_dsp_get_reverse_diagnostics', 'number', ['number', 'number', 'number', 'number', 'number']),
         transportPlay: this.module.cwrap('hydra_dsp_transport_play', 'number', ['number']),
         transportPause: this.module.cwrap('hydra_dsp_transport_pause', 'number', ['number']),
         transportStop: this.module.cwrap('hydra_dsp_transport_stop', 'number', ['number']),
@@ -132,6 +133,7 @@ class HydraProcessor extends AudioWorkletProcessor {
       };
 
       this.transportStatePtr = this.module._malloc(72);
+      this.reverseDiagPtr = this.module._malloc(16);
 
       const handlePtr = this.module._malloc(4);
       const res = this.api.create(sampleRate, 4000.0, 16100.0, handlePtr);
@@ -192,7 +194,8 @@ class HydraProcessor extends AudioWorkletProcessor {
       if (this.outL) this.module._free(this.outL);
       if (this.outR) this.module._free(this.outR);
       if (this.transportStatePtr) this.module._free(this.transportStatePtr);
-      this.inL = this.inR = this.outL = this.outR = this.transportStatePtr = 0;
+      if (this.reverseDiagPtr) this.module._free(this.reverseDiagPtr);
+      this.inL = this.inR = this.outL = this.outR = this.transportStatePtr = this.reverseDiagPtr = 0;
     }
   }
 
@@ -324,6 +327,25 @@ class HydraProcessor extends AudioWorkletProcessor {
         const playing = view.getInt32(64, true);
         const generation = view.getUint32(68, true);
 
+        let reverseClamped = 0;
+        let reverseRequestedMs = 0;
+        let reverseEffectiveMs = 0;
+        let reverseMaxHistoryMs = 0;
+
+        if (this.reverseDiagPtr && this.api.getReverseDiagnostics) {
+          const reqPtr = this.reverseDiagPtr;
+          const effPtr = this.reverseDiagPtr + 4;
+          const clmPtr = this.reverseDiagPtr + 8;
+          const maxPtr = this.reverseDiagPtr + 12;
+          if (this.api.getReverseDiagnostics(this.handle, reqPtr, effPtr, clmPtr, maxPtr) === 0) {
+            const dView = new DataView(this.module.HEAPU8.buffer, this.reverseDiagPtr, 16);
+            reverseRequestedMs = dView.getFloat32(0, true);
+            reverseEffectiveMs = dView.getFloat32(4, true);
+            reverseClamped = dView.getInt32(8, true);
+            reverseMaxHistoryMs = dView.getFloat32(12, true);
+          }
+        }
+
         this.port.postMessage({
           type: 'transportTelemetry',
           bpm,
@@ -335,7 +357,11 @@ class HydraProcessor extends AudioWorkletProcessor {
           num,
           den,
           playing,
-          generation
+          generation,
+          reverseClamped,
+          reverseRequestedMs,
+          reverseEffectiveMs,
+          reverseMaxHistoryMs
         });
       }
     }

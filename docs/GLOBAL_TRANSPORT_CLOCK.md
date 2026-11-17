@@ -221,6 +221,25 @@ Todos os renders acompanham marcadores temporais, hashes SHA-256 e o arquivo `ma
     - **Estabilidade de Memória:** `HeapStart = 124.160 B`, `HeapEnd = 124.160 B`, `HeapMin = 124.160 B` (delta de 0 bytes; zero fragmentação, zero alocação dinâmica em tempo de execução).
     - **PSRAM Livre:** `1.667.736 B` constante.
 
-### 11.6 Divergência Histórica Native/WASM (Issue #48)
-- A divergência numérica entre Native e WASM permanece em `max_abs = 3.6681e-5` e `RMSE = 1.585565e-5` (limites oficiais: $\le 10^{-5}$ e $\le 10^{-6}$), herdada de iterações anteriores de interpolação e funções transcendentais.
-- Os thresholds oficiais não foram relaxados e os testes continuam ativos. O acompanhamento permanece formalizado na issue #48.
+### 11.6 Divergência Histórica Native/WASM (Issue #48) e Aceite Excepcional
+- A divergência numérica entre Native e WASM permanece em `max_abs = 3.6681e-5` e `RMSE = 1.585565e-5` (limites do teste: $\le 10^{-5}$ e $\le 10^{-6}$), herdada de iterações anteriores de interpolação e funções transcendentais (Issue #48).
+- Os thresholds oficiais não foram relaxados e os testes continuam ativos.
+- **Aceite Excepcional para Release da Fase 3:** O responsável pelo projeto formalizou a aceitação excepcional desta divergência pré-existente exclusivamente para a conclusão da PR #50, visto que nenhuma nova regressão numérica foi introduzida pelo GTC. A issue #48 permanece formalmente aberta para resolução técnica posterior.
+
+### 11.7 Validação Estrita de Fórmulas de Compasso
+- **Contrato de Validação Compartilhado (`isValidTimeSignature`):**
+  - **Numeradores aceitos:** Inteiros no intervalo fechado $[1, 32]$.
+  - **Denominadores aceitos:** Apenas potências musicais permitidas: $\{2, 4, 8, 16\}$.
+  - **Casos estritamente rejeitados:** $0/4$, $33/4$, $4/0$, $4/3$, $4/32$, denominadores ímpares ou fora da lista suportada.
+- **Invariância de Estado:** Em qualquer chamada inválida, o estado interno anterior é preservado integralmente: numerador, denominador, `beatsPerBar`, posição musical, contadores e geração permanecem idênticos.
+- **Retorno C-API:** `hydra_dsp_transport_set_time_signature` retorna `0` em caso de sucesso e `-1` em caso de rejeição ou ponteiro nulo.
+
+### 11.8 Visibilidade de Histórico Limitado e Precedência de DSP
+- **Visibilidade na Web UI:**
+  - Quando o Reverse Rítmico é limitado pelo buffer de histórico (`is_clamped == 1`), a interface exibe um banner explícito: `REVERSE TIME LIMITED — requested XXX ms / effective YYY ms`.
+  - O indicador de sincronização (`transportSyncBadge`) transiciona de `SYNC: LOCKED` (`success`) para `SYNC: LIMITED` (`warning`).
+- **Visibilidade no ESP32-S3 CLI:**
+  - O comando `transport status` imprime: `  Reverse Sync        : LIMITED (Effective: %.1f ms)` quando o leitor reverso opera sob limitação de capacidade.
+- **Precedência DSP (Accidental Warp vs Reverse V2):**
+  - No `TapeCore`, a condição de ativação do leitor reverso é estritamente: `wantsReverse = delayActive && !warpActive && reverse && !legacyReverse`.
+  - O Accidental Warp possui precedência operacional sobre o Reverse V2: caso ambos os efeitos estejam ligados simultaneamente, o processamento de áudio do Warp assume o controle e o Reverse V2 permanece em repouso sem gerar conflitos ou artefatos.

@@ -503,8 +503,28 @@ function updateTransportUI(data) {
   const bpmInputEl = document.getElementById('transportBpmInput');
 
   if (syncBadgeEl) {
-    syncBadgeEl.textContent = data.playing ? 'SYNC: LOCKED' : 'PAUSED';
-    syncBadgeEl.setAttribute('data-state', data.playing ? 'success' : 'warn');
+    if (data.playing) {
+      if (data.reverseClamped) {
+        syncBadgeEl.textContent = 'SYNC: LIMITED';
+        syncBadgeEl.setAttribute('data-state', 'warning');
+      } else {
+        syncBadgeEl.textContent = 'SYNC: LOCKED';
+        syncBadgeEl.setAttribute('data-state', 'success');
+      }
+    } else {
+      syncBadgeEl.textContent = 'PAUSED';
+      syncBadgeEl.setAttribute('data-state', 'warning');
+    }
+  }
+
+  const reverseWarnEl = document.getElementById('reverseClampedWarning');
+  if (reverseWarnEl) {
+    if (data.reverseClamped) {
+      reverseWarnEl.style.display = 'block';
+      reverseWarnEl.textContent = `REVERSE TIME LIMITED — requested ${Math.round(data.reverseRequestedMs)} ms / effective ${Math.round(data.reverseEffectiveMs)} ms`;
+    } else {
+      reverseWarnEl.style.display = 'none';
+    }
   }
 
   if (posDisplayEl) {

@@ -51,18 +51,20 @@ flowchart LR
 ---
 
 ### FASE 3 — Global Transport Clock & Sincronização Musical
-- **Status:** VALIDADO & PRONTO PARA DECISÃO DE MERGE (PR #50, branch `feature/global-transport-clock`).
+- **Status:** CONCLUÍDO & AUTORIZADO PARA MERGE NA MAIN (PR #50, branch `feature/global-transport-clock`).
 - **Objetivos Cumpridos:**
   - Infraestrutura temporal centralizada com resolução sample-accurate e zero deriva acumulada (`dsp/core/global_transport_clock.hpp`).
-  - Suporte a 10 subdivisões rítmicas racionais, métricas 4/4, 3/4 e 6/8, e dinâmica completa de transporte (Play, Pause, Stop, Reset, Locate).
+  - Suporte a 10 subdivisões rítmicas racionais, métricas arbitrárias válidas ($1 \dots 32$ com denominadores em $\{2, 4, 8, 16\}$), e dinâmica completa de transporte (Play, Pause, Stop, Reset, Locate).
   - Preservação estrita de fase musical durante variações de BPM em tempo real sem saltos ou cliques.
   - Sincronização de fase do Reverse Tape Echo V2 em modo Rhythmic com alinhamento na grade global.
   - Expansão da C-API para versão 1.5.0 com funções dedicadas de transporte e diagnósticos de histórico limitado preservando estritamente a ABI (116, 140 e 148 bytes).
   - Hardening completo contra NaN, Infinity e valores inválidos/negativos no DSP e C-API com preservação de estado e retorno `-1`.
   - Resolução da falha de compilação Xtensa GCC 14.2 para ESP32-S3 (`std::clamp`/`std::max` type mismatch corrigido).
-  - Telemetria integrada na Web UI (AudioWorklet + display visual de beats via `DataView`) e na CLI do ESP32-S3 (`tempo`, `transport play|pause|stop|reset|status`).
-  - Validação física em placa real ESP32-S3 N16R8 @ 240 MHz com zero overruns e ~53,9% de uso de CPU sustentado.
+  - Telemetria integrada na Web UI (AudioWorklet + display visual de beats via `DataView`, badge de status e alerta visual de limitação de histórico) e na CLI do ESP32-S3 (`tempo`, `transport play|pause|stop|reset|status` com indicação de `Reverse Sync : LIMITED`).
+  - Validação física em placa real ESP32-S3 N16R8 @ 240 MHz com zero overruns e 54,76% de uso de CPU sustentado em 5 minutos ininterruptos.
   - Pacote de 10 cenários objetivos gerado no Hydra Listening Lab (`artifacts/listening-lab/gtc-reverse-sync/`).
+  - Precedência clara entre efeitos: Accidental Warp possui prioridade operacional sobre o Reverse V2 quando ambos estão ativos.
+  - Aceite formal da exceção da divergência histórica Native/WASM (Issue #48) sem novas regressões.
 - **Critério de Saída:** 13/13 testes CTest aprovados, 21/21 testes web aprovados, zero regressão e documentação definitiva em [docs/GLOBAL_TRANSPORT_CLOCK.md](GLOBAL_TRANSPORT_CLOCK.md).
 
 ---

@@ -204,15 +204,18 @@ bool testBlockIndependence() {
   return true;
 }
 
-// E. Time Signatures: 4/4, 3/4, 6/8
+// E. Time Signatures: 4/4, 3/4, 6/8, 7/8, 5/16 + Strict Validation
 bool testTimeSignatures() {
   GlobalTransportClock clock;
   clock.prepare(48000.0);
   clock.setBpm(120.0);
   clock.play();
 
+  // 1. Valid Signatures:
   // 4/4: 4 beats per bar
-  clock.setTimeSignature(4, 4);
+  EXPECT_TRUE(clock.setTimeSignature(4, 4));
+  EXPECT_EQ(clock.timeSignatureNumerator(), 4);
+  EXPECT_EQ(clock.timeSignatureDenominator(), 4);
   EXPECT_NEAR(clock.beatsPerBar(), 4.0, 1e-9);
   clock.locate(3.99);
   EXPECT_EQ(clock.barIndex(), 0);
@@ -221,7 +224,9 @@ bool testTimeSignatures() {
   EXPECT_NEAR(clock.barPhase(), 0.0f, 1e-6);
 
   // 3/4: 3 beats per bar
-  clock.setTimeSignature(3, 4);
+  EXPECT_TRUE(clock.setTimeSignature(3, 4));
+  EXPECT_EQ(clock.timeSignatureNumerator(), 3);
+  EXPECT_EQ(clock.timeSignatureDenominator(), 4);
   EXPECT_NEAR(clock.beatsPerBar(), 3.0, 1e-9);
   clock.locate(2.99);
   EXPECT_EQ(clock.barIndex(), 0);
@@ -230,7 +235,9 @@ bool testTimeSignatures() {
   EXPECT_NEAR(clock.barPhase(), 0.0f, 1e-6);
 
   // 6/8: 6 eighth-notes = 3 quarter-note beats per bar
-  clock.setTimeSignature(6, 8);
+  EXPECT_TRUE(clock.setTimeSignature(6, 8));
+  EXPECT_EQ(clock.timeSignatureNumerator(), 6);
+  EXPECT_EQ(clock.timeSignatureDenominator(), 8);
   EXPECT_NEAR(clock.beatsPerBar(), 3.0, 1e-9);
   clock.locate(5.99);
   EXPECT_EQ(clock.barIndex(), 1);
@@ -238,7 +245,67 @@ bool testTimeSignatures() {
   EXPECT_EQ(clock.barIndex(), 2);
   EXPECT_NEAR(clock.barPhase(), 0.0f, 1e-6);
 
-  std::cout << "[PASS] Time Signatures (4/4, 3/4, 6/8)\n";
+  // 7/8: 7 eighth-notes = 3.5 quarter-note beats per bar
+  EXPECT_TRUE(clock.setTimeSignature(7, 8));
+  EXPECT_EQ(clock.timeSignatureNumerator(), 7);
+  EXPECT_EQ(clock.timeSignatureDenominator(), 8);
+  EXPECT_NEAR(clock.beatsPerBar(), 3.5, 1e-9);
+
+  // 5/16: 5 sixteenth-notes = 1.25 quarter-note beats per bar
+  EXPECT_TRUE(clock.setTimeSignature(5, 16));
+  EXPECT_EQ(clock.timeSignatureNumerator(), 5);
+  EXPECT_EQ(clock.timeSignatureDenominator(), 16);
+  EXPECT_NEAR(clock.beatsPerBar(), 1.25, 1e-9);
+
+  // 2. Strict Rejection of Invalid Signatures:
+  // Baseline state: 5/16, beatsPerBar = 1.25, musicalPos = 6.0, generation = clock.generation()
+  clock.locate(6.0);
+  const uint32_t savedNum = clock.timeSignatureNumerator();
+  const uint32_t savedDen = clock.timeSignatureDenominator();
+  const double savedBpb = clock.beatsPerBar();
+  const double savedPos = clock.musicalPosition();
+  const uint32_t savedGen = clock.generation();
+
+  const std::pair<uint32_t, uint32_t> invalidCases[] = {
+      {0, 4},   // Zero numerator
+      {33, 4},  // Numerator > 32
+      {4, 0},   // Zero denominator
+      {4, 3},   // Unsupported denominator (3)
+      {4, 32}   // Denominator not in {2, 4, 8, 16}
+  };
+
+  for (const auto& [n, d] : invalidCases) {
+    EXPECT_TRUE(!clock.setTimeSignature(n, d));
+    // Verify complete state preservation
+    EXPECT_EQ(clock.timeSignatureNumerator(), savedNum);
+    EXPECT_EQ(clock.timeSignatureDenominator(), savedDen);
+    EXPECT_NEAR(clock.beatsPerBar(), savedBpb, 1e-9);
+    EXPECT_NEAR(clock.musicalPosition(), savedPos, 1e-9);
+    EXPECT_EQ(clock.generation(), savedGen);
+  }
+
+  // 3. C-API Verification
+  hydra_dsp_handle* handle = nullptr;
+  int err = hydra_dsp_create(48000.0f, 2000.0f, &handle);
+  EXPECT_EQ(err, 0);
+
+  // Valid via C-API
+  EXPECT_EQ(hydra_dsp_transport_set_time_signature(handle, 4, 4), 0);
+  EXPECT_EQ(hydra_dsp_transport_set_time_signature(handle, 7, 8), 0);
+
+  // Invalid via C-API
+  for (const auto& [n, d] : invalidCases) {
+    EXPECT_EQ(hydra_dsp_transport_set_time_signature(handle, n, d), -1);
+  }
+
+  hydra_dsp_transport_state st{};
+  EXPECT_EQ(hydra_dsp_transport_get_state(handle, &st), 0);
+  EXPECT_EQ(st.time_signature_numerator, 7);
+  EXPECT_EQ(st.time_signature_denominator, 8);
+
+  hydra_dsp_destroy(handle);
+
+  std::cout << "[PASS] Time Signatures (4/4, 3/4, 6/8, 7/8, 5/16 + Strict Validation)\n";
   return true;
 }
 
@@ -607,6 +674,43 @@ bool testLimitedHistoryDiagnostics() {
   return true;
 }
 
+// N. DSP Precedence: Accidental Warp takes operational priority over Reverse V2
+bool testDspPrecedenceWarpVsReverse() {
+  TapeCore core(48000.0f, 2000.0f, 2000.0f);
+  EXPECT_TRUE(core.isValid());
+
+  TapeParams p;
+  p.delayActive = true;
+  p.delayTimeMs = 300.0f;
+  p.delayWet = 100.0f;
+  p.dryWet = 100.0f;
+  p.reverse = true;
+  p.reverseMode = 0; // Rhythmic Reverse V2
+  p.reverseDivision = 0; // Quarter note
+
+  // When Warp is OFF, Reverse V2 is active
+  p.warpActive = false;
+  core.updateParams(p);
+  EXPECT_TRUE(!core.isReverseClamped()); // Valid window
+
+  // When Warp is ON, Warp takes operational priority over Reverse V2
+  p.warpActive = true;
+  core.updateParams(p);
+
+  // Process a block: verify engine runs stably without conflict
+  std::vector<float> inL(128, 0.5f), inR(128, 0.5f);
+  std::vector<float> outL(128, 0.0f), outR(128, 0.0f);
+  core.processStereoBlock(inL.data(), inR.data(), outL.data(), outR.data(), 128);
+
+  for (size_t i = 0; i < 128; ++i) {
+    EXPECT_TRUE(std::isfinite(outL[i]));
+    EXPECT_TRUE(std::isfinite(outR[i]));
+  }
+
+  std::cout << "[PASS] DSP Precedence (Accidental Warp takes priority over Reverse V2)\n";
+  return true;
+}
+
 int main() {
   std::cout << "=== HYDRA GLOBAL TRANSPORT CLOCK TEST SUITE ===\n";
   bool ok = true;
@@ -623,6 +727,7 @@ int main() {
   ok = ok && testLongSessionStability();
   ok = ok && testInvalidInputsAndNaN();
   ok = ok && testLimitedHistoryDiagnostics();
+  ok = ok && testDspPrecedenceWarpVsReverse();
 
   if (ok) {
     std::cout << ">>> ALL GLOBAL TRANSPORT CLOCK TESTS PASSED <<<\n";

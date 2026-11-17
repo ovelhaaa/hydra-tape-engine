@@ -407,9 +407,8 @@ int hydra_dsp_transport_set_bpm(hydra_dsp_handle* handle, float bpm) {
 }
 
 int hydra_dsp_transport_set_time_signature(hydra_dsp_handle* handle, uint32_t numerator, uint32_t denominator) {
-  if (!handle || !handle->core || numerator == 0 || denominator == 0) return -1;
-  handle->core->transport().setTimeSignature(numerator, denominator);
-  return 0;
+  if (!handle || !handle->core) return -1;
+  return handle->core->transport().setTimeSignature(numerator, denominator) ? 0 : -1;
 }
 
 int hydra_dsp_transport_get_state(const hydra_dsp_handle* handle, hydra_dsp_transport_state* out_state) {

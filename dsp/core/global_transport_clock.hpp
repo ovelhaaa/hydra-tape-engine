@@ -122,13 +122,19 @@ class GlobalTransportClock {
     transportGeneration_++;
   }
 
-  void setTimeSignature(uint32_t numerator, uint32_t denominator) {
-    if (numerator == 0 || denominator == 0) {
-      return; // Reject invalid zero values
+  static constexpr bool isValidTimeSignature(uint32_t numerator, uint32_t denominator) {
+    return (numerator >= 1 && numerator <= 32) &&
+           (denominator == 2 || denominator == 4 || denominator == 8 || denominator == 16);
+  }
+
+  bool setTimeSignature(uint32_t numerator, uint32_t denominator) {
+    if (!isValidTimeSignature(numerator, denominator)) {
+      return false; // Reject invalid values without modifying state
     }
-    num_ = std::clamp<uint32_t>(numerator, 1, 32);
-    den_ = (denominator == 8 || denominator == 16 || denominator == 2) ? denominator : 4;
+    num_ = numerator;
+    den_ = denominator;
     beatsPerBar_ = static_cast<double>(num_) * (4.0 / static_cast<double>(den_));
+    return true;
   }
 
   uint32_t timeSignatureNumerator() const { return num_; }

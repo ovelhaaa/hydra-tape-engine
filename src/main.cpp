@@ -1648,6 +1648,9 @@ void executeCommand(String line) {
           dualPrintf("  Time Signature      : %u/%u\n", st.time_signature_numerator, st.time_signature_denominator);
           dualPrintf("  Sample Rate         : %.1f Hz\n", SAMPLE_RATE);
           dualPrintf("  Absolute Samples    : %llu\n", (unsigned long long)st.absolute_sample_position);
+          if (tape->isReverseClamped()) {
+            dualPrintf("  Reverse Sync        : LIMITED (Effective: %.1f ms)\n", tape->effectiveReverseMs());
+          }
         } else {
           dualPrintln("Transport: Not initialized");
         }

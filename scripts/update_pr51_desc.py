@@ -33,7 +33,7 @@ This PR delivers the complete, performance-ready implementation of **Tap Tempo V
   - **Lock-Free SPSC Command Queue (`dsp/core/spsc_queue.hpp`):** 32-slot ring buffer with cache-line separation (`alignas(64)`) separating `head_`, `tail_`, and buffer storage to prevent cache thrashing between Xtensa LX7 dual cores.
   - **Zero Locks in Audio Path:** Audio callback drains the queue via non-blocking `pop()` at block boundaries ($128\\text{ frames} / 44.1\\text{ kHz} \\approx 2.90\\text{ ms}$ max delivery latency).
   - **Overflow Protection:** Non-blocking rejection (`push()` returns `false`) if queue exceeds 32 items, safely dropping excess events without locking or memory reallocation.
-  - **Seqlock State Publication:** `StatePublisher<T>` sequence lock allows Core 0 (CLI/UI) to query `tap status` and `transport status` with 100% tear-free reads without locking Core 1.
+  - **Triple Buffer State Publication:** `StatePublisher<T>` lock-free triple buffer completely eliminates data races under C++17 memory model, allowing Core 0 (CLI/UI) to query `tap status` and `transport status` with 100% tear-free reads without locking Core 1. Producer is 100% wait-free O(1).
 
 ---
 
@@ -74,12 +74,16 @@ This PR delivers the complete, performance-ready implementation of **Tap Tempo V
 ## 6. Comprehensive Test & Benchmark Validation
 
 - **Native CTest Suite (14/14 Suites Passed, 100%):**
-  - All 16 Tap Tempo unit and concurrency tests passed in `hydra_tap_tempo_test`:
+  - All 20 Tap Tempo unit and concurrency tests passed in `hydra_tap_tempo_test`:
     - Tests A–L: Core estimation, debounce, outlier rejection, intentional cadence change, timeout, sample rate independence, timestamp validation, transport integration, reverse synchronization, block independence, C-API state query, legacy ABI structs (116, 140, 148 bytes).
-    - **Test M:** Lock-free SPSC queue FIFO order, overflow protection, and seqlock state publisher.
+    - **Test M:** Lock-free SPSC queue FIFO order, overflow protection, and Triple Buffer state publisher.
     - **Test N:** Verification that Tap 1, isolated outliers, debounce bounces, and out-of-range taps never trigger `updateParams()`.
     - **Test O:** Multi-threaded concurrency stress test (Core 0 producer thread sending 200 taps vs Core 1 consumer thread running 2,000 blocks with concurrent telemetry polling).
     - **Test P:** Interleaved transport commands (`play`, `pause`, `reset`, manual BPM) and tap tempo under continuous audio processing.
+    - **Test Q:** StatePublisher Producer/Consumer Stress & High-Frequency (100k publishes, zero corruption, consistent reads).
+    - **Test R:** Snapshot Consistency Invariants (`inverseGeneration == ~generation`, zero torn reads).
+    - **Test S:** Slow Reader Protection (Writer safely cycled without corrupting reader's buffer).
+    - **Test T:** SPSC Queue Overflow & FIFO Order (Capacity 32 exact, deterministic non-blocking drop).
 - **Web AudioWorklet Suite (24/24 Passed, 100%):**
   - All Node.js tests in `host/web/tests/` passed, covering UI controls, worklet routing, schema serialization, and telemetry.
 - **ESP32-S3 Physical Benchmark (COM15, 240 MHz, 44.1 kHz / 128 frames):**

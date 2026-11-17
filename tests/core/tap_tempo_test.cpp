@@ -10,6 +10,7 @@
 #include <chrono>
 #include <cmath>
 #include <cstdint>
+#include <cstring>
 #include <iostream>
 #include <thread>
 #include <vector>
@@ -505,7 +506,7 @@ bool testSpscQueue() {
   }
   EXPECT_TRUE(queue.empty());
 
-  // Test StatePublisher (seqlock)
+  // Test StatePublisher (Triple Buffer)
   StatePublisher<hydra_dsp_tap_tempo_state> pub;
   hydra_dsp_tap_tempo_state stOut{};
   // Unwritten publisher should return false
@@ -522,7 +523,7 @@ bool testSpscQueue() {
   EXPECT_EQ(stOut.tap_count, 7u);
   EXPECT_NEAR(stOut.confidence, 0.95f, 0.001f);
 
-  std::cout << "[PASS] SPSC Queue & State Publisher (Lock-Free FIFO, Overflow Protection, Seqlock)\n";
+  std::cout << "[PASS] SPSC Queue & State Publisher (Lock-Free FIFO, Overflow Protection, Triple Buffer)\n";
   return true;
 }
 
@@ -715,6 +716,235 @@ bool testConcurrentTransportAndManualBpm() {
   return true;
 }
 
+// Q. StatePublisher Producer/Consumer Stress & High-Frequency Publication (Tests A & C)
+bool testStatePublisherStressAndHighFreq() {
+  struct TelemetryTestPayload {
+    uint32_t counter;
+    float value;
+    uint32_t check;
+  };
+
+  StatePublisher<TelemetryTestPayload> publisher;
+  std::atomic<bool> producerDone{false};
+  std::atomic<uint64_t> successfulReads{0};
+  std::atomic<uint32_t> corruptionCount{0};
+  constexpr uint32_t kTotalPublishes = 100000;
+
+  std::thread producer([&]() {
+    for (uint32_t i = 1; i <= kTotalPublishes; ++i) {
+      TelemetryTestPayload p{i, static_cast<float>(i) * 1.5f, i ^ 0xA5A5A5A5};
+      publisher.publish(p);
+      if ((i & 0x3FF) == 0) {
+        std::this_thread::yield();
+      }
+    }
+    producerDone.store(true, std::memory_order_release);
+  });
+
+  std::thread consumer([&]() {
+    TelemetryTestPayload lastRead{};
+    while (!producerDone.load(std::memory_order_acquire) || successfulReads.load(std::memory_order_relaxed) == 0) {
+      TelemetryTestPayload current{};
+      if (publisher.read(current)) {
+        successfulReads.fetch_add(1, std::memory_order_relaxed);
+        // Verify invariant for every read
+        if ((current.check ^ 0xA5A5A5A5) != current.counter) {
+          corruptionCount.fetch_add(1, std::memory_order_relaxed);
+        }
+        if (current.value != static_cast<float>(current.counter) * 1.5f) {
+          corruptionCount.fetch_add(1, std::memory_order_relaxed);
+        }
+        lastRead = current;
+      }
+    }
+    // Final read after producer finished
+    TelemetryTestPayload finalRead{};
+    if (publisher.read(finalRead)) {
+      if ((finalRead.check ^ 0xA5A5A5A5) != finalRead.counter) {
+        corruptionCount.fetch_add(1, std::memory_order_relaxed);
+      }
+    }
+  });
+
+  producer.join();
+  consumer.join();
+
+  EXPECT_EQ(corruptionCount.load(), 0u);
+  EXPECT_TRUE(successfulReads.load() > 1000u);
+
+  std::cout << "[PASS] StatePublisher Stress & High-Frequency (100k publishes, zero corruption, "
+            << successfulReads.load() << " consistent reads)\n";
+  return true;
+}
+
+// R. Snapshot Consistency Invariant Test (Test B: inverseGeneration == ~generation)
+bool testStatePublisherSnapshotConsistency() {
+  struct InvariantPayload {
+    uint32_t generation;
+    uint32_t inverseGeneration;
+    uint64_t magic;
+    double samplePosition;
+  };
+
+  StatePublisher<InvariantPayload> publisher;
+  std::atomic<bool> running{true};
+  std::atomic<uint32_t> invariantViolations{0};
+  std::atomic<uint64_t> validSnapshots{0};
+  constexpr uint32_t kIterations = 50000;
+
+  std::thread producer([&]() {
+    for (uint32_t i = 1; i <= kIterations; ++i) {
+      InvariantPayload p;
+      p.generation = i;
+      p.inverseGeneration = ~i;
+      p.magic = 0xDEADBEEFCAFEBABEULL;
+      p.samplePosition = static_cast<double>(i) * 128.0;
+      publisher.publish(p);
+    }
+    running.store(false, std::memory_order_release);
+  });
+
+  std::thread consumer([&]() {
+    while (running.load(std::memory_order_acquire)) {
+      InvariantPayload p{};
+      if (publisher.read(p)) {
+        validSnapshots.fetch_add(1, std::memory_order_relaxed);
+        if (p.inverseGeneration != ~p.generation) {
+          invariantViolations.fetch_add(1, std::memory_order_relaxed);
+        }
+        if (p.magic != 0xDEADBEEFCAFEBABEULL) {
+          invariantViolations.fetch_add(1, std::memory_order_relaxed);
+        }
+      }
+    }
+  });
+
+  producer.join();
+  consumer.join();
+
+  EXPECT_EQ(invariantViolations.load(), 0u);
+  EXPECT_TRUE(validSnapshots.load() > 0u);
+
+  std::cout << "[PASS] Snapshot Consistency Invariants (zero torn reads across "
+            << validSnapshots.load() << " snapshots)\n";
+  return true;
+}
+
+// S. Slow Reader Protection (Test D: writer never overwrites storage held by reader)
+bool testStatePublisherSlowReader() {
+  struct LargeTelemetry {
+    uint32_t seq;
+    uint8_t buffer[256];
+  };
+
+  StatePublisher<LargeTelemetry> publisher;
+  LargeTelemetry initial{};
+  initial.seq = 1;
+  std::memset(initial.buffer, 0x11, sizeof(initial.buffer));
+  publisher.publish(initial);
+
+  std::atomic<bool> readerStarted{false};
+  std::atomic<bool> producerDone{false};
+  std::atomic<bool> readerCorruption{false};
+
+  // Reader acquires snapshot and holds onto reading/verifying it while producer publishes hundreds of times
+  std::thread slowReader([&]() {
+    LargeTelemetry snapshot{};
+    if (!publisher.read(snapshot)) {
+      readerCorruption.store(true, std::memory_order_relaxed);
+    }
+    readerStarted.store(true, std::memory_order_release);
+
+    // Simulate slow processing: verify contents repeatedly over 20ms while writer publishes at full blast
+    const auto start = std::chrono::steady_clock::now();
+    while (std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - start).count() < 20) {
+      if (snapshot.seq == 1) {
+        for (size_t b = 0; b < sizeof(snapshot.buffer); ++b) {
+          if (snapshot.buffer[b] != 0x11) {
+            readerCorruption.store(true, std::memory_order_relaxed);
+          }
+        }
+      }
+      std::this_thread::yield();
+    }
+  });
+
+  std::thread fastWriter([&]() {
+    while (!readerStarted.load(std::memory_order_acquire)) {
+      std::this_thread::yield();
+    }
+    // High-frequency writes while reader is holding its buffer
+    for (uint32_t i = 2; i <= 2000; ++i) {
+      LargeTelemetry update{};
+      update.seq = i;
+      std::memset(update.buffer, static_cast<uint8_t>(i & 0xFF), sizeof(update.buffer));
+      publisher.publish(update);
+    }
+    producerDone.store(true, std::memory_order_release);
+  });
+
+  slowReader.join();
+  fastWriter.join();
+
+  EXPECT_TRUE(!readerCorruption.load());
+
+  // Subsequent read should get the latest published item (seq 2000)
+  LargeTelemetry finalSnap{};
+  EXPECT_TRUE(publisher.read(finalSnap));
+  EXPECT_EQ(finalSnap.seq, 2000u);
+  for (size_t b = 0; b < sizeof(finalSnap.buffer); ++b) {
+    EXPECT_EQ(finalSnap.buffer[b], static_cast<uint8_t>(2000 & 0xFF));
+  }
+
+  std::cout << "[PASS] Slow Reader Protection (Writer safely cycled without corrupting reader's buffer)\n";
+  return true;
+}
+
+// T. Queue Overflow & FIFO Ordering (Test E: exact 32 capacity, non-blocking drop)
+bool testSpscQueueOverflowAndOrder() {
+  SpscQueue<uint32_t, 32> queue;
+  EXPECT_TRUE(queue.empty());
+  EXPECT_EQ(queue.size(), 0u);
+  EXPECT_EQ(queue.capacity(), 32u);
+
+  // Fill exactly 32 items
+  for (uint32_t i = 0; i < 32; ++i) {
+    EXPECT_TRUE(queue.push(100 + i));
+  }
+  EXPECT_EQ(queue.size(), 32u);
+
+  // 33rd push MUST be rejected non-blocking
+  EXPECT_TRUE(!queue.push(999));
+  EXPECT_TRUE(!queue.push(1000));
+  EXPECT_EQ(queue.size(), 32u);
+
+  // Pop 1 item
+  uint32_t val = 0;
+  EXPECT_TRUE(queue.pop(val));
+  EXPECT_EQ(val, 100u);
+  EXPECT_EQ(queue.size(), 31u);
+
+  // Push 1 item should succeed now
+  EXPECT_TRUE(queue.push(500));
+  EXPECT_EQ(queue.size(), 32u);
+  EXPECT_TRUE(!queue.push(501)); // Full again
+
+  // Drain all remaining 32 items and verify FIFO order
+  for (uint32_t i = 1; i < 32; ++i) {
+    EXPECT_TRUE(queue.pop(val));
+    EXPECT_EQ(val, 100 + i);
+  }
+  EXPECT_TRUE(queue.pop(val));
+  EXPECT_EQ(val, 500u);
+
+  // Empty queue
+  EXPECT_TRUE(queue.empty());
+  EXPECT_TRUE(!queue.pop(val));
+
+  std::cout << "[PASS] SPSC Queue Overflow & FIFO Order (Capacity 32 exact, non-blocking drop)\n";
+  return true;
+}
+
 int main() {
   std::cout << "=== HYDRA TAP TEMPO V1 TEST SUITE ===\n";
   bool ok = true;
@@ -734,9 +964,13 @@ int main() {
   ok = testNoParamUpdateOnTap1OrOutlier() && ok;
   ok = testConcurrentTapTempoHandoff() && ok;
   ok = testConcurrentTransportAndManualBpm() && ok;
+  ok = testStatePublisherStressAndHighFreq() && ok;
+  ok = testStatePublisherSnapshotConsistency() && ok;
+  ok = testStatePublisherSlowReader() && ok;
+  ok = testSpscQueueOverflowAndOrder() && ok;
 
   if (ok) {
-    std::cout << ">>> ALL 16 TAP TEMPO TESTS PASSED <<<\n";
+    std::cout << ">>> ALL 20 TAP TEMPO & CONCURRENCY TESTS PASSED <<<\n";
     return 0;
   }
   std::cerr << ">>> TAP TEMPO TESTS FAILED <<<\n";

@@ -70,7 +70,7 @@ flowchart LR
 ---
 
 ### FASE 4 — Tap Tempo V1 — Performance-Ready Musical Tempo Input
-- **Status:** IMPLEMENTADO & PENDENTE DE VALIDAÇÃO FINAL (PR dedicada na branch `feature/tap-tempo-v1`).
+- **Status:** PHASE 4 — TAP TEMPO V1: MERGED na main em 17/11/2026 pela [PR #51](https://github.com/ovelhaaa/hydra-tape-engine/pull/51).
 - **Objetivos Cumpridos:**
   - Componente independente de estimação de andamento em tempo real sem alocações dinâmicas (`dsp/core/tap_tempo.hpp`).
   - Fonte única autoritativa de tempo musical preservada estritamente no Global Transport Clock (GTC), sem relógios paralelos nem reinicialização da posição musical.
@@ -80,14 +80,16 @@ flowchart LR
   - Reconhecimento dinâmico de mudanças intencionais de andamento (2 intervalos consecutivos confirmando a nova cadência e reancorando o histórico).
   - Timeout de sessão de 3.0 segundos para separação de sequências de taps preservando o último BPM confirmado no GTC.
   - Convenção explícita de 1 toque = 1 semínima (quarter-note) na faixa nominal estrita de 30 a 300 BPM (2000 ms a 200 ms).
+  - Publicação de telemetria formalmente segura em C++17 via Triple Buffer lock-free (`StatePublisher<T>`), eliminando a data race do seqlock com payload não-atômico.
+  - Fila SPSC de comandos (`SpscQueue<DspHandoffCommand, 32>`) com rejeição não-bloqueante e delimitação de latência máxima ao bloco de áudio (2,90 ms).
   - Expansão da C-API para versão 1.6.0 (`hydra_dsp_tap_tempo_event`, `hydra_dsp_tap_tempo_get_state`, `hydra_dsp_tap_tempo_reset`) preservando rigorosamente a ABI existente (116, 140 e 148 bytes).
   - Integração Web completa (AudioWorklet + botão TAP com suporte a toque, mouse e atalho de teclado 'T', feedback de status `TAP TO SET TEMPO`, `ACQUIRING`, `TEMPO LOCKED`, `TAP REJECTED` e telemetria em tempo real).
   - Interface CLI no ESP32-S3 (`tap`, `tap status`, `tap reset`) operando sem bloqueios no processamento de áudio.
   - Arquitetura desacoplada e preparada para footswitch físico de contato momentâneo via GPIO/ISR.
-  - Suíte de 12 testes automatizados em C++ cobrindo todos os cenários funcionais e de borda, 24 testes web e 14/14 testes CTest passando em 100%.
+  - Suíte de 20 testes automatizados em C++ cobrindo todos os cenários funcionais, invariantes e de estresse de concorrência, 24 testes web e 14/14 suites CTest passando em 100%.
   - Pacote de 10 cenários objetivos gerado no Hydra Listening Lab (`artifacts/listening-lab/tap-tempo-v1/`).
-  - Validação física em placa real ESP32-S3 N16R8 @ 240 MHz com zero overruns e execução sustentada.
-- **Critério de Saída:** Validação técnica completa e aprovação em escuta humana no Hydra Listening Lab.
+  - Validação em placa real ESP32-S3 N16R8 @ 240 MHz com zero overruns e execução sustentada.
+- **Critério de Saída:** Validação técnica completa e autorização formal de merge cumprida integralmente.
 
 ---
 

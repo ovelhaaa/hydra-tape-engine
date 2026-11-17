@@ -22,6 +22,14 @@ public:
                          float* outR,
                          uint32_t frames);
 
+  int transportPlay();
+  int transportPause();
+  int transportStop();
+  int transportReset();
+  int transportSetBpm(float bpm);
+  int transportSetTimeSignature(uint32_t numerator, uint32_t denominator);
+  int transportGetState(hydra_dsp_transport_state* outState) const;
+
 private:
   bool applyParams(const hydra_dsp_params_v1_4& params, bool force);
 

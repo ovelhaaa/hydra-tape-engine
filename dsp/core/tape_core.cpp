@@ -259,7 +259,7 @@ struct TapeCore::Impl {
     if (ptr) heap_caps_free(ptr);
   }
 #endif
-  explicit Impl(float fs,float maxDelayMs,float historyMs):sampleRate(fs),noiseGen(fs,123456789u),noiseGenR(fs,987654321u){ tanhLUT.init(); magneticsL.lut=&tanhLUT; magneticsR.lut=&tanhLUT; updateSampleRateConstants(); dropout.setSampleRate(fs); magneticsL.updateParams(fs,currentParams); magneticsR.updateParams(fs,currentParams); normalBufferSize=(int32_t)(fs*(maxDelayMs/1000.f)); bufferSize=(int32_t)(fs*(historyMs/1000.f)); bufferCapacity=bufferSize+TAPE_BUFFER_GUARD; delayLine=allocateDelayBuffer(bufferCapacity); delayLineR=allocateDelayBuffer(bufferCapacity); if(!delayLine||!delayLineR){freeDelayBuffer(delayLine);freeDelayBuffer(delayLineR);delayLine=delayLineR=nullptr;bufferSize=0;return;} static const float sc[6]={0.7f,0.65f,0.6f,0.6f,0.5f,0.5f}; static const int st[6]={223,367,491,647,821,1039}; for(int i=0;i<6;i++){springAP_L[i].init(st[i]);springAP_R[i].init(st[i]+23);springAP_L[i].setCoeff(sc[i]);springAP_R[i].setCoeff(sc[i]);springLPF_L[i].setLowpass(fs,2500,0.5f);springLPF_R[i].setLowpass(fs,2500,0.5f);} static const float rc[4]={0.6f,0.55f,0.5f,0.45f}; static const int rt[4]={151,313,569,797}; for(int i=0;i<4;i++){reverseAP_L[i].init(rt[i]);reverseAP_R[i].init(rt[i]+17);reverseAP_L[i].setCoeff(rc[i]);reverseAP_R[i].setCoeff(rc[i]);} updateFilters(); flutterLPF.setLowpass(fs,15,0.707f); flutterLPFR.setLowpass(fs,15,0.707f); warpHPF_L.setHighpass(fs,120.0f,0.707f); warpHPF_R.setHighpass(fs,120.0f,0.707f); warpLPF_L.setLowpass(fs,2200.0f,0.707f); warpLPF_R.setLowpass(fs,2200.0f,0.707f); smoothedGrainSamples=std::max(64.0f,80.0f*0.001f*fs);}
+  explicit Impl(float fs,float maxDelayMs,float historyMs):sampleRate(fs),noiseGen(fs,123456789u),noiseGenR(fs,987654321u){ tanhLUT.init(); magneticsL.lut=&tanhLUT; magneticsR.lut=&tanhLUT; updateSampleRateConstants(); dropout.setSampleRate(fs); magneticsL.updateParams(fs,currentParams); magneticsR.updateParams(fs,currentParams); normalBufferSize=(int32_t)(fs*(maxDelayMs/1000.f)); bufferSize=(int32_t)(fs*(historyMs/1000.f)); bufferCapacity=bufferSize+TAPE_BUFFER_GUARD; delayLine=allocateDelayBuffer(bufferCapacity); delayLineR=allocateDelayBuffer(bufferCapacity); if(!delayLine||!delayLineR){freeDelayBuffer(delayLine);freeDelayBuffer(delayLineR);delayLine=delayLineR=nullptr;bufferSize=0;return;} static const float sc[6]={0.7f,0.65f,0.6f,0.6f,0.5f,0.5f}; static const int st[6]={223,367,491,647,821,1039}; for(int i=0;i<6;i++){springAP_L[i].init(st[i]);springAP_R[i].init(st[i]+23);springAP_L[i].setCoeff(sc[i]);springAP_R[i].setCoeff(sc[i]);springLPF_L[i].setLowpass(fs,2500,0.5f);springLPF_R[i].setLowpass(fs,2500,0.5f);} static const float rc[4]={0.6f,0.55f,0.5f,0.45f}; static const int rt[4]={151,313,569,797}; for(int i=0;i<4;i++){reverseAP_L[i].init(rt[i]);reverseAP_R[i].init(rt[i]+17);reverseAP_L[i].setCoeff(rc[i]);reverseAP_R[i].setCoeff(rc[i]);} updateFilters(); flutterLPF.setLowpass(fs,15,0.707f); flutterLPFR.setLowpass(fs,15,0.707f); warpHPF_L.setHighpass(fs,120.0f,0.707f); warpHPF_R.setHighpass(fs,120.0f,0.707f); warpLPF_L.setLowpass(fs,2200.0f,0.707f); warpLPF_R.setLowpass(fs,2200.0f,0.707f); smoothedGrainSamples=std::max(64.0f,80.0f*0.001f*fs); transportClock.prepare(fs); transportClock.setBpm(120.0f);}
   ~Impl(){freeDelayBuffer(delayLine);freeDelayBuffer(delayLineR);}
   bool valid() const {return delayLine&&delayLineR&&bufferSize>0;}
   HYDRA_DSP_IRAM HYDRA_AUDIO_INLINE float feedbackCompressor(float x){ const float t=0.6f,r=1.5f,k=0.2f; float a=std::fabs(x); if(a<=t-k*0.5f)return x; if(a>=t+k*0.5f)return std::copysign(t+(a-t)/r,x); float kx=(a-(t-k*0.5f))/k; float ratio=1.f+(1.f/r-1.f)*kx*kx; return std::copysign(a*ratio,x);}
@@ -310,6 +310,18 @@ struct TapeCore::Impl {
     reverseBlend = 0.f;
     reverseSmearBlend = 0.f;
   }
+  float requestedReverseMs() const {
+    constexpr double beats[] = {1., 4., 2., .5, .25, 1.5, .75, 2./3., 1./3.};
+    if (currentParams.reverseMode == 1) {
+      return currentParams.delayTimeMs;
+    }
+    const int subdiv = std::clamp(currentParams.reverseDivision, 0, 8);
+    const double bpm = std::max(1.0f, currentParams.bpm);
+    return static_cast<float>((60.0 * beats[subdiv] / bpm) * 1000.0);
+  }
+  float maxHistoryMs() const {
+    return (sampleRate > 0.f) ? (static_cast<float>(bufferSize) / sampleRate * 1000.f) : 0.f;
+  }
   void updateSampleRateConstants(){ const float fs=std::max(1.0f,sampleRate); invSampleRate=1.0f/fs; reverseFadeStep=1.f/std::max(1.f,0.010f*fs); reverseControlAlpha=1.f-std::exp(-1.f/(0.015f*fs)); maxDropoutFc=0.45f*fs; delaySmoothAlpha=1.f-std::exp(-1.f/(0.200f*fs)); delayRampInc=1.f/(0.250f*fs); azimuthInc=0.2f*invSampleRate; mechNoiseSlowAlpha=mechNoiseOnePoleAlpha(fs,kMechNoiseSlowTimeSeconds); mechNoiseFastAlpha=mechNoiseOnePoleAlpha(fs,kMechNoiseFastTimeSeconds); duckAttackCoeff=1.f-std::exp(-1.f/(kHissDuckAttackTimeSeconds*fs)); duckReleaseCoeff=1.f-std::exp(-1.f/(kHissDuckReleaseTimeSeconds*fs)); }
   void updateCachedParams();
   void updateFilters();
@@ -328,6 +340,7 @@ struct TapeCore::Impl {
   int springStages=3;
   uint8_t activeHeadMask=4;
   ReverseWindows reverseWindows;
+  GlobalTransportClock transportClock;
   float reverseBlend=0.f, reverseSmearBlend=0.f, reverseFadeStep=0.f;
   float reverseFeedback=0.f, smoothFeedback=0.f;
   float smoothTexture=0.f, smoothWet=0.f, reverseControlAlpha=0.f;
@@ -430,6 +443,10 @@ bool TapeCore::isValid() const { return impl_ && impl_->valid(); }
 const TapeParams& TapeCore::params() const { return impl_->currentParams; }
 bool TapeCore::isReverseClamped() const { return impl_ ? impl_->reverseWindows.isClamped() : false; }
 float TapeCore::effectiveReverseMs() const { return impl_ ? impl_->reverseWindows.effectiveMs() : 0.0f; }
+float TapeCore::requestedReverseMs() const { return impl_ ? impl_->requestedReverseMs() : 0.0f; }
+float TapeCore::maxHistoryMs() const { return impl_ ? impl_->maxHistoryMs() : 0.0f; }
+GlobalTransportClock& TapeCore::transport() { return impl_->transportClock; }
+const GlobalTransportClock& TapeCore::transport() const { return impl_->transportClock; }
 
 void TapeCore::reset(){
   if(!isValid()) return;
@@ -469,6 +486,9 @@ void TapeCore::updateParams(const TapeParams& newParams){
     impl_->warpLPF_L.reset(); impl_->warpLPF_R.reset();
   }
   const auto& previous = impl_->currentParams;
+  if (newParams.bpm != previous.bpm) {
+    impl_->transportClock.setBpm(newParams.bpm);
+  }
   if (newParams.reverse && newParams.reverseMode != 2 &&
       (!previous.reverse || previous.reverseMode != newParams.reverseMode ||
        (newParams.reverseMode == 1 && previous.delayTimeMs != newParams.delayTimeMs) ||
@@ -672,6 +692,10 @@ HYDRA_DSP_IRAM void TapeCore::processStereoBlock(const float* inLBlock,const flo
                             impl_->reverse && !legacyReverse;
   float& reverseBlend = impl_->reverseBlend;
   if (wantsReverse) {
+    if (reverseBlend == 0.f && p->reverseMode == 0) {
+      const auto subdiv = GlobalTransportClock::fromReverseDivision(p->reverseDivision);
+      impl_->reverseWindows.syncPhase(impl_->transportClock.subdivisionPhase(subdiv), impl_->bufferSize);
+    }
     reverseBlend = std::min(1.f, reverseBlend + impl_->reverseFadeStep);
   } else if (reverseBlend > 0.f) {
     reverseBlend = std::max(0.f, reverseBlend - impl_->reverseFadeStep);
@@ -683,7 +707,13 @@ HYDRA_DSP_IRAM void TapeCore::processStereoBlock(const float* inLBlock,const flo
   float dryGain = impl_->dryGain;
   float feedbackGain = impl_->safeFeedback;
   if (reverseBlend > 0.f) {
-    reverseFrame = impl_->reverseWindows.next();
+    const bool syncToClock = (p->reverseMode == 0 && impl_->transportClock.isPlaying());
+    bool isBoundary = false;
+    if (syncToClock) {
+      const auto subdiv = GlobalTransportClock::fromReverseDivision(p->reverseDivision);
+      isBoundary = impl_->transportClock.isSubdivisionBoundary(subdiv);
+    }
+    reverseFrame = impl_->reverseWindows.next(isBoundary, syncToClock);
     const float a = impl_->reverseControlAlpha;
     impl_->smoothTexture += a * (textureGain - impl_->smoothTexture);
     impl_->smoothWet += a * (delayGain - impl_->smoothWet);
@@ -849,6 +879,7 @@ HYDRA_DSP_IRAM void TapeCore::processStereoBlock(const float* inLBlock,const flo
   impl_->writeHead++; if(impl_->writeHead>=impl_->bufferSize) impl_->writeHead=0;
   outLBlock[frameIdx]=sampleOutL;
   outRBlock[frameIdx]=sampleOutR;
+  impl_->transportClock.tick();
   }
   impl_->flushDenormals();
 }

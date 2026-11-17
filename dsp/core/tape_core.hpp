@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include "global_transport_clock.hpp"
 
 namespace hydra::dsp {
 
@@ -56,6 +57,10 @@ public:
   const TapeParams& params() const;
   bool isReverseClamped() const;
   float effectiveReverseMs() const;
+  float requestedReverseMs() const;
+  float maxHistoryMs() const;
+  GlobalTransportClock& transport();
+  const GlobalTransportClock& transport() const;
   float process(float input);
   void processStereo(float inL, float inR, float* outL, float* outR);
   void processStereoBlock(const float* inL, const float* inR, float* outL, float* outR, uint32_t frames);

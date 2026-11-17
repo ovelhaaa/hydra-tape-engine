@@ -129,3 +129,31 @@ int HydraDspEsp32Adapter::processStereoBlock(const float* inL,
   if (!handle_ || !inL || !inR || !outL || !outR) return -1;
   return hydra_dsp_process(handle_, inL, inR, outL, outR, frames);
 }
+
+int HydraDspEsp32Adapter::transportPlay() {
+  return handle_ ? hydra_dsp_transport_play(handle_) : -1;
+}
+
+int HydraDspEsp32Adapter::transportPause() {
+  return handle_ ? hydra_dsp_transport_pause(handle_) : -1;
+}
+
+int HydraDspEsp32Adapter::transportStop() {
+  return handle_ ? hydra_dsp_transport_stop(handle_) : -1;
+}
+
+int HydraDspEsp32Adapter::transportReset() {
+  return handle_ ? hydra_dsp_transport_reset(handle_) : -1;
+}
+
+int HydraDspEsp32Adapter::transportSetBpm(float bpm) {
+  return handle_ ? hydra_dsp_transport_set_bpm(handle_, bpm) : -1;
+}
+
+int HydraDspEsp32Adapter::transportSetTimeSignature(uint32_t numerator, uint32_t denominator) {
+  return handle_ ? hydra_dsp_transport_set_time_signature(handle_, numerator, denominator) : -1;
+}
+
+int HydraDspEsp32Adapter::transportGetState(hydra_dsp_transport_state* outState) const {
+  return handle_ ? hydra_dsp_transport_get_state(handle_, outState) : -1;
+}

@@ -88,7 +88,9 @@ static void from_c(const hydra_dsp_params& in, hydra::dsp::TapeParams* out) {
   out->dryWet = in.dryWet;
   out->delayWet = in.delayWet;
   out->activeHeads = (int)in.activeHeads;
-  out->bpm = in.bpm;
+  if (std::isfinite(in.bpm) && in.bpm > 0.0f) {
+    out->bpm = in.bpm;
+  }
   out->headsMusical = in.headsMusical > 0.5f;
   out->guitarFocus = in.guitarFocus > 0.5f;
   out->tone = in.tone;
@@ -127,7 +129,10 @@ static int set_param(hydra_dsp_handle* h, hydra_dsp_param_id id, float v) {
     case HYDRA_DSP_PARAM_DRY_WET: h->params.dryWet = v; break;
     case HYDRA_DSP_PARAM_DELAY_WET: h->params.delayWet = v; break;
     case HYDRA_DSP_PARAM_ACTIVE_HEADS: h->params.activeHeads = (int)v; break;
-    case HYDRA_DSP_PARAM_BPM: h->params.bpm = v; break;
+    case HYDRA_DSP_PARAM_BPM:
+      if (!std::isfinite(v) || v <= 0.0f) return -1;
+      h->params.bpm = v;
+      break;
     case HYDRA_DSP_PARAM_HEADS_MUSICAL: h->params.headsMusical = v > 0.5f; break;
     case HYDRA_DSP_PARAM_GUITAR_FOCUS: h->params.guitarFocus = v > 0.5f; break;
     case HYDRA_DSP_PARAM_TONE: h->params.tone = v; break;
@@ -343,6 +348,97 @@ int hydra_dsp_get_reverse_status(const hydra_dsp_handle* handle, float* out_effe
   if (out_is_clamped) {
     *out_is_clamped = handle->core->isReverseClamped() ? 1 : 0;
   }
+  return 0;
+}
+
+int hydra_dsp_get_reverse_diagnostics(const hydra_dsp_handle* handle,
+                                      float* out_requested_ms,
+                                      float* out_effective_ms,
+                                      int* out_is_clamped,
+                                      float* out_max_history_ms) {
+  if (!handle || !handle->core) return -1;
+  if (handle->dirty) {
+    const_cast<hydra_dsp_handle*>(handle)->core->updateParams(handle->params);
+    const_cast<hydra_dsp_handle*>(handle)->dirty = false;
+  }
+  if (out_requested_ms) *out_requested_ms = handle->core->requestedReverseMs();
+  if (out_effective_ms) *out_effective_ms = handle->core->effectiveReverseMs();
+  if (out_is_clamped) *out_is_clamped = handle->core->isReverseClamped() ? 1 : 0;
+  if (out_max_history_ms) *out_max_history_ms = handle->core->maxHistoryMs();
+  return 0;
+}
+
+int hydra_dsp_transport_play(hydra_dsp_handle* handle) {
+  if (!handle || !handle->core) return -1;
+  handle->core->transport().play();
+  return 0;
+}
+
+int hydra_dsp_transport_pause(hydra_dsp_handle* handle) {
+  if (!handle || !handle->core) return -1;
+  handle->core->transport().pause();
+  return 0;
+}
+
+int hydra_dsp_transport_stop(hydra_dsp_handle* handle) {
+  if (!handle || !handle->core) return -1;
+  handle->core->transport().stop();
+  return 0;
+}
+
+int hydra_dsp_transport_reset(hydra_dsp_handle* handle) {
+  if (!handle || !handle->core) return -1;
+  handle->core->transport().reset();
+  return 0;
+}
+
+int hydra_dsp_transport_locate(hydra_dsp_handle* handle, double musical_pos, uint64_t sample_pos) {
+  if (!handle || !handle->core || !std::isfinite(musical_pos) || musical_pos < 0.0) return -1;
+  handle->core->transport().locate(musical_pos, sample_pos);
+  return 0;
+}
+
+int hydra_dsp_transport_set_bpm(hydra_dsp_handle* handle, float bpm) {
+  if (!handle || !handle->core || !std::isfinite(bpm) || bpm <= 0.0f) return -1;
+  handle->core->transport().setBpm(bpm);
+  handle->params.bpm = static_cast<float>(handle->core->transport().bpm());
+  handle->core->updateParams(handle->params);
+  return 0;
+}
+
+int hydra_dsp_transport_set_time_signature(hydra_dsp_handle* handle, uint32_t numerator, uint32_t denominator) {
+  if (!handle || !handle->core) return -1;
+  return handle->core->transport().setTimeSignature(numerator, denominator) ? 0 : -1;
+}
+
+int hydra_dsp_transport_get_state(const hydra_dsp_handle* handle, hydra_dsp_transport_state* out_state) {
+  if (!handle || !handle->core || !out_state) return -1;
+  static_assert(sizeof(hydra_dsp_transport_state) == 72, "hydra_dsp_transport_state size must be 72 bytes");
+  static_assert(offsetof(hydra_dsp_transport_state, bpm) == 0, "bpm offset mismatch");
+  static_assert(offsetof(hydra_dsp_transport_state, beat_phase) == 4, "beat_phase offset mismatch");
+  static_assert(offsetof(hydra_dsp_transport_state, bar_phase) == 8, "bar_phase offset mismatch");
+  static_assert(offsetof(hydra_dsp_transport_state, musical_position) == 16, "musical_position offset mismatch");
+  static_assert(offsetof(hydra_dsp_transport_state, absolute_sample_position) == 24, "absolute_sample_position offset mismatch");
+  static_assert(offsetof(hydra_dsp_transport_state, transport_sample_position) == 32, "transport_sample_position offset mismatch");
+  static_assert(offsetof(hydra_dsp_transport_state, beat_index) == 40, "beat_index offset mismatch");
+  static_assert(offsetof(hydra_dsp_transport_state, bar_index) == 48, "bar_index offset mismatch");
+  static_assert(offsetof(hydra_dsp_transport_state, time_signature_numerator) == 56, "time_signature_numerator offset mismatch");
+  static_assert(offsetof(hydra_dsp_transport_state, time_signature_denominator) == 60, "time_signature_denominator offset mismatch");
+  static_assert(offsetof(hydra_dsp_transport_state, playing) == 64, "playing offset mismatch");
+  static_assert(offsetof(hydra_dsp_transport_state, generation) == 68, "generation offset mismatch");
+  const auto& t = handle->core->transport();
+  out_state->bpm = static_cast<float>(t.bpm());
+  out_state->beat_phase = t.beatPhase();
+  out_state->bar_phase = t.barPhase();
+  out_state->musical_position = t.musicalPosition();
+  out_state->absolute_sample_position = t.absoluteSamplePosition();
+  out_state->transport_sample_position = t.transportSamplePosition();
+  out_state->beat_index = t.beatIndex();
+  out_state->bar_index = t.barIndex();
+  out_state->time_signature_numerator = t.timeSignatureNumerator();
+  out_state->time_signature_denominator = t.timeSignatureDenominator();
+  out_state->playing = t.isPlaying() ? 1 : 0;
+  out_state->generation = t.generation();
   return 0;
 }
 

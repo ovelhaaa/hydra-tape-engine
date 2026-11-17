@@ -262,6 +262,8 @@ async function ensureAudioGraph() {
       setActionFeedback('Worklet execution failed', 'error');
     } else if (event.data?.type === 'stateAck') {
       engineState[event.data.key] = event.data.value;
+    } else if (event.data?.type === 'transportTelemetry') {
+      updateTransportUI(event.data);
     }
   };
   
@@ -493,6 +495,102 @@ resetBtn.addEventListener('click', () => {
   setStatus('DSP Core clear command sent.', 'info');
   setActionFeedback('DSP buffers cleared', 'success');
 });
+
+function updateTransportUI(data) {
+  const beatDotsEl = document.getElementById('transportBeatDots');
+  const posDisplayEl = document.getElementById('transportPositionDisplay');
+  const syncBadgeEl = document.getElementById('transportSyncBadge');
+  const bpmInputEl = document.getElementById('transportBpmInput');
+
+  if (syncBadgeEl) {
+    if (data.playing) {
+      if (data.reverseClamped) {
+        syncBadgeEl.textContent = 'SYNC: LIMITED';
+        syncBadgeEl.setAttribute('data-state', 'warning');
+      } else {
+        syncBadgeEl.textContent = 'SYNC: LOCKED';
+        syncBadgeEl.setAttribute('data-state', 'success');
+      }
+    } else {
+      syncBadgeEl.textContent = 'PAUSED';
+      syncBadgeEl.setAttribute('data-state', 'warning');
+    }
+  }
+
+  const reverseWarnEl = document.getElementById('reverseClampedWarning');
+  if (reverseWarnEl) {
+    if (data.reverseClamped) {
+      reverseWarnEl.style.display = 'block';
+      reverseWarnEl.textContent = `REVERSE TIME LIMITED — requested ${Math.round(data.reverseRequestedMs)} ms / effective ${Math.round(data.reverseEffectiveMs)} ms`;
+    } else {
+      reverseWarnEl.style.display = 'none';
+    }
+  }
+
+  if (posDisplayEl) {
+    const currentBar = Number(data.barIndex) + 1;
+    const currentBeat = (Number(data.beatIndex) % Number(data.num || 4)) + 1;
+    posDisplayEl.textContent = `Bar ${currentBar} : Beat ${currentBeat} (${Number(data.musicalPos).toFixed(2)})`;
+  }
+
+  if (beatDotsEl) {
+    const totalBeats = Number(data.num) || 4;
+    const currentBeatIdx = Number(data.beatIndex) % totalBeats;
+    let dots = '';
+    for (let b = 0; b < totalBeats; b++) {
+      dots += (b === currentBeatIdx ? '● ' : '○ ');
+    }
+    beatDotsEl.textContent = dots.trim();
+  }
+
+  if (bpmInputEl && document.activeElement !== bpmInputEl) {
+    bpmInputEl.value = Math.round(data.bpm);
+  }
+}
+
+const transportPlayBtn = document.getElementById('transportPlayBtn');
+const transportPauseBtn = document.getElementById('transportPauseBtn');
+const transportStopBtn = document.getElementById('transportStopBtn');
+const transportResetBtn = document.getElementById('transportResetBtn');
+const transportBpmInput = document.getElementById('transportBpmInput');
+
+if (transportPlayBtn) {
+  transportPlayBtn.addEventListener('click', () => {
+    post({ type: 'transportPlay' });
+    setStatus('Transport: Play', 'info');
+  });
+}
+if (transportPauseBtn) {
+  transportPauseBtn.addEventListener('click', () => {
+    post({ type: 'transportPause' });
+    setStatus('Transport: Paused', 'info');
+  });
+}
+if (transportStopBtn) {
+  transportStopBtn.addEventListener('click', () => {
+    post({ type: 'transportStop' });
+    setStatus('Transport: Stopped', 'info');
+  });
+}
+if (transportResetBtn) {
+  transportResetBtn.addEventListener('click', () => {
+    post({ type: 'transportReset' });
+    setStatus('Transport: Reset to beat 0.0', 'info');
+  });
+}
+if (transportBpmInput) {
+  transportBpmInput.addEventListener('change', () => {
+    const val = Number(transportBpmInput.value);
+    if (!isNaN(val) && val >= 30 && val <= 300) {
+      post({ type: 'transportSetBpm', bpm: val });
+      const bpmSlider = document.getElementById('bpm');
+      if (bpmSlider) {
+        bpmSlider.value = val;
+        bpmSlider.dispatchEvent(new Event('input'));
+      }
+    }
+  });
+}
 
 // Bind controls to their DSP parameters
 ALL_PARAM_IDS.forEach((id) => {

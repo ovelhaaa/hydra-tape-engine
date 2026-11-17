@@ -1156,6 +1156,9 @@ void printHelp() {
   dualPrintln("  wfb <0-95>  : Warp Feedback %");
   dualPrintln("  wmd <0-3>   : Warp Mode (0=2T-Herm, 1=1T-Herm, 2=1T-Raw, 3=2T-Raw)");
   dualPrintln("  perf        : DSP Performance & Telemetry Stats");
+  dualPrintln(" [GLOBAL TRANSPORT CLOCK]");
+  dualPrintln("  tempo <bpm> : Set global BPM");
+  dualPrintln("  transport <play|pause|stop|reset|status> : Transport controls");
   dualPrintln("");
   dualPrintln("  load <preset> : clean, lofi, dub, broken, warp_octave, warp_cascade");
   dualPrintln("  list          : Show Dashboard");
@@ -1613,9 +1616,48 @@ void executeCommand(String line) {
       printDspPerformanceStats();
     }
 
-    // --- SYSTEM ---
-    else if (cmd == "bmp")
-      p_bpm = constrain(val, 30.0f, 300.0f);
+    // --- SYSTEM & TRANSPORT ---
+    else if (cmd == "bmp" || cmd == "bpm" || cmd == "tempo") {
+      p_bpm = constrain(val, 20.0f, 300.0f);
+      if (tape) tape->transportSetBpm(p_bpm);
+      dualPrintf("Tempo: %.1f BPM\n", p_bpm);
+    }
+    else if (cmd == "transport") {
+      valStr.trim();
+      if (valStr == "play") {
+        if (tape) tape->transportPlay();
+        dualPrintln("Transport: PLAY");
+      } else if (valStr == "pause") {
+        if (tape) tape->transportPause();
+        dualPrintln("Transport: PAUSE");
+      } else if (valStr == "stop") {
+        if (tape) tape->transportStop();
+        dualPrintln("Transport: STOP");
+      } else if (valStr == "reset") {
+        if (tape) tape->transportReset();
+        dualPrintln("Transport: RESET to 0.0");
+      } else if (valStr == "status" || valStr.length() == 0) {
+        hydra_dsp_transport_state st{};
+        if (tape && tape->transportGetState(&st) == 0) {
+          dualPrintln("=== TRANSPORT STATUS ===");
+          dualPrintf("  BPM                 : %.1f\n", st.bpm);
+          dualPrintf("  State               : %s\n", st.playing ? "PLAYING" : "PAUSED/STOPPED");
+          dualPrintf("  Beat                : %lld (Phase: %.3f)\n", (long long)st.beat_index, st.beat_phase);
+          dualPrintf("  Bar                 : %lld (Phase: %.3f)\n", (long long)st.bar_index, st.bar_phase);
+          dualPrintf("  Musical Position    : %.3f beats\n", st.musical_position);
+          dualPrintf("  Time Signature      : %u/%u\n", st.time_signature_numerator, st.time_signature_denominator);
+          dualPrintf("  Sample Rate         : %.1f Hz\n", SAMPLE_RATE);
+          dualPrintf("  Absolute Samples    : %llu\n", (unsigned long long)st.absolute_sample_position);
+          if (tape->isReverseClamped()) {
+            dualPrintf("  Reverse Sync        : LIMITED (Effective: %.1f ms)\n", tape->effectiveReverseMs());
+          }
+        } else {
+          dualPrintln("Transport: Not initialized");
+        }
+      } else {
+        dualPrintln("Usage: transport [play|pause|stop|reset|status]");
+      }
+    }
     else if (cmd == "load")
       loadPreset(valStr);
     else if (cmd == "list")

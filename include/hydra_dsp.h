@@ -13,7 +13,7 @@ enum { HYDRA_DSP_CHANNELS_STEREO = 2 };
 
 enum {
   HYDRA_DSP_API_VERSION_MAJOR = 1,
-  HYDRA_DSP_API_VERSION_MINOR = 4,
+  HYDRA_DSP_API_VERSION_MINOR = 5,
   HYDRA_DSP_API_VERSION_PATCH = 0,
   HYDRA_DSP_API_VERSION =
       (HYDRA_DSP_API_VERSION_MAJOR << 16) |
@@ -63,6 +63,41 @@ typedef enum hydra_dsp_reverse_division {
   HYDRA_DSP_REVERSE_TRIPLET_QUARTER = 7,
   HYDRA_DSP_REVERSE_TRIPLET_EIGHTH = 8
 } hydra_dsp_reverse_division;
+
+typedef enum hydra_dsp_transport_playback_state {
+  HYDRA_DSP_TRANSPORT_STOPPED = 0,
+  HYDRA_DSP_TRANSPORT_PLAYING = 1,
+  HYDRA_DSP_TRANSPORT_PAUSED = 2
+} hydra_dsp_transport_playback_state;
+
+typedef enum hydra_dsp_subdivision {
+  HYDRA_DSP_SUBDIV_WHOLE = 0,
+  HYDRA_DSP_SUBDIV_HALF = 1,
+  HYDRA_DSP_SUBDIV_QUARTER = 2,
+  HYDRA_DSP_SUBDIV_EIGHTH = 3,
+  HYDRA_DSP_SUBDIV_SIXTEENTH = 4,
+  HYDRA_DSP_SUBDIV_THIRTY_SECOND = 5,
+  HYDRA_DSP_SUBDIV_DOTTED_QUARTER = 6,
+  HYDRA_DSP_SUBDIV_DOTTED_EIGHTH = 7,
+  HYDRA_DSP_SUBDIV_TRIPLET_QUARTER = 8,
+  HYDRA_DSP_SUBDIV_TRIPLET_EIGHTH = 9,
+  HYDRA_DSP_SUBDIV_COUNT = 10
+} hydra_dsp_subdivision;
+
+typedef struct hydra_dsp_transport_state {
+  float bpm;
+  float beat_phase;
+  float bar_phase;
+  double musical_position;
+  uint64_t absolute_sample_position;
+  uint64_t transport_sample_position;
+  int64_t beat_index;
+  int64_t bar_index;
+  uint32_t time_signature_numerator;
+  uint32_t time_signature_denominator;
+  int playing;
+  uint32_t generation;
+} hydra_dsp_transport_state;
 
 typedef struct hydra_dsp_params_v1_4 {
   hydra_dsp_params v1_3;
@@ -188,6 +223,31 @@ int hydra_dsp_commit(hydra_dsp_handle* handle);
  * @return 0 on success, -1 on null handle
  */
 int hydra_dsp_get_reverse_status(const hydra_dsp_handle* handle, float* out_effective_ms, int* out_is_clamped);
+
+/**
+ * @brief Retrieves detailed reverse window timing diagnostics including requested vs effective duration and max history.
+ *
+ * @param handle Handle to DSP instance
+ * @param out_requested_ms Output pointer for nominal requested duration in ms (may be NULL)
+ * @param out_effective_ms Output pointer for effective applied duration in ms (may be NULL)
+ * @param out_is_clamped Output pointer for clamp flag (1 if clamped, 0 otherwise, may be NULL)
+ * @param out_max_history_ms Output pointer for total available history capacity in ms (may be NULL)
+ * @return 0 on success, -1 on null handle
+ */
+int hydra_dsp_get_reverse_diagnostics(const hydra_dsp_handle* handle,
+                                      float* out_requested_ms,
+                                      float* out_effective_ms,
+                                      int* out_is_clamped,
+                                      float* out_max_history_ms);
+
+int hydra_dsp_transport_play(hydra_dsp_handle* handle);
+int hydra_dsp_transport_pause(hydra_dsp_handle* handle);
+int hydra_dsp_transport_stop(hydra_dsp_handle* handle);
+int hydra_dsp_transport_reset(hydra_dsp_handle* handle);
+int hydra_dsp_transport_locate(hydra_dsp_handle* handle, double musical_pos, uint64_t sample_pos);
+int hydra_dsp_transport_set_bpm(hydra_dsp_handle* handle, float bpm);
+int hydra_dsp_transport_set_time_signature(hydra_dsp_handle* handle, uint32_t numerator, uint32_t denominator);
+int hydra_dsp_transport_get_state(const hydra_dsp_handle* handle, hydra_dsp_transport_state* out_state);
 
 int hydra_dsp_process(hydra_dsp_handle* handle,
                       const float* in_l,

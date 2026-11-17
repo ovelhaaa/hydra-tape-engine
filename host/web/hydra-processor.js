@@ -122,8 +122,18 @@ class HydraProcessor extends AudioWorkletProcessor {
         reset: this.module.cwrap('hydra_dsp_reset', null, ['number']),
         setParameter: this.module.cwrap('hydra_dsp_set_parameter', 'number', ['number', 'number', 'number']),
         commit: this.module.cwrap('hydra_dsp_commit', 'number', ['number']),
-        process: this.module.cwrap('hydra_dsp_process', 'number', ['number', 'number', 'number', 'number', 'number', 'number'])
+        process: this.module.cwrap('hydra_dsp_process', 'number', ['number', 'number', 'number', 'number', 'number', 'number']),
+        getReverseDiagnostics: this.module.cwrap('hydra_dsp_get_reverse_diagnostics', 'number', ['number', 'number', 'number', 'number', 'number']),
+        transportPlay: this.module.cwrap('hydra_dsp_transport_play', 'number', ['number']),
+        transportPause: this.module.cwrap('hydra_dsp_transport_pause', 'number', ['number']),
+        transportStop: this.module.cwrap('hydra_dsp_transport_stop', 'number', ['number']),
+        transportReset: this.module.cwrap('hydra_dsp_transport_reset', 'number', ['number']),
+        transportSetBpm: this.module.cwrap('hydra_dsp_transport_set_bpm', 'number', ['number', 'number']),
+        transportGetState: this.module.cwrap('hydra_dsp_transport_get_state', 'number', ['number', 'number'])
       };
+
+      this.transportStatePtr = this.module._malloc(72);
+      this.reverseDiagPtr = this.module._malloc(16);
 
       const handlePtr = this.module._malloc(4);
       const res = this.api.create(sampleRate, 4000.0, 16100.0, handlePtr);
@@ -183,7 +193,9 @@ class HydraProcessor extends AudioWorkletProcessor {
       if (this.inR) this.module._free(this.inR);
       if (this.outL) this.module._free(this.outL);
       if (this.outR) this.module._free(this.outR);
-      this.inL = this.inR = this.outL = this.outR = 0;
+      if (this.transportStatePtr) this.module._free(this.transportStatePtr);
+      if (this.reverseDiagPtr) this.module._free(this.reverseDiagPtr);
+      this.inL = this.inR = this.outL = this.outR = this.transportStatePtr = this.reverseDiagPtr = 0;
     }
   }
 
@@ -239,6 +251,16 @@ class HydraProcessor extends AudioWorkletProcessor {
         this.api.commit(this.handle);
         this.port.postMessage({ type: 'stateAck', key: command, value });
       }
+    } else if (msg.type === 'transportPlay') {
+      if (this.api.transportPlay) this.api.transportPlay(this.handle);
+    } else if (msg.type === 'transportPause') {
+      if (this.api.transportPause) this.api.transportPause(this.handle);
+    } else if (msg.type === 'transportStop') {
+      if (this.api.transportStop) this.api.transportStop(this.handle);
+    } else if (msg.type === 'transportReset') {
+      if (this.api.transportReset) this.api.transportReset(this.handle);
+    } else if (msg.type === 'transportSetBpm') {
+      if (this.api.transportSetBpm) this.api.transportSetBpm(this.handle, Number(msg.bpm));
     }
   }
 
@@ -287,6 +309,61 @@ class HydraProcessor extends AudioWorkletProcessor {
       const dry = 1.0 - wet;
       outL[i] = dspL[i] * wet + inL[i] * dry;
       outR[i] = dspR[i] * wet + inR[i] * dry;
+    }
+
+    this.telemetryTick = (this.telemetryTick || 0) + 1;
+    if (this.telemetryTick >= 16 && this.transportStatePtr && this.api.transportGetState) {
+      this.telemetryTick = 0;
+      if (this.api.transportGetState(this.handle, this.transportStatePtr) === 0) {
+        const view = new DataView(this.module.HEAPU8.buffer, this.transportStatePtr, 72);
+        const bpm = view.getFloat32(0, true);
+        const beatPhase = view.getFloat32(4, true);
+        const barPhase = view.getFloat32(8, true);
+        const musicalPos = view.getFloat64(16, true);
+        const beatIndex = Number(view.getBigInt64(40, true));
+        const barIndex = Number(view.getBigInt64(48, true));
+        const num = view.getUint32(56, true);
+        const den = view.getUint32(60, true);
+        const playing = view.getInt32(64, true);
+        const generation = view.getUint32(68, true);
+
+        let reverseClamped = 0;
+        let reverseRequestedMs = 0;
+        let reverseEffectiveMs = 0;
+        let reverseMaxHistoryMs = 0;
+
+        if (this.reverseDiagPtr && this.api.getReverseDiagnostics) {
+          const reqPtr = this.reverseDiagPtr;
+          const effPtr = this.reverseDiagPtr + 4;
+          const clmPtr = this.reverseDiagPtr + 8;
+          const maxPtr = this.reverseDiagPtr + 12;
+          if (this.api.getReverseDiagnostics(this.handle, reqPtr, effPtr, clmPtr, maxPtr) === 0) {
+            const dView = new DataView(this.module.HEAPU8.buffer, this.reverseDiagPtr, 16);
+            reverseRequestedMs = dView.getFloat32(0, true);
+            reverseEffectiveMs = dView.getFloat32(4, true);
+            reverseClamped = dView.getInt32(8, true);
+            reverseMaxHistoryMs = dView.getFloat32(12, true);
+          }
+        }
+
+        this.port.postMessage({
+          type: 'transportTelemetry',
+          bpm,
+          beatPhase,
+          barPhase,
+          musicalPos,
+          beatIndex,
+          barIndex,
+          num,
+          den,
+          playing,
+          generation,
+          reverseClamped,
+          reverseRequestedMs,
+          reverseEffectiveMs,
+          reverseMaxHistoryMs
+        });
+      }
     }
 
     return true;

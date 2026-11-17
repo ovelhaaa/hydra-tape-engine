@@ -427,6 +427,30 @@
           </div>
         </div>
 
+        <!-- Global Transport Clock -->
+        <div class="panel" id="transportPanel">
+          <div class="panel-title" style="display: flex; justify-content: space-between; align-items: center;">
+            <span>Global Transport Clock</span>
+            <span class="badge" id="transportSyncBadge" data-state="success" style="font-size: 0.65rem;">SYNC: LOCKED</span>
+          </div>
+          <div class="control-stack">
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.4rem 0.6rem; background: var(--surface-low, #18181b); border-radius: 4px;">
+              <div id="transportBeatDots" style="font-size: 1.1rem; letter-spacing: 0.3rem; font-family: var(--font-mono); color: var(--accent, #38bdf8);">● ○ ○ ○</div>
+              <div id="transportPositionDisplay" style="font-size: 0.75rem; font-family: var(--font-mono); color: var(--text-mid, #94a3b8);">Bar 1 : Beat 1 (0.00)</div>
+            </div>
+            <div class="btn-group">
+              <button class="btn btn-primary" id="transportPlayBtn">Play</button>
+              <button class="btn" id="transportPauseBtn">Pause</button>
+              <button class="btn" id="transportStopBtn">Stop</button>
+              <button class="btn" id="transportResetBtn">Reset</button>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; font-size: 0.75rem;">
+              <span>Global BPM</span>
+              <input type="number" id="transportBpmInput" min="30" max="300" step="1" value="120" style="width: 70px; padding: 0.2rem 0.4rem; background: var(--surface-low, #18181b); border: 1px solid var(--border, #27272a); color: var(--text-high, #f8fafc); border-radius: 4px; font-family: var(--font-mono);" />
+            </div>
+          </div>
+        </div>
+
         <!-- Inputs & IO -->
         <div class="panel">
           <div class="panel-title">I/O Operations</div>
@@ -710,7 +734,9 @@
                     <input type="checkbox" id="reverseSmear" />
                   </div>
                 </div>
-
+                <div id="reverseClampedWarning" style="display: none; margin-top: 8px; padding: 6px 10px; background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.4); color: var(--warning, #f59e0b); border-radius: 4px; font-size: 0.72rem; font-weight: 600; text-align: center;">
+                  REVERSE TIME LIMITED — requested 0 ms / effective 0 ms
+                </div>
               </div>
             </div>
 

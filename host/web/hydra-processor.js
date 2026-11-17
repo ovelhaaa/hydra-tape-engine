@@ -312,19 +312,17 @@ class HydraProcessor extends AudioWorkletProcessor {
     if (this.telemetryTick >= 16 && this.transportStatePtr && this.api.transportGetState) {
       this.telemetryTick = 0;
       if (this.api.transportGetState(this.handle, this.transportStatePtr) === 0) {
-        const f32 = new Float32Array(this.module.HEAPF32.buffer, this.transportStatePtr, 3);
-        const bpm = f32[0];
-        const beatPhase = f32[1];
-        const barPhase = f32[2];
-        const f64 = new Float64Array(this.module.HEAPF64.buffer, this.transportStatePtr + 16, 1);
-        const musicalPos = f64[0];
-        const i32 = new Int32Array(this.module.HEAP32.buffer, this.transportStatePtr + 40, 8);
-        const beatIndex = i32[0];
-        const barIndex = i32[2];
-        const num = i32[4];
-        const den = i32[5];
-        const playing = i32[6];
-        const generation = i32[7];
+        const view = new DataView(this.module.HEAPU8.buffer, this.transportStatePtr, 72);
+        const bpm = view.getFloat32(0, true);
+        const beatPhase = view.getFloat32(4, true);
+        const barPhase = view.getFloat32(8, true);
+        const musicalPos = view.getFloat64(16, true);
+        const beatIndex = Number(view.getBigInt64(40, true));
+        const barIndex = Number(view.getBigInt64(48, true));
+        const num = view.getUint32(56, true);
+        const den = view.getUint32(60, true);
+        const playing = view.getInt32(64, true);
+        const generation = view.getUint32(68, true);
 
         this.port.postMessage({
           type: 'transportTelemetry',

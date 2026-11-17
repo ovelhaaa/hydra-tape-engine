@@ -57,6 +57,8 @@ public:
   const TapeParams& params() const;
   bool isReverseClamped() const;
   float effectiveReverseMs() const;
+  float requestedReverseMs() const;
+  float maxHistoryMs() const;
   GlobalTransportClock& transport();
   const GlobalTransportClock& transport() const;
   float process(float input);

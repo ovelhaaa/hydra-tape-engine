@@ -310,6 +310,18 @@ struct TapeCore::Impl {
     reverseBlend = 0.f;
     reverseSmearBlend = 0.f;
   }
+  float requestedReverseMs() const {
+    constexpr double beats[] = {1., 4., 2., .5, .25, 1.5, .75, 2./3., 1./3.};
+    if (currentParams.reverseMode == 1) {
+      return currentParams.delayTimeMs;
+    }
+    const int subdiv = std::clamp(currentParams.reverseDivision, 0, 8);
+    const double bpm = std::max(1.0f, currentParams.bpm);
+    return static_cast<float>((60.0 * beats[subdiv] / bpm) * 1000.0);
+  }
+  float maxHistoryMs() const {
+    return (sampleRate > 0.f) ? (static_cast<float>(bufferSize) / sampleRate * 1000.f) : 0.f;
+  }
   void updateSampleRateConstants(){ const float fs=std::max(1.0f,sampleRate); invSampleRate=1.0f/fs; reverseFadeStep=1.f/std::max(1.f,0.010f*fs); reverseControlAlpha=1.f-std::exp(-1.f/(0.015f*fs)); maxDropoutFc=0.45f*fs; delaySmoothAlpha=1.f-std::exp(-1.f/(0.200f*fs)); delayRampInc=1.f/(0.250f*fs); azimuthInc=0.2f*invSampleRate; mechNoiseSlowAlpha=mechNoiseOnePoleAlpha(fs,kMechNoiseSlowTimeSeconds); mechNoiseFastAlpha=mechNoiseOnePoleAlpha(fs,kMechNoiseFastTimeSeconds); duckAttackCoeff=1.f-std::exp(-1.f/(kHissDuckAttackTimeSeconds*fs)); duckReleaseCoeff=1.f-std::exp(-1.f/(kHissDuckReleaseTimeSeconds*fs)); }
   void updateCachedParams();
   void updateFilters();
@@ -431,6 +443,8 @@ bool TapeCore::isValid() const { return impl_ && impl_->valid(); }
 const TapeParams& TapeCore::params() const { return impl_->currentParams; }
 bool TapeCore::isReverseClamped() const { return impl_ ? impl_->reverseWindows.isClamped() : false; }
 float TapeCore::effectiveReverseMs() const { return impl_ ? impl_->reverseWindows.effectiveMs() : 0.0f; }
+float TapeCore::requestedReverseMs() const { return impl_ ? impl_->requestedReverseMs() : 0.0f; }
+float TapeCore::maxHistoryMs() const { return impl_ ? impl_->maxHistoryMs() : 0.0f; }
 GlobalTransportClock& TapeCore::transport() { return impl_->transportClock; }
 const GlobalTransportClock& TapeCore::transport() const { return impl_->transportClock; }
 

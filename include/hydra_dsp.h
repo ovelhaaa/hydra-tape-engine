@@ -224,6 +224,22 @@ int hydra_dsp_commit(hydra_dsp_handle* handle);
  */
 int hydra_dsp_get_reverse_status(const hydra_dsp_handle* handle, float* out_effective_ms, int* out_is_clamped);
 
+/**
+ * @brief Retrieves detailed reverse window timing diagnostics including requested vs effective duration and max history.
+ *
+ * @param handle Handle to DSP instance
+ * @param out_requested_ms Output pointer for nominal requested duration in ms (may be NULL)
+ * @param out_effective_ms Output pointer for effective applied duration in ms (may be NULL)
+ * @param out_is_clamped Output pointer for clamp flag (1 if clamped, 0 otherwise, may be NULL)
+ * @param out_max_history_ms Output pointer for total available history capacity in ms (may be NULL)
+ * @return 0 on success, -1 on null handle
+ */
+int hydra_dsp_get_reverse_diagnostics(const hydra_dsp_handle* handle,
+                                      float* out_requested_ms,
+                                      float* out_effective_ms,
+                                      int* out_is_clamped,
+                                      float* out_max_history_ms);
+
 int hydra_dsp_transport_play(hydra_dsp_handle* handle);
 int hydra_dsp_transport_pause(hydra_dsp_handle* handle);
 int hydra_dsp_transport_stop(hydra_dsp_handle* handle);

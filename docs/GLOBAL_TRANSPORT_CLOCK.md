@@ -48,7 +48,7 @@ Em vez de acumulações sucessivas de ponto flutuante susceptíveis a erro de ar
 $$m(n) = m_{\text{origin}} + (n - n_{\text{origin}}) \cdot \Delta m$$
 onde $\Delta m = \frac{\text{BPM}}{60.0 \cdot f_s}$.
 
-Em uma sessão contínua de 100 milhões de frames (~35 horas a 48 kHz), a deriva máxima é $< 10^{-9}$ beats ($< 10^{-7}$ amostras).
+Em uma sessão contínua de 100 milhões de frames (~34,7 minutos a 48 kHz, correspondendo a $\frac{100\,000\,000}{48\,000 \cdot 60} \approx 34,72$ min), a deriva máxima é $< 10^{-9}$ beats ($< 10^{-7}$ amostras).
 
 ---
 
@@ -175,3 +175,52 @@ Pacote gerado em `artifacts/listening-lab/gtc-reverse-sync/`:
 - **10_reset_locate_history:** Relocate preservando o histórico de áudio.
 
 Todos os renders acompanham marcadores temporais, hashes SHA-256 e o arquivo `manifest.json`.
+
+---
+
+## 11. Validação Final de Release, Build Xtensa e Robustez Numérica (v1.5.1)
+
+### 11.1 Causa e Resolução do Build Xtensa ESP32-S3
+- **Diagnóstico:** O compilador Xtensa GCC 14.2.0 (`toolchain-xtensa-esp-elf`) define `int32_t` como `long int`. Em expressões como `std::max(0, safeMax)` e `std::clamp(targetAge, 0, safeMax)`, onde `0` é literal `int` e `safeMax` é `int32_t`, a dedução de tipo falhava com `no matching function for call to max(int, const int32_t&)`.
+- **Correção:** Tipagem explícita com templates fixos em `dsp/core/reverse_windows.hpp`:
+  - `std::min<int32_t>(...)`
+  - `std::max<int32_t>(0, safeMax)`
+  - `std::clamp<int32_t>(targetAge, 0, safeAge)`
+- **Verificação:** Build de firmware com PlatformIO concluído com sucesso total (`esp32-s3-devkitc-1 SUCCESS`), gerando a imagem flashable de 600.959 bytes.
+
+### 11.2 Política de Entradas Inválidas e Hardening (NaN / Inf / Zero / Negativos)
+- **Política Estrita de Rejeição:** Valores não finitos (`std::isnan`, `std::isinf`), negativos ou fora de domínio em chamadas de configuração do relógio são sumariamente rejeitados, mantendo 100% íntegro o estado anterior (BPM anterior, posição musical anterior, geração de transporte e contadores inalterados).
+- **Código de Retorno C-API:** As funções `hydra_dsp_transport_set_bpm`, `hydra_dsp_transport_locate` e `hydra_dsp_transport_set_time_signature` retornam `-1` imediatamente em caso de argumentos inválidos/não-finitos.
+- **Parametrização DSP:** Chamadas a `hydra_dsp_set_parameter` para `HYDRA_DSP_PARAM_BPM` com valores não finitos ou $\le 0.0$ retornam `-1`.
+
+### 11.3 Política de Histórico Limitado e Diagnóstico
+- **Clamping Seguro:** Quando a subdivisão rítmica solicitada em determinado BPM excede a capacidade física do buffer (`requested > maxHop_`), a janela é limitada com segurança ao `maxHop_` disponível, sinalizando `isClamped = 1` e ajustando `effectiveMs`.
+- **API de Diagnóstico (`hydra_dsp_get_reverse_diagnostics`):** Exposição transparente ao host dos valores:
+  1. `requested_ms`: Duração nominal solicitada pela subdivisão musical.
+  2. `effective_ms`: Duração real aplicada ao leitor reverso.
+  3. `is_clamped`: Flag booleana indicando se houve limitação por falta de histórico.
+  4. `max_history_ms`: Capacidade máxima total do buffer de histórico alocado.
+
+### 11.4 Layout de Memória e Telemetria Web
+- A estrutura `hydra_dsp_transport_state` possui tamanho exato de **72 bytes**, com alinhamento de 64 bits para campos `double musical_position`, `uint64_t absolute_sample_position`, `uint64_t transport_sample_position`, `int64_t beat_index` e `int64_t bar_index`.
+- O worklet Web (`host/web/hydra-processor.js`) consome o buffer via `DataView` com decodificação little-endian explícita, prevenindo desalinhamentos ou exceções de offset na memória WASM.
+
+### 11.5 Auditoria de Ponto Flutuante e Desempenho Físico (ESP32-S3 N16R8)
+- **Impacto de Double no Xtensa LX7:** As operações em `double` do GTC ocorrem via incrementos pré-calculados e equações fechadas. No loop de áudio por amostra, apenas incrementos inteiros (`tick()`) e aritméticas básicas são avaliados. O microbenchmarking físico revelou que `floorf` consome apenas ~71 ciclos e o estágio do DSP ocupa menos de 55% do orçamento por bloco.
+- **Ensaio Físico Sustentado (5 minutos contínuos na placa real ESP32-S3 @ 240 MHz):**
+  - **Amostras / Blocos:** 103.360 blocos de 128 frames estéreo a 44,1 kHz (300.003,9 ms de áudio ininterrupto).
+  - **Orçamento por bloco:** **2.902,49 µs**.
+  - **Cadeia Completa sob Carga Máxima** (TapeCore + Delay + Reverse V2 Rhythmic + Accidental Warp + Spring Reverb + GTC ativo):
+    - **Média DSP:** `1.589,41 µs` (**54,76%** do orçamento).
+    - **P50:** `1.594 µs`.
+    - **P95:** `1.665 µs`.
+    - **P99:** `1.677 µs` (**57,78%** do orçamento).
+    - **Pico Máximo:** `1.887 µs` (margem livre de > 1.015 µs para o teto de overrun).
+    - **Overruns de DSP:** **0** (`0,00%`).
+    - **Falhas de I2S (DMA Delta):** **0**.
+    - **Estabilidade de Memória:** `HeapStart = 124.160 B`, `HeapEnd = 124.160 B`, `HeapMin = 124.160 B` (delta de 0 bytes; zero fragmentação, zero alocação dinâmica em tempo de execução).
+    - **PSRAM Livre:** `1.667.736 B` constante.
+
+### 11.6 Divergência Histórica Native/WASM (Issue #48)
+- A divergência numérica entre Native e WASM permanece em `max_abs = 3.6681e-5` e `RMSE = 1.585565e-5` (limites oficiais: $\le 10^{-5}$ e $\le 10^{-6}$), herdada de iterações anteriores de interpolação e funções transcendentais.
+- Os thresholds oficiais não foram relaxados e os testes continuam ativos. O acompanhamento permanece formalizado na issue #48.

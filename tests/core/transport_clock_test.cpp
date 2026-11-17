@@ -469,7 +469,7 @@ bool testLongSessionStability() {
   clock.setBpm(130.0);
   clock.play();
 
-  // Simulate 100 million frames (~34.7 hours of continuous playback)
+  // Simulate 100 million frames (~34.7 minutes of continuous playback at 48 kHz)
   const uint64_t hugeFrames = 100000000ULL;
   clock.advanceBlock(static_cast<uint32_t>(hugeFrames & 0xFFFFFFFF));
 
@@ -479,7 +479,131 @@ bool testLongSessionStability() {
   EXPECT_TRUE(clock.barPhase() >= 0.0f && clock.barPhase() < 1.0f);
   EXPECT_EQ(clock.absoluteSamplePosition(), hugeFrames);
 
-  std::cout << "[PASS] Long Session Stability (100M frames / 35h continuous)\n";
+  std::cout << "[PASS] Long Session Stability (100M frames / ~34.7 minutes continuous)\n";
+  return true;
+}
+
+// M. NaN, Infinity, and Invalid Input Hardening
+bool testInvalidInputsAndNaN() {
+  GlobalTransportClock clock;
+  clock.prepare(48000.0);
+  clock.setBpm(120.0);
+  clock.play();
+  clock.advanceBlock(24000); // 1.0 beat
+
+  const double prevBpm = clock.bpm();
+  const double prevPos = clock.musicalPosition();
+  const uint32_t prevGen = clock.generation();
+
+  // 1. Invalid BPMs must be rejected without modifying state
+  const double invalidBpms[] = {
+      std::numeric_limits<double>::quiet_NaN(),
+      std::numeric_limits<double>::infinity(),
+      -std::numeric_limits<double>::infinity(),
+      0.0,
+      -10.0,
+      -120.0
+  };
+  for (double badBpm : invalidBpms) {
+    clock.setBpm(badBpm);
+    EXPECT_EQ(clock.bpm(), prevBpm);
+    EXPECT_NEAR(clock.musicalPosition(), prevPos, 1e-9);
+    EXPECT_EQ(clock.generation(), prevGen);
+  }
+
+  // 2. Invalid locate positions must be rejected without modifying state
+  const double invalidPositions[] = {
+      std::numeric_limits<double>::quiet_NaN(),
+      std::numeric_limits<double>::infinity(),
+      -std::numeric_limits<double>::infinity(),
+      -0.0001,
+      -100.0
+  };
+  for (double badPos : invalidPositions) {
+    clock.locate(badPos, 12345);
+    EXPECT_EQ(clock.bpm(), prevBpm);
+    EXPECT_NEAR(clock.musicalPosition(), prevPos, 1e-9);
+    EXPECT_EQ(clock.generation(), prevGen);
+  }
+
+  // 3. Invalid time signatures (zero numerator or denominator) must be rejected
+  const uint32_t prevNum = clock.timeSignatureNumerator();
+  const uint32_t prevDen = clock.timeSignatureDenominator();
+  clock.setTimeSignature(0, 4);
+  EXPECT_EQ(clock.timeSignatureNumerator(), prevNum);
+  EXPECT_EQ(clock.timeSignatureDenominator(), prevDen);
+  clock.setTimeSignature(4, 0);
+  EXPECT_EQ(clock.timeSignatureNumerator(), prevNum);
+  EXPECT_EQ(clock.timeSignatureDenominator(), prevDen);
+
+  // 4. Invalid sample rate must be rejected in prepare
+  clock.prepare(std::numeric_limits<double>::quiet_NaN());
+  EXPECT_EQ(clock.sampleRate(), 48000.0);
+  clock.prepare(0.0);
+  EXPECT_EQ(clock.sampleRate(), 48000.0);
+  clock.prepare(-48000.0);
+  EXPECT_EQ(clock.sampleRate(), 48000.0);
+
+  // 5. C-API error codes on invalid inputs
+  hydra_dsp_handle* handle = nullptr;
+  int err = hydra_dsp_create_v1_4(48000.0f, 2000.0f, 4000.0f, &handle);
+  EXPECT_EQ(err, 0);
+  EXPECT_TRUE(handle != nullptr);
+
+  // C-API set BPM: returns -1 on NaN / non-finite / non-positive
+  EXPECT_EQ(hydra_dsp_transport_set_bpm(handle, std::numeric_limits<float>::quiet_NaN()), -1);
+  EXPECT_EQ(hydra_dsp_transport_set_bpm(handle, std::numeric_limits<float>::infinity()), -1);
+  EXPECT_EQ(hydra_dsp_transport_set_bpm(handle, -std::numeric_limits<float>::infinity()), -1);
+  EXPECT_EQ(hydra_dsp_transport_set_bpm(handle, 0.0f), -1);
+  EXPECT_EQ(hydra_dsp_transport_set_bpm(handle, -50.0f), -1);
+
+  // C-API locate: returns -1 on NaN / negative
+  EXPECT_EQ(hydra_dsp_transport_locate(handle, std::numeric_limits<double>::quiet_NaN(), 0), -1);
+  EXPECT_EQ(hydra_dsp_transport_locate(handle, -1.0, 0), -1);
+
+  // C-API time signature: returns -1 on 0
+  EXPECT_EQ(hydra_dsp_transport_set_time_signature(handle, 0, 4), -1);
+  EXPECT_EQ(hydra_dsp_transport_set_time_signature(handle, 4, 0), -1);
+
+  // Parameter set for BPM
+  EXPECT_EQ(hydra_dsp_set_parameter(handle, HYDRA_DSP_PARAM_BPM, std::numeric_limits<float>::quiet_NaN()), -1);
+  EXPECT_EQ(hydra_dsp_set_parameter(handle, HYDRA_DSP_PARAM_BPM, 0.0f), -1);
+  EXPECT_EQ(hydra_dsp_set_parameter(handle, HYDRA_DSP_PARAM_BPM, -10.0f), -1);
+
+  hydra_dsp_destroy(handle);
+  std::cout << "[PASS] NaN, Infinity, and Invalid Input Hardening\n";
+  return true;
+}
+
+// N. Limited History Diagnostics & Safe Clamping
+bool testLimitedHistoryDiagnostics() {
+  hydra_dsp_handle* handle = nullptr;
+  // Create engine with 500ms max delay / history at 48 kHz (~24000 frames)
+  int err = hydra_dsp_create_v1_4(48000.0f, 500.0f, 500.0f, &handle);
+  EXPECT_EQ(err, 0);
+
+  // Request 30 BPM with Whole Note (subdivision 1 = 4 beats = 8000 ms!)
+  hydra_dsp_set_parameter(handle, HYDRA_DSP_PARAM_REVERSE, 1.0f);
+  hydra_dsp_set_parameter(handle, HYDRA_DSP_PARAM_REVERSE_MODE, 0.0f); // Rhythmic
+  hydra_dsp_set_parameter(handle, HYDRA_DSP_PARAM_REVERSE_DIVISION, 1.0f); // Whole note
+  hydra_dsp_transport_set_bpm(handle, 30.0f);
+  hydra_dsp_commit(handle);
+
+  float requestedMs = 0.0f;
+  float effectiveMs = 0.0f;
+  int isClamped = 0;
+  float maxHistoryMs = 0.0f;
+
+  err = hydra_dsp_get_reverse_diagnostics(handle, &requestedMs, &effectiveMs, &isClamped, &maxHistoryMs);
+  EXPECT_EQ(err, 0);
+  EXPECT_EQ(isClamped, 1);
+  EXPECT_NEAR(requestedMs, 8000.0f, 1.0f);
+  EXPECT_TRUE(effectiveMs < requestedMs);
+  EXPECT_TRUE(effectiveMs <= maxHistoryMs);
+  EXPECT_NEAR(maxHistoryMs, 500.0f, 1.0f);
+
+  hydra_dsp_destroy(handle);
+  std::cout << "[PASS] Limited History Diagnostics & Safe Clamping\n";
   return true;
 }
 
@@ -497,6 +621,8 @@ int main() {
   ok = ok && testReverseIntegration();
   ok = ok && testCApiTransport();
   ok = ok && testLongSessionStability();
+  ok = ok && testInvalidInputsAndNaN();
+  ok = ok && testLimitedHistoryDiagnostics();
 
   if (ok) {
     std::cout << ">>> ALL GLOBAL TRANSPORT CLOCK TESTS PASSED <<<\n";

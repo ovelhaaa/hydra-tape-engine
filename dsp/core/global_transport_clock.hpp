@@ -57,7 +57,7 @@ class GlobalTransportClock {
   }
 
   void prepare(double sampleRate) {
-    if (sampleRate > 0.0) {
+    if (std::isfinite(sampleRate) && sampleRate > 0.0) {
       sampleRate_ = sampleRate;
       updateIncrements();
     }
@@ -65,6 +65,9 @@ class GlobalTransportClock {
 
   // Set BPM with phase preservation (instantaneous change without musical position jump)
   void setBpm(double bpm) {
+    if (!std::isfinite(bpm) || bpm <= 0.0) {
+      return; // Reject invalid/non-finite BPM without modifying state
+    }
     const double clampedBpm = std::clamp(bpm, 1.0, 999.0);
     if (clampedBpm == bpm_) return;
 
@@ -110,13 +113,19 @@ class GlobalTransportClock {
   }
 
   void locate(double musicalPositionBeats, uint64_t samplePosition = 0) {
-    musicalOrigin_ = std::max(0.0, musicalPositionBeats);
+    if (!std::isfinite(musicalPositionBeats) || musicalPositionBeats < 0.0) {
+      return; // Reject invalid/non-finite musical position without modifying state
+    }
+    musicalOrigin_ = musicalPositionBeats;
     transportSamplePosition_ = samplePosition;
     sampleOrigin_ = samplePosition;
     transportGeneration_++;
   }
 
   void setTimeSignature(uint32_t numerator, uint32_t denominator) {
+    if (numerator == 0 || denominator == 0) {
+      return; // Reject invalid zero values
+    }
     num_ = std::clamp<uint32_t>(numerator, 1, 32);
     den_ = (denominator == 8 || denominator == 16 || denominator == 2) ? denominator : 4;
     beatsPerBar_ = static_cast<double>(num_) * (4.0 / static_cast<double>(den_));

@@ -30,7 +30,8 @@ struct MidiClockEventResult {
   double wrappedPhaseErrorBeats = 0.0;
   double absolutePhaseErrorBeats = 0.0;
   MidiClockSyncStatus status = MidiClockSyncStatus::Disconnected;
-  uint8_t transportAction = 0; // 0=None, 1=Start, 2=Continue, 3=Stop
+  uint8_t transportAction = 0; // 0=None, 1=Start, 2=Continue, 3=Stop, 4=Realignment
+  double realignMusicalPos = 0.0;
 };
 
 class MidiClockSync {
@@ -39,9 +40,9 @@ class MidiClockSync {
   static constexpr double kMaxBpm = 300.0;
   static constexpr double kDefaultBpm = 120.0;
   static constexpr size_t kHistorySize = 24; // 24 pulses = 1 quarter-note beat
-  static constexpr double kMaxPhaseCorrectionPercent = 0.03; // Max 3% BPM adjustment for phase tracking
-  static constexpr double kMaxPhaseCorrectionBpm = 3.0;      // Max 3.0 BPM absolute correction
-  static constexpr double kPhaseGain = 15.0;                 // Proportional phase correction gain
+  static constexpr double kMaxPhaseCorrectionPercent = 0.05; // Max 5% BPM adjustment for phase tracking
+  static constexpr double kMaxPhaseCorrectionBpm = 5.0;      // Max 5.0 BPM absolute correction
+  static constexpr double kPhaseGain = 35.0;                 // Proportional phase correction gain
 
   MidiClockSync() {
     reset();
@@ -66,7 +67,11 @@ class MidiClockSync {
     estimatedJitterMs_ = 0.0;
     pulseCount_ = 0;
     lastPulseFrame_ = 0;
+    lastGtcMusicalPos_ = -1.0;
     consecutiveLockedPulses_ = 0;
+    consecutiveLargePhasePulses_ = 0;
+    phaseCorrectionsCount_ = 0;
+    realignmentsCount_ = 0;
     historyCount_ = 0;
     historyIndex_ = 0;
     transportRunning_ = false;
@@ -80,8 +85,10 @@ class MidiClockSync {
   void resetAcquisition() {
     status_ = MidiClockSyncStatus::Acquiring;
     consecutiveLockedPulses_ = 0;
+    consecutiveLargePhasePulses_ = 0;
     historyCount_ = 0;
     historyIndex_ = 0;
+    lastGtcMusicalPos_ = -1.0;
     phaseErrorBeats_ = 0.0;
     absolutePhaseErrorBeats_ = 0.0;
     wrappedPhaseErrorBeats_ = 0.0;
@@ -194,6 +201,8 @@ class MidiClockSync {
   uint64_t lastPulseFrame() const { return lastPulseFrame_; }
   bool isTransportRunning() const { return transportRunning_; }
   uint32_t missedPulses() const { return missedPulses_; }
+  uint32_t phaseCorrectionsCount() const { return phaseCorrectionsCount_; }
+  uint32_t realignmentsCount() const { return realignmentsCount_; }
 
   void setAppliedBpm(double bpm) {
     if (std::isfinite(bpm) && bpm >= kMinBpm && bpm <= kMaxBpm) {
@@ -307,13 +316,14 @@ class MidiClockSync {
     estimatedBpm_ = std::clamp(estimatedBpm_, kMinBpm, kMaxBpm);
 
     // Phase error tracking
+    double expectedMusicalPos = 0.0;
     if (transportRunning_ && pulseCount_ > 0) {
       // Expected external position: 1/24 beat per pulse
-      const double expectedMusicalPos = static_cast<double>(pulseCount_) / 24.0;
+      expectedMusicalPos = static_cast<double>(pulseCount_) / 24.0;
       const double rawDiff = expectedMusicalPos - currentGtcMusicalPos;
       absolutePhaseErrorBeats_ = rawDiff;
       // Wrap phase difference to closest beat [-0.5, +0.5]
-      double phaseDiff = rawDiff - std::round(rawDiff);
+      double phaseDiff = rawDiff - std::floor(rawDiff + 0.5);
       wrappedPhaseErrorBeats_ = phaseDiff;
       phaseErrorBeats_ = phaseDiff;
     } else {
@@ -322,12 +332,38 @@ class MidiClockSync {
       phaseErrorBeats_ = 0.0;
     }
 
-    // Digital PLL: Apply proportional correction to pull phase error to zero
+    const bool freqStable = std::fabs(instBpm - estimatedBpm_) <= std::max(2.0, estimatedBpm_ * 0.03);
+
+    // Large Phase Error Detection & Recovery Policy:
+    // Identifies significant integer-beat phase misalignment (>= 1.0 beat displacement with wrapped error near 0)
+    // where proportional PLL cannot recover because wrapped phase error is near zero.
+    const double intBeatOffset = std::round(absolutePhaseErrorBeats_);
+    const bool isIntegerBeatOffset = transportRunning_ && (std::abs(intBeatOffset) >= 1.0) &&
+                                     (std::fabs(wrappedPhaseErrorBeats_) <= 0.05);
+
+    if (isIntegerBeatOffset && freqStable && status_ != MidiClockSyncStatus::Locked) {
+      consecutiveLargePhasePulses_++;
+      // If integer beat displacement persists during acquisition / recovery (>= 12 pulses ~ 0.5 beat of observation):
+      // signal safe musical realignment to external master's expected musical position
+      if (consecutiveLargePhasePulses_ >= 12) {
+        res.transportAction = 4; // Large Phase Recovery Realignment
+        res.realignMusicalPos = expectedMusicalPos;
+        realignmentsCount_++;
+        consecutiveLargePhasePulses_ = 0;
+      }
+    } else {
+      consecutiveLargePhasePulses_ = 0;
+    }
+
+    // Digital PLL: Fine phase tracking with proportional correction
     double phaseCorrectionBpm = 0.0;
     if (transportRunning_ && historyCount_ >= 8) {
       phaseCorrectionBpm = wrappedPhaseErrorBeats_ * kPhaseGain;
       const double maxCorrection = std::min(kMaxPhaseCorrectionBpm, estimatedBpm_ * kMaxPhaseCorrectionPercent);
       phaseCorrectionBpm = std::clamp(phaseCorrectionBpm, -maxCorrection, maxCorrection);
+      if (std::fabs(phaseCorrectionBpm) > 1e-4) {
+        phaseCorrectionsCount_++;
+      }
     }
 
     appliedBpm_ = std::clamp(estimatedBpm_ + phaseCorrectionBpm, kMinBpm, kMaxBpm);
@@ -335,7 +371,6 @@ class MidiClockSync {
     // Evaluate Phase-Locked condition
     // Requires: sufficient history (at least 8 pulses), stable frequency (within 2 BPM),
     // AND both wrapped phase within 0.015 and absolute phase within 0.05 beat (preventing 1-beat, 2-beat offset false lock)
-    const bool freqStable = std::fabs(instBpm - estimatedBpm_) <= std::max(2.0, estimatedBpm_ * 0.03);
     const bool phaseLocked = (!transportRunning_) ||
                              (std::fabs(wrappedPhaseErrorBeats_) <= 0.015 &&
                               std::fabs(absolutePhaseErrorBeats_) <= 0.05);
@@ -375,7 +410,11 @@ class MidiClockSync {
   double estimatedJitterMs_ = 0.0;
   uint64_t pulseCount_ = 0;
   uint64_t lastPulseFrame_ = 0;
+  double lastGtcMusicalPos_ = -1.0;
   uint32_t consecutiveLockedPulses_ = 0;
+  uint32_t consecutiveLargePhasePulses_ = 0;
+  uint32_t phaseCorrectionsCount_ = 0;
+  uint32_t realignmentsCount_ = 0;
   bool transportRunning_ = false;
   uint32_t missedPulses_ = 0;
 

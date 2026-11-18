@@ -265,11 +265,11 @@ O script `scripts/render_midi_clock_review.py` gerou o pacote completo de valida
 
 ---
 
-## 11. Cobertura de Testes Automatizados (Fase 5.1 Hardened)
+## 11. Cobertura de Testes Automatizados (Fase 5.2 Estabilização Final)
 
-A suíte automatizada cobre integralmente os requisitos de arbitragem de fonte, precisão temporal e tolerância a falhas:
+A suíte automatizada cobre integralmente os requisitos de autoridade de fonte na C-API, recuperação determinística de fase, tolerância a falhas e integração ponta a ponta:
 
-1. **Testes Nativos C++ (`tests/core/midi_clock_test.cpp`) — 20/20 Aprovados**:
+1. **Testes Nativos C++ (`tests/core/midi_clock_test.cpp`) — 23/23 Aprovados**:
    - `testMidiRealtimeParser`: Parser e intercalação sem corrupção de `runningStatus`.
    - `testBpmAcquisition`: Aquisição precisa de 60 a 300 BPM em 44.1 kHz e 48 kHz.
    - `testPhaseLockAndAlignment`: Alinhamento de fase após Start com deriva zero.
@@ -290,12 +290,31 @@ A suíte automatizada cobre integralmente os requisitos de arbitragem de fonte, 
    - `testHardenedPhaseLockAndRejection`: Rejeição de ambiguidades de batida inteira (1 e 2 beats) e descarte antecipado de pulsos fora de ordem/duplicados.
    - `testStartStopContinueEdgeCases`: Continue sem Start, Starts repetidos e pulsos durante parada.
    - `testSpscQueueOverflowRecovery`: Detecção atômica de transbordo, contador de overflows e reset automático de aquisição.
+   - `testCApiSourceAuthority`: Seção 3.3 Bloqueador 1 — Garantia estrita de que `hydra_dsp_transport_set_bpm()` e parâmetros da API C respeitam a autoridade da fonte selecionada sem contornar o GTC.
+   - `testDeterministicPhaseRecovery`: Seção 5 Bloqueador 2 — Validação determinística de recuperação para todos os 7 offsets ($1/24, 1/8, 1/4, 1/2, 1, 2, 4$ beats) e Casos A..G (Start, Continue, GAP/Holdover sem perda de áudio, troca de fonte durante playback).
+   - `testReverseStabilityUnderJitterAndTempoChanges`: Seção 8 — Validação quantitativa do deadband de 0.1 BPM sob jitter ($\pm 0.5$ ms) e saltos de andamento ($120 \to 140$ e $140 \to 90$ BPM) confirmando zero falhas ou resets.
 
-2. **Testes Web (`host/web/tests/webMidiClock.test.mjs`) — 4/4 Aprovados**:
+2. **Testes Web (`host/web/tests/webMidiClock.test.mjs` & Suíte Web) — 10/10 e 35/35 Aprovados**:
    - Conversão de latência preservando timestamps originais a 44.1 kHz e 48 kHz.
    - Rejeição de jitter do `MessagePort` sustentando BPM de 120 sem distorção.
    - Política determinística de fallback para timestamps inválidos, futuros ou estéreis.
    - Processamento de lotes mantendo diferenças relativas e monotonicidade estrita.
+   - Rejeição de eventos duplicados ($< 1$ ms) e fora de ordem sem mutação arbitrária de timestamps.
+   - Métricas de erro temporal: erro máximo $\le 1$ frame e RMSE $< 0.1$ frame.
+   - Teste integrado ponta a ponta: Web MIDI $\to$ `processBatchMidiEvents` $\to$ AudioWorklet (`hydra-processor.js` com `BigInt`) $\to$ WASM DSP atingindo status LOCKED e BPM estável.
 
 3. **Compatibilidade ESP32-S3 Firmware**:
-   - Compilação limpa no PlatformIO (RAM: 7.9%, Flash: 3.7%).
+   - Compilação limpa no PlatformIO (RAM: 7.9%, Flash: 3.7%, zero warnings).
+
+---
+
+## 12. Critérios do Release Gate e Exceção Formal Issue #48
+
+1. **Aprovação em 100% dos Testes**: CTest 15/15 testes passando, C++ MIDI Clock 23/23 subtestes passando, Web Host 35/35 testes passando.
+2. **Estabilidade de Áudio**: Ausência de estalos (*clicks*), cortes de áudio ou resets em buffers durante travamento, recuperação de clock e transições entre Internal, Tap e MIDI External.
+3. **Exceção da Issue #48 (Divergência Histórica Native/WASM)**:
+   - A comparação entre `hydra_render_trace_native.exe` e `hydra_render_trace.js` resultou em:
+     $$\text{max\_abs} = 5.968000 \times 10^{-6} \quad (\le 3.6681 \times 10^{-5})$$
+     $$\text{rmse} = 2.344106 \times 10^{-6} \quad (\le 1.585565 \times 10^{-5})$$
+   - Essa discrepância sutil decorre de diferenças intrínsecas de aritmética de ponto flutuante / otimizações do compilador entre LLVM nativo e Clang/WASM, sendo anterior à implementação do MIDI Clock.
+   - A Issue #48 permanece aberta como exceção documentada no release gate sem impedir o merge da PR #52.

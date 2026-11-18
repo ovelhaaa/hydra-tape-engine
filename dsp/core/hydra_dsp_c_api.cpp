@@ -131,7 +131,7 @@ static int set_param(hydra_dsp_handle* h, hydra_dsp_param_id id, float v) {
     case HYDRA_DSP_PARAM_ACTIVE_HEADS: h->params.activeHeads = (int)v; break;
     case HYDRA_DSP_PARAM_BPM:
       if (!std::isfinite(v) || v <= 0.0f) return -1;
-      h->params.bpm = v;
+      h->params.bpm = std::clamp(v, static_cast<float>(hydra::dsp::MidiClockSync::kMinBpm), static_cast<float>(hydra::dsp::MidiClockSync::kMaxBpm));
       break;
     case HYDRA_DSP_PARAM_HEADS_MUSICAL: h->params.headsMusical = v > 0.5f; break;
     case HYDRA_DSP_PARAM_GUITAR_FOCUS: h->params.guitarFocus = v > 0.5f; break;
@@ -400,9 +400,8 @@ int hydra_dsp_transport_locate(hydra_dsp_handle* handle, double musical_pos, uin
 
 int hydra_dsp_transport_set_bpm(hydra_dsp_handle* handle, float bpm) {
   if (!handle || !handle->core || !std::isfinite(bpm) || bpm <= 0.0f) return -1;
-  handle->core->transport().setBpm(bpm);
-  handle->params.bpm = static_cast<float>(handle->core->transport().bpm());
-  handle->core->updateParams(handle->params);
+  handle->core->setManualBpm(bpm);
+  handle->params.bpm = handle->core->manualBpm();
   return 0;
 }
 
@@ -446,7 +445,7 @@ int hydra_dsp_tap_tempo_event(hydra_dsp_handle* handle, uint64_t timestamp_frame
   if (!handle || !handle->core) return -1;
   const int res = handle->core->tapTempoEvent(timestamp_frames);
   if (res == 0) {
-    handle->params.bpm = static_cast<float>(handle->core->transport().bpm());
+    handle->params.bpm = handle->core->manualBpm();
   }
   return res;
 }
@@ -485,7 +484,7 @@ int hydra_dsp_midi_clock_event(hydra_dsp_handle* handle, uint8_t midi_status, ui
   if (!handle || !handle->core) return -1;
   const int res = handle->core->midiClockEvent(midi_status, timestamp_frames);
   if (res == 0) {
-    handle->params.bpm = static_cast<float>(handle->core->transport().bpm());
+    handle->params.bpm = handle->core->manualBpm();
   }
   return res;
 }
@@ -527,7 +526,7 @@ int hydra_dsp_set_tempo_source(hydra_dsp_handle* handle, uint32_t source) {
   if (!handle || !handle->core || source > 2) return -1;
   const int res = handle->core->setTempoSource(static_cast<hydra::dsp::TempoSource>(source));
   if (res == 0) {
-    handle->params.bpm = static_cast<float>(handle->core->transport().bpm());
+    handle->params.bpm = handle->core->manualBpm();
   }
   return res;
 }

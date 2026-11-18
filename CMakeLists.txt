@@ -176,7 +176,7 @@ if(BUILD_WEB)
     # `worklet` ENVIRONMENT token.
     "SHELL:-sENVIRONMENT=web,worker"
     "SHELL:-sEXPORTED_FUNCTIONS=['_hydra_dsp_get_api_version','_hydra_dsp_get_param_count','_hydra_dsp_get_param_specs','_hydra_dsp_get_param_spec','_hydra_dsp_get_param_spec_for_handle','_hydra_dsp_create','_hydra_dsp_create_v1_4','_hydra_dsp_destroy','_hydra_dsp_prepare','_hydra_dsp_reset','_hydra_dsp_set_parameter','_hydra_dsp_get_parameter','_hydra_dsp_get_reverse_status','_hydra_dsp_get_reverse_diagnostics','_hydra_dsp_transport_play','_hydra_dsp_transport_pause','_hydra_dsp_transport_stop','_hydra_dsp_transport_reset','_hydra_dsp_transport_locate','_hydra_dsp_transport_set_bpm','_hydra_dsp_transport_set_time_signature','_hydra_dsp_transport_get_state','_hydra_dsp_tap_tempo_event','_hydra_dsp_tap_tempo_get_state','_hydra_dsp_tap_tempo_reset','_hydra_dsp_midi_clock_event','_hydra_dsp_midi_clock_get_state','_hydra_dsp_midi_clock_reset','_hydra_dsp_set_tempo_source','_hydra_dsp_get_tempo_source','_hydra_dsp_set_params','_hydra_dsp_set_params_v1_2','_hydra_dsp_set_params_v1_3','_hydra_dsp_set_params_sized','_hydra_dsp_commit','_hydra_dsp_process','_malloc','_free']"
-    "SHELL:-sEXPORTED_RUNTIME_METHODS=['cwrap','HEAP32','HEAPF32']"
+    "SHELL:-sEXPORTED_RUNTIME_METHODS=['cwrap','HEAP32','HEAPF32','HEAPU8']"
   )
 
   set(HYDRA_WEB_DIR "${CMAKE_BINARY_DIR}/web")
@@ -191,6 +191,7 @@ if(BUILD_WEB)
       "${CMAKE_CURRENT_SOURCE_DIR}/host/web/transportController.js"
       "${CMAKE_CURRENT_SOURCE_DIR}/host/web/presetSerialization.js"
       "${CMAKE_CURRENT_SOURCE_DIR}/host/web/runtimeDiagnostics.js"
+      "${CMAKE_CURRENT_SOURCE_DIR}/host/web/webMidiTime.js"
       "${HYDRA_WEB_DIR}"
     VERBATIM
   )

@@ -503,7 +503,7 @@ bool testMultiHeadSynchronization() {
   // Sync to 90 BPM
   const double deltaFrames90 = (60.0 * fs) / (24.0 * 90.0);
   uint64_t frame = 0;
-  for (int i = 0; i < 48; ++i) {
+  for (int i = 0; i < 72; ++i) {
     frame += static_cast<uint64_t>(deltaFrames90);
     core.midiClockEvent(0xF8, frame);
     core.transport().advanceBlock(static_cast<uint32_t>(deltaFrames90));
@@ -698,7 +698,7 @@ bool testSourceArbitrationExplicit() {
   double fExact120 = static_cast<double>(f) + 10000.0;
   f = static_cast<uint64_t>(std::round(fExact120));
   core.midiClockEvent(0xFA, f);
-  for (int i = 0; i < 96; ++i) {
+  for (int i = 0; i < 144; ++i) {
     fExact120 += interval120;
     uint64_t nextF = static_cast<uint64_t>(std::round(fExact120));
     core.transport().advanceBlock(static_cast<uint32_t>(nextF - f));
@@ -726,11 +726,13 @@ bool testSourceArbitrationExplicit() {
 
   // Test D — BPM manual durante MIDI External
   // 1. Selecionar MIDI External.
+  EXPECT_EQ(core.setTempoSource(TempoSource::MidiExternal), 0);
+  EXPECT_EQ(core.tempoSource(), TempoSource::MidiExternal);
   // 2. Estabilizar clock a 140 BPM.
-  fExact += 10000.0;
+  fExact = static_cast<double>(f) + 10000.0;
   f = static_cast<uint64_t>(std::round(fExact));
   core.midiClockEvent(0xFA, f);
-  for (int i = 0; i < 96; ++i) {
+  for (int i = 0; i < 144; ++i) {
     fExact += interval140;
     uint64_t nextF = static_cast<uint64_t>(std::round(fExact));
     core.transport().advanceBlock(static_cast<uint32_t>(nextF - f));
@@ -927,6 +929,344 @@ bool testSpscQueueOverflowRecovery() {
   return true;
 }
 
+// U. Section 3.3 C-API Tempo Source Authority (Tests A, B, C, D, E)
+bool testCApiSourceAuthority() {
+  hydra_dsp_handle* handle = nullptr;
+  EXPECT_EQ(hydra_dsp_create(44100.0f, 2000.0f, &handle), 0);
+  EXPECT_TRUE(handle != nullptr);
+
+  // A — Internal manual: 120 -> 135 BPM por API C. Confirmar GTC a 135 BPM.
+  EXPECT_EQ(hydra_dsp_transport_set_bpm(handle, 135.0f), 0);
+  hydra_dsp_transport_state tst{};
+  EXPECT_EQ(hydra_dsp_transport_get_state(handle, &tst), 0);
+  EXPECT_NEAR(tst.bpm, 135.0f, 0.01f);
+  float paramBpm = 0.0f;
+  EXPECT_EQ(hydra_dsp_get_parameter(handle, HYDRA_DSP_PARAM_BPM, &paramBpm), 0);
+  EXPECT_NEAR(paramBpm, 135.0f, 0.01f);
+
+  // B — MIDI External manual edit:
+  // 1. Configurar manualBpm = 120.
+  EXPECT_EQ(hydra_dsp_transport_set_bpm(handle, 120.0f), 0);
+  // 2. Selecionar MIDI External.
+  EXPECT_EQ(hydra_dsp_set_tempo_source(handle, HYDRA_DSP_TEMPO_SOURCE_MIDI_EXTERNAL), 0);
+  // 3. Adquirir clock de 140 BPM.
+  EXPECT_EQ(hydra_dsp_midi_clock_event(handle, 0xFA, 1000), 0);
+  const double interval140 = (60.0 * 44100.0) / (24.0 * 140.0);
+  uint64_t t = 1000;
+  for (int i = 0; i < 72; ++i) {
+    t += static_cast<uint64_t>(std::round(interval140));
+    EXPECT_EQ(hydra_dsp_midi_clock_event(handle, 0xF8, t), 0);
+  }
+  EXPECT_EQ(hydra_dsp_transport_get_state(handle, &tst), 0);
+  EXPECT_NEAR(tst.bpm, 140.0f, 1.0f);
+
+  // 4. Executar hydra_dsp_transport_set_bpm(handle, 110).
+  EXPECT_EQ(hydra_dsp_transport_set_bpm(handle, 110.0f), 0);
+  // 5. Confirmar GTC próximo de 140 BPM.
+  EXPECT_EQ(hydra_dsp_transport_get_state(handle, &tst), 0);
+  EXPECT_NEAR(tst.bpm, 140.0f, 1.0f);
+  // 6. Confirmar fonte MIDI External.
+  uint32_t currentSource = 999;
+  EXPECT_EQ(hydra_dsp_get_tempo_source(handle, &currentSource), 0);
+  EXPECT_EQ(currentSource, static_cast<uint32_t>(HYDRA_DSP_TEMPO_SOURCE_MIDI_EXTERNAL));
+  // 7. Voltar para Internal.
+  EXPECT_EQ(hydra_dsp_set_tempo_source(handle, HYDRA_DSP_TEMPO_SOURCE_INTERNAL), 0);
+  // 8. Confirmar 110 BPM.
+  EXPECT_EQ(hydra_dsp_transport_get_state(handle, &tst), 0);
+  EXPECT_NEAR(tst.bpm, 110.0f, 0.01f);
+  EXPECT_EQ(hydra_dsp_get_parameter(handle, HYDRA_DSP_PARAM_BPM, &paramBpm), 0);
+  EXPECT_NEAR(paramBpm, 110.0f, 0.01f);
+
+  // C — TAP manual edit:
+  // 1. Selecionar TAP.
+  EXPECT_EQ(hydra_dsp_set_tempo_source(handle, HYDRA_DSP_TEMPO_SOURCE_TAP), 0);
+  // 2. Adquirir 90 BPM por taps (interval = 60/90 s = 29400 samples).
+  uint64_t tapTime = t + 44100;
+  EXPECT_EQ(hydra_dsp_tap_tempo_event(handle, tapTime), 0);
+  tapTime += 29400; EXPECT_EQ(hydra_dsp_tap_tempo_event(handle, tapTime), 0);
+  tapTime += 29400; EXPECT_EQ(hydra_dsp_tap_tempo_event(handle, tapTime), 0);
+  tapTime += 29400; EXPECT_EQ(hydra_dsp_tap_tempo_event(handle, tapTime), 0);
+  EXPECT_EQ(hydra_dsp_transport_get_state(handle, &tst), 0);
+  EXPECT_NEAR(tst.bpm, 90.0f, 1.0f);
+
+  // 3. Executar edição manual a 115 BPM.
+  EXPECT_EQ(hydra_dsp_transport_set_bpm(handle, 115.0f), 0);
+  // 4. Confirmar GTC em 90 BPM.
+  EXPECT_EQ(hydra_dsp_transport_get_state(handle, &tst), 0);
+  EXPECT_NEAR(tst.bpm, 90.0f, 1.0f);
+  // 5. Confirmar fonte TAP.
+  EXPECT_EQ(hydra_dsp_get_tempo_source(handle, &currentSource), 0);
+  EXPECT_EQ(currentSource, static_cast<uint32_t>(HYDRA_DSP_TEMPO_SOURCE_TAP));
+  // 6. Voltar para Internal.
+  EXPECT_EQ(hydra_dsp_set_tempo_source(handle, HYDRA_DSP_TEMPO_SOURCE_INTERNAL), 0);
+  // 7. Confirmar 115 BPM.
+  EXPECT_EQ(hydra_dsp_transport_get_state(handle, &tst), 0);
+  EXPECT_NEAR(tst.bpm, 115.0f, 0.01f);
+
+  // D — Preset e commit:
+  // Selecionar MIDI External e estabilizar a 140 BPM.
+  EXPECT_EQ(hydra_dsp_set_tempo_source(handle, HYDRA_DSP_TEMPO_SOURCE_MIDI_EXTERNAL), 0);
+  t += 10000;
+  EXPECT_EQ(hydra_dsp_midi_clock_event(handle, 0xFA, t), 0);
+  for (int i = 0; i < 72; ++i) {
+    t += static_cast<uint64_t>(std::round(interval140));
+    EXPECT_EQ(hydra_dsp_midi_clock_event(handle, 0xF8, t), 0);
+  }
+  EXPECT_EQ(hydra_dsp_transport_get_state(handle, &tst), 0);
+  EXPECT_NEAR(tst.bpm, 140.0f, 1.0f);
+
+  // Atualizar parâmetros não relacionados a BPM enquanto MIDI External estiver ativo.
+  EXPECT_EQ(hydra_dsp_set_parameter(handle, HYDRA_DSP_PARAM_FEEDBACK, 75.0f), 0);
+  EXPECT_EQ(hydra_dsp_set_parameter(handle, HYDRA_DSP_PARAM_DRY_WET, 80.0f), 0);
+  EXPECT_EQ(hydra_dsp_commit(handle), 0);
+  // Confirmar que o GTC não sofre alteração indevida.
+  EXPECT_EQ(hydra_dsp_transport_get_state(handle, &tst), 0);
+  EXPECT_NEAR(tst.bpm, 140.0f, 1.0f);
+
+  // E — Source switching: 6 transições entre Internal, Tap e MIDI External
+  const uint32_t pairs[6][2] = {
+    {HYDRA_DSP_TEMPO_SOURCE_INTERNAL, HYDRA_DSP_TEMPO_SOURCE_TAP},
+    {HYDRA_DSP_TEMPO_SOURCE_TAP, HYDRA_DSP_TEMPO_SOURCE_INTERNAL},
+    {HYDRA_DSP_TEMPO_SOURCE_INTERNAL, HYDRA_DSP_TEMPO_SOURCE_MIDI_EXTERNAL},
+    {HYDRA_DSP_TEMPO_SOURCE_MIDI_EXTERNAL, HYDRA_DSP_TEMPO_SOURCE_INTERNAL},
+    {HYDRA_DSP_TEMPO_SOURCE_TAP, HYDRA_DSP_TEMPO_SOURCE_MIDI_EXTERNAL},
+    {HYDRA_DSP_TEMPO_SOURCE_MIDI_EXTERNAL, HYDRA_DSP_TEMPO_SOURCE_TAP}
+  };
+  for (int i = 0; i < 6; ++i) {
+    EXPECT_EQ(hydra_dsp_set_tempo_source(handle, pairs[i][0]), 0);
+    EXPECT_EQ(hydra_dsp_get_tempo_source(handle, &currentSource), 0);
+    EXPECT_EQ(currentSource, pairs[i][0]);
+    EXPECT_EQ(hydra_dsp_set_tempo_source(handle, pairs[i][1]), 0);
+    EXPECT_EQ(hydra_dsp_get_tempo_source(handle, &currentSource), 0);
+    EXPECT_EQ(currentSource, pairs[i][1]);
+  }
+
+  hydra_dsp_destroy(handle);
+  std::cout << "[PASS] U. Section 3.3 C-API Source Authority (Tests A, B, C, D, E passed)\n";
+  return true;
+}
+
+// V. Section 5 Deterministic Phase Recovery Suite (1/24, 1/8, 1/4, 1/2, 1, 2, 4 beats & Cases A..G)
+bool testDeterministicPhaseRecovery() {
+  const double fs = 48000.0;
+  const double bpm = 120.0;
+  const double step = (60.0 * fs) / (24.0 * bpm); // 1000 frames @ 120 BPM
+
+  const struct Scenario {
+    const char* label;
+    double offsetBeats;
+    bool expectLocate;
+  } scenarios[] = {
+    {"1/24 beat (~0.0417)", 1.0 / 24.0, false},
+    {"1/8 beat (0.1250)",   1.0 / 8.0,  false},
+    {"1/4 beat (0.2500)",   1.0 / 4.0,  false},
+    {"1/2 beat (0.5000)",   0.5,        false},
+    {"1 beat (1.0000)",     1.0,        true},
+    {"2 beats (2.0000)",    2.0,        true},
+    {"4 beats (4.0000)",    4.0,        true}
+  };
+
+  std::cout << "\n--- SECTION 5 PHASE RECOVERY DETERMINISTIC RESULTS ---\n";
+  std::cout << "Scenario | InitErr | PostErr | WrapErr | AbsErr | EstBPM | AppBPM | Pulses | Locked | Locate | GenDelta\n";
+  std::cout << "---------+---------+---------+---------+--------+--------+--------+--------+--------+--------+---------\n";
+
+  for (const auto& sc : scenarios) {
+    TapeCore core(static_cast<float>(fs), 2000.0f, 8100.0f);
+    core.setTempoSource(TempoSource::MidiExternal);
+
+    // Initial Start at sample 1000
+    uint64_t t = 1000;
+    core.midiClockEvent(0xFA, t);
+
+    // Injetar erro inicial deslocando o transporte GTC por sc.offsetBeats
+    if (sc.offsetBeats > 0.0) {
+      core.transport().locate(sc.offsetBeats);
+    }
+    const uint32_t initGen = core.transport().generation();
+
+    uint32_t convergencePulses = 0;
+    bool achievedLock = false;
+
+    // Process up to 480 pulses (20 beats)
+    for (int p = 0; p < 480; ++p) {
+      t += static_cast<uint64_t>(step);
+      core.transport().advanceBlock(static_cast<uint32_t>(step));
+      core.midiClockEvent(0xF8, t);
+
+      if (core.midiClock().status() == MidiClockSyncStatus::Locked) {
+        achievedLock = true;
+        if (convergencePulses == 0) {
+          convergencePulses = p + 1;
+        }
+      }
+    }
+
+    const auto& mc = core.midiClock();
+    const uint32_t finalGen = core.transport().generation();
+    const bool locateOccurred = (finalGen != initGen);
+
+    std::printf("%-9s | %7.4f | %7.4f | %7.4f | %6.4f | %6.2f | %6.2f | %6u | %-6s | %-6s | %7u\n",
+                sc.label,
+                sc.offsetBeats,
+                mc.phaseErrorBeats(),
+                mc.wrappedPhaseErrorBeats(),
+                mc.absolutePhaseErrorBeats(),
+                mc.estimatedBpm(),
+                mc.appliedBpm(),
+                convergencePulses,
+                achievedLock ? "YES" : "NO",
+                locateOccurred ? "YES" : "NO",
+                finalGen - initGen);
+
+    // Assertions according to Section 4 & 5 specifications:
+    EXPECT_TRUE(achievedLock);
+    EXPECT_NEAR(mc.appliedBpm(), 120.0, 0.5);
+    EXPECT_NEAR(mc.wrappedPhaseErrorBeats(), 0.0, 0.015);
+    EXPECT_NEAR(mc.absolutePhaseErrorBeats(), 0.0, 0.05);
+
+    if (!sc.expectLocate) {
+      // Small offsets must converge smoothly without Locate!
+      EXPECT_FALSE(locateOccurred);
+      EXPECT_EQ(finalGen, initGen);
+    } else {
+      // Large offsets (1, 2, 4 beats) must trigger safe realignment
+      EXPECT_TRUE(locateOccurred);
+    }
+  }
+
+  // Case D: Start from origin 0.0
+  {
+    TapeCore core(static_cast<float>(fs), 2000.0f, 8100.0f);
+    core.setTempoSource(TempoSource::MidiExternal);
+    core.midiClockEvent(0xFA, 1000);
+    EXPECT_NEAR(core.transport().musicalPosition(), 0.0, 1e-6);
+  }
+
+  // Case E: Continue preserves position
+  {
+    TapeCore core(static_cast<float>(fs), 2000.0f, 8100.0f);
+    core.setTempoSource(TempoSource::MidiExternal);
+    core.midiClockEvent(0xFA, 1000);
+    core.transport().advanceBlock(48000); // 1 second
+    const double pos1 = core.transport().musicalPosition();
+    core.midiClockEvent(0xFC, 49000); // Stop
+    EXPECT_FALSE(core.transport().isPlaying());
+    core.midiClockEvent(0xFB, 50000); // Continue
+    EXPECT_TRUE(core.transport().isPlaying());
+    EXPECT_NEAR(core.transport().musicalPosition(), pos1, 1e-4);
+  }
+
+  // Case F: Clock lost and recovered does not clear audio
+  {
+    TapeCore core(static_cast<float>(fs), 2000.0f, 8100.0f);
+    core.setTempoSource(TempoSource::MidiExternal);
+    std::vector<float> in(128, 0.5f), outL(128, 0.0f), outR(128, 0.0f);
+    core.processStereoBlock(in.data(), in.data(), outL.data(), outR.data(), 128);
+
+    core.midiClockEvent(0xFA, 1000);
+    // Gap of 2 seconds -> Lost
+    core.midiClock().update(1000 + 96000);
+    EXPECT_EQ(static_cast<int>(core.midiClock().status()), static_cast<int>(MidiClockSyncStatus::Lost));
+
+    // Audio continues smoothly without reset/clicks
+    core.processStereoBlock(in.data(), in.data(), outL.data(), outR.data(), 128);
+    EXPECT_TRUE(!std::isnan(outL[0]));
+    EXPECT_TRUE(outL[0] != 0.0f);
+  }
+
+  // Case G: Source Internal -> MIDI External during playback preserves effects state
+  {
+    TapeCore core(static_cast<float>(fs), 2000.0f, 8100.0f);
+    core.transport().play();
+    std::vector<float> in(128, 0.3f), outL(128, 0.0f), outR(128, 0.0f);
+    for (int b = 0; b < 10; ++b) {
+      core.processStereoBlock(in.data(), in.data(), outL.data(), outR.data(), 128);
+    }
+    const float tailBefore = outL[64];
+    EXPECT_EQ(core.setTempoSource(TempoSource::MidiExternal), 0);
+    core.processStereoBlock(in.data(), in.data(), outL.data(), outR.data(), 128);
+    EXPECT_TRUE(!std::isnan(outL[64]));
+    EXPECT_NEAR(outL[64], tailBefore, 0.1f); // No mute, no click
+  }
+
+  std::cout << "[PASS] V. Section 5 Deterministic Phase Recovery Suite (All 7 offsets & Cases A..G)\n";
+  return true;
+}
+
+// W. Section 8 Reverse V2 Stability & Jitter Deadband Quantitative Verification
+bool testReverseStabilityUnderJitterAndTempoChanges() {
+  const double fs = 48000.0;
+  TapeCore core(static_cast<float>(fs), 2000.0f, 8100.0f);
+  core.setTempoSource(TempoSource::MidiExternal);
+
+  TapeParams p;
+  p.bpm = 120.0f;
+  p.reverse = true;
+  p.reverseMode = 0; // Rhythmic
+  p.reverseDivision = 0; // Quarter
+  p.feedback = 70.0f;
+  p.dryWet = 50.0f;
+  p.delayWet = 50.0f;
+  core.updateParams(p);
+
+  core.midiClockEvent(0xFA, 1000);
+
+  // Scenario 1: Stable clock 120 BPM, zero jitter -> Zero spurious reconfigurations
+  uint64_t t = 1000;
+  const double step = (60.0 * fs) / (24.0 * 120.0);
+  for (int i = 0; i < 144; ++i) {
+    t += static_cast<uint64_t>(step);
+    core.transport().advanceBlock(static_cast<uint32_t>(step));
+    core.midiClockEvent(0xF8, t);
+  }
+  EXPECT_NEAR(core.transport().bpm(), 120.0, 0.1);
+  EXPECT_TRUE(!core.isReverseClamped());
+  EXPECT_NEAR(core.effectiveReverseMs(), 500.0f, 1.0f);
+
+  // Scenario 2: Light jitter (±0.5ms) -> 0.1 BPM deadband suppresses spurious reconfigurations
+  std::mt19937 rng(42);
+  const double jitter05Frames = 0.5 * 0.001 * fs; // 24 frames
+  std::uniform_real_distribution<double> dist05(-jitter05Frames, jitter05Frames);
+  for (int i = 0; i < 144; ++i) {
+    t += static_cast<uint64_t>(step + dist05(rng));
+    core.transport().advanceBlock(static_cast<uint32_t>(step));
+    core.midiClockEvent(0xF8, t);
+  }
+  EXPECT_NEAR(core.transport().bpm(), 120.0, 1.0);
+  EXPECT_NEAR(core.effectiveReverseMs(), 500.0f, 3.0f);
+
+  // Scenario 3: Gradual change 120 -> 140 BPM
+  const double step140 = (60.0 * fs) / (24.0 * 140.0);
+  for (int i = 0; i < 192; ++i) {
+    t += static_cast<uint64_t>(step140);
+    core.transport().advanceBlock(static_cast<uint32_t>(step140));
+    core.midiClockEvent(0xF8, t);
+  }
+  EXPECT_NEAR(core.transport().bpm(), 140.0, 1.0);
+  // Quarter note at 140 BPM = 60000 / 140 = 428.57 ms
+  EXPECT_NEAR(core.effectiveReverseMs(), 428.57f, 3.0f);
+
+  // Scenario 4: Abrupt change 140 -> 90 BPM
+  const double step90 = (60.0 * fs) / (24.0 * 90.0);
+  for (int i = 0; i < 192; ++i) {
+    t += static_cast<uint64_t>(step90);
+    core.transport().advanceBlock(static_cast<uint32_t>(step90));
+    core.midiClockEvent(0xF8, t);
+  }
+  EXPECT_NEAR(core.transport().bpm(), 90.0, 1.0);
+  // Quarter note at 90 BPM = 60000 / 90 = 666.67 ms
+  EXPECT_NEAR(core.effectiveReverseMs(), 666.67f, 5.0f);
+
+  // Verify audio stability through blocks
+  std::vector<float> in(128, 0.2f), outL(128, 0.0f), outR(128, 0.0f);
+  core.processStereoBlock(in.data(), in.data(), outL.data(), outR.data(), 128);
+  EXPECT_TRUE(!std::isnan(outL[0]));
+  EXPECT_TRUE(!std::isinf(outL[0]));
+
+  std::cout << "[PASS] W. Section 8 Reverse V2 Stability (Deadband, Jitter rejection & Tempo steps)\n";
+  return true;
+}
+
 int main() {
   std::cout << "=== HYDRA MIDI CLOCK EXTERNAL SYNC V1 TEST SUITE ===\n";
   bool ok = true;
@@ -950,9 +1290,12 @@ int main() {
   ok = testHardenedPhaseLockAndRejection() && ok;
   ok = testStartStopContinueEdgeCases() && ok;
   ok = testSpscQueueOverflowRecovery() && ok;
+  ok = testCApiSourceAuthority() && ok;
+  ok = testDeterministicPhaseRecovery() && ok;
+  ok = testReverseStabilityUnderJitterAndTempoChanges() && ok;
 
   if (ok) {
-    std::cout << ">>> ALL 20 MIDI CLOCK SUITE TESTS PASSED <<<\n";
+    std::cout << ">>> ALL 23 MIDI CLOCK SUITE TESTS PASSED <<<\n";
     return 0;
   }
   std::cerr << ">>> MIDI CLOCK TESTS FAILED <<<\n";

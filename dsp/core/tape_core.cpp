@@ -581,6 +581,8 @@ int TapeCore::midiClockEvent(uint8_t statusByte, uint64_t timestamp_frames) {
       impl_->transportClock.play();
     } else if (result.transportAction == 3) { // Stop (0xFC)
       impl_->transportClock.pause();
+    } else if (result.transportAction == 4) { // Large Phase Recovery Realignment
+      impl_->transportClock.locate(result.realignMusicalPos, impl_->transportClock.transportSamplePosition());
     }
 
     if (result.tempoUpdated) {
@@ -642,11 +644,11 @@ void TapeCore::updateParams(const TapeParams& newParams){
   }
   const auto& previous = impl_->currentParams;
   if (newParams.bpm != impl_->manualBpm) {
-    impl_->manualBpm = newParams.bpm;
+    impl_->manualBpm = std::clamp(newParams.bpm, static_cast<float>(MidiClockSync::kMinBpm), static_cast<float>(MidiClockSync::kMaxBpm));
     if (impl_->tempoSource == TempoSource::Internal) {
-      impl_->applyEffectiveBpm(newParams.bpm);
-      impl_->tapTempo.setAppliedBpm(newParams.bpm);
-      impl_->midiClockSync.setAppliedBpm(newParams.bpm);
+      impl_->applyEffectiveBpm(impl_->manualBpm);
+      impl_->tapTempo.setAppliedBpm(impl_->manualBpm);
+      impl_->midiClockSync.setAppliedBpm(impl_->manualBpm);
     }
   }
 

@@ -4,6 +4,27 @@
  */
 
 /**
+ * Checks whether a Web MIDI event timestamp is valid and within acceptable latency bounds.
+ *
+ * @param {number|null|undefined} midiTimestamp - Event timestamp from MIDIMessageEvent.timeStamp (ms)
+ * @param {number} hostNow - Current monotonic host time from performance.now() (ms)
+ * @returns {boolean} True if timestamp is valid
+ */
+export function isMidiTimestampValid(midiTimestamp, hostNow) {
+  if (typeof midiTimestamp !== 'number' || !Number.isFinite(midiTimestamp) || midiTimestamp <= 0) {
+    return false;
+  }
+  if (typeof hostNow !== 'number' || !Number.isFinite(hostNow) || hostNow <= 0) {
+    return false;
+  }
+  const dtMs = hostNow - midiTimestamp;
+  if (dtMs < -50.0 || dtMs > 3000.0) {
+    return false;
+  }
+  return true;
+}
+
+/**
  * Converts a Web MIDI event timestamp (DOMHighResTimeStamp relative to performance.timeOrigin)
  * into an absolute audio context frame index, compensating for main-thread event scheduling latency.
  *
@@ -23,26 +44,11 @@ export function convertMidiTimestampToAudioFrames(midiTimestamp, hostNow, audioC
   const fallbackFrame = Math.max(0, Math.round(validAudioTime * validRate));
 
   // Invalid or missing timestamp fallback policy
-  if (typeof midiTimestamp !== 'number' || !Number.isFinite(midiTimestamp) || midiTimestamp <= 0) {
-    return fallbackFrame;
-  }
-  if (typeof hostNow !== 'number' || !Number.isFinite(hostNow) || hostNow <= 0) {
+  if (!isMidiTimestampValid(midiTimestamp, hostNow)) {
     return fallbackFrame;
   }
 
   const dtMs = hostNow - midiTimestamp;
-
-  // Reject future timestamps exceeding 50ms tolerance margin
-  if (dtMs < -50.0) {
-    return fallbackFrame;
-  }
-
-  // Reject stale events delayed by more than 3.0 seconds
-  if (dtMs > 3000.0) {
-    return fallbackFrame;
-  }
-
-  // Calculate audio frame corresponding to the instant the MIDI event was received by driver
   const safeDtMs = Math.max(0, dtMs);
   const dtSec = safeDtMs / 1000.0;
   const eventAudioTime = Math.max(0, validAudioTime - dtSec);
@@ -51,29 +57,49 @@ export function convertMidiTimestampToAudioFrames(midiTimestamp, hostNow, audioC
 
 /**
  * Process a batch of MIDI events, preserving original inter-pulse timing and ensuring monotonic frame ordering.
+ * Explicitly rejects duplicate and truly out-of-order/regressive events.
  *
  * @param {Array<{byte: number, timeStamp: number}>} events - Batch of MIDI messages
  * @param {number} hostNow - Current performance.now() (ms)
  * @param {number} audioCurrentTime - AudioContext.currentTime (seconds)
  * @param {number} sampleRate - AudioContext.sampleRate (Hz)
  * @param {number} [lastFrame=0] - Last processed frame index
- * @returns {Array<{byte: number, timestampFrames: number}>} Processed messages with converted frame timestamps
+ * @returns {Array<{byte: number, timestampFrames: number, status: string, isFallback: boolean}>} Processed messages
  */
 export function processBatchMidiEvents(events, hostNow, audioCurrentTime, sampleRate, lastFrame = 0) {
   if (!Array.isArray(events) || events.length === 0) return [];
   const results = [];
   let prevFrame = lastFrame;
+  let prevTimestamp = -1;
 
   for (const ev of events) {
+    const isValid = isMidiTimestampValid(ev.timeStamp, hostNow);
     let frame = convertMidiTimestampToAudioFrames(ev.timeStamp, hostNow, audioCurrentTime, sampleRate);
-    if (frame <= prevFrame && prevFrame > 0) {
-      // Ensure strict monotonicity for timing clock events
-      frame = prevFrame + 1;
+    let status = isValid ? 'accepted' : 'fallback';
+
+    if (prevTimestamp >= 0 && typeof ev.timeStamp === 'number' && Math.abs(ev.timeStamp - prevTimestamp) < 1.0) {
+      status = 'rejected_duplicate';
+    } else if (prevFrame > 0) {
+      if (frame < prevFrame) {
+        status = 'rejected_out_of_order';
+      } else if (frame === prevFrame) {
+        // Sub-sample rounding: preserve sequence with minimal separation
+        frame = prevFrame + 1;
+      }
     }
-    prevFrame = frame;
+
+    if (status === 'accepted' || status === 'fallback') {
+      prevFrame = frame;
+      if (typeof ev.timeStamp === 'number') {
+        prevTimestamp = ev.timeStamp;
+      }
+    }
+
     results.push({
       byte: ev.byte,
-      timestampFrames: frame
+      timestampFrames: frame,
+      status,
+      isFallback: !isValid
     });
   }
   return results;

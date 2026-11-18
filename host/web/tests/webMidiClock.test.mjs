@@ -137,3 +137,180 @@ test('processBatchMidiEvents preserva ordem temporal e garante monotonicidade', 
   assert.ok(processed[2].timestampFrames > processed[1].timestampFrames, 'frame 2 deve ser maior que frame 1');
   assert.equal(processed[1].timestampFrames - processed[0].timestampFrames, 1000);
 });
+
+test('processBatchMidiEvents rejeita duplicatas (< 1ms) e eventos fora de ordem sem mutação prevFrame + 1', async () => {
+  const { processBatchMidiEvents, isMidiTimestampValid } = await import('../webMidiTime.js');
+
+  const hostNow = 2050.0;
+  const audioTime = 2.0;
+  const sampleRate = 48000.0;
+
+  // Batch com evento normal, duplicata (delta 0.2ms), regredido (-5ms) e evento posterior normal
+  const events = [
+    { byte: 0xF8, timeStamp: 2000.0 },
+    { byte: 0xF8, timeStamp: 2000.2 }, // Duplicata (< 1.0ms)
+    { byte: 0xF8, timeStamp: 1995.0 }, // Fora de ordem (regressivo)
+    { byte: 0xF8, timeStamp: 2020.8333 } // Válido subsequente
+  ];
+
+  const processed = processBatchMidiEvents(events, hostNow, audioTime, sampleRate, 0);
+  assert.equal(processed.length, 4);
+
+  assert.equal(processed[0].status, 'accepted');
+  assert.equal(processed[1].status, 'rejected_duplicate');
+  assert.equal(processed[2].status, 'rejected_out_of_order');
+  assert.equal(processed[3].status, 'accepted');
+
+  // Os eventos aceitos preservam exatamente o intervalo correto
+  const validEvents = processed.filter(e => e.status === 'accepted');
+  assert.equal(validEvents.length, 2);
+  assert.equal(validEvents[1].timestampFrames - validEvents[0].timestampFrames, 1000);
+});
+
+test('conversor Web MIDI métricas temporais: erro máximo e RMSE < 0.1 frame', async () => {
+  const { convertMidiTimestampToAudioFrames } = await import('../webMidiTime.js');
+
+  const sampleRate = 48000.0;
+  const bpm = 120.0;
+  const periodMs = 60000.0 / (24.0 * bpm); // 20.833333 ms
+  const totalPulses = 100;
+
+  let sumSqErr = 0.0;
+  let maxAbsErr = 0.0;
+
+  for (let i = 0; i < totalPulses; i++) {
+    const idealTimeMs = 1000.0 + i * periodMs;
+    // Simula atraso da thread principal de 5 a 25 ms
+    const jitterDelivery = 5.0 + (i % 5) * 4.0;
+    const hostNow = idealTimeMs + jitterDelivery;
+    const audioTime = hostNow / 1000.0;
+
+    const calculatedFrame = convertMidiTimestampToAudioFrames(idealTimeMs, hostNow, audioTime, sampleRate);
+    const idealFrame = Math.round((idealTimeMs / 1000.0) * sampleRate);
+
+    const err = Math.abs(calculatedFrame - idealFrame);
+    if (err > maxAbsErr) maxAbsErr = err;
+    sumSqErr += err * err;
+  }
+
+  const rmse = Math.sqrt(sumSqErr / totalPulses);
+  assert.ok(maxAbsErr <= 1.0, `Erro máximo (${maxAbsErr}) deve ser <= 1 frame de áudio`);
+  assert.ok(rmse <= 0.1, `RMSE (${rmse}) deve ser <= 0.1 frame de áudio`);
+});
+
+const buildDir = process.env.HYDRA_WEB_BUILD;
+
+test('conversão ponta a ponta: Web MIDI -> conversor -> AudioWorklet -> WASM DSP',
+  { skip: buildDir ? false : 'Set HYDRA_WEB_BUILD to run integrated WASM test', timeout: 15000 },
+  async () => {
+    const { readFile } = await import('node:fs/promises');
+    const { resolve } = await import('node:path');
+    const { pathToFileURL } = await import('node:url');
+    const { processBatchMidiEvents } = await import('../webMidiTime.js');
+
+    let Processor;
+    const sampleRate = 48000;
+    const blockSize = 128;
+    globalThis.sampleRate = sampleRate;
+
+    globalThis.AudioWorkletProcessor = class {
+      constructor() {
+        this.readyMessage = new Promise((res) => {
+          this.port = {
+            postMessage: (msg) => {
+              if (msg.type === 'ready' || msg.type === 'error') res(msg);
+              if (msg.type === 'transportTelemetry') this.lastTelemetry = msg;
+            }
+          };
+        });
+      }
+    };
+    globalThis.registerProcessor = (_name, proc) => { Processor = proc; };
+
+    await import(pathToFileURL(resolve(buildDir, 'hydra-processor.js')).href);
+    assert.ok(Processor);
+
+    const wasmBinary = await readFile(resolve(buildDir, 'hydra_dsp.wasm'));
+    const worklet = new Processor({ processorOptions: { wasmBinary } });
+    assert.deepEqual(await worklet.readyMessage, { type: 'ready' });
+
+    // 1. Configurar fonte para MIDI External (fonte = 2)
+    worklet.port.onmessage({ data: { type: 'setTempoSource', source: 2 } });
+    worklet.port.onmessage({ data: { type: 'command', command: 'transportPlay', value: 1 } });
+
+    // 2. Simular MIDI Start (0xFA) no instante 0
+    worklet.port.onmessage({
+      data: {
+        type: 'midiClockEvent',
+        byte: 0xFA,
+        timestampFrames: 0
+      }
+    });
+
+    // 3. Simular transmissão de 144 pulsos a 120 BPM em lotes com jitter de entrega
+    const bpm = 120.0;
+    const pulseIntervalFrames = Math.round((60.0 * sampleRate) / (24.0 * bpm)); // 1000 frames @ 48k
+    const pulseIntervalMs = 60000.0 / (24.0 * bpm); // 20.8333 ms
+    const t0 = 1000.0; // Instante inicial do contexto de áudio em ms
+    const numPulses = 144;
+    const inL = new Float32Array(blockSize);
+    const inR = new Float32Array(blockSize);
+    const outL = new Float32Array(blockSize);
+    const outR = new Float32Array(blockSize);
+    const inputs = [[inL, inR]];
+    const outputs = [[outL, outR]];
+
+    let currentAudioFrame = 0;
+    let nextPulseIndex = 0;
+    let lastProcessedFrame = 0;
+
+    // Processar 144 * 1000 frames = 144,000 frames (+ margem para telemetria processar)
+    const totalFrames = numPulses * pulseIntervalFrames + 4000;
+    while (currentAudioFrame < totalFrames) {
+      // Entrega em lote pela thread principal a cada 2048 frames (~42.6ms, ~2 pulsos por batch)
+      const currentHostNow = t0 + (currentAudioFrame / sampleRate) * 1000.0;
+      const currentAudioTime = currentAudioFrame / sampleRate;
+
+      // Coletar pulsos cujo timestamp já ocorreu na linha do tempo do driver MIDI
+      const events = [];
+      while (nextPulseIndex < numPulses) {
+        const pulseTime = t0 + nextPulseIndex * pulseIntervalMs;
+        if (pulseTime <= currentHostNow) {
+          events.push({ byte: 0xF8, timeStamp: pulseTime });
+          nextPulseIndex++;
+        } else {
+          break;
+        }
+      }
+
+      if (events.length > 0) {
+        // Simular latência de escalonamento da thread principal (ex: +8ms)
+        const deliveryHostNow = currentHostNow + 8.0;
+        const deliveryAudioTime = currentAudioTime + (8.0 / 1000.0);
+        const processed = processBatchMidiEvents(events, deliveryHostNow, deliveryAudioTime, sampleRate, lastProcessedFrame);
+
+        for (const evt of processed) {
+          if (evt.status === 'accepted') {
+            worklet.port.onmessage({
+              data: {
+                type: 'midiClockEvent',
+                byte: evt.byte,
+                timestampFrames: evt.timestampFrames
+              }
+            });
+            lastProcessedFrame = evt.timestampFrames;
+          }
+        }
+      }
+
+      worklet.process(inputs, outputs, {});
+      currentAudioFrame += blockSize;
+    }
+
+    // Conferir estado do MIDI Clock no DSP
+    const state = worklet.lastTelemetry?.midiClock;
+    assert.ok(state, 'deve produzir telemetria de MIDI clock');
+    assert.ok(Math.abs(state.appliedBpm - 120.0) < 1.0, `appliedBpm (${state.appliedBpm}) deve estar próximo de 120`);
+    assert.equal(state.syncStatus, 2, 'deve atingir status 2 (Locked)');
+  }
+);

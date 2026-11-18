@@ -131,18 +131,14 @@ flowchart LR
 
 ---
 
-### FASE 6 — Validação Musical, Listening Lab & Prontidão para Performance
-- **Status:** CONCLUÍDO (Pronto para Revisão Musical & Escuta Humana).
-- **Branch:** `feature/musical-validation-phase6` (PR aberta sem merge automático).
-- **Entregas e Conquistas:**
-  - **Matriz de Validação Musical Abrangente:** Cobertura de andamentos (60 a 180 BPM), fontes de tempo (Internal, Tap Tempo, MIDI Clock External 24 PPQN), subdivisões rítmicas e modos Reverse.
-  - **Fontes Musicais Realistas (`scripts/musical_sources.py`):** 6 sinais de estímulo instrumentais (Guitarra Limpa, Guitarra com Drive, Sintetizador Monofônico, Sintetizador Polifônico, Drum Machine e Percussão Irregular).
-  - **Hydra Listening Lab — Pacote Fase 6 (`artifacts/listening-lab/phase6-musical-validation/`):** 20 cenários musicais estruturados nos Grupos A (Tape Echo), B (Reverse V2), C (Clock & Transport) e D (Performance), com áudios originais e processados em 24-bit PCM, telemetria em CSV, marcadores e `manifest.json` com SHA-256.
-  - **Ferramentas de Análise de Áudio Reproduzíveis (`scripts/audio_analysis.py`):** Cálculo de pico, True Peak (4x sobreamostragem), RMS, fator de crista, detecção de clipping (zero clipping em todos os 20 cenários), derivada de descontinuidades, correlação estéreo e medição precisa de atraso de repetição (erro < 1 ms / < 0.2%).
-  - **Auditoria de Desempenho Web/WASM:** 24.000 blocos avaliados a 44.1 kHz e 48.0 kHz em AudioWorklet com carga média de 2.98% a 4.15% do orçamento de bloco, P99 < 12% e zero dropouts.
-  - **Auditoria ESP32-S3:** Firmware compilado com sucesso via PlatformIO Core (`RAM: 7.9%`, `Flash: 3.7%`), upload físico executado e limites em tempo real documentados.
-  - **Pendência Formal de Escuta Humana:** Registrado formalmente como `PENDING_HUMAN_AUDITION` no relatório e manifesto para audição presencial do revisor.
-- **Critério de Saída:** Relatório técnico definitivo em [docs/PHASE6_MUSICAL_VALIDATION_REPORT.md](PHASE6_MUSICAL_VALIDATION_REPORT.md), suítes Native (15/15), Web (40/40) e WASM (3/3) 100% aprovadas, e zero novas regressões.
+### FASE 6 / 6.1 — Validação Musical e Listening Lab
+- **Status:** ENTREGA EM VALIDAÇÃO; escuta humana `PENDING_HUMAN_AUDITION`.
+- **PR:** [#54](https://github.com/ovelhaaa/hydra-tape-engine/pull/54), branch `feature/musical-validation-phase6`; sem merge automático.
+- Renderizador portátil, seeds fixas, 20 cenários, 40 WAVs PCM24, 20 CSVs, parâmetros/eventos e SHA-256 no manifesto. A CI Linux repete renderização e valida arquivos antes do upload do artifact `hydra-phase6-listening-lab`.
+- Interface dedicada `tools/phase6-listening-lab/`: A/B no mesmo relógio, seek, loop, waveforms, eventos, avaliações e JSON importável/exportável. A interface histórica e a Web Demo foram preservadas.
+- **Evidência:** Native offline e WASM/Node simulando AudioWorklet são categorias distintas de Browser Real e ESP32-S3 físico. Firmware: **FIRMWARE BUILT / FLASHED — PHYSICAL RUNTIME NOT VERIFIED**; medições antigas permanecem baseline histórico.
+- **Issue #48 aberta:** CI Linux estrita no baseline: max_abs 3.6681e-05, RMSE 1.585565032192e-05, FAIL. Comparação local Windows: max_abs 5.968e-06, RMSE 2.344106e-06, FAIL. Thresholds e goldens inalterados. Não classificar a suíte estrita como aprovada.
+- **Gates:** pacote Linux publicado e íntegro, interface validada e decisão humana explícita. Ver [relatório e links reais de evidência](PHASE6_MUSICAL_VALIDATION_REPORT.md) e [guia de escuta](PHASE6_LISTENING_GUIDE.md). A conclusão musical e a revisão de merge permanecem pendentes.
 
 ---
 

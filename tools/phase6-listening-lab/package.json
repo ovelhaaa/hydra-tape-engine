@@ -1,0 +1,1 @@
+{"name":"hydra-listening-lab-tests","private":true,"type":"module","scripts":{"test":"node --test tests/*.test.mjs","test:browser":"node tests/browser.mjs"},"devDependencies":{"playwright":"1.56.1"}}

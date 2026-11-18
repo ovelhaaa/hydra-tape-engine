@@ -15,6 +15,9 @@
 import { readFile } from 'node:fs/promises';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import os from 'node:os';
+import {execFileSync} from 'node:child_process';
+import {createHash} from 'node:crypto';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -187,6 +190,18 @@ async function main() {
   const report = {
     suite: "Hydra Tape Engine 2.0 — Web/WASM Performance Audit",
     timestamp: new Date().toISOString(),
+    classification: 'B — WASM / Node.js; simulated AudioWorklet globals; not browser real-time evidence',
+    environment: {
+      node: process.version, os: `${os.platform()} ${os.release()} ${os.arch()}`,
+      cpu: os.cpus()[0]?.model,
+      emscripten: process.env.HYDRA_EMSCRIPTEN_VERSION || 'NOT RECORDED (set HYDRA_EMSCRIPTEN_VERSION from the build toolchain)',
+      commit: execFileSync('git', ['rev-parse', 'HEAD'], {cwd: rootDir, encoding: 'utf8'}).trim(),
+      wasm_sha256: createHash('sha256').update(await readFile(resolve(webBuildDir, 'hydra_dsp.wasm'))).digest('hex')
+    },
+    blocks: NUM_BLOCKS * 8,
+    block_frames: BLOCK,
+    simulated_seconds: {rate_48000: NUM_BLOCKS * 4 * BLOCK / 48000, rate_44100: NUM_BLOCKS * 4 * BLOCK / 44100},
+    limitations: 'process() wall time and block-budget overruns in Node; no browser scheduler, device latency, I2S, or physical dropout measurement. No allocation instrumentation.',
     benchmark_48k: r48,
     benchmark_44k: r44
   };

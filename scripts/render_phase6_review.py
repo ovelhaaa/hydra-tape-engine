@@ -16,6 +16,9 @@ Produces for each scenario:
 """
 
 import array
+import argparse
+import platform
+import subprocess
 import ctypes
 from ctypes import (
     c_float, c_uint32, c_int, c_void_p, c_uint64, c_double, c_int64,
@@ -161,11 +164,15 @@ def write_wav_24bit(path: Path, data: np.ndarray, sample_rate: int = RATE):
 
 class HydraEngineRunner:
     def __init__(self, lib_path: Path):
-        gcc_path = shutil.which("gcc")
-        if gcc_path:
-            os.add_dll_directory(str(Path(gcc_path).parent))
-        os.add_dll_directory(str(lib_path.parent))
+        self.dll_directories = []
+        if sys.platform == "win32":
+            gcc_path = shutil.which("gcc")
+            for directory in [lib_path.parent] + ([Path(gcc_path).parent] if gcc_path else []):
+                self.dll_directories.append(os.add_dll_directory(str(directory)))
         self.lib = ctypes.CDLL(str(lib_path))
+        self.library_sha256 = sha256_file(lib_path)
+        self.lib.hydra_dsp_get_api_version.restype = c_uint32
+        self.api_version = int(self.lib.hydra_dsp_get_api_version())
 
         # Signatures
         self.lib.hydra_dsp_create_v1_4.argtypes = [c_float, c_float, c_float, POINTER(c_void_p)]
@@ -302,10 +309,11 @@ def run_simulation(runner: HydraEngineRunner, config: dict) -> dict:
         m_state = HydraDspMidiClockState()
         tap_state = HydraDspTapTempoState()
 
-        num_blocks = total_frames // BLOCK
+        num_blocks = math.ceil(total_frames / BLOCK)
         for b in range(num_blocks):
             frame_start = b * BLOCK
-            frame_end = frame_start + BLOCK
+            frame_end = min(frame_start + BLOCK, total_frames)
+            block_frames = frame_end - frame_start
 
             # Process scheduled parameter or control events
             for f in range(frame_start, frame_end):
@@ -326,6 +334,10 @@ def run_simulation(runner: HydraEngineRunner, config: dict) -> dict:
                             runner.lib.hydra_dsp_transport_stop(handle)
                         elif ev_type == "tap":
                             runner.lib.hydra_dsp_tap_tempo_event(handle, f)
+                        elif ev_type == "midi":
+                            runner.lib.hydra_dsp_midi_clock_event(handle, ev["status"], f)
+                        else:
+                            raise ValueError(f"Unsupported scheduled event: {ev_type}")
 
                 # Process MIDI clock pulses
                 while pulse_idx < num_pulses and clock_pulses[pulse_idx]["frame"] <= f:
@@ -334,14 +346,16 @@ def run_simulation(runner: HydraEngineRunner, config: dict) -> dict:
                     pulse_idx += 1
 
             # Prepare block buffers
-            for i in range(BLOCK):
+            for i in range(block_frames):
                 idx = frame_start + i
                 in_l_buf[i] = float(stimulus[idx, 0])
                 in_r_buf[i] = float(stimulus[idx, 1])
 
-            runner.lib.hydra_dsp_process(handle, in_l_buf, in_r_buf, out_l_buf, out_r_buf, BLOCK)
+            result = runner.lib.hydra_dsp_process(handle, in_l_buf, in_r_buf, out_l_buf, out_r_buf, block_frames)
+            if result != 0:
+                raise RuntimeError(f"Processing failed at frame {frame_start}: {result}")
 
-            for i in range(BLOCK):
+            for i in range(block_frames):
                 idx = frame_start + i
                 output[idx, 0] = out_l_buf[i]
                 output[idx, 1] = out_r_buf[i]
@@ -383,6 +397,7 @@ def run_simulation(runner: HydraEngineRunner, config: dict) -> dict:
         return {
             "output": output,
             "telemetry": telemetry_rows,
+            "parameters": params,
         }
 
     finally:
@@ -419,9 +434,19 @@ def generate_midi_pulses(bpm: float, duration_sec: float, start_sec: float = 0.0
 
 def build_all_scenarios(output_dir: Path, runner: HydraEngineRunner):
     output_dir.mkdir(parents=True, exist_ok=True)
+    np.random.seed(6100)  # MIDI jitter is constructed before the scenario render loop.
+    root = Path(__file__).resolve().parents[1]
+    commit = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=root, text=True).strip()
     manifest = {
+        "schema_version": 1,
         "suite": "Hydra Tape Engine 2.0 — Phase 6 Musical Validation & Performance Readiness",
-        "reference_commit": "53ec55632b78364b51c26e7778e7ba920f534fe1",
+        "reference_commit": commit,
+        "api_version": runner.api_version,
+        "native_library_sha256": runner.library_sha256,
+        "working_tree_dirty": bool(subprocess.check_output(["git", "status", "--porcelain", "--untracked-files=no"], cwd=root, text=True).strip()),
+        "environment": {"os": platform.platform(), "python": platform.python_version(), "numpy": np.__version__},
+        "random_seed": 6100,
+        "event_timing": "Control changes applied at containing block start; MIDI/tap carry sample timestamps. Telemetry every four blocks.",
         "baseline_pr": "#53 — Hotfix MIDI Clock WASM BigInt Interop",
         "sample_rate_hz": RATE,
         "block_size_frames": BLOCK,
@@ -805,8 +830,8 @@ def build_all_scenarios(output_dir: Path, runner: HydraEngineRunner):
             },
             "clock_pulses": generate_midi_pulses(bpm=120.0, duration_sec=4.5, start_sec=0.05),
             "events": [
-                {"time_sec": 1.8, "type": "stop"},
-                {"time_sec": 2.6, "type": "play"}, # Continue
+                {"time_sec": 1.8, "type": "midi", "status": 0xFC},
+                {"time_sec": 2.6, "type": "midi", "status": 0xFB},
             ],
             "markers": [
                 {"time": 0.05, "label": "Transport Running (Play)"},
@@ -820,7 +845,7 @@ def build_all_scenarios(output_dir: Path, runner: HydraEngineRunner):
             "id": "16_perf_live_source_switch",
             "group": "Group D — Performance",
             "name": "Live Source Switching",
-            "description": "Seamless real-time switching: Internal (120 BPM) -> MIDI Clock (140 BPM) -> Tap (100 BPM) with zero clicks.",
+            "description": "Scheduled source switching: Internal (120 BPM) -> MIDI Clock (140 BPM) -> Internal (100 BPM). Evaluate continuity and clicks.",
             "duration": 4.5,
             "bpm": 120.0,
             "source_kind": "irregular_percussion",
@@ -960,6 +985,7 @@ def build_all_scenarios(output_dir: Path, runner: HydraEngineRunner):
     print(f"Rendering {len(scenarios_def)} Musical Validation Scenarios...")
 
     for scen in scenarios_def:
+        np.random.seed(6100 + int(scen["id"][:2]))
         scen_id = scen["id"]
         print(f" -> Rendering scenario: {scen_id} ({scen['name']})...")
 
@@ -1012,6 +1038,11 @@ def build_all_scenarios(output_dir: Path, runner: HydraEngineRunner):
             "description": scen["description"],
             "duration_sec": dur,
             "bpm": bpm,
+            "tempo_source": scen.get("tempo_source", TEMPO_SOURCE_INTERNAL),
+            "reference_commit": commit,
+            "random_seed": 6100 + int(scen_id[:2]),
+            "events": scen.get("events", []),
+            "clock_pulses": scen.get("clock_pulses", []),
             "sample_rate_hz": RATE,
             "source_material": scen["source_kind"],
             "original_wav_file": orig_wav_path.name,
@@ -1020,30 +1051,50 @@ def build_all_scenarios(output_dir: Path, runner: HydraEngineRunner):
             "processed_wav_sha256": sha256_file(proc_wav_path),
             "telemetry_csv_file": csv_path.name,
             "telemetry_csv_sha256": sha256_file(csv_path),
-            "dsp_params": {str(k): float(v) for k, v in scen.get("params", {}).items()},
-            "markers": scen.get("markers", []),
+            "dsp_params": {str(k): float(v) for k, v in sim_res["parameters"].items()},
+            "markers": [{"time": e["time_sec"], "label": json.dumps(e, sort_keys=True)} for e in scen.get("events", [])]
+                + [{"time": p["frame"] / RATE, "label": {250: "MIDI Start", 251: "MIDI Continue", 252: "MIDI Stop"}[p["status"]]}
+                   for p in scen.get("clock_pulses", []) if p["status"] in (250, 251, 252)]
+                + ([{"time": 1.2, "label": "Input silenced"}] if scen_id.startswith("19_") else [])
+                + ([{"time": 2.0, "label": "Input silenced"}] if scen_id.startswith("04_") else []),
             "analysis_metrics": metrics,
         }
 
     manifest_path = output_dir / "manifest.json"
     with manifest_path.open("w", encoding="utf-8") as f_man:
-        json.dump(manifest, f_man, indent=2)
+        json.dump(manifest, f_man, indent=2, allow_nan=False)
 
     print(f"All 20 scenarios rendered successfully to {output_dir}")
     print(f"Listening Lab manifest written to {manifest_path}")
 
 def main():
     root = Path(__file__).resolve().parents[1]
-    lib_path = root / "build-native" / "libhydra_abi_test_library.dll"
-    if not lib_path.exists():
-        lib_path = root / "build" / "libhydra_abi_test_library.dll"
-    if not lib_path.exists():
-        print(f"Error: {lib_path} not found.")
-        sys.exit(1)
-
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--library", type=Path)
+    parser.add_argument("--build-dir", type=Path, default=root / "build-native")
+    parser.add_argument("--config", default="Release")
+    parser.add_argument("--output", type=Path, default=root / "artifacts/listening-lab/phase6-musical-validation")
+    args = parser.parse_args()
+    lib_path = resolve_library(args.library, args.build_dir, args.config)
+    print(f"Loading native library: {lib_path}")
     runner = HydraEngineRunner(lib_path)
-    output_dir = root / "artifacts" / "listening-lab" / "phase6-musical-validation"
-    build_all_scenarios(output_dir, runner)
+    build_all_scenarios(args.output, runner)
+
+def resolve_library(explicit, build_dir, config):
+    if explicit:
+        path = explicit.expanduser().resolve()
+        if not path.is_file():
+            raise FileNotFoundError(f"Native library does not exist: {path}")
+        return path
+    suffix = {"win32": ".dll", "darwin": ".dylib"}.get(sys.platform, ".so")
+    names = [f"{prefix}hydra_abi_test_library{suffix}" for prefix in ("", "lib")]
+    directories = [build_dir / config, build_dir, build_dir / "lib" / config, build_dir / "lib"]
+    for directory in directories:
+        for name in names:
+            candidate = directory / name
+            if candidate.is_file():
+                return candidate.resolve()
+    raise FileNotFoundError(f"No native {suffix} library in {directories}. Build hydra_abi_test_library or use --library PATH.")
 
 if __name__ == "__main__":
     main()

@@ -18,6 +18,7 @@ jobs:
     runs-on: ubuntu-24.04
     env:
       PYTHONUTF8: '1'
+      HYDRA_BROWSER_CHANNEL: chrome
     steps:
       - uses: actions/checkout@v4
         with:
@@ -54,7 +55,7 @@ jobs:
       - name: Install interface test runner
         run: |
           npm ci --prefix tools/phase6-listening-lab
-          npx --prefix tools/phase6-listening-lab playwright install --with-deps chromium
+          google-chrome --version
       - name: Test interface model and real Chromium Web Audio
         run: |
           npm test --prefix tools/phase6-listening-lab

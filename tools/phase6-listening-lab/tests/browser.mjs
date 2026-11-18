@@ -10,7 +10,7 @@ const packageDir = resolve(root, 'artifacts/listening-lab/phase6-musical-validat
 const reportDir = resolve(root, 'artifacts/listening-lab-browser'); await mkdir(reportDir,{recursive:true});
 const server=createServer(async(req,res)=>{try{const path=resolve(root,'.'+decodeURIComponent(req.url.split('?')[0])); if(!path.startsWith(root))throw Error(); const data=await readFile(path); res.setHeader('Content-Type',({'.html':'text/html','.mjs':'text/javascript','.css':'text/css'})[extname(path)]??'application/octet-stream');res.end(data);}catch{res.statusCode=404;res.end('Missing');}});
 await new Promise(r=>server.listen(0,'127.0.0.1',r));
-const browser=await chromium.launch({headless:true});
+const browser=await chromium.launch({headless:true, ...(process.env.HYDRA_BROWSER_CHANNEL ? {channel:process.env.HYDRA_BROWSER_CHANNEL} : {})});
 let activePage;
 try{
  const page=await browser.newPage({viewport:{width:1440,height:1000},acceptDownloads:true}); const errors=[]; page.on('pageerror',e=>errors.push(e.message));

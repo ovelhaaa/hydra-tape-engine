@@ -23,7 +23,7 @@ O workflow `.github/workflows/listening-lab.yml` gera o artifact `hydra-phase6-l
 
 Leia `listening-guide.md` no pacote ou `docs/PHASE6_LISTENING_GUIDE.md`. Dois AudioBufferSourceNodes usam o mesmo AudioContext, instante de início, offset e limites de loop. A/B muda somente ganhos complementares com rampa linear de 8 ms. Volume comum, sem compensação automática. Seek e alterações do loop recriam ambos os sources no mesmo instante. Trocar de cenário para os sources anteriores e não inicia áudio novo. Waveforms mostram o canal esquerdo; marcadores combinam eventos agendados e mudanças reais na telemetria. Os detalhes mostram IDs DSP completos e métricas reais do manifesto.
 
-Decisões e notas são salvas localmente por commit, se permitido. **Export reviews** produz JSON portátil, **Import reviews** valida commit e conteúdo e mescla por cenário. Nenhum cenário começa aprovado. Arquivos ausentes/corrompidos geram erro e bloqueiam os controles sem mudar decisões humanas.
+Decisões e notas são salvas localmente por commit, se permitido. **Export reviews** produz JSON portátil, **Import reviews** valida commit e hashes do conteúdo e mescla por cenário. Nenhum cenário começa aprovado. Arquivos ausentes/corrompidos geram erro e bloqueiam os controles sem mudar decisões humanas.
 
 ## Testes
 

@@ -17,17 +17,17 @@ Baseline CI: [Core run 44405989345](https://github.com/ovelhaaa/hydra-tape-engin
 | Execution | Source/build | max_abs | RMSE | Status |
 |---|---|---:|---:|---|
 | CI Linux strict, run 44405989345, job 135161716377 | PR merge `0065d1f19dd8f8c142574cd7a9079972046fe08f` (head 9c1c8d2), Ubuntu 26.04.1, Release, Emscripten 3.1.62; 2048 samples | 3.668100000000e-05 | 1.585565032192e-05 | FAIL |
-| Additional local Windows strict, rerun 2026-11-18 | Head 9c1c8d2, existing Release MinGW native and Emscripten 3.1.62 WASM build trees, same comparator | 5.968000000002e-06 | 2.344106157418e-06 | FAIL |
+| Additional local Windows strict, rerun 2026-11-18 | Head 9c1c8d2, Release MinGW native and Emscripten 3.1.62 WASM build trees; later reproduced from a fresh WASM build, same comparator | 5.968000000002e-06 | 2.344106157418e-06 | FAIL |
 
-The older report's 5.968e-06 / 2.344e-06 values match the Windows local execution, not the Linux CI job. This is evidence of different environments; it does not establish the exact floating-point root cause or prove that both runs are equivalent. Local build caches are weaker provenance than a clean CI build. Thresholds stay `max_abs <= 1e-5`, `RMSE <= 1e-6`. [Issue #48](https://github.com/ovelhaaa/hydra-tape-engine/issues/48) remains open. No diagnostic or golden was disabled. The full local WASM CTest has 13 passes and 2 strict-related failures (equivalence and A/B null comparison); reporting only the three passing goldens as an entirely green WASM suite would be misleading.
+The older report's 5.968e-06 / 2.344e-06 values match the Windows local execution, not the Linux CI job. This is evidence of different environments; it does not establish the exact floating-point root cause or prove that both runs are equivalent. The initial local caches were subsequently checked against a fresh `build/phase61-wasm` build with Emscripten 3.1.62, reproducing the same values. Thresholds stay `max_abs <= 1e-5`, `RMSE <= 1e-6`. [Issue #48](https://github.com/ovelhaaa/hydra-tape-engine/issues/48) remains open. No diagnostic or golden was disabled. The full local WASM CTest has 13 passes and 2 strict-related failures (equivalence and A/B null comparison); reporting only the three passing goldens as an entirely green WASM suite would be misleading.
 
 ## Reproducible native offline package — category A
 
-`render_phase6_review.py` discovers `.dll`, `.so` or `.dylib` only in the requested build/configuration directories; `--library` overrides discovery. Windows DLL search handles remain alive. Defaults: 48 kHz, 128-frame blocks, PCM24 stereo. All 20 ordered scenarios produce original and processed WAVs (40 total) and 20 CSVs. Partial final blocks are now processed instead of leaving the last 64 frames of 4.5-second scenarios unrendered.
+`render_phase6_review.py` discovers `.dll`, `.so` or `.dylib` only in the requested build/configuration directories; `--library` overrides discovery. Windows DLL search handles remain alive. Defaults: 48 kHz, 128-frame blocks, PCM24 stereo. All 20 ordered scenarios produce original and processed WAVs (40 total) and 20 CSVs. Scenario 15 now calls genuine MIDI 0xFC/0xFB events instead of generic transport Stop/Play; telemetry confirms stopped/running states. Partial final blocks are now processed instead of leaving the last 64 frames of 4.5-second scenarios unrendered.
 
 The manifest records actual Git HEAD, C API version, full applied parameter map, tempo source, duration/rate, seed, event timestamps, MIDI pulse frames, hashes and metrics. Seed 6100 constructs clock jitter; seed 6100+scenario number constructs sources. No wall clock drives audio. Scheduled control changes apply at the beginning of the containing block; MIDI/tap APIs receive sample timestamps. Telemetry snapshots occur every four blocks. Markers use scheduled events and observed telemetry transitions; descriptive claims such as “invariant confirmed” are not fabricated timeline evidence.
 
-Local physical file validation passed: 20 scenarios, 40 WAVs, 20 CSVs, 50,837,152 audio/telemetry bytes. The final Linux ZIP size and manifest commit are reported by the artifact job; the local initial ZIP was 42,224,640 bytes and is superseded by the CI package. Exact hashes apply to that package/toolchain. Cross-platform bit identity is not asserted. Native/WASM numerical tolerances remain those of the strict comparator above.
+Local physical file validation passed: 20 scenarios, 40 WAVs, 20 CSVs, 50,837,189 audio/telemetry bytes. The final Linux ZIP size and manifest commit are reported by the artifact job; the local initial ZIP was 42,225,511 bytes and is superseded by the CI package. Exact hashes apply to that package/toolchain. Cross-platform bit identity is not asserted. Native/WASM numerical tolerances remain those of the strict comparator above.
 
 Commands, dependencies and import instructions: [tool README](../tools/phase6-listening-lab/README.md). Validation rejects missing/empty WAVs or CSVs, bad hashes, invalid manifests/counts, mismatched rate/channels/PCM width, truncated frame counts and incomplete/non-monotonic telemetry. Analysis JSON and validation summary are generated from the real manifest, not from a hand-written result table.
 
@@ -49,7 +49,7 @@ Commands, dependencies and import instructions: [tool README](../tools/phase6-li
     "os": "win32 10.0.19045 x64",
     "cpu": "AMD Ryzen 7 7730U with Radeon Graphics         ",
     "emscripten": "3.1.62",
-    "commit": "9c1c8d29a0c73e2e2d416af8de4c7cc5a4458c53",
+    "commit": "98ca3ddd359d549ca237bbd16b30bb4194ef0fef",
     "wasm_sha256": "1893eb3a595f6510a4f5b566853d17566f30db882959326e47e8acea8ba590df"
   },
   "blocks": 24000,
@@ -64,14 +64,14 @@ Commands, dependencies and import instructions: [tool README](../tools/phase6-li
 
 | Rate | Scenario | Mean µs | P50 µs | P95 µs | P99 µs | Peak µs | Budget overruns |
 |---|---|---:|---:|---:|---:|---:|---:|
-| 48000 | A_tape_echo_base | 33.22 | 29.20 | 55.70 | 70.60 | 405.40 | 0/3000 |
-| 48000 | B_multi_head_stereo | 37.70 | 36.10 | 47.50 | 68.80 | 297.30 | 0/3000 |
-| 48000 | C_reverse_v2 | 33.48 | 32.70 | 35.30 | 53.50 | 287.30 | 0/3000 |
-| 48000 | D_combined_stress_chain | 31.32 | 30.60 | 32.80 | 49.50 | 291.60 | 0/3000 |
-| 44100 | A_tape_echo_base | 30.86 | 29.70 | 34.00 | 50.00 | 312.10 | 0/3000 |
-| 44100 | B_multi_head_stereo | 44.43 | 38.40 | 72.50 | 82.90 | 812.00 | 0/3000 |
-| 44100 | C_reverse_v2 | 37.04 | 33.50 | 52.30 | 61.80 | 2402.40 | 0/3000 |
-| 44100 | D_combined_stress_chain | 31.80 | 31.10 | 33.70 | 50.40 | 357.70 | 0/3000 |
+| 48000 | A_tape_echo_base | 35.21 | 29.30 | 60.90 | 121.00 | 404.10 | 0/3000 |
+| 48000 | B_multi_head_stereo | 40.38 | 36.20 | 63.30 | 77.00 | 804.10 | 0/3000 |
+| 48000 | C_reverse_v2 | 32.74 | 31.60 | 38.90 | 54.70 | 306.50 | 0/3000 |
+| 48000 | D_combined_stress_chain | 31.24 | 30.30 | 36.30 | 44.90 | 328.90 | 0/3000 |
+| 44100 | A_tape_echo_base | 31.20 | 29.80 | 40.80 | 51.70 | 325.30 | 0/3000 |
+| 44100 | B_multi_head_stereo | 36.57 | 35.30 | 39.90 | 58.50 | 536.70 | 0/3000 |
+| 44100 | C_reverse_v2 | 32.83 | 31.30 | 46.90 | 55.90 | 255.10 | 0/3000 |
+| 44100 | D_combined_stress_chain | 31.74 | 30.30 | 43.80 | 57.60 | 282.10 | 0/3000 |
 
 Simulated duration: 32.0 s at 48 kHz and approximately 34.83 s at 44.1 kHz. The script's `dropouts` means `process()` exceeded the per-block time budget in Node, not observed audio device dropouts. No allocation instrumentation was used; the previous “zero allocations” claim is not established by this tool. Older 86–120 µs mean values are historical Phase 6 measurements with incomplete environment provenance and are not reused as current evidence.
 
@@ -81,13 +81,13 @@ The [ESP32 performance audit](ESP32_S3_PERFORMANCE_AUDIT.md), baseline `c9bc17e`
 
 ## Interface, validation and human review
 
-The dedicated player groups all 20 scenarios and displays real metadata/metrics, original and processed waveforms (left channel), cursor, scheduled markers and telemetry transitions. Both stereo buffers use one AudioContext, identical start/offset and native loop boundaries. A/B changes complementary linear gains over 8 ms. No normalization, relative gain matching or additional DSP; common monitor gain defaults to 35%. Playback never starts automatically.
+The dedicated player groups all 20 scenarios and displays real metadata/metrics, original and processed waveforms (left channel), cursor, scheduled markers and telemetry transitions. Both stereo buffers use one AudioContext explicitly created at the package sample rate, identical start/offset and native loop boundaries. This avoids 44.1 kHz device-default resampling truncation; the browser test reproduces that device default. A/B changes complementary linear gains over 8 ms. No normalization, relative gain matching or additional DSP; common monitor gain defaults to 35%. Playback never starts automatically.
 
-Seek, waveform zoom, shift-drag range selection, loop fields and previous/next event controls support repeated inspection. Each scenario has eight optional criteria, an explicit review state, comments and timestamped severity notes. Export/import JSON is independent of localStorage; import is validated against the package commit. Errors disable audition and never assign PASS.
+Seek, waveform zoom, shift-drag range selection, loop fields and previous/next event controls support repeated inspection. Each scenario has eight optional criteria, an explicit review state, comments and timestamped severity notes. Export/import JSON is independent of localStorage; import is validated against the package commit and audio/telemetry content hashes. Errors disable audition and never assign PASS.
 
 Local validation: five Python delivery tests, four Node player tests, real Chromium functional checks for all 20 WAV/CSV sets, A/B clock/no restart, seek, loop, scenario stop, JSON roundtrip/persistence, missing-file handling and desktop/mobile layouts passed. The seven historical Listening Lab model tests also passed. Browser screenshots and machine-readable results are workflow evidence artifacts. These are functional tests, not a human listening decision.
 
-Regression: Native 15/15 passed with `PYTHONUTF8=1` (the unmodified baseline Python test otherwise fails under Windows cp1252); WASM 13/15 passed with the two documented strict failures; Web host 40/40 passed with built WASM; Web Demo build and ESP32-S3 build passed. Native covers MIDI Clock, Reverse, GTC/transport and ABI. The new Linux workflow reruns native reference tests and delivery/browser checks, repeats rendering to compare complete manifests, then publishes only a validated ZIP. Existing Web Demo workflow is unchanged.
+Regression: Native 15/15 passed with `PYTHONUTF8=1` (the unmodified baseline Python test otherwise fails under Windows cp1252); WASM 13/15 passed with the two documented strict failures; Web host 40/40 passed with built WASM; Web Demo build and ESP32-S3 build passed. Native covers MIDI Clock, Reverse, GTC/transport and ABI. The Linux workflow is pinned to Ubuntu 24.04 (supported by the pinned Playwright); it reruns native reference tests and delivery/browser checks, repeats rendering to compare complete manifests, then publishes only a validated ZIP. Existing Web Demo workflow is unchanged.
 
 ## Distribution and release gates
 

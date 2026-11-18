@@ -43,7 +43,7 @@ Wow/flutter, ruído de fita, saturação, ecos reversos e mudanças de pitch dur
 
 ## Registro e decisão
 
-Para cada cenário, preencha os critérios aplicáveis, comentários e notas com timestamp, descrição e severidade. Use N/A para critérios sem aplicação. Estados: NOT REVIEWED, PASS, NEEDS ATTENTION e FAIL. Não existe decisão automática. Export reviews gera JSON independente do armazenamento local. Import reviews reabre avaliações do mesmo commit; entradas importadas substituem as decisões dos cenários correspondentes, preservando as demais. Faça backup antes de importar.
+Para cada cenário, preencha os critérios aplicáveis, comentários e notas com timestamp, descrição e severidade. Use N/A para critérios sem aplicação. Estados: NOT REVIEWED, PASS, NEEDS ATTENTION e FAIL. Não existe decisão automática. Export reviews gera JSON independente do armazenamento local. Import reviews reabre avaliações do mesmo commit e dos mesmos hashes de áudio/telemetria; entradas importadas substituem as decisões dos cenários correspondentes, preservando as demais. Faça backup antes de importar.
 
 Picos, RMS, true peak estimado, correlação e diagnósticos de fronteiras orientam a investigação; não substituem audição. Métricas no manifesto foram calculadas sobre float antes da quantização PCM24; o escritor limita a [-1,1] para exportar WAV. O campo de clipping deve ser lido antes de interpretar o arquivo limitado. Não há garantia de identidade bit a bit entre toolchains; os hashes verificam o pacote específico. Native/WASM estrito continua separado, com thresholds inalterados e issue #48 aberta.
 

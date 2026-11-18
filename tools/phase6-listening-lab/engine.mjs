@@ -34,9 +34,11 @@ export function parseTelemetry(text) {
 
 export function telemetryEvents(rows) {
   const events = [];
+  const labels = {tempo_source: ['Internal', 'Tap Tempo', 'MIDI Clock'], midi_status: ['Disconnected', 'Acquiring', 'Locked', 'Holdover', 'Lost'], is_playing: ['Stopped', 'Playing']};
+  const names = {tempo_source: 'Tempo source', midi_status: 'MIDI Clock', is_playing: 'Transport'};
   for (let i = 1; i < rows.length; i++) {
     for (const key of ['tempo_source', 'midi_status', 'is_playing']) {
-      if (rows[i][key] !== rows[i - 1][key]) events.push({time: rows[i].time_sec, label: `${key}: ${rows[i - 1][key]} → ${rows[i][key]} (telemetry)`});
+      if (rows[i][key] !== rows[i - 1][key]) events.push({time: rows[i].time_sec, label: `${names[key]}: ${labels[key][rows[i - 1][key]] ?? rows[i - 1][key]} → ${labels[key][rows[i][key]] ?? rows[i][key]} (telemetry)`});
     }
   }
   return events;

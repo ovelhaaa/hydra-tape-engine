@@ -41,7 +41,7 @@ class ListeningDeliveryTests(unittest.TestCase):
         self.assertGreater(validate(self.root)[1], 0)
 
     def test_missing_wav_csv_empty_hash_and_truncation(self):
-        for failure in ("missing_wav", "missing_csv", "empty", "hash", "truncated"):
+        for failure in ("missing_wav", "missing_csv", "empty", "hash", "truncated", "truncated_data"):
             with self.subTest(failure=failure):
                 manifest = self.fixture()
                 scenario = manifest["scenarios"]["01_test"]
@@ -53,6 +53,10 @@ class ListeningDeliveryTests(unittest.TestCase):
                     path.write_bytes(b"")
                 elif failure == "hash":
                     path.write_bytes(b"corrupt")
+                elif failure == "truncated_data":
+                    path.write_bytes(path.read_bytes()[:-6])
+                    scenario[f"{kind}_sha256"] = hashlib.sha256(path.read_bytes()).hexdigest()
+                    (self.root / "manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
                 else:
                     with wave.open(str(path), "wb") as wav:
                         wav.setparams((2, 3, 48000, 0, "NONE", "not compressed"))

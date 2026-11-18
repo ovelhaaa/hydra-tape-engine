@@ -3,6 +3,7 @@ import argparse
 import csv
 import hashlib
 import json
+import re
 from pathlib import Path
 import shutil
 import wave
@@ -17,14 +18,18 @@ def validate(directory):
     scenarios = manifest["scenarios"]
     if len(scenarios) != 20 or [int(k[:2]) for k in scenarios] != list(range(1, 21)):
         raise ValueError("Expected the ordered 20 scenarios")
-    if len(manifest["reference_commit"]) != 40 or not manifest["api_version"]:
+    if not re.fullmatch(r"[a-f0-9]{40}", manifest["reference_commit"]) or not manifest["api_version"]:
         raise ValueError("Missing provenance")
     total = 0
+    seen = set()
     for key, scenario in scenarios.items():
         for kind in ("original_wav", "processed_wav", "telemetry_csv"):
             path = (directory / scenario[f"{kind}_file"]).resolve()
             if not path.is_relative_to(directory) or not path.is_file() or not path.stat().st_size:
                 raise ValueError(f"Missing/empty or unsafe file: {path}")
+            if path in seen:
+                raise ValueError(f"Reused scenario file: {path}")
+            seen.add(path)
             if hashlib.sha256(path.read_bytes()).hexdigest() != scenario[f"{kind}_sha256"]:
                 raise ValueError(f"SHA-256 mismatch: {path.name}")
             total += path.stat().st_size
@@ -33,6 +38,8 @@ def validate(directory):
                     frames = round(scenario["duration_sec"] * scenario["sample_rate_hz"])
                     if (wav.getnframes(), wav.getframerate(), wav.getnchannels(), wav.getsampwidth()) != (frames, scenario["sample_rate_hz"], 2, 3):
                         raise ValueError(f"Truncated/incompatible WAV: {path.name}")
+                    if len(wav.readframes(frames)) != frames * 6:
+                        raise ValueError(f"Truncated physical PCM data: {path.name}")
             else:
                 with path.open(encoding="utf-8", newline="") as stream:
                     rows = list(csv.DictReader(stream))
@@ -42,6 +49,8 @@ def validate(directory):
                 times = [float(row["time_sec"]) for row in rows]
                 if any(b <= a for a, b in zip(times, times[1:])):
                     raise ValueError(f"Non-monotonic telemetry: {key}")
+                if any(abs(time - i * 512 / scenario["sample_rate_hz"]) > 0.000051 for i, time in enumerate(times)):
+                    raise ValueError(f"Premature/incorrect telemetry timestamps: {key}")
         for field in ("dsp_params", "markers", "analysis_metrics", "events", "tempo_source", "random_seed"):
             if field not in scenario:
                 raise ValueError(f"Missing {field}: {key}")

@@ -318,3 +318,86 @@ A suíte automatizada cobre integralmente os requisitos de autoridade de fonte n
      $$\text{rmse} = 2.344106 \times 10^{-6} \quad (\le 1.585565 \times 10^{-5})$$
    - Essa discrepância sutil decorre de diferenças intrínsecas de aritmética de ponto flutuante / otimizações do compilador entre LLVM nativo e Clang/WASM, sendo anterior à implementação do MIDI Clock.
    - A Issue #48 permanece aberta como exceção documentada no release gate sem impedir o merge da PR #52.
+
+---
+
+## 13. Hotfix 5.2.1 — Interoperabilidade WASM BigInt (i64) & Recuperação do Web Release
+
+### 13.1 Diagnóstico da Regressão Pós-Merge PR #52
+Após a integração da PR #52 na branch `main`, o workflow de CI `Web Demo (Build + Deploy Pages)` falhou no teste integrado de ponta a ponta (`host/web/tests/webMidiClock.test.mjs`) com o seguinte erro em tempo de execução:
+```text
+TypeError: Cannot convert a BigInt value to a number
+    at Module._hydra_dsp_midi_clock_event
+    at ccall
+    at Object.midiClockEvent
+    at HydraProcessor.onMessage (hydra-processor.js)
+```
+
+**Causa Raiz**:
+Nas versões modernas do Emscripten (incluindo a 3.1.62 utilizada no repositório), a legalização de inteiros de 64 bits (`i64`) para WebAssembly é habilitada por padrão quando `-sWASM_BIGINT=1` não é especificado. Nessa configuração (`WASM_BIGINT=0`), as funções exportadas que recebem `uint64_t` ou `int64_t` na ABI C têm seus argumentos convertidos para pares de inteiros de 32 bits (`(i32, i32)`). A biblioteca JavaScript gerada (`hydra_dsp_web.js`) espera números JavaScript (`Number`) para preencher esses slots. Quando o AudioWorklet (`hydra-processor.js`) chamou a função encapsulada por `cwrap('...', 'number', ['number', 'number', 'bigint'])` passando instâncias de `BigInt`, a conversão interna para número falhou (`TypeError: Cannot convert a BigInt value to a number`).
+
+### 13.2 Política Única de Interoperabilidade i64: `-sWASM_BIGINT=1`
+Para assegurar fidelidade de 64 bits sem perda de precisão ou truncamento arbitrário, foi adotada a interoperabilidade nativa de `BigInt` com WebAssembly em todo o projeto:
+1. **Configuração de Linker Emscripten (`CMakeLists.txt`)**:
+   - Adicionada a flag global:
+     ```cmake
+     if(EMSCRIPTEN)
+         add_link_options("SHELL:-sWASM_BIGINT=1")
+     endif()
+     ```
+   - E reforçada especificamente no target `hydra_dsp_web`:
+     ```cmake
+     target_link_options(hydra_dsp_web PRIVATE
+         "SHELL:-sEXPORTED_FUNCTIONS=['_hydra_dsp_create',...]"
+         "SHELL:-sEXPORTED_RUNTIME_METHODS=['ccall','cwrap','addFunction','removeFunction']"
+         "SHELL:-sALLOW_TABLE_GROWTH=1"
+         "SHELL:-sWASM_BIGINT=1"
+         "SHELL:-sMODULARIZE=1"
+         "SHELL:-sEXPORT_NAME='createHydraDspModule'"
+     )
+     ```
+   Com `-sWASM_BIGINT=1`, a assinatura WebAssembly exportada preserva nativamente o tipo `i64` (`(i32, i32, i64) -> i32`), aceitando objetos `BigInt` do JavaScript de forma direta, atômica e sem legalização.
+
+2. **Auditoria e Padronização de Assinaturas C-API no Host Web**:
+   Todas as funções da C-API com argumentos ou retornos de 64 bits foram auditadas e padronizadas no `HydraProcessor`:
+   - `hydra_dsp_midi_clock_event(handle, status, timestamp_frames)`: `['number', 'number', 'bigint']`
+   - `hydra_dsp_tap_tempo_event(handle, timestamp_frames)`: `['number', 'bigint']`
+   - `hydra_dsp_transport_locate(handle, sample_pos)`: `['number', 'bigint']`
+
+3. **Conversão Segura e Validação de Limites (`toUint64BigInt`)**:
+   Implementado helper robusto de conversão em `host/web/hydra-processor.js`:
+   ```javascript
+   function toUint64BigInt(val, fallback = 0n) {
+       if (val === undefined || val === null) return fallback;
+       try {
+           if (typeof val === 'bigint') {
+               if (val < 0n) return 0n;
+               if (val > 0xFFFFFFFFFFFFFFFFn) return 0xFFFFFFFFFFFFFFFFn;
+               return val;
+           }
+           const num = Number(val);
+           if (!Number.isFinite(num) || isNaN(num) || num <= 0) return 0n;
+           if (num >= 18446744073709551615) return 0xFFFFFFFFFFFFFFFFn;
+           return BigInt(Math.round(num));
+       } catch (_) {
+           return fallback;
+       }
+   }
+   ```
+   Garante conformidade estrita no intervalo $[0, 2^{64}-1]$, evitando falhas na presença de `Number`, `BigInt` ou strings numéricas.
+
+4. **Preservação de Posição de Frames no AudioWorklet**:
+   Adicionado o rastreamento acumulativo `this.totalFramesProcessed = (this.totalFramesProcessed || 0) + frames;` em `HydraProcessor.process()`, permitindo cálculo contínuo de referências temporais no processador de áudio.
+
+### 13.3 Matriz de Testes Expandida (Web & C++)
+- Suíte `host/web/tests/webMidiClock.test.mjs` expandida para 15 testes integrados cobrindo:
+  - Cenário A (120 BPM regular e travamento de PLL).
+  - Cenário B (90 BPM) e Cenário C (180 BPM).
+  - Cenário D (Transporte Start, Stop e Continue sem perda de fase).
+  - Cenário E (Limites temporais de 64 bits: `0ULL`, `1000ULL`, `2^32-1`, `5e9`, `MAX_SAFE_INTEGER`, `UINT64_MAX` e strings numéricas).
+  - Cenários F e G (Jitter de entrega e lotes de mensagens preservando diferenças temporais).
+  - Cenário H (Regressão de Tap Tempo via WASM com timestamps de 64 bits).
+  - Cenário I (Transport Locate com argumento `sample_pos` de 64 bits via WASM).
+- 40/40 testes web passando em 100%.
+- C++ `testAbiCompatibility` reforçado com validação de limites `0ULL`, `1000ULL`, `4294967295ULL`, `5000000000ULL` e `kTapTempoUseCurrentTime`.
+- Algoritmo DSP do PLL e estimador de clock mantidos 100% inalterados.

@@ -199,40 +199,46 @@ test('conversor Web MIDI métricas temporais: erro máximo e RMSE < 0.1 frame', 
 });
 
 const buildDir = process.env.HYDRA_WEB_BUILD;
+let CachedProcessor = null;
+
+async function setupWorkletTest() {
+  const { readFile } = await import('node:fs/promises');
+  const { resolve } = await import('node:path');
+  const { pathToFileURL } = await import('node:url');
+
+  const sampleRate = 48000;
+  globalThis.sampleRate = sampleRate;
+
+  globalThis.AudioWorkletProcessor = class {
+    constructor() {
+      this.readyMessage = new Promise((res) => {
+        this.port = {
+          postMessage: (msg) => {
+            if (msg.type === 'ready' || msg.type === 'error') res(msg);
+            if (msg.type === 'transportTelemetry') this.lastTelemetry = msg;
+          }
+        };
+      });
+    }
+  };
+
+  if (!CachedProcessor) {
+    globalThis.registerProcessor = (_name, proc) => { CachedProcessor = proc; };
+    await import(pathToFileURL(resolve(buildDir, 'hydra-processor.js')).href);
+  }
+
+  const wasmBinary = await readFile(resolve(buildDir, 'hydra_dsp.wasm'));
+  const worklet = new CachedProcessor({ processorOptions: { wasmBinary } });
+  assert.deepEqual(await worklet.readyMessage, { type: 'ready' });
+  return { worklet, sampleRate };
+}
 
 test('conversão ponta a ponta: Web MIDI -> conversor -> AudioWorklet -> WASM DSP',
   { skip: buildDir ? false : 'Set HYDRA_WEB_BUILD to run integrated WASM test', timeout: 15000 },
   async () => {
-    const { readFile } = await import('node:fs/promises');
-    const { resolve } = await import('node:path');
-    const { pathToFileURL } = await import('node:url');
     const { processBatchMidiEvents } = await import('../webMidiTime.js');
-
-    let Processor;
-    const sampleRate = 48000;
     const blockSize = 128;
-    globalThis.sampleRate = sampleRate;
-
-    globalThis.AudioWorkletProcessor = class {
-      constructor() {
-        this.readyMessage = new Promise((res) => {
-          this.port = {
-            postMessage: (msg) => {
-              if (msg.type === 'ready' || msg.type === 'error') res(msg);
-              if (msg.type === 'transportTelemetry') this.lastTelemetry = msg;
-            }
-          };
-        });
-      }
-    };
-    globalThis.registerProcessor = (_name, proc) => { Processor = proc; };
-
-    await import(pathToFileURL(resolve(buildDir, 'hydra-processor.js')).href);
-    assert.ok(Processor);
-
-    const wasmBinary = await readFile(resolve(buildDir, 'hydra_dsp.wasm'));
-    const worklet = new Processor({ processorOptions: { wasmBinary } });
-    assert.deepEqual(await worklet.readyMessage, { type: 'ready' });
+    const { worklet, sampleRate } = await setupWorkletTest();
 
     // 1. Configurar fonte para MIDI External (fonte = 2)
     worklet.port.onmessage({ data: { type: 'setTempoSource', source: 2 } });
@@ -312,5 +318,223 @@ test('conversão ponta a ponta: Web MIDI -> conversor -> AudioWorklet -> WASM DS
     assert.ok(state, 'deve produzir telemetria de MIDI clock');
     assert.ok(Math.abs(state.appliedBpm - 120.0) < 1.0, `appliedBpm (${state.appliedBpm}) deve estar próximo de 120`);
     assert.equal(state.syncStatus, 2, 'deve atingir status 2 (Locked)');
+  }
+);
+
+test('conversão ponta a ponta: Web MIDI -> WASM DSP (Cenário B: 90 BPM e Cenário C: 180 BPM)',
+  { skip: buildDir ? false : 'Set HYDRA_WEB_BUILD to run integrated WASM test', timeout: 20000 },
+  async () => {
+    const blockSize = 128;
+    const runBpmScenario = async (targetBpm, tolerance) => {
+      const { worklet, sampleRate } = await setupWorkletTest();
+      worklet.port.onmessage({ data: { type: 'setTempoSource', source: 2 } });
+      worklet.port.onmessage({ data: { type: 'command', command: 'transportPlay', value: 1 } });
+
+      const t0 = 1000;
+      worklet.port.onmessage({ data: { type: 'midiClockEvent', byte: 0xFA, timestampFrames: t0 } });
+
+      const pulseIntervalFrames = (60.0 * sampleRate) / (24.0 * targetBpm);
+      const numPulses = 144;
+      const inL = new Float32Array(blockSize);
+      const inR = new Float32Array(blockSize);
+      const inputs = [[inL, inR]];
+      const outputs = [[inL, inR]];
+
+      let currentAudioFrame = 0;
+      let nextPulseIndex = 0;
+      const totalFrames = t0 + Math.round(numPulses * pulseIntervalFrames) + 500;
+
+      while (currentAudioFrame < totalFrames) {
+        while (nextPulseIndex < numPulses) {
+          const pulseFrame = t0 + Math.round((nextPulseIndex + 1) * pulseIntervalFrames);
+          if (pulseFrame <= currentAudioFrame) {
+            worklet.port.onmessage({
+              data: {
+                type: 'midiClockEvent',
+                byte: 0xF8,
+                timestampFrames: pulseFrame
+              }
+            });
+            nextPulseIndex++;
+          } else {
+            break;
+          }
+        }
+        worklet.process(inputs, outputs, {});
+        currentAudioFrame += blockSize;
+      }
+
+      const st = worklet.lastTelemetry?.midiClock;
+      assert.ok(st, `deve produzir telemetria MIDI a ${targetBpm} BPM`);
+      assert.ok(
+        Math.abs(st.appliedBpm - targetBpm) < tolerance,
+        `appliedBpm (${st.appliedBpm}) deve estar próximo de ${targetBpm}`
+      );
+      assert.equal(st.syncStatus, 2, 'deve atingir status 2 (Locked)');
+    };
+
+    // Cenário B: 90 BPM
+    await runBpmScenario(90.0, 1.0);
+
+    // Cenário C: 180 BPM (intervalo curto de clock sem rejeição indevida)
+    await runBpmScenario(180.0, 1.5);
+  }
+);
+
+test('conversão ponta a ponta: Web MIDI -> WASM DSP (Cenário D: Start, Stop, Continue)',
+  { skip: buildDir ? false : 'Set HYDRA_WEB_BUILD to run integrated WASM test', timeout: 15000 },
+  async () => {
+    const blockSize = 128;
+    const { worklet } = await setupWorkletTest();
+
+    worklet.port.onmessage({ data: { type: 'setTempoSource', source: 2 } });
+    const inL = new Float32Array(blockSize);
+    const inR = new Float32Array(blockSize);
+    const inputs = [[inL, inR]];
+    const outputs = [[inL, inR]];
+
+    // 1. Start (0xFA) no frame 1000
+    worklet.port.onmessage({ data: { type: 'midiClockEvent', byte: 0xFA, timestampFrames: 1000 } });
+    for (let i = 0; i < 48; i++) {
+      worklet.port.onmessage({ data: { type: 'midiClockEvent', byte: 0xF8, timestampFrames: 1000 + i * 1000 } });
+      worklet.process(inputs, outputs, {});
+    }
+    for (let i = 0; i < 20; i++) worklet.process(inputs, outputs, {});
+    assert.equal(worklet.lastTelemetry?.midiClock?.isTransportRunning, true, 'transporte deve estar rodando após Start');
+
+    // 2. Stop (0xFC) no frame 50000
+    worklet.port.onmessage({ data: { type: 'midiClockEvent', byte: 0xFC, timestampFrames: 50000 } });
+    for (let i = 0; i < 20; i++) worklet.process(inputs, outputs, {});
+    assert.equal(worklet.lastTelemetry?.midiClock?.isTransportRunning, false, 'transporte deve parar após Stop');
+
+    // 3. Continue (0xFB) no frame 60000
+    worklet.port.onmessage({ data: { type: 'midiClockEvent', byte: 0xFB, timestampFrames: 60000 } });
+    for (let i = 0; i < 48; i++) {
+      worklet.port.onmessage({ data: { type: 'midiClockEvent', byte: 0xF8, timestampFrames: 60000 + i * 1000 } });
+      worklet.process(inputs, outputs, {});
+    }
+    for (let i = 0; i < 20; i++) worklet.process(inputs, outputs, {});
+    assert.equal(worklet.lastTelemetry?.midiClock?.isTransportRunning, true, 'transporte deve retomar após Continue');
+  }
+);
+
+test('interoperabilidade WASM i64: Cenário E (limites numéricos 0, pequeno, 2^32, >MAX_SAFE_INTEGER, UINT64_MAX)',
+  { skip: buildDir ? false : 'Set HYDRA_WEB_BUILD to run integrated WASM test', timeout: 15000 },
+  async () => {
+    const blockSize = 128;
+    const { worklet } = await setupWorkletTest();
+
+    const testTimestamps = [
+      0,
+      0n,
+      1000,
+      1000n,
+      4294967295,
+      4294967295n,
+      5000000000,
+      5000000000n,
+      Number.MAX_SAFE_INTEGER,
+      BigInt(Number.MAX_SAFE_INTEGER),
+      BigInt(Number.MAX_SAFE_INTEGER) + 1000n,
+      0xFFFFFFFFFFFFFFFFn,
+      '5000000000',
+      '18446744073709551615'
+    ];
+
+    const inL = new Float32Array(blockSize);
+    const inR = new Float32Array(blockSize);
+    const inputs = [[inL, inR]];
+    const outputs = [[inL, inR]];
+
+    for (const ts of testTimestamps) {
+      assert.doesNotThrow(() => {
+        worklet.port.onmessage({
+          data: {
+            type: 'midiClockEvent',
+            byte: 0xF8,
+            timestampFrames: ts
+          }
+        });
+      }, `midiClockEvent não deve lançar exceção para timestamp ${ts}`);
+
+      assert.doesNotThrow(() => {
+        worklet.port.onmessage({
+          data: {
+            type: 'tapTempoEvent',
+            timestampFrames: ts
+          }
+        });
+      }, `tapTempoEvent não deve lançar exceção para timestamp ${ts}`);
+
+      assert.doesNotThrow(() => {
+        worklet.port.onmessage({
+          data: {
+            type: 'transportLocate',
+            musicalPos: 1.0,
+            samplePos: ts
+          }
+        });
+      }, `transportLocate não deve lançar exceção para samplePos ${ts}`);
+
+      worklet.process(inputs, outputs, {});
+    }
+  }
+);
+
+test('regressão WASM: Cenário H (Tap Tempo com timestamps válidos via WASM)',
+  { skip: buildDir ? false : 'Set HYDRA_WEB_BUILD to run integrated WASM test', timeout: 15000 },
+  async () => {
+    const blockSize = 128;
+    const { worklet } = await setupWorkletTest();
+
+    worklet.port.onmessage({ data: { type: 'setTempoSource', source: 1 } }); // Tap
+    const inL = new Float32Array(blockSize);
+    const inR = new Float32Array(blockSize);
+    const inputs = [[inL, inR]];
+    const outputs = [[inL, inR]];
+
+    // 4 toques a 120 BPM (intervalo de 24000 frames)
+    for (let tap = 0; tap < 4; tap++) {
+      worklet.port.onmessage({
+        data: {
+          type: 'tapTempoEvent',
+          timestampFrames: BigInt(tap * 24000)
+        }
+      });
+      for (let b = 0; b < 20; b++) worklet.process(inputs, outputs, {});
+    }
+
+    const tapState = worklet.lastTelemetry?.tapTempo;
+    assert.ok(tapState, 'deve produzir telemetria de Tap Tempo');
+    assert.equal(tapState.tapCount, 4, 'tapCount deve ser 4');
+    assert.ok(Math.abs(tapState.appliedBpm - 120.0) < 1.0, `appliedBpm (${tapState.appliedBpm}) deve ser ~120`);
+  }
+);
+
+test('regressão WASM: Cenário I (Transport Locate com argumentos i64)',
+  { skip: buildDir ? false : 'Set HYDRA_WEB_BUILD to run integrated WASM test', timeout: 15000 },
+  async () => {
+    const blockSize = 128;
+    const { worklet } = await setupWorkletTest();
+
+    const inL = new Float32Array(blockSize);
+    const inR = new Float32Array(blockSize);
+    const inputs = [[inL, inR]];
+    const outputs = [[inL, inR]];
+
+    // Localizar para compasso 8 (32 batidas) e sample frame 100,000 (i64)
+    worklet.port.onmessage({
+      data: {
+        type: 'transportLocate',
+        musicalPos: 32.0,
+        samplePos: 100000n
+      }
+    });
+
+    for (let b = 0; b < 20; b++) worklet.process(inputs, outputs, {});
+
+    const t = worklet.lastTelemetry;
+    assert.ok(t, 'deve produzir telemetria de transporte');
+    assert.ok(Math.abs(t.musicalPos - 32.0) < 0.2, `musicalPos (${t.musicalPos}) deve estar próximo de 32.0`);
   }
 );

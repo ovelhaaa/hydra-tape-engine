@@ -590,6 +590,15 @@ bool testAbiCompatibility() {
   EXPECT_EQ(st.pulse_count, 0u);
   EXPECT_EQ(st.sync_status, static_cast<int>(HYDRA_DSP_MIDI_CLOCK_DISCONNECTED));
 
+  // 64-bit boundary and timestamp range validation
+  EXPECT_EQ(hydra_dsp_midi_clock_event(handle, 0xFA, 0ULL), 0);
+  EXPECT_EQ(hydra_dsp_midi_clock_event(handle, 0xF8, 1000ULL), 0);
+  EXPECT_EQ(hydra_dsp_midi_clock_event(handle, 0xF8, 4294967295ULL), 0);
+  EXPECT_EQ(hydra_dsp_midi_clock_event(handle, 0xF8, 5000000000ULL), 0);
+  EXPECT_EQ(hydra_dsp_tap_tempo_event(handle, 5000000000ULL), 0);
+  EXPECT_EQ(hydra_dsp_tap_tempo_event(handle, 5000024000ULL), 0);
+  EXPECT_EQ(hydra_dsp_transport_locate(handle, 4.0, 5000000000ULL), 0);
+
   hydra_dsp_destroy(handle);
 
   std::cout << "[PASS] O. ABI Compatibility & C API 1.7 (Zero struct offset or ABI regression)\n";

@@ -144,6 +144,10 @@ if(BUILD_TESTING)
   endif()
 endif()
 
+if(EMSCRIPTEN)
+  add_link_options("SHELL:-sWASM_BIGINT=1")
+endif()
+
 if(BUILD_WEB)
   if(NOT EMSCRIPTEN)
     message(FATAL_ERROR "BUILD_WEB=ON requires Emscripten toolchain. Use emcmake cmake ...")
@@ -168,6 +172,7 @@ if(BUILD_WEB)
   target_link_options(hydra_dsp_web PRIVATE
     "SHELL:--no-entry"
     "SHELL:-sWASM=1"
+    "SHELL:-sWASM_BIGINT=1"
     "SHELL:-sMODULARIZE=1"
     "SHELL:-sEXPORT_ES6=1"
     "SHELL:-sALLOW_MEMORY_GROWTH=1"

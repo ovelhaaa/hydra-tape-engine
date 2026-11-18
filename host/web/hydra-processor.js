@@ -8,6 +8,35 @@ if (!(HYDRA_SHARED.runtimes instanceof Map)) {
 }
 globalThis.__hydraShared = HYDRA_SHARED;
 
+const UINT64_MAX = 0xFFFFFFFFFFFFFFFFn;
+
+function toUint64BigInt(val, fallback = 0n) {
+  if (typeof val === 'bigint') {
+    if (val < 0n) return 0n;
+    if (val > UINT64_MAX) return UINT64_MAX;
+    return val;
+  }
+  if (typeof val === 'number') {
+    if (!Number.isFinite(val) || val <= 0) return 0n;
+    if (val >= 18446744073709551615) return UINT64_MAX;
+    return BigInt(Math.max(0, Math.round(val)));
+  }
+  if (typeof val === 'string' && val.trim().length > 0) {
+    try {
+      const b = BigInt(val.trim());
+      if (b < 0n) return 0n;
+      if (b > UINT64_MAX) return UINT64_MAX;
+      return b;
+    } catch {
+      const n = parseFloat(val);
+      if (Number.isFinite(n) && n >= 0) {
+        return BigInt(Math.max(0, Math.round(n)));
+      }
+    }
+  }
+  return typeof fallback === 'bigint' ? fallback : BigInt(Math.max(0, Math.round(Number(fallback) || 0)));
+}
+
 function loadHydraRuntime(wasmBinary) {
   const cached = HYDRA_SHARED.runtimes.get('hydra');
   if (cached) return cached;
@@ -130,6 +159,7 @@ class HydraProcessor extends AudioWorkletProcessor {
         transportReset: this.module.cwrap('hydra_dsp_transport_reset', 'number', ['number']),
         transportSetBpm: this.module.cwrap('hydra_dsp_transport_set_bpm', 'number', ['number', 'number']),
         transportGetState: this.module.cwrap('hydra_dsp_transport_get_state', 'number', ['number', 'number']),
+        transportLocate: this.module.cwrap('hydra_dsp_transport_locate', 'number', ['number', 'number', 'bigint']),
         tapTempoEvent: this.module.cwrap('hydra_dsp_tap_tempo_event', 'number', ['number', 'bigint']),
         tapTempoGetState: this.module.cwrap('hydra_dsp_tap_tempo_get_state', 'number', ['number', 'number']),
         tapTempoReset: this.module.cwrap('hydra_dsp_tap_tempo_reset', 'number', ['number']),
@@ -272,19 +302,31 @@ class HydraProcessor extends AudioWorkletProcessor {
       if (this.api.transportReset) this.api.transportReset(this.handle);
     } else if (msg.type === 'transportSetBpm') {
       if (this.api.transportSetBpm) this.api.transportSetBpm(this.handle, Number(msg.bpm));
+    } else if (msg.type === 'transportLocate') {
+      if (this.api.transportLocate) {
+        const musicalPos = Number(msg.musicalPos !== undefined ? msg.musicalPos : 0);
+        const samplePos = (msg.samplePos !== undefined && msg.samplePos !== null)
+          ? toUint64BigInt(msg.samplePos)
+          : 0n;
+        this.api.transportLocate(this.handle, musicalPos, samplePos);
+      }
     } else if (msg.type === 'tapTempoEvent') {
       if (this.api.tapTempoEvent) {
-        this.api.tapTempoEvent(this.handle, BigInt(Math.max(0, Math.round(Number(msg.timestampFrames || 0)))));
+        const fallbackFrame = (typeof currentFrame !== 'undefined') ? currentFrame : (this.totalFramesProcessed || 0);
+        const ts = (msg.timestampFrames !== undefined && msg.timestampFrames !== null)
+          ? toUint64BigInt(msg.timestampFrames, BigInt(fallbackFrame))
+          : toUint64BigInt(fallbackFrame);
+        this.api.tapTempoEvent(this.handle, ts);
       }
     } else if (msg.type === 'tapTempoReset') {
       if (this.api.tapTempoReset) this.api.tapTempoReset(this.handle);
     } else if (msg.type === 'midiClockEvent') {
       if (this.api.midiClockEvent) {
-        const rawTs = Number(msg.timestampFrames);
         const fallbackFrame = (typeof currentFrame !== 'undefined') ? currentFrame : (this.totalFramesProcessed || 0);
-        const ts = (Number.isFinite(rawTs) && rawTs >= 0) ? rawTs : fallbackFrame;
+        const rawTs = (msg.timestampFrames !== undefined && msg.timestampFrames !== null) ? msg.timestampFrames : fallbackFrame;
+        const ts = toUint64BigInt(rawTs, BigInt(fallbackFrame));
         const status = Number(msg.statusByte !== undefined ? msg.statusByte : msg.byte);
-        this.api.midiClockEvent(this.handle, status, BigInt(Math.max(0, Math.round(ts))));
+        this.api.midiClockEvent(this.handle, status, ts);
       }
     } else if (msg.type === 'midiClockReset') {
       if (this.api.midiClockReset) this.api.midiClockReset(this.handle);
@@ -311,6 +353,7 @@ class HydraProcessor extends AudioWorkletProcessor {
     }
 
     this.ensureBuffers(frames);
+    this.totalFramesProcessed = (this.totalFramesProcessed || 0) + frames;
     this.applyContinuousParams(parameters);
 
     // Transfer audio blocks to WASM heap

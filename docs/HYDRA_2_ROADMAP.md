@@ -118,6 +118,19 @@ flowchart LR
 
 ---
 
+### HOTFIX 5.2.1 — MIDI Clock V1.2.1 (WASM BigInt Interop & Web Release Recovery)
+- **Status:** CONCLUÍDO & VALIDADO.
+- **Diagnóstico:** Regressão pós-merge da PR #52 na suite Web (`webMidiClock.test.mjs`) gerando `TypeError: Cannot convert a BigInt value to a number`. O Emscripten legalizava parâmetros de 64 bits (`uint64_t`/`i64`) para pares `(i32, i32)` quando compilado sem `WASM_BIGINT=1`, colidindo com o binding `cwrap(..., ['number', 'number', 'bigint'])`.
+- **Solução:**
+  - Habilitação explícita de `-sWASM_BIGINT=1` global e no target `hydra_dsp_web` em `CMakeLists.txt`, gerando ABI WASM nativa com tipos `i64`.
+  - Normalização segura de argumentos temporais de 64 bits via `toUint64BigInt` em `host/web/hydra-processor.js` (cobrindo `midiClockEvent`, `tapTempoEvent` e `transportLocate`).
+  - Rastreamento contínuo de frames no AudioWorklet (`totalFramesProcessed`).
+  - Validação abrangente de limites 64-bit (`0ULL`, `1000ULL`, `2^32-1`, `5e9`, `MAX_SAFE_INTEGER`, `UINT64_MAX`) nos testes de ABI C++ e na suíte de testes integrada Web (15/15 testes em `webMidiClock.test.mjs`, 40/40 testes web no total).
+  - Preservação estrita dos algoritmos de DSP, PLL, GTC e Tap Tempo sem alterações de comportamento acústico ou temporal.
+- **Critério de Saída:** Suíte Web 100% aprovada (40/40), CTest Native 100% aprovado (15/15), CTest WASM 100% aprovado (3/3), equivalência Native/WASM dentro do limite da issue #48, e firmware ESP32-S3 compilado com sucesso.
+
+---
+
 ### FASE 6 — Expansão Criativa do Accidental Warp & MVP Final
 - **Status:** PLANEJADO.
 - **Sub-etapas:**

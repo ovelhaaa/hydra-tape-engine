@@ -37,11 +37,11 @@ async function selectScenario(id) {
   $('metrics').textContent = JSON.stringify(s.analysis_metrics, null, 2); $('provenance').textContent = JSON.stringify({commit: manifest.reference_commit, api: manifest.api_version, environment: manifest.environment}, null, 2);
   $('events').replaceChildren(); message(`Verifying and loading ${s.name}…`);
   try {
-    if (!player) { player = new Audition(new AudioContext()); player.master.gain.value = Number($('volume').value); }
+    if (!player) { player = new Audition(new AudioContext({sampleRate: manifest.sample_rate_hz})); player.master.gain.value = Number($('volume').value); }
     const data = await Promise.all(['original_wav','processed_wav','telemetry_csv'].map(kind => verifiedFile(files.get(s[`${kind}_file`]), s[`${kind}_sha256`])));
     const decoded = await Promise.all(data.slice(0,2).map(bytes => player.context.decodeAudioData(bytes)));
     if (token !== generation) return;
-    if (decoded.some(b => Math.abs(b.duration - s.duration_sec) > 1 / b.sampleRate || b.numberOfChannels !== 2)) throw Error('Incomplete or invalid WAV');
+    if (decoded.some(b => Math.abs(b.duration - s.duration_sec) > 1 / b.sampleRate || b.numberOfChannels !== 2)) throw Error(`Incomplete or invalid WAV: ${decoded.map(b => `${b.duration}s / ${b.sampleRate}Hz / ${b.numberOfChannels}ch`).join(', ')}`);
     const rows = parseTelemetry(new TextDecoder().decode(data[2]));
     const expectedRows = Math.ceil(Math.round(s.duration_sec * s.sample_rate_hz) / 512);
     if (rows.length !== expectedRows) throw Error('Incomplete telemetry');

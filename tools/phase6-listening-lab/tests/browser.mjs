@@ -15,6 +15,9 @@ let activePage;
 try{
  const page=await browser.newPage({viewport:{width:1440,height:1000},acceptDownloads:true}); const errors=[]; page.on('pageerror',e=>errors.push(e.message));
  activePage=page;
+ // Model devices whose default output rate is 44.1 kHz, including Linux CI.
+ // Explicit context requests remain honored.
+ await page.addInitScript(()=>{const NativeContext=AudioContext; globalThis.AudioContext=class extends NativeContext{constructor(options={}){super({sampleRate:44100,...options});}};});
  await page.addInitScript(()=>{globalThis.audioStarts=[];globalThis.audioStops=0;const start=AudioBufferSourceNode.prototype.start,stop=AudioBufferSourceNode.prototype.stop; AudioBufferSourceNode.prototype.start=function(...args){audioStarts.push(args);return start.apply(this,args);};AudioBufferSourceNode.prototype.stop=function(...args){audioStops++;return stop.apply(this,args);};});
  await page.goto(`http://127.0.0.1:${server.address().port}/tools/phase6-listening-lab/index.html`);
  await page.locator('#package').setInputFiles(packageDir);

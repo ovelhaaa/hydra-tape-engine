@@ -4,9 +4,10 @@ export const CRITERIA = ['Rhythmic clarity', 'Natural repeats', 'Continuity', 'C
 export function validateManifest(manifest) {
   if (manifest.schema_version !== 1 || !/^[a-f0-9]{40}$/.test(manifest.reference_commit ?? '')) throw Error('Invalid manifest provenance/schema');
   const entries = Object.entries(manifest.scenarios ?? {});
+  if (!(manifest.sample_rate_hz > 0)) throw Error('Missing package sample rate');
   if (entries.length !== 20 || entries.some(([id], i) => Number(id.slice(0, 2)) !== i + 1)) throw Error('Expected 20 ordered scenarios');
   for (const [, s] of entries) {
-    if (!(s.duration_sec > 0 && s.sample_rate_hz > 0) || !s.dsp_params || !s.analysis_metrics || !Array.isArray(s.markers)) throw Error('Invalid scenario metadata');
+    if (!(s.duration_sec > 0 && s.sample_rate_hz === manifest.sample_rate_hz) || !s.dsp_params || !s.analysis_metrics || !Array.isArray(s.markers)) throw Error('Invalid scenario metadata');
     for (const kind of ['original_wav', 'processed_wav', 'telemetry_csv']) {
       const path = s[`${kind}_file`];
       if (typeof path !== 'string' || path.includes('..') || /[:\\]/.test(path) || path.startsWith('/') || !/^[a-f0-9]{64}$/.test(s[`${kind}_sha256`] ?? '')) throw Error('Invalid file path/hash');

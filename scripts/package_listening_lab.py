@@ -3,6 +3,7 @@ import argparse
 import csv
 import hashlib
 import json
+import math
 import re
 from pathlib import Path
 import shutil
@@ -56,6 +57,8 @@ def validate(directory):
                 raise ValueError(f"Missing {field}: {key}")
         if scenario.get("reference_commit") != manifest["reference_commit"]:
             raise ValueError(f"Scenario provenance mismatch: {key}")
+        if not scenario["markers"] or any(not marker.get("label") or not math.isfinite(marker["time"]) or not 0 <= marker["time"] <= scenario["duration_sec"] for marker in scenario["markers"]):
+            raise ValueError(f"Missing/invalid musical timeline markers: {key}")
     return manifest, total
 
 def package(directory, archive=None):

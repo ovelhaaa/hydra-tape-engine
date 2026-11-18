@@ -132,7 +132,7 @@ flowchart LR
 ---
 
 ### FASE 6 / 6.1 — Validação Musical e Listening Lab
-- **Status:** ENTREGA EM VALIDAÇÃO; escuta humana `PENDING_HUMAN_AUDITION`.
+- **Status:** READY FOR HUMAN LISTENING; pacote Linux publicado e validado; escuta humana `PENDING_HUMAN_AUDITION`.
 - **PR:** [#54](https://github.com/ovelhaaa/hydra-tape-engine/pull/54), branch `feature/musical-validation-phase6`; sem merge automático.
 - Renderizador portátil, seeds fixas, 20 cenários, 40 WAVs PCM24, 20 CSVs, parâmetros/eventos e SHA-256 no manifesto. A CI Linux repete renderização e valida arquivos antes do upload do artifact `hydra-phase6-listening-lab`.
 - Interface dedicada `tools/phase6-listening-lab/`: A/B no mesmo relógio, seek, loop, waveforms, eventos, avaliações e JSON importável/exportável. A interface histórica e a Web Demo foram preservadas.

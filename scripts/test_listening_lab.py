@@ -22,6 +22,7 @@ class ListeningDeliveryTests(unittest.TestCase):
         for i in range(1, 21):
             scenario = {"duration_sec": 512 / 48000, "sample_rate_hz": 48000, "dsp_params": {}, "markers": [], "analysis_metrics": {}, "events": [], "tempo_source": 0, "random_seed": i}
             scenario["reference_commit"] = manifest["reference_commit"]
+            scenario["markers"] = [{"time": 0, "label": "Audio start"}, {"time": scenario["duration_sec"], "label": "Audio end"}]
             for kind in ("original_wav", "processed_wav", "telemetry_csv"):
                 path = self.root / f"{i:02}_{kind}.{'csv' if kind.endswith('csv') else 'wav'}"
                 if kind.endswith("wav"):

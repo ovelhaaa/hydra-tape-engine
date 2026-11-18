@@ -36,3 +36,5 @@ npm run test:browser --prefix tools/phase6-listening-lab
 ```
 
 O teste Chromium usa os WAVs reais, AudioContext real, importação de pasta, decisões, seek e loop; é teste funcional do player offline, não benchmark Browser Real do DSP. Dependências Python fixadas registram a execução; seed 6100 para jitter e 6100+ID para fontes. PCM depende do compilador/plataforma/NumPy; comparar hashes apenas entre entradas e toolchains equivalentes. A equivalência Native/WASM tem seu comparador próprio e continua falhando historicamente (#48).
+
+Primeira entrega Linux verificada: [baixar artifact](https://github.com/ovelhaaa/hydra-tape-engine/actions/runs/44416301599/artifacts/14478588859), commit `0eaf0485ae623328a7b881adf59cf2d3e131a758`. Consulte a PR #54 para a entrega verificada mais recente. A CI usa Google Chrome já instalado no runner; localmente, o comando acima instala Chromium.

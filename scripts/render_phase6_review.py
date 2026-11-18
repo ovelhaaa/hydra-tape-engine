@@ -1053,6 +1053,10 @@ def build_all_scenarios(output_dir: Path, runner: HydraEngineRunner):
             "telemetry_csv_sha256": sha256_file(csv_path),
             "dsp_params": {str(k): float(v) for k, v in sim_res["parameters"].items()},
             "markers": [{"time": e["time_sec"], "label": json.dumps(e, sort_keys=True)} for e in scen.get("events", [])]
+                + [{"time": 0.0, "label": "Audio start"}, {"time": len(stimulus) / RATE, "label": "Audio end"}]
+                + [{"time": row["time_sec"], "label": "Beat phase wrap (telemetry)"}
+                   for previous, row in zip(telemetry, telemetry[1:])
+                   if row["is_playing"] and previous["beat_phase"] - row["beat_phase"] > 0.5]
                 + [{"time": p["frame"] / RATE, "label": {250: "MIDI Start", 251: "MIDI Continue", 252: "MIDI Stop"}[p["status"]]}
                    for p in scen.get("clock_pulses", []) if p["status"] in (250, 251, 252)]
                 + ([{"time": 1.2, "label": "Input silenced"}] if scen_id.startswith("19_") else [])

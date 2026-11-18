@@ -35,10 +35,15 @@ function calculatePercentiles(latenciesUs) {
   return { mean, p50, p95, p99, peak };
 }
 
-let CachedProcessor = null;
+let CachedProcessor = globalThis.__hydraProcessorClass || null;
 
 async function getProcessor() {
   if (CachedProcessor) return CachedProcessor;
+  if (globalThis.__hydraProcessorClass) {
+    CachedProcessor = globalThis.__hydraProcessorClass;
+    return CachedProcessor;
+  }
+
   globalThis.AudioWorkletProcessor = class {
     constructor() {
       this.readyMessage = new Promise((resolveReady) => {
@@ -50,8 +55,19 @@ async function getProcessor() {
       });
     }
   };
-  globalThis.registerProcessor = (_name, proc) => { CachedProcessor = proc; };
-  await import(pathToFileURL(resolve(webBuildDir, 'hydra-processor.js')).href);
+
+  globalThis.registerProcessor = (_name, proc) => {
+    globalThis.__hydraProcessorClass = proc;
+    CachedProcessor = proc;
+  };
+
+  const moduleUrl = pathToFileURL(resolve(webBuildDir, 'hydra-processor.js')).href;
+  await import(moduleUrl);
+
+  CachedProcessor = CachedProcessor || globalThis.__hydraProcessorClass;
+  if (!CachedProcessor) {
+    throw new Error("Failed to register HydraProcessor from hydra-processor.js");
+  }
   return CachedProcessor;
 }
 

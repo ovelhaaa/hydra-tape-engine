@@ -3,7 +3,6 @@ import {createServer} from 'node:http';
 import {readFile, mkdir, mkdtemp, copyFile, readdir, writeFile} from 'node:fs/promises';
 import {resolve, extname, join} from 'node:path';
 import {fileURLToPath} from 'node:url';
-import {tmpdir} from 'node:os';
 import assert from 'node:assert/strict';
 const root = fileURLToPath(new URL('../../../', import.meta.url));
 const packageDir = resolve(root, 'artifacts/listening-lab/phase6-musical-validation');
@@ -44,7 +43,10 @@ try{
  for(let i=0;i<20;i++){await page.locator('#library button').nth(i).click();await page.waitForFunction(()=>!document.getElementById('play').disabled);assert.equal(await page.locator('#message.error').count(),0);}
  await page.locator('#library button').nth(13).click();await page.waitForFunction(()=>!document.getElementById('play').disabled);assert.ok(await page.locator('#events button').count()>0);
  await page.screenshot({path:join(reportDir,'desktop.png'),fullPage:true});await page.setViewportSize({width:390,height:844});await page.screenshot({path:join(reportDir,'mobile.png'),fullPage:true});assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
- const broken=await mkdtemp(join(tmpdir(),'hydra-missing-'));for(const name of await readdir(packageDir)){if(name==='manifest.json'||name.endsWith('.wav')||name.endsWith('.csv')){if(!name.startsWith('01_')||!name.endsWith('_original.wav'))await copyFile(join(packageDir,name),join(broken,name));}}
+ // Keep directory-upload fixtures on the same filesystem as the real package;
+ // Linux runner /tmp aliases can prevent Chrome's directory selection from completing.
+ const fixtureDir=resolve(root,'artifacts/listening-lab-fixtures');await mkdir(fixtureDir,{recursive:true});
+ const broken=await mkdtemp(join(fixtureDir,'missing-'));for(const name of await readdir(packageDir)){if(name==='manifest.json'||name.endsWith('.wav')||name.endsWith('.csv')){if(!name.startsWith('01_')||!name.endsWith('_original.wav'))await copyFile(join(packageDir,name),join(broken,name));}}
  await page.locator('#package').setInputFiles(broken);await page.waitForFunction(()=>document.getElementById('message').className==='error');assert.match(await page.locator('#message').textContent(),/Missing/);assert.equal(await page.locator('#play').isDisabled(),true);
  assert.deepEqual(errors,[]);await writeFile(join(reportDir,'result.json'),JSON.stringify({status:'PASS',browser:browser.version(),scenarios:20,checks:['manifest','WAV/CSV decode and hashes','no autoplay','A/B shared clock/no restart','seek','loop','scenario stop','events','review export/import/persistence','missing file error','responsive layout']},null,2));console.log('PASS: Chromium real Web Audio Listening Lab checks (20 scenarios).');
 }catch(error){

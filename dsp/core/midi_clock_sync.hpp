@@ -27,6 +27,8 @@ struct MidiClockEventResult {
   double estimatedBpm = 0.0;
   double appliedBpm = 0.0;
   double phaseErrorBeats = 0.0;
+  double wrappedPhaseErrorBeats = 0.0;
+  double absolutePhaseErrorBeats = 0.0;
   MidiClockSyncStatus status = MidiClockSyncStatus::Disconnected;
   uint8_t transportAction = 0; // 0=None, 1=Start, 2=Continue, 3=Stop
 };
@@ -59,6 +61,8 @@ class MidiClockSync {
     estimatedBpm_ = kDefaultBpm;
     appliedBpm_ = kDefaultBpm;
     phaseErrorBeats_ = 0.0;
+    absolutePhaseErrorBeats_ = 0.0;
+    wrappedPhaseErrorBeats_ = 0.0;
     estimatedJitterMs_ = 0.0;
     pulseCount_ = 0;
     lastPulseFrame_ = 0;
@@ -79,6 +83,8 @@ class MidiClockSync {
     historyCount_ = 0;
     historyIndex_ = 0;
     phaseErrorBeats_ = 0.0;
+    absolutePhaseErrorBeats_ = 0.0;
+    wrappedPhaseErrorBeats_ = 0.0;
     for (size_t i = 0; i < kHistorySize; ++i) {
       intervals_[i] = 0.0;
     }
@@ -92,6 +98,9 @@ class MidiClockSync {
     MidiClockEventResult res{};
     res.estimatedBpm = estimatedBpm_;
     res.appliedBpm = appliedBpm_;
+    res.phaseErrorBeats = wrappedPhaseErrorBeats_;
+    res.wrappedPhaseErrorBeats = wrappedPhaseErrorBeats_;
+    res.absolutePhaseErrorBeats = absolutePhaseErrorBeats_;
     res.status = status_;
 
     switch (statusByte) {
@@ -99,6 +108,10 @@ class MidiClockSync {
         transportRunning_ = true;
         pulseCount_ = 0;
         consecutiveLockedPulses_ = 0;
+        lastPulseFrame_ = 0;
+        absolutePhaseErrorBeats_ = 0.0;
+        wrappedPhaseErrorBeats_ = 0.0;
+        phaseErrorBeats_ = 0.0;
         res.accepted = true;
         res.transportAction = 1; // Start
         if (status_ == MidiClockSyncStatus::Disconnected || status_ == MidiClockSyncStatus::Lost) {
@@ -126,7 +139,6 @@ class MidiClockSync {
         return res;
       }
       case 0xF8: { // Timing Clock (24 PPQN)
-        res.accepted = true;
         return processTimingClock(timestampFrames, currentGtcMusicalPos);
       }
       default:
@@ -174,7 +186,9 @@ class MidiClockSync {
   MidiClockSyncStatus status() const { return status_; }
   double estimatedBpm() const { return estimatedBpm_; }
   double appliedBpm() const { return appliedBpm_; }
-  double phaseErrorBeats() const { return phaseErrorBeats_; }
+  double phaseErrorBeats() const { return wrappedPhaseErrorBeats_; }
+  double wrappedPhaseErrorBeats() const { return wrappedPhaseErrorBeats_; }
+  double absolutePhaseErrorBeats() const { return absolutePhaseErrorBeats_; }
   double estimatedJitterMs() const { return estimatedJitterMs_; }
   uint64_t pulseCount() const { return pulseCount_; }
   uint64_t lastPulseFrame() const { return lastPulseFrame_; }
@@ -199,7 +213,17 @@ class MidiClockSync {
 
   MidiClockEventResult processTimingClock(uint64_t timestampFrames, double currentGtcMusicalPos) {
     MidiClockEventResult res{};
-    res.accepted = true;
+
+    if (lastPulseFrame_ != 0 && timestampFrames <= lastPulseFrame_) {
+      // Out of order or zero delta - reject interval update, do NOT advance pulse count or lastPulseFrame
+      res.accepted = false;
+      res.status = status_;
+      res.estimatedBpm = estimatedBpm_;
+      res.appliedBpm = appliedBpm_;
+      res.phaseErrorBeats = wrappedPhaseErrorBeats_;
+      res.absolutePhaseErrorBeats = absolutePhaseErrorBeats_;
+      return res;
+    }
 
     if (transportRunning_) {
       pulseCount_++;
@@ -209,24 +233,20 @@ class MidiClockSync {
       // First pulse or re-connection after lost
       lastPulseFrame_ = timestampFrames;
       status_ = MidiClockSyncStatus::Acquiring;
+      res.accepted = true;
       res.status = status_;
       res.estimatedBpm = estimatedBpm_;
       res.appliedBpm = appliedBpm_;
-      return res;
-    }
-
-    if (timestampFrames <= lastPulseFrame_) {
-      // Out of order or zero delta - reject interval update
-      res.status = status_;
-      res.estimatedBpm = estimatedBpm_;
-      res.appliedBpm = appliedBpm_;
+      res.phaseErrorBeats = wrappedPhaseErrorBeats_;
+      res.absolutePhaseErrorBeats = absolutePhaseErrorBeats_;
       return res;
     }
 
     const uint64_t deltaFrames = timestampFrames - lastPulseFrame_;
     lastPulseFrame_ = timestampFrames;
+    res.accepted = true;
 
-    // Check for missing pulse (e.g., dropped MIDI packet where delta is ~2x expected interval)
+    // Check for missing pulse (e.g., dropped MIDI packet where delta is ~2x or ~3x expected interval)
     double effectiveDelta = static_cast<double>(deltaFrames);
     if (historyCount_ >= 4 && smoothedIntervalFrames_ > 0.0) {
       const double ratio = effectiveDelta / smoothedIntervalFrames_;
@@ -235,20 +255,25 @@ class MidiClockSync {
         missedPulses_++;
         if (transportRunning_) pulseCount_++;
         effectiveDelta /= 2.0;
+        consecutiveLockedPulses_ = 0;
       } else if (ratio >= 2.7 && ratio <= 3.3) {
         // Detected 2 missing pulses
         missedPulses_ += 2;
         if (transportRunning_) pulseCount_ += 2;
         effectiveDelta /= 3.0;
+        consecutiveLockedPulses_ = 0;
       }
     }
 
     // Validate interval bounds
     if (effectiveDelta < minValidIntervalFrames_ || effectiveDelta > maxValidIntervalFrames_) {
       // Out of range interval
+      consecutiveLockedPulses_ = 0;
       res.status = status_;
       res.estimatedBpm = estimatedBpm_;
       res.appliedBpm = appliedBpm_;
+      res.phaseErrorBeats = wrappedPhaseErrorBeats_;
+      res.absolutePhaseErrorBeats = absolutePhaseErrorBeats_;
       return res;
     }
 
@@ -285,18 +310,22 @@ class MidiClockSync {
     if (transportRunning_ && pulseCount_ > 0) {
       // Expected external position: 1/24 beat per pulse
       const double expectedMusicalPos = static_cast<double>(pulseCount_) / 24.0;
-      double phaseDiff = expectedMusicalPos - currentGtcMusicalPos;
+      const double rawDiff = expectedMusicalPos - currentGtcMusicalPos;
+      absolutePhaseErrorBeats_ = rawDiff;
       // Wrap phase difference to closest beat [-0.5, +0.5]
-      phaseDiff -= std::round(phaseDiff);
+      double phaseDiff = rawDiff - std::round(rawDiff);
+      wrappedPhaseErrorBeats_ = phaseDiff;
       phaseErrorBeats_ = phaseDiff;
     } else {
+      absolutePhaseErrorBeats_ = 0.0;
+      wrappedPhaseErrorBeats_ = 0.0;
       phaseErrorBeats_ = 0.0;
     }
 
     // Digital PLL: Apply proportional correction to pull phase error to zero
     double phaseCorrectionBpm = 0.0;
     if (transportRunning_ && historyCount_ >= 8) {
-      phaseCorrectionBpm = phaseErrorBeats_ * kPhaseGain;
+      phaseCorrectionBpm = wrappedPhaseErrorBeats_ * kPhaseGain;
       const double maxCorrection = std::min(kMaxPhaseCorrectionBpm, estimatedBpm_ * kMaxPhaseCorrectionPercent);
       phaseCorrectionBpm = std::clamp(phaseCorrectionBpm, -maxCorrection, maxCorrection);
     }
@@ -304,9 +333,12 @@ class MidiClockSync {
     appliedBpm_ = std::clamp(estimatedBpm_ + phaseCorrectionBpm, kMinBpm, kMaxBpm);
 
     // Evaluate Phase-Locked condition
-    // Requires: sufficient history (at least 8 pulses), stable frequency (within 2 BPM), and phase error within 1% beat (0.01)
+    // Requires: sufficient history (at least 8 pulses), stable frequency (within 2 BPM),
+    // AND both wrapped phase within 0.015 and absolute phase within 0.05 beat (preventing 1-beat, 2-beat offset false lock)
     const bool freqStable = std::fabs(instBpm - estimatedBpm_) <= std::max(2.0, estimatedBpm_ * 0.03);
-    const bool phaseLocked = (!transportRunning_) || (std::fabs(phaseErrorBeats_) <= 0.01);
+    const bool phaseLocked = (!transportRunning_) ||
+                             (std::fabs(wrappedPhaseErrorBeats_) <= 0.015 &&
+                              std::fabs(absolutePhaseErrorBeats_) <= 0.05);
 
     if (historyCount_ >= 8 && freqStable && phaseLocked) {
       consecutiveLockedPulses_++;
@@ -323,7 +355,9 @@ class MidiClockSync {
     res.tempoUpdated = true;
     res.estimatedBpm = estimatedBpm_;
     res.appliedBpm = appliedBpm_;
-    res.phaseErrorBeats = phaseErrorBeats_;
+    res.phaseErrorBeats = wrappedPhaseErrorBeats_;
+    res.wrappedPhaseErrorBeats = wrappedPhaseErrorBeats_;
+    res.absolutePhaseErrorBeats = absolutePhaseErrorBeats_;
     res.status = status_;
     return res;
   }
@@ -336,6 +370,8 @@ class MidiClockSync {
   double estimatedBpm_ = kDefaultBpm;
   double appliedBpm_ = kDefaultBpm;
   double phaseErrorBeats_ = 0.0;
+  double absolutePhaseErrorBeats_ = 0.0;
+  double wrappedPhaseErrorBeats_ = 0.0;
   double estimatedJitterMs_ = 0.0;
   uint64_t pulseCount_ = 0;
   uint64_t lastPulseFrame_ = 0;

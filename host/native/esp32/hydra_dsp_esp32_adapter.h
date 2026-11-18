@@ -71,6 +71,7 @@ public:
   int midiClockReset();
   int setTempoSource(uint32_t source);
   int getTempoSource(uint32_t* outSource) const;
+  uint32_t midiOverflowCount() const { return midiOverflowCount_.load(std::memory_order_relaxed); }
 
   // Asynchronous Real-Time Safe Handoff API (Lock-Free SPSC queue from Core 0 / CLI / GPIO)
   bool postTapTempoEvent(uint64_t timestamp_frames = 0, int64_t arrival_time_us = 0);
@@ -99,6 +100,8 @@ private:
   // Real-Time Safe Lock-Free Handoff Structures
   hydra::dsp::SpscQueue<DspHandoffCommand, 32> commandQueue_;
   hydra::dsp::SpscQueue<DspMidiEvent, 64> midiQueue_;
+  std::atomic<uint32_t> midiOverflowCount_{0};
+  std::atomic<bool> midiQueueOverflowed_{false};
   mutable hydra::dsp::StatePublisher<hydra_dsp_tap_tempo_state> publishedTapTempoState_;
   mutable hydra::dsp::StatePublisher<hydra_dsp_transport_state> publishedTransportState_;
   mutable hydra::dsp::StatePublisher<hydra_dsp_midi_clock_state> publishedMidiClockState_;

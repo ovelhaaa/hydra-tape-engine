@@ -223,6 +223,13 @@ void HydraDspEsp32Adapter::drainCommandQueue() {
     }
   }
 
+  // If MIDI queue overflowed, reset acquisition and purge compromised pulses
+  if (midiQueueOverflowed_.exchange(false, std::memory_order_acq_rel)) {
+    hydra_dsp_midi_clock_reset(handle_);
+    DspMidiEvent staleEv;
+    while (midiQueue_.pop(staleEv)) {}
+  }
+
   // Drain dedicated MIDI clock event queue
   DspMidiEvent midiEv;
   while (midiQueue_.pop(midiEv)) {
@@ -378,7 +385,12 @@ bool HydraDspEsp32Adapter::postMidiClockEvent(uint8_t status, uint64_t timestamp
   ev.status = status;
   ev.timestamp_frames = timestamp_frames;
   ev.arrival_time_us = (arrival_time_us > 0) ? arrival_time_us : getSystemTimeUs();
-  return midiQueue_.push(ev);
+  const bool ok = midiQueue_.push(ev);
+  if (!ok) {
+    midiOverflowCount_.fetch_add(1, std::memory_order_relaxed);
+    midiQueueOverflowed_.store(true, std::memory_order_release);
+  }
+  return ok;
 }
 
 bool HydraDspEsp32Adapter::postMidiClockReset() {

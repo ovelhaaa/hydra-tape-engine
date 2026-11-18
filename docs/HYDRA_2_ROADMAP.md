@@ -93,24 +93,28 @@ flowchart LR
 
 ---
 
-### FASE 5 — Sincronização MIDI Clock Externa V1 (Andamento, Fase & Transporte)
-- **Status:** IMPLEMENTADO (PR PENDENTE DE REVISÃO).
+### FASE 5 — Sincronização MIDI Clock Externa V1 (Fase 5.1 Hardened)
+- **Status:** CONCLUÍDO & REVISADO (PR #52 PRONTA PARA MERGE REVIEW).
 - **Entregas Principais:**
   - Componente de sincronização em tempo real `MidiClockSync` operando na norma MIDI 1.0 (24 PPQN).
   - Estimativa de andamento em tempo real com buffer circular de histórico e filtragem estatística de jitter.
   - PLL digital proporcional de fase mantendo o Global Transport Clock (GTC) rigorosamente alinhado à posição do mestre externo com modulação limitada de slew rate (máx 3% de variação), eliminando artefatos audíveis de wow/flutter ou saltos de pitch.
+  - **Fase 5.1 Hardening**: Separação estrita de erro de fase absoluto e erro de fase embrulhado (`absolutePhaseErrorBeats` e `wrappedPhaseErrorBeats`), impedindo que ambiguidades de batidas inteiras (1 e 2 beats) gerem falso travamento.
+  - Rejeição antecipada de mensagens fora de ordem e duplicadas antes do incremento da contagem de pulsos.
   - Máquina de estados de sincronização determinística: `DISCONNECTED`, `ACQUIRING`, `LOCKED`, `HOLDOVER`, `LOST`.
   - Tratamento musical e determinístico de mensagens de transporte: Start (`0xFA`), Continue (`0xFB`) e Stop (`0xFC`), com preservação de caudas de áudio, feedback e buffers.
   - Parser de mensagens de tempo real com preservação de `runningStatus` em mensagens intercaladas.
-  - Seleção explícita de fonte de andamento (`TempoSource::Internal`, `TempoSource::Tap`, `TempoSource::MidiExternal`) com todas as 6 transições de modo livres de estalos (*clickless*) e restauração transparente de parâmetros manuais.
-  - Fila dedicada Lock-Free SPSC de eventos MIDI (`SpscQueue<DspMidiEvent, 64>`) no ESP32-S3 com garantia matemática de produtor único e zero contenção de mutexes.
+  - **Arbitragem Estrita de Andamento**: Modelo explícito `manualBpm`, `tapEstimatedBpm`, `midiEstimatedBpm`, `effectiveBpm` e `tempoSource`. Atualizações manuais não sobrescrevem a referência MIDI nem restauram a fonte silenciosamente; toques durante MIDI External não sequestram o transporte. Todas as 6 transições de modo livres de estalos (*clickless*).
+  - **Deadband de 0.1 BPM no Reverse V2**: Protege contra flutuações e recálculos desnecessários de janelas reversas causados por microajustes contínuos do PLL.
+  - Fila dedicada Lock-Free SPSC de eventos MIDI (`SpscQueue<DspMidiEvent, 64>`) no ESP32-S3 com detecção de overflow (`midiOverflowCount`), purga de pulsos corrompidos e reset automático de aquisição.
   - Publicação de telemetria em Triple Buffer (`StatePublisher<hydra_dsp_midi_clock_state>`).
   - Elevação da C-API para versão 1.7.0 mantendo conformidade e estabilidade estrita de ABI (116, 140 e 148 bytes).
   - Comandos de terminal serial no firmware ESP32-S3 (`clock source <internal|tap|midi>`, `clock status`, `clock reset`, `clock event <hex>`).
+  - **Preservação de Timestamps Web MIDI**: Módulo `host/web/webMidiTime.js` convertendo `event.timeStamp` diretamente para o domínio de frames de áudio, compensando latência e preservando espaçamento em lotes sem colapso.
   - Suporte completo no frontend Web (Web MIDI API, seletor de porta, seletor de fonte, badges e telemetria no AudioWorklet).
-  - Suíte de 16 testes dedicados em C++ (`hydra_midi_clock_test`), 28 testes web em Node.js e 15/15 testes CTest passando.
+  - Suíte de 20 testes dedicados em C++ (`hydra_midi_clock_test`), 31 testes web em Node.js e 15/15 testes CTest passando em 100%.
   - Pacote de 12 cenários sonoros e temporais no Hydra Listening Lab (`artifacts/listening-lab/midi-clock-external-v1/`).
-- **Critério de Saída:** Código completo, testes 100% aprovados, build ESP32-S3 e WASM validados, e artefatos de escuta gerados.
+- **Critério de Saída:** Código completo, testes 100% aprovados, build ESP32-S3 e WASM validados, e artefatos de escuta gerados. Pronto para merge review.
 
 ---
 

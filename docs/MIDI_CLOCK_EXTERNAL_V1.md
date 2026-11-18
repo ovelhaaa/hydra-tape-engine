@@ -23,22 +23,40 @@ O componente `MidiClockSync`:
 
 ---
 
-## 2. Modos de Fonte de Andamento (Tempo Source)
+## 2. Modos de Fonte de Andamento e Modelo de Arbitragem
 
-O sistema introduz uma seleção explícita da origem do andamento musical:
+O sistema introduz uma seleção explícita da autoridade de andamento musical com desacoplamento rigoroso entre a origem do comando e o valor efetivamente aplicado aos módulos DSP:
+
+```text
+manualBpm          -> Último andamento definido manualmente pelo usuário
+tapEstimatedBpm    -> Último andamento válido calculado pelo estimador de toques
+midiEstimatedBpm   -> Andamento estimado recuperado do fluxo de pulsos MIDI
+effectiveBpm       -> Valor ativamente aplicado ao GTC e aos consumidores DSP
+tempoSource        -> Autoridade atualmente selecionada (INTERNAL | TAP | MIDI EXTERNAL)
+```
 
 | Modo | Valor Enum C-API | Descrição | Comportamento no GTC |
 | :--- | :---: | :--- | :--- |
-| **INTERNAL** | `0` (`HYDRA_DSP_TEMPO_SOURCE_INTERNAL`) | Controle manual pelo usuário via parâmetro BPM ou CLI. | GTC avança no BPM configurado manualmente (`manualBpm`). |
-| **TAP** | `1` (`HYDRA_DSP_TEMPO_SOURCE_TAP`) | Andamento derivado do estimador Tap Tempo V1. | GTC segue o BPM validado e travado pelo estimador de toques. |
-| **MIDI EXTERNAL**| `2` (`HYDRA_DSP_TEMPO_SOURCE_MIDI_EXTERNAL`) | Andamento e transporte derivados do fluxo MIDI Clock externo. | GTC é governado pela taxa e fase estimadas pelo PLL digital. |
+| **INTERNAL** | `0` (`HYDRA_DSP_TEMPO_SOURCE_INTERNAL`) | Controle manual pelo usuário via parâmetro BPM ou CLI. | GTC avança no BPM configurado manualmente (`manualBpm`). Edições manuais atualizam `manualBpm` e `effectiveBpm`. |
+| **TAP** | `1` (`HYDRA_DSP_TEMPO_SOURCE_TAP`) | Andamento derivado do estimador Tap Tempo V1. | GTC segue o BPM validado e travado pelo estimador de toques (`tapEstimatedBpm`). Ações manuais não alteram a fonte implicitamente. |
+| **MIDI EXTERNAL**| `2` (`HYDRA_DSP_TEMPO_SOURCE_MIDI_EXTERNAL`) | Andamento e transporte derivados do fluxo MIDI Clock externo. | GTC é governado pela taxa e fase estimadas pelo PLL digital. Edições manuais preservam `manualBpm` sem assumir autoridade. |
 
-### 2.1 Matriz de Transições e Invariantes Sonoras
+### 2.1 Arbitragem Estrita de Fonte (Correção Fase 5.1)
+
+Anteriormente, atualizações genéricas em `TapeParams::bpm` ou eventos de toque podiam sobrescrever inadvertidamente o `manualBpm` ou redefinir a fonte de tempo para `Internal`.
+A regra de arbitragem foi endurecida:
+- `TapeParams::bpm` só atualiza `manualBpm` se o valor sofrer modificação real, e só reflete em `effectiveBpm` quando `tempoSource == Internal`.
+- O estimador de Tap Tempo pode monitorar toques durante `MidiExternal` atualizando `tapEstimatedBpm` sem assumir autoridade do transporte musical.
+- Ao retornar para `Internal`, o `manualBpm` previamente estabelecido é restaurado de forma limpa e transparente.
+- Nenhuma função genérica de atualização altera `tempoSource` implicitamente: a transição exige chamada explícita (`setTempoSource`).
+
+### 2.2 Matriz de Transições e Invariantes Sonoras
 
 Todas as 6 transições de modo (`Internal ↔ Tap`, `Internal ↔ MidiExternal`, `Tap ↔ MidiExternal`) operam sem estalos (*clickless*):
-- **Preservação de Memória**: Ao alternar para `MidiExternal`, o andamento manual anterior é salvo. Se o usuário alterar parâmetros manuais enquanto em `MidiExternal`, o valor manual é armazenado em `manualBpm` sem sobrescrever o clock externo; ao retornar para `Internal`, o andamento manual é restaurado imediatamente.
+- **Preservação de Memória**: Ao alternar para `MidiExternal`, o andamento manual anterior é preservado. Se o usuário alterar parâmetros manuais enquanto em `MidiExternal`, o valor manual é armazenado em `manualBpm` sem sobrescrever o clock externo; ao retornar para `Internal`, o andamento manual é restaurado imediatamente.
 - **Continuidade de Buffers**: Nenhuma troca de modo limpa buffers de retardo, reinicializa a fita ou corta caudas de realimentação.
 - **Desacoplamento de Subdivisões**: A seleção da fonte de andamento é completamente independente das subdivisões métricas de cada efeito (ex: colcheia pontuada, semínima, semínima reversa).
+- **Proteção do Reverse V2 (Deadband)**: Microflutuações contínuas de 0.001 BPM originadas pelo tracking do PLL poderiam forçar a reconstrução das janelas do Reverse V2. Um deadband de 0.1 BPM protege a estabilidade do Reverse V2 enquanto o GTC acompanha a fase musical de forma contínua.
 
 ---
 
@@ -87,17 +105,29 @@ $$\text{BPM} = \frac{60.0}{24.0 \times \text{pulseIntervalSeconds}} = \frac{2.5 
 - **Rejeição de Outliers e Jitter**: Calcula a média móvel e o desvio padrão (jitter estimado em ms). Variações de jitter até $\pm 5$ ms são filtradas pela inércia da janela móvel.
 - **Detecção de Pulso Perdido**: Se um intervalo medido atingir aproximadamente $2\times$ ou $3\times$ o intervalo médio esperado ($\text{ratio} \in [1.7, 2.3]$ ou $[2.7, 3.3]$), o estimador reconhece o pulso faltante, incrementa o contador `missed_pulses` e divide o $\Delta$ adequadamente, evitando saltos bruscos no cálculo de BPM.
 
-### 4.3 PLL Digital Proporcional de Fase
+### 4.3 PLL Digital Proporcional e Métricas de Erro de Fase (Fase 5.1 Hardening)
 
-Diferente de um simples medidor de BPM, o componente `MidiClockSync` monitora continuamente o erro de fase entre a posição musical esperada do dispositivo mestre e a posição musical autoritativa do GTC:
+Diferente de um simples medidor de BPM, o componente `MidiClockSync` monitora continuamente o erro de fase entre a posição musical esperada do dispositivo mestre e a posição musical autoritativa do GTC. Para evitar ambiguidades onde um deslocamento inteiro de compasso ou batida (ex: 1.0 ou 2.0 batidas) produzia um erro embrulhado nulo (`wrapped == 0.0`), a Fase 5.1 introduz a separação estrita de duas métricas:
 
-$$\text{expectedMusicalPos} = \frac{\text{pulseCount}}{24.0}$$
-$$\text{phaseDiff} = \text{expectedMusicalPos} - \text{currentGtcMusicalPos}$$
-$$\text{phaseErrorBeats} = \text{phaseDiff} - \text{round}(\text{phaseDiff}) \quad \in [-0.5, +0.5]$$
+$$\text{expectedMusicalPos} = \frac{\text{pulseCount} + 1}{24.0}$$
+$$\text{absolutePhaseErrorBeats} = \text{expectedMusicalPos} - \text{currentGtcMusicalPos}$$
+$$\text{wrappedPhaseErrorBeats} = \text{absolutePhaseErrorBeats} - \text{round}(\text{absolutePhaseErrorBeats}) \quad \in [-0.5, +0.5]$$
+
+- **`absolutePhaseErrorBeats`**: Reflete a distância real absoluta entre a referência externa e a posição do motor. Utilizado para validação de alinhamento real e proteção contra falsos travamentos em batidas adjacentes.
+- **`wrappedPhaseErrorBeats`**: Utilizado exclusivamente para a modulação proporcional fina do PLL.
+
+#### Rejeição Antecipada de Pulsos Duplicados ou Fora de Ordem
+Pulsos com `timestampFrames <= lastPulseFrame_` são rejeitados **antes** de qualquer incremento na contagem de pulsos (`pulseCount_`), impedindo que eventos reordenados ou duplicados avancem a referência musical do PLL.
+
+#### Condição Hardened para Estado LOCKED
+Para transicionar de `ACQUIRING` para `LOCKED`, o PLL exige cumulativamente:
+1. 8 pulsos consecutivos com intervalo estável.
+2. $|\text{wrappedPhaseErrorBeats}| \le 0.015$ batidas (erro de fase fino nulo).
+3. $|\text{absolutePhaseErrorBeats}| \le 0.05$ batidas (garantia de alinhamento na mesma batida musical, rejeitando deslocamentos inteiros).
 
 Uma correção proporcional com limite dinâmico (*bounded slew*) é aplicada ao andamento do GTC:
-$$\Delta \text{BPM}_{\text{corr}} = \text{clamp}\left(\text{phaseErrorBeats} \times K_p, \; - \text{maxCorrection}, \; + \text{maxCorrection}\right)$$
-onde $K_p = 4.0$ e $\text{maxCorrection} = \min(2.0, \text{estimatedBpm} \times 0.03)$ (máximo de 3% de variação ou 2.0 BPM por bloco).
+$$\Delta \text{BPM}_{\text{corr}} = \text{clamp}\left(-K_p \times \text{wrappedPhaseErrorBeats}, \; - \text{maxCorrection}, \; + \text{maxCorrection}\right)$$
+onde $K_p = 15.0$ e $\text{maxCorrection} = \min(3.0, \text{estimatedBpm} \times 0.03)$ (máximo de 3% de variação ou 3.0 BPM por bloco).
 Essa modulação suave garante que o erro de fase seja continuamente drenado para zero **sem provocar artefatos audíveis de wow/flutter nem saltos perceptíveis no pitch da fita**.
 
 ---
@@ -124,13 +154,14 @@ Essa modulação suave garante que o erro de fase seja continuamente drenado par
 
 ---
 
-## 6. Concorrência Real-Time Safe no ESP32-S3
+## 6. Concorrência Real-Time Safe no ESP32-S3 e Recuperação de Overflow
 
 Para respeitar a garantia matemática do padrão Lock-Free **Single-Producer Single-Consumer (SPSC)**, o subsistema de entrada MIDI conta com uma fila dedicada e isolada:
 
 - **`commandQueue_` (Capacidade: 32)**: Produtor exclusivo = Tarefa CLI/Configuração (Core 0). Comandos de transporte, andamento manual e fonte de tempo.
 - **`midiQueue_` (Capacidade: 64)**: Produtor exclusivo = Tarefa MIDI / ISR de porta serial / USB (Core 0 ou driver serial). Eventos `0xF8`, `0xFA`, `0xFB`, `0xFC` com timestamp em microsegundos ou amostras.
 - **Consumidor Único**: A tarefa de áudio (`audioTask`, Core 1) drena ambas as filas no início de cada bloco de 128 frames (`drainCommandQueue()`).
+- **Detecção e Recuperação de Overflow**: Se a fila de 64 eventos transbordar devido a atrasos transitórios do host, o adaptador incrementa atomicamente o contador `midiOverflowCount_` e ativa a flag `midiQueueOverflowed_`. No início do próximo bloco de áudio, a tarefa de áudio purga os pulsos residuais corrompidos e aciona `hydra_dsp_midi_clock_reset(handle_)`, forçando uma reaquisição limpa em vez de sustentar um estado travado com integridade comprometida.
 - **Triple Buffer Lock-Free (`StatePublisher<hydra_dsp_midi_clock_state>`)**: Core 1 publica snapshots atômicos do estado do clock sem contenda nem mutexes, lidos de forma segura pela UI ou CLI.
 
 ---
@@ -189,6 +220,18 @@ A interface serial do firmware ESP32-S3 disponibiliza os seguintes comandos:
 
 ## 9. Integração Web (Web MIDI API & AudioWorklet)
 
+### 9.1 Preservação de Timestamps e Conversão de Latência (`webMidiTime.js`)
+Anteriormente, o host web descartava o timestamp do evento MIDI (`event.timeStamp`) e enviava `timestampFrames = 0`, submetendo a estimativa ao jitter de agendamento do `MessagePort` e do browser main thread.
+A Fase 5.1 implementa o módulo formal de tempo (`host/web/webMidiTime.js`):
+1. **Preservação Monotônica de Alta Precisão**: O `event.timeStamp` em milissegundos é preservado diretamente do driver da Web MIDI API.
+2. **Transformação para Domínio de Amostras de Áudio**:
+   $$\text{latencySeconds} = \frac{\text{nowMs} - \text{event.timeStamp}}{1000.0}$$
+   $$\text{latencyFrames} = \text{round}(\text{latencySeconds} \times f_s)$$
+   $$\text{audioFrame} = \max(0, \text{currentAudioFrame} - \text{latencyFrames})$$
+3. **Processamento em Lote Sem Colapso**: Quando múltiplos eventos chegam em lote, `processBatchMidiEvents` preserva as diferenças relativas de tempo entre eles, garantindo que `frames[k] >= frames[k-1] + 1` sem colapsar múltiplos pulsos no mesmo frame de áudio.
+4. **Política de Fallback e Sanitização**: Timestamps não-finitos, no futuro excessivo (> 50 ms) ou estéreis (> 3,0 s) sofrem fallback determinístico para `currentAudioFrame` mantendo a monotonicidade.
+
+### 9.2 Controles de UI e Telemetria
 1. **Seletor de Porta Web MIDI**: Suporte nativo a `navigator.requestMIDIAccess({ sysex: false })`. Enumera portas de entrada MIDI USB e roteia mensagens `0xF8`, `0xFA`, `0xFB`, `0xFC` diretamente ao AudioWorklet.
 2. **Seletor de Modo na Interface**: Botões `INTERNAL`, `TAP` e `MIDI EXT` atualizam o modo e refletem o estado ativo.
 3. **Badge de Diagnóstico**:
@@ -219,3 +262,40 @@ O script `scripts/render_midi_clock_review.py` gerou o pacote completo de valida
 | `10_start_stop_continue_transport` | Sequência Start $\to$ Stop $\to$ Continue | 5.0s | Posicionamento exato, caudas de delay e feedback preservadas. |
 | `11_reverse_eighth_sync_midi` | Reverse 1/8 quantizado a 130 BPM externo | 4.5s | Janelas reversas adaptadas precisamente à cadência MIDI. |
 | `12_source_transition_internal_to_midi`| Transição `Internal` $\to$ `MidiExternal` | 5.0s | Transição ao vivo sem estalos, sem corte de áudio e sem glitch. |
+
+---
+
+## 11. Cobertura de Testes Automatizados (Fase 5.1 Hardened)
+
+A suíte automatizada cobre integralmente os requisitos de arbitragem de fonte, precisão temporal e tolerância a falhas:
+
+1. **Testes Nativos C++ (`tests/core/midi_clock_test.cpp`) — 20/20 Aprovados**:
+   - `testMidiRealtimeParser`: Parser e intercalação sem corrupção de `runningStatus`.
+   - `testBpmAcquisition`: Aquisição precisa de 60 a 300 BPM em 44.1 kHz e 48 kHz.
+   - `testPhaseLockAndAlignment`: Alinhamento de fase após Start com deriva zero.
+   - `testStartStopContinue`: Preservação de posição em Stop e retomada transparente em Continue.
+   - `testJitterFiltering`: Imunidade a jitter gaussiano de $\pm 0.5$ ms a $\pm 5$ ms.
+   - `testTempoRamp`: Rastreamento contínuo de aceleração (120 $\to$ 140 BPM).
+   - `testSuddenTempoChange`: Convergência rápida em degraus abruptos (120 $\to$ 90 $\to$ 140 $\to$ 180 BPM).
+   - `testMissingPulses`: Detecção e interpolação de pulsos perdidos.
+   - `testClockLossAndHoldover`: Transição progressiva Locked $\to$ Holdover $\to$ Lost.
+   - `testReconnection`: Reaquisição após restabelecimento do sinal.
+   - `testSourceSwitching`: Todas as 6 transições de fonte clickless e com buffers intactos.
+   - `testReverseSynchronization`: Janelas rítmicas reversas sincronizadas com clock externo.
+   - `testMultiHeadSynchronization`: Cabeças de delay musicais proporcionais ao clock externo.
+   - `testSpscMidiConcurrency`: Fila SPSC com 64 slots, descarte não-bloqueante e thread safety.
+   - `testAbiCompatibility`: Validação estrita da ABI 1.7.0 e offsets de structs legadas.
+   - `testLongRunningStability`: 100.000 pulsos com deriva acumulada nula ($< 0.01$).
+   - `testSourceArbitrationExplicit`: Testes formais da Seção 3.4 (Testes A, B, C, D e E).
+   - `testHardenedPhaseLockAndRejection`: Rejeição de ambiguidades de batida inteira (1 e 2 beats) e descarte antecipado de pulsos fora de ordem/duplicados.
+   - `testStartStopContinueEdgeCases`: Continue sem Start, Starts repetidos e pulsos durante parada.
+   - `testSpscQueueOverflowRecovery`: Detecção atômica de transbordo, contador de overflows e reset automático de aquisição.
+
+2. **Testes Web (`host/web/tests/webMidiClock.test.mjs`) — 4/4 Aprovados**:
+   - Conversão de latência preservando timestamps originais a 44.1 kHz e 48 kHz.
+   - Rejeição de jitter do `MessagePort` sustentando BPM de 120 sem distorção.
+   - Política determinística de fallback para timestamps inválidos, futuros ou estéreis.
+   - Processamento de lotes mantendo diferenças relativas e monotonicidade estrita.
+
+3. **Compatibilidade ESP32-S3 Firmware**:
+   - Compilação limpa no PlatformIO (RAM: 7.9%, Flash: 3.7%).

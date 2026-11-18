@@ -280,7 +280,10 @@ class HydraProcessor extends AudioWorkletProcessor {
       if (this.api.tapTempoReset) this.api.tapTempoReset(this.handle);
     } else if (msg.type === 'midiClockEvent') {
       if (this.api.midiClockEvent) {
-        this.api.midiClockEvent(this.handle, Number(msg.statusByte), Number(msg.timestampFrames || 0));
+        const rawTs = Number(msg.timestampFrames);
+        const fallbackFrame = (typeof currentFrame !== 'undefined') ? currentFrame : (this.totalFramesProcessed || 0);
+        const ts = (Number.isFinite(rawTs) && rawTs > 0) ? rawTs : fallbackFrame;
+        this.api.midiClockEvent(this.handle, Number(msg.statusByte), ts);
       }
     } else if (msg.type === 'midiClockReset') {
       if (this.api.midiClockReset) this.api.midiClockReset(this.handle);

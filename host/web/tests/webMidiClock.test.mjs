@@ -47,4 +47,93 @@ test('main.js inclui handlers Web MIDI, seletor de porta e atualização de tele
   assert.match(mainCode, /0xFC/, 'deve capturar mensagens Stop 0xFC');
   assert.match(mainCode, /midiClockStatusBadge/, 'deve atualizar badge de status MIDI Clock');
   assert.match(mainCode, /midiClockResetBtn/, 'deve permitir reset do estimador MIDI');
+  assert.match(mainCode, /convertMidiTimestampToAudioFrames/, 'deve importar e utilizar conversor de timestamp Web MIDI');
+});
+
+test('convertMidiTimestampToAudioFrames preserva precisão temporal a 44.1 kHz e 48 kHz', async () => {
+  const { convertMidiTimestampToAudioFrames } = await import('../webMidiTime.js');
+
+  // Cenário 1: Evento ocorrido há 10ms (atraso de escalonamento da thread principal)
+  // Host now = 5000.0 ms, event timestamp = 4990.0 ms (dt = 10ms = 0.01s)
+  // Audio currentTime = 5.0s @ 48000 Hz -> audio frame at now = 240,000
+  // Frame real do evento = (5.0 - 0.01) * 48000 = 4.99 * 48000 = 239,520 frames
+  const f48 = convertMidiTimestampToAudioFrames(4990.0, 5000.0, 5.0, 48000.0);
+  assert.equal(f48, 239520, 'deve mapear exatamente 10ms de latência para 480 frames a 48kHz');
+
+  // A 44.1 kHz: 4.99 * 44100 = 220,059 frames
+  const f44 = convertMidiTimestampToAudioFrames(4990.0, 5000.0, 5.0, 44100.0);
+  assert.equal(f44, 220059, 'deve mapear exatamente 10ms de latência para 441 frames a 44.1kHz');
+});
+
+test('convertMidiTimestampToAudioFrames preserva intervalos exatos de 120 BPM e rejeita jitter do MessagePort', async () => {
+  const { convertMidiTimestampToAudioFrames } = await import('../webMidiTime.js');
+
+  // A 120 BPM, período de clock (24 PPQN) = 60 / (24 * 120) = 20.8333... ms
+  // Suponha 3 pulsos recebidos pelo driver MIDI a cada 20.8333 ms:
+  // p1 = 1000.00 ms
+  // p2 = 1020.8333 ms
+  // p3 = 1041.6666 ms
+  // Mas a thread principal travou e entregou todos no MessagePort no instante now = 1060.0 ms!
+  // Audio currentTime no momento da entrega = 2.0s @ 48000 Hz
+  const sampleRate = 48000.0;
+  const hostNow = 1060.0;
+  const audioTime = 2.0;
+
+  const f1 = convertMidiTimestampToAudioFrames(1000.0, hostNow, audioTime, sampleRate);
+  const f2 = convertMidiTimestampToAudioFrames(1020.833333, hostNow, audioTime, sampleRate);
+  const f3 = convertMidiTimestampToAudioFrames(1041.666666, hostNow, audioTime, sampleRate);
+
+  const delta1 = f2 - f1;
+  const delta2 = f3 - f2;
+
+  // Esperado a 48kHz: 0.020833333 * 48000 = exatamente 1000 frames!
+  assert.equal(delta1, 1000, 'delta entre p1 e p2 deve ser exatamente 1000 frames apesar do atraso da entrega');
+  assert.equal(delta2, 1000, 'delta entre p2 e p3 deve ser exatamente 1000 frames apesar do atraso da entrega');
+});
+
+test('convertMidiTimestampToAudioFrames política de fallback para timestamps inválidos', async () => {
+  const { convertMidiTimestampToAudioFrames } = await import('../webMidiTime.js');
+  const now = 5000.0;
+  const audioTime = 3.0;
+  const sampleRate = 48000.0;
+  const expectedFallback = Math.round(audioTime * sampleRate); // 144,000
+
+  // 1. Timestamp ausente / undefined / null
+  assert.equal(convertMidiTimestampToAudioFrames(undefined, now, audioTime, sampleRate), expectedFallback);
+  assert.equal(convertMidiTimestampToAudioFrames(null, now, audioTime, sampleRate), expectedFallback);
+
+  // 2. Timestamp NaN
+  assert.equal(convertMidiTimestampToAudioFrames(NaN, now, audioTime, sampleRate), expectedFallback);
+
+  // 3. Timestamp infinito
+  assert.equal(convertMidiTimestampToAudioFrames(Infinity, now, audioTime, sampleRate), expectedFallback);
+
+  // 4. Timestamp negativo ou zero
+  assert.equal(convertMidiTimestampToAudioFrames(-100.0, now, audioTime, sampleRate), expectedFallback);
+  assert.equal(convertMidiTimestampToAudioFrames(0, now, audioTime, sampleRate), expectedFallback);
+
+  // 5. Timestamp no futuro (> now + 50ms)
+  assert.equal(convertMidiTimestampToAudioFrames(now + 1000.0, now, audioTime, sampleRate), expectedFallback);
+
+  // 6. Mensagem muito antiga (> 3s)
+  assert.equal(convertMidiTimestampToAudioFrames(now - 4000.0, now, audioTime, sampleRate), expectedFallback);
+});
+
+test('processBatchMidiEvents preserva ordem temporal e garante monotonicidade', async () => {
+  const { processBatchMidiEvents } = await import('../webMidiTime.js');
+
+  const events = [
+    { byte: 0xF8, timeStamp: 1000.0 },
+    { byte: 0xF8, timeStamp: 1020.8333 },
+    { byte: 0xF8, timeStamp: 1041.6666 }
+  ];
+
+  const processed = processBatchMidiEvents(events, 1050.0, 2.0, 48000.0, 0);
+  assert.equal(processed.length, 3);
+  assert.equal(processed[0].byte, 0xF8);
+  assert.equal(processed[1].byte, 0xF8);
+  assert.equal(processed[2].byte, 0xF8);
+  assert.ok(processed[1].timestampFrames > processed[0].timestampFrames, 'frame 1 deve ser maior que frame 0');
+  assert.ok(processed[2].timestampFrames > processed[1].timestampFrames, 'frame 2 deve ser maior que frame 1');
+  assert.equal(processed[1].timestampFrames - processed[0].timestampFrames, 1000);
 });

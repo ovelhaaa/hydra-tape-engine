@@ -2,6 +2,7 @@ import { createTransportState } from './transportState.js';
 import { createTransportController } from './transportController.js';
 import { DEFAULT_CONTROL_STATE, deserializePresetFromText, serializePreset } from './presetSerialization.js';
 import { formatRuntimeError } from './runtimeDiagnostics.js';
+import { convertMidiTimestampToAudioFrames } from './webMidiTime.js';
 
 const PARAM = {
   flutterDepth: 0,
@@ -711,10 +712,22 @@ let activeMidiInput = null;
 function onMidiMessage(event) {
   const data = event.data;
   if (!data || data.length === 0) return;
+  const now = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+  const audioTime = (context && typeof context.currentTime === 'number') ? context.currentTime : 0.0;
+  const sampleRate = (context && typeof context.sampleRate === 'number') ? context.sampleRate : 48000.0;
+  const tsFrames = convertMidiTimestampToAudioFrames(event.timeStamp, now, audioTime, sampleRate);
+
   for (let i = 0; i < data.length; ++i) {
     const byte = data[i];
     if (byte === 0xF8 || byte === 0xFA || byte === 0xFB || byte === 0xFC) {
-      post({ type: 'midiClockEvent', statusByte: byte, timestampFrames: 0 });
+      post({
+        type: 'midiClockEvent',
+        statusByte: byte,
+        timestampFrames: tsFrames,
+        midiTimestamp: event.timeStamp,
+        hostNow: now,
+        audioCurrentTime: audioTime
+      });
     }
   }
 }
@@ -732,6 +745,22 @@ function updateMidiInputs() {
   }
   if (currentVal && inputs.some(i => i.id === currentVal)) {
     midiInputSelect.value = currentVal;
+  } else {
+    if (activeMidiInput) {
+      activeMidiInput.onmidimessage = null;
+      activeMidiInput = null;
+      post({ type: 'midiClockReset' });
+      setStatus('MIDI device disconnected', 'warning');
+      const badge = document.getElementById('midiClockStatusBadge');
+      if (badge) {
+        badge.textContent = 'Disconnected';
+        badge.className = 'status-badge badge-secondary';
+      }
+      const detail = document.getElementById('midiClockDetail');
+      if (detail) {
+        detail.textContent = 'Device disconnected';
+      }
+    }
   }
 }
 
@@ -743,6 +772,7 @@ async function initWebMidi() {
       midiAccess.onstatechange = () => updateMidiInputs();
     } catch (err) {
       console.warn('Web MIDI access error:', err);
+      setStatus('Web MIDI not available or permission denied', 'warning');
     }
   }
 }
@@ -759,8 +789,16 @@ if (midiInputSelect) {
       if (input) {
         activeMidiInput = input;
         activeMidiInput.onmidimessage = onMidiMessage;
-        setStatus(`MIDI connected: ${input.name}`, 'success');
+        setStatus(`MIDI device connected: ${input.name}`, 'success');
       }
+    } else {
+      post({ type: 'midiClockReset' });
+      const badge = document.getElementById('midiClockStatusBadge');
+      if (badge) {
+        badge.textContent = 'Disconnected';
+        badge.className = 'status-badge badge-secondary';
+      }
+      setStatus('MIDI disconnected', 'info');
     }
   });
 }

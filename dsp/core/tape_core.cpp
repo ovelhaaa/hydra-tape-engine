@@ -345,6 +345,24 @@ struct TapeCore::Impl {
   MidiClockSync midiClockSync;
   TempoSource tempoSource = TempoSource::Internal;
   float manualBpm = 120.0f;
+  double tapEstimatedBpm = 120.0;
+  double midiEstimatedBpm = 120.0;
+  float lastConfiguredReverseBpm = 120.0f;
+
+  void applyEffectiveBpm(double bpm) {
+    bpm = std::clamp(bpm, 30.0, 300.0);
+    transportClock.setBpm(bpm);
+    currentParams.bpm = static_cast<float>(bpm);
+
+    // Reverse V2 stability: avoid micro-reconfigurations of windows unless difference is significant
+    if (currentParams.reverse && currentParams.reverseMode == 0) {
+      if (std::fabs(lastConfiguredReverseBpm - static_cast<float>(bpm)) >= 0.1f) {
+        lastConfiguredReverseBpm = static_cast<float>(bpm);
+        reverseWindows.configure(sampleRate, bufferSize, static_cast<float>(bpm),
+                                 currentParams.reverseDivision, false, currentParams.delayTimeMs);
+      }
+    }
+  }
   float reverseBlend=0.f, reverseSmearBlend=0.f, reverseFadeStep=0.f;
   float reverseFeedback=0.f, smoothFeedback=0.f;
   float smoothTexture=0.f, smoothWet=0.f, reverseControlAlpha=0.f;
@@ -455,40 +473,45 @@ TapTempo& TapeCore::tapTempo() { return impl_->tapTempo; }
 const TapTempo& TapeCore::tapTempo() const { return impl_->tapTempo; }
 MidiClockSync& TapeCore::midiClock() { return impl_->midiClockSync; }
 const MidiClockSync& TapeCore::midiClock() const { return impl_->midiClockSync; }
-TempoSource TapeCore::tempoSource() const { return impl_->tempoSource; }
+TempoSource TapeCore::tempoSource() const { return impl_ ? impl_->tempoSource : TempoSource::Internal; }
+float TapeCore::manualBpm() const { return impl_ ? impl_->manualBpm : 120.0f; }
+void TapeCore::setManualBpm(float bpm) {
+  if (!impl_) return;
+  impl_->manualBpm = std::clamp(bpm, static_cast<float>(MidiClockSync::kMinBpm), static_cast<float>(MidiClockSync::kMaxBpm));
+  if (impl_->tempoSource == TempoSource::Internal) {
+    impl_->applyEffectiveBpm(impl_->manualBpm);
+    impl_->tapTempo.setAppliedBpm(impl_->manualBpm);
+    impl_->midiClockSync.setAppliedBpm(impl_->manualBpm);
+  }
+}
+double TapeCore::effectiveBpm() const { return impl_ ? impl_->transportClock.bpm() : 120.0; }
+double TapeCore::tapEstimatedBpm() const { return impl_ ? impl_->tapEstimatedBpm : 120.0; }
+double TapeCore::midiEstimatedBpm() const { return impl_ ? impl_->midiEstimatedBpm : 120.0; }
 
 int TapeCore::setTempoSource(TempoSource source) {
   if (!impl_) return -1;
-  if (impl_->tempoSource == source) return 0;
   impl_->tempoSource = source;
   switch (source) {
     case TempoSource::Internal: {
-      impl_->transportClock.setBpm(impl_->manualBpm);
+      impl_->applyEffectiveBpm(impl_->manualBpm);
       impl_->tapTempo.setAppliedBpm(impl_->manualBpm);
       impl_->midiClockSync.setAppliedBpm(impl_->manualBpm);
-      TapeParams p = impl_->currentParams;
-      p.bpm = impl_->manualBpm;
-      updateParams(p);
       break;
     }
     case TempoSource::Tap: {
-      const double tapBpm = impl_->tapTempo.appliedBpm();
-      impl_->transportClock.setBpm(tapBpm);
+      const double tapBpm = (impl_->tapEstimatedBpm >= 30.0 && impl_->tapEstimatedBpm <= 300.0)
+                                ? impl_->tapEstimatedBpm
+                                : static_cast<double>(impl_->manualBpm);
+      impl_->applyEffectiveBpm(tapBpm);
       impl_->midiClockSync.setAppliedBpm(tapBpm);
-      TapeParams p = impl_->currentParams;
-      p.bpm = static_cast<float>(tapBpm);
-      updateParams(p);
       break;
     }
     case TempoSource::MidiExternal: {
       if (impl_->midiClockSync.status() == MidiClockSyncStatus::Locked ||
           impl_->midiClockSync.status() == MidiClockSyncStatus::Holdover) {
         const double midiBpm = impl_->midiClockSync.appliedBpm();
-        impl_->transportClock.setBpm(midiBpm);
+        impl_->applyEffectiveBpm(midiBpm);
         impl_->tapTempo.setAppliedBpm(midiBpm);
-        TapeParams p = impl_->currentParams;
-        p.bpm = static_cast<float>(midiBpm);
-        updateParams(p);
       }
       break;
     }
@@ -509,14 +532,21 @@ int TapeCore::tapTempoEvent(uint64_t timestamp_frames) {
   }
 
   const TapResult result = impl_->tapTempo.recordTap(ts);
-  if (impl_->tempoSource != TempoSource::MidiExternal) {
-    impl_->tempoSource = TempoSource::Tap;
-    if (result.tempoUpdated && static_cast<float>(result.newBpm) != impl_->currentParams.bpm) {
-      TapeParams newP = impl_->currentParams;
-      newP.bpm = static_cast<float>(result.newBpm);
-      updateParams(newP);
+  if (result.accepted) {
+    impl_->tapEstimatedBpm = result.newBpm;
+  }
+
+  if (impl_->tempoSource == TempoSource::Tap) {
+    if (result.tempoUpdated) {
+      impl_->applyEffectiveBpm(result.newBpm);
+    }
+  } else if (impl_->tempoSource == TempoSource::Internal) {
+    if (result.tempoUpdated) {
+      impl_->manualBpm = static_cast<float>(result.newBpm);
+      impl_->applyEffectiveBpm(result.newBpm);
     }
   }
+  // When in MidiExternal, taps are tracked in tapEstimatedBpm without assuming authority
   return result.accepted ? 0 : -1;
 }
 
@@ -539,6 +569,10 @@ int TapeCore::midiClockEvent(uint8_t statusByte, uint64_t timestamp_frames) {
   const double currentMusicalPos = impl_->transportClock.musicalPosition();
   const MidiClockEventResult result = impl_->midiClockSync.processEvent(statusByte, ts, currentMusicalPos);
 
+  if (result.accepted) {
+    impl_->midiEstimatedBpm = result.estimatedBpm;
+  }
+
   if (impl_->tempoSource == TempoSource::MidiExternal) {
     if (result.transportAction == 1) { // Start (0xFA)
       impl_->transportClock.locate(0.0);
@@ -550,12 +584,7 @@ int TapeCore::midiClockEvent(uint8_t statusByte, uint64_t timestamp_frames) {
     }
 
     if (result.tempoUpdated) {
-      impl_->transportClock.setBpm(result.appliedBpm);
-      if (static_cast<float>(result.appliedBpm) != impl_->currentParams.bpm) {
-        TapeParams newP = impl_->currentParams;
-        newP.bpm = static_cast<float>(result.appliedBpm);
-        updateParams(newP);
-      }
+      impl_->applyEffectiveBpm(result.appliedBpm);
     }
   }
   return result.accepted ? 0 : -1;
@@ -584,6 +613,11 @@ void TapeCore::reset(){
   for(int i=0;i<4;i++){ impl_->reverseAP_L[i].clear(); impl_->reverseAP_R[i].clear(); }
   impl_->tapTempo.reset();
   impl_->midiClockSync.reset();
+  impl_->tempoSource = TempoSource::Internal;
+  impl_->manualBpm = 120.0f;
+  impl_->tapEstimatedBpm = 120.0;
+  impl_->midiEstimatedBpm = 120.0;
+  impl_->applyEffectiveBpm(impl_->manualBpm);
   impl_->updateFilters();
 }
 
@@ -607,24 +641,27 @@ void TapeCore::updateParams(const TapeParams& newParams){
     impl_->warpLPF_L.reset(); impl_->warpLPF_R.reset();
   }
   const auto& previous = impl_->currentParams;
-  if (newParams.bpm != previous.bpm) {
+  if (newParams.bpm != impl_->manualBpm) {
     impl_->manualBpm = newParams.bpm;
-    if (impl_->tempoSource != TempoSource::MidiExternal) {
-      impl_->tempoSource = TempoSource::Internal;
-      impl_->transportClock.setBpm(newParams.bpm);
+    if (impl_->tempoSource == TempoSource::Internal) {
+      impl_->applyEffectiveBpm(newParams.bpm);
       impl_->tapTempo.setAppliedBpm(newParams.bpm);
       impl_->midiClockSync.setAppliedBpm(newParams.bpm);
     }
   }
+
+  const float effectiveBpm = static_cast<float>(impl_->transportClock.bpm());
   if (newParams.reverse && newParams.reverseMode != 2 &&
       (!previous.reverse || previous.reverseMode != newParams.reverseMode ||
        (newParams.reverseMode == 1 && previous.delayTimeMs != newParams.delayTimeMs) ||
-       (newParams.reverseMode == 0 && (previous.bpm != newParams.bpm ||
+       (newParams.reverseMode == 0 && (std::fabs(impl_->lastConfiguredReverseBpm - effectiveBpm) >= 0.1f ||
         previous.reverseDivision != newParams.reverseDivision)))) {
-    impl_->reverseWindows.configure(impl_->sampleRate, impl_->bufferSize, newParams.bpm,
+    impl_->lastConfiguredReverseBpm = effectiveBpm;
+    impl_->reverseWindows.configure(impl_->sampleRate, impl_->bufferSize, effectiveBpm,
         newParams.reverseDivision, newParams.reverseMode == 1, newParams.delayTimeMs);
   }
   impl_->currentParams=newParams;
+  impl_->currentParams.bpm = effectiveBpm;
   impl_->dropout.setSeverity(clampf(newParams.dropoutSeverity * 0.01f, 0.0f, 1.0f));
   impl_->updateFilters();
 }

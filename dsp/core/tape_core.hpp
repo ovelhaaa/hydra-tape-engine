@@ -69,6 +69,11 @@ public:
   const MidiClockSync& midiClock() const;
   TempoSource tempoSource() const;
   int setTempoSource(TempoSource source);
+  float manualBpm() const;
+  void setManualBpm(float bpm);
+  double effectiveBpm() const;
+  double tapEstimatedBpm() const;
+  double midiEstimatedBpm() const;
 
   static constexpr uint64_t kTapTempoUseCurrentTime = UINT64_MAX;
   int tapTempoEvent(uint64_t timestamp_frames = kTapTempoUseCurrentTime);

@@ -93,7 +93,32 @@ flowchart LR
 
 ---
 
-### FASE 5 — Expansão Criativa do Accidental Warp & MVP Final
+### FASE 5 — Sincronização MIDI Clock Externa V1 (Fase 5.2 Estabilização Final)
+- **Status:** CONCLUÍDO & VALIDADO (PR #52 MERGED EM MAIN).
+- **Entregas Principais:**
+  - Componente de sincronização em tempo real `MidiClockSync` operando na norma MIDI 1.0 (24 PPQN).
+  - Estimativa de andamento em tempo real com buffer circular de histórico e filtragem estatística de jitter.
+  - PLL digital proporcional de fase mantendo o Global Transport Clock (GTC) rigorosamente alinhado à posição do mestre externo com modulação limitada de slew rate (máx 4-5% de variação), eliminando artefatos audíveis de wow/flutter ou saltos de pitch.
+  - **Fase 5.2 Hardening — Autoridade Estrita de Fonte na C-API**: `hydra_dsp_transport_set_bpm()` roteia via `TapeCore::setManualBpm()`, preservando `manualBpm` armazenado sem contornar a fonte ativa (INTERNAL, TAP ou MIDI EXTERNAL). O cache de parâmetros e commit não corrompem o andamento externo durante a sincronização.
+  - **Fase 5.2 Hardening — Recuperação Determinística de Grandes Desvios de Fase**: Separação clara entre *Fine Phase Tracking* (PLL proporcional sem locate para erros fracionários $\le 0.5$ beat) e *Large Phase Recovery* (realinhamento seguro via `GTC::locate()` acionado após persistência de $\ge 12$ pulsos com deslocamento inteiro $\ge 1.0$ beat e frequência estável, preservando buffers de delay e áudio).
+  - **Fase 5.2 Hardening — Web MIDI End-to-End**: Validação do conversor `webMidiTime.js` e `processBatchMidiEvents` garantindo monotonicidade estrita, rejeição de duplicatas ($< 1$ ms) e eventos fora de ordem sem a mutação ingênua `prevFrame + 1`. Suporte a `BigInt` de 64-bit no `hydra-processor.js` (AudioWorklet) e validação ponta a ponta com WASM DSP atingindo status LOCKED e RMSE temporal $< 0.1$ frame.
+  - **Fase 5.2 Hardening — Validação de Deadband do Reverse V2**: 0.1 BPM deadband testado deterministicamente sob jitter temporal ($\pm 0.5$ ms a $\pm 5$ ms) e degraus de tempo ($120 \to 140$ e $140 \to 90$ BPM), confirmando zero reconfigurações espúrias ou resets de áudio.
+  - Rejeição antecipada de mensagens fora de ordem e duplicadas antes do incremento da contagem de pulsos.
+  - Máquina de estados de sincronização determinística: `DISCONNECTED`, `ACQUIRING`, `LOCKED`, `HOLDOVER`, `LOST`.
+  - Tratamento musical e determinístico de mensagens de transporte: Start (`0xFA`), Continue (`0xFB`) e Stop (`0xFC`), com preservação de caudas de áudio, feedback e buffers.
+  - Parser de mensagens de tempo real com preservação de `runningStatus` em mensagens intercaladas.
+  - Fila dedicada Lock-Free SPSC de eventos MIDI (`SpscQueue<DspMidiEvent, 64>`) no ESP32-S3 com detecção de overflow (`midiOverflowCount`), purga de pulsos corrompidos e reset automático de aquisição.
+  - Publicação de telemetria em Triple Buffer (`StatePublisher<hydra_dsp_midi_clock_state>`).
+  - Elevação da C-API para versão 1.7.0 mantendo conformidade e estabilidade estrita de ABI (116, 140 e 148 bytes).
+  - Comandos de terminal serial no firmware ESP32-S3 (`clock source <internal|tap|midi>`, `clock status`, `clock reset`, `clock event <hex>`).
+  - Suíte de 23 subtestes dedicados em C++ (`hydra_midi_clock_test`), 35 testes web em Node.js e 15/15 testes CTest passando em 100%.
+  - Pacote de 12 cenários sonoros e temporais no Hydra Listening Lab (`artifacts/listening-lab/midi-clock-external-v1/`).
+  - **Exceção Histórica Issue #48 Formalmente Documentada**: Divergência pré-existente Native/WASM mantida dentro do baseline aceito (`max_abs = 5.968e-06`, `rmse = 2.344e-06`), não introduzida pelo MIDI Clock e mantida aberta para investigação futura de ponto flutuante.
+- **Critério de Saída:** Código completo, testes 100% aprovados, builds ESP32-S3, Native e WASM validados, e artefatos de escuta gerados. Pronto para merge.
+
+---
+
+### FASE 6 — Expansão Criativa do Accidental Warp & MVP Final
 - **Status:** PLANEJADO.
 - **Sub-etapas:**
   1. **Warp Head:** Habilitar uma das 3 cabeças do tape delay clássico para operar simultaneamente como leitor Warp ascendente.

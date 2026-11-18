@@ -156,6 +156,10 @@ int HydraDspEsp32Adapter::processStereoBlock(const float* inL,
   if (hydra_dsp_transport_get_state(handle_, &transSt) == 0) {
     publishedTransportState_.publish(transSt);
   }
+  hydra_dsp_midi_clock_state midiSt{};
+  if (hydra_dsp_midi_clock_get_state(handle_, &midiSt) == 0) {
+    publishedMidiClockState_.publish(midiSt);
+  }
 
   return res;
 }
@@ -208,9 +212,44 @@ void HydraDspEsp32Adapter::drainCommandQueue() {
       case DspHandoffCommandType::TransportSetTimeSignature:
         hydra_dsp_transport_set_time_signature(handle_, cmd.num, cmd.den);
         break;
+      case DspHandoffCommandType::MidiClockReset:
+        hydra_dsp_midi_clock_reset(handle_);
+        break;
+      case DspHandoffCommandType::SetTempoSource:
+        hydra_dsp_set_tempo_source(handle_, cmd.tempo_source);
+        break;
       default:
         break;
     }
+  }
+
+  // If MIDI queue overflowed, reset acquisition and purge compromised pulses
+  if (midiQueueOverflowed_.exchange(false, std::memory_order_acq_rel)) {
+    hydra_dsp_midi_clock_reset(handle_);
+    DspMidiEvent staleEv;
+    while (midiQueue_.pop(staleEv)) {}
+  }
+
+  // Drain dedicated MIDI clock event queue
+  DspMidiEvent midiEv;
+  while (midiQueue_.pop(midiEv)) {
+    uint64_t ts = midiEv.timestamp_frames;
+    if (midiEv.arrival_time_us > 0 && ts == 0) {
+      hydra_dsp_transport_state st{};
+      if (hydra_dsp_transport_get_state(handle_, &st) == 0) {
+        const int64_t nowUs = getSystemTimeUs();
+        const int64_t deltaUs = nowUs - midiEv.arrival_time_us;
+        if (deltaUs >= 0) {
+          const uint64_t deltaFrames = static_cast<uint64_t>((deltaUs * sampleRate_) / 1000000.0);
+          ts = (st.absolute_sample_position >= deltaFrames)
+                   ? (st.absolute_sample_position - deltaFrames)
+                   : 0;
+        } else {
+          ts = st.absolute_sample_position;
+        }
+      }
+    }
+    hydra_dsp_midi_clock_event(handle_, midiEv.status, ts);
   }
 }
 
@@ -314,5 +353,55 @@ bool HydraDspEsp32Adapter::postTransportSetTimeSignature(uint32_t numerator, uin
   cmd.type = DspHandoffCommandType::TransportSetTimeSignature;
   cmd.num = numerator;
   cmd.den = denominator;
+  return commandQueue_.push(cmd);
+}
+
+int HydraDspEsp32Adapter::midiClockEvent(uint8_t status, uint64_t timestamp_frames) {
+  return handle_ ? hydra_dsp_midi_clock_event(handle_, status, timestamp_frames) : -1;
+}
+
+int HydraDspEsp32Adapter::midiClockGetState(hydra_dsp_midi_clock_state* outState) const {
+  if (!outState) return -1;
+  if (publishedMidiClockState_.read(*outState)) {
+    return 0;
+  }
+  return handle_ ? hydra_dsp_midi_clock_get_state(handle_, outState) : -1;
+}
+
+int HydraDspEsp32Adapter::midiClockReset() {
+  return handle_ ? hydra_dsp_midi_clock_reset(handle_) : -1;
+}
+
+int HydraDspEsp32Adapter::setTempoSource(uint32_t source) {
+  return handle_ ? hydra_dsp_set_tempo_source(handle_, source) : -1;
+}
+
+int HydraDspEsp32Adapter::getTempoSource(uint32_t* outSource) const {
+  return handle_ ? hydra_dsp_get_tempo_source(handle_, outSource) : -1;
+}
+
+bool HydraDspEsp32Adapter::postMidiClockEvent(uint8_t status, uint64_t timestamp_frames, int64_t arrival_time_us) {
+  DspMidiEvent ev;
+  ev.status = status;
+  ev.timestamp_frames = timestamp_frames;
+  ev.arrival_time_us = (arrival_time_us > 0) ? arrival_time_us : getSystemTimeUs();
+  const bool ok = midiQueue_.push(ev);
+  if (!ok) {
+    midiOverflowCount_.fetch_add(1, std::memory_order_relaxed);
+    midiQueueOverflowed_.store(true, std::memory_order_release);
+  }
+  return ok;
+}
+
+bool HydraDspEsp32Adapter::postMidiClockReset() {
+  DspHandoffCommand cmd;
+  cmd.type = DspHandoffCommandType::MidiClockReset;
+  return commandQueue_.push(cmd);
+}
+
+bool HydraDspEsp32Adapter::postSetTempoSource(uint32_t source) {
+  DspHandoffCommand cmd;
+  cmd.type = DspHandoffCommandType::SetTempoSource;
+  cmd.tempo_source = source;
   return commandQueue_.push(cmd);
 }

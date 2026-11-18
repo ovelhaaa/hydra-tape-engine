@@ -130,14 +130,21 @@ class HydraProcessor extends AudioWorkletProcessor {
         transportReset: this.module.cwrap('hydra_dsp_transport_reset', 'number', ['number']),
         transportSetBpm: this.module.cwrap('hydra_dsp_transport_set_bpm', 'number', ['number', 'number']),
         transportGetState: this.module.cwrap('hydra_dsp_transport_get_state', 'number', ['number', 'number']),
-        tapTempoEvent: this.module.cwrap('hydra_dsp_tap_tempo_event', 'number', ['number', 'number']),
+        tapTempoEvent: this.module.cwrap('hydra_dsp_tap_tempo_event', 'number', ['number', 'bigint']),
         tapTempoGetState: this.module.cwrap('hydra_dsp_tap_tempo_get_state', 'number', ['number', 'number']),
-        tapTempoReset: this.module.cwrap('hydra_dsp_tap_tempo_reset', 'number', ['number'])
+        tapTempoReset: this.module.cwrap('hydra_dsp_tap_tempo_reset', 'number', ['number']),
+        midiClockEvent: this.module.cwrap('hydra_dsp_midi_clock_event', 'number', ['number', 'number', 'bigint']),
+        midiClockGetState: this.module.cwrap('hydra_dsp_midi_clock_get_state', 'number', ['number', 'number']),
+        midiClockReset: this.module.cwrap('hydra_dsp_midi_clock_reset', 'number', ['number']),
+        setTempoSource: this.module.cwrap('hydra_dsp_set_tempo_source', 'number', ['number', 'number']),
+        getTempoSource: this.module.cwrap('hydra_dsp_get_tempo_source', 'number', ['number', 'number'])
       };
 
       this.transportStatePtr = this.module._malloc(72);
       this.reverseDiagPtr = this.module._malloc(16);
       this.tapTempoStatePtr = this.module._malloc(32);
+      this.midiClockStatePtr = this.module._malloc(48);
+      this.tempoSourcePtr = this.module._malloc(4);
 
       const handlePtr = this.module._malloc(4);
       const res = this.api.create(sampleRate, 4000.0, 16100.0, handlePtr);
@@ -267,10 +274,22 @@ class HydraProcessor extends AudioWorkletProcessor {
       if (this.api.transportSetBpm) this.api.transportSetBpm(this.handle, Number(msg.bpm));
     } else if (msg.type === 'tapTempoEvent') {
       if (this.api.tapTempoEvent) {
-        this.api.tapTempoEvent(this.handle, Number(msg.timestampFrames || 0));
+        this.api.tapTempoEvent(this.handle, BigInt(Math.max(0, Math.round(Number(msg.timestampFrames || 0)))));
       }
     } else if (msg.type === 'tapTempoReset') {
       if (this.api.tapTempoReset) this.api.tapTempoReset(this.handle);
+    } else if (msg.type === 'midiClockEvent') {
+      if (this.api.midiClockEvent) {
+        const rawTs = Number(msg.timestampFrames);
+        const fallbackFrame = (typeof currentFrame !== 'undefined') ? currentFrame : (this.totalFramesProcessed || 0);
+        const ts = (Number.isFinite(rawTs) && rawTs >= 0) ? rawTs : fallbackFrame;
+        const status = Number(msg.statusByte !== undefined ? msg.statusByte : msg.byte);
+        this.api.midiClockEvent(this.handle, status, BigInt(Math.max(0, Math.round(ts))));
+      }
+    } else if (msg.type === 'midiClockReset') {
+      if (this.api.midiClockReset) this.api.midiClockReset(this.handle);
+    } else if (msg.type === 'setTempoSource') {
+      if (this.api.setTempoSource) this.api.setTempoSource(this.handle, Number(msg.source));
     }
   }
 
@@ -325,7 +344,7 @@ class HydraProcessor extends AudioWorkletProcessor {
     if (this.telemetryTick >= 16 && this.transportStatePtr && this.api.transportGetState) {
       this.telemetryTick = 0;
       if (this.api.transportGetState(this.handle, this.transportStatePtr) === 0) {
-        const view = new DataView(this.module.HEAPU8.buffer, this.transportStatePtr, 72);
+        const view = new DataView((this.module.HEAPU8 || this.module.HEAP32).buffer, this.transportStatePtr, 72);
         const bpm = view.getFloat32(0, true);
         const beatPhase = view.getFloat32(4, true);
         const barPhase = view.getFloat32(8, true);
@@ -348,7 +367,7 @@ class HydraProcessor extends AudioWorkletProcessor {
           const clmPtr = this.reverseDiagPtr + 8;
           const maxPtr = this.reverseDiagPtr + 12;
           if (this.api.getReverseDiagnostics(this.handle, reqPtr, effPtr, clmPtr, maxPtr) === 0) {
-            const dView = new DataView(this.module.HEAPU8.buffer, this.reverseDiagPtr, 16);
+            const dView = new DataView((this.module.HEAPU8 || this.module.HEAP32).buffer, this.reverseDiagPtr, 16);
             reverseRequestedMs = dView.getFloat32(0, true);
             reverseEffectiveMs = dView.getFloat32(4, true);
             reverseClamped = dView.getInt32(8, true);
@@ -359,7 +378,7 @@ class HydraProcessor extends AudioWorkletProcessor {
         let tapTempo = null;
         if (this.tapTempoStatePtr && this.api.tapTempoGetState) {
           if (this.api.tapTempoGetState(this.handle, this.tapTempoStatePtr) === 0) {
-            const tView = new DataView(this.module.HEAPU8.buffer, this.tapTempoStatePtr, 32);
+            const tView = new DataView((this.module.HEAPU8 || this.module.HEAP32).buffer, this.tapTempoStatePtr, 32);
             tapTempo = {
               estimatedBpm: tView.getFloat32(0, true),
               appliedBpm: tView.getFloat32(4, true),
@@ -369,6 +388,25 @@ class HydraProcessor extends AudioWorkletProcessor {
               isTimedOut: tView.getInt32(20, true) !== 0,
               status: tView.getInt32(24, true),
               lastRejection: tView.getInt32(28, true)
+            };
+          }
+        }
+
+        let midiClock = null;
+        if (this.midiClockStatePtr && this.api.midiClockGetState) {
+          if (this.api.midiClockGetState(this.handle, this.midiClockStatePtr) === 0) {
+            const mView = new DataView((this.module.HEAPU8 || this.module.HEAP32).buffer, this.midiClockStatePtr, 48);
+            midiClock = {
+              tempoSource: mView.getUint32(0, true),
+              syncStatus: mView.getInt32(4, true),
+              estimatedBpm: mView.getFloat32(8, true),
+              appliedBpm: mView.getFloat32(12, true),
+              phaseErrorBeats: mView.getFloat32(16, true),
+              estimatedJitterMs: mView.getFloat32(20, true),
+              pulseCount: Number(mView.getBigUint64(24, true)),
+              lastPulseFrame: Number(mView.getBigUint64(32, true)),
+              isTransportRunning: mView.getInt32(40, true) !== 0,
+              missedPulses: mView.getUint32(44, true)
             };
           }
         }
@@ -389,7 +427,8 @@ class HydraProcessor extends AudioWorkletProcessor {
           reverseRequestedMs,
           reverseEffectiveMs,
           reverseMaxHistoryMs,
-          tapTempo
+          tapTempo: tapTempo,
+          midiClock: midiClock
         });
       }
     }

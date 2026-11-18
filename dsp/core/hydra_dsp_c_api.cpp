@@ -131,7 +131,7 @@ static int set_param(hydra_dsp_handle* h, hydra_dsp_param_id id, float v) {
     case HYDRA_DSP_PARAM_ACTIVE_HEADS: h->params.activeHeads = (int)v; break;
     case HYDRA_DSP_PARAM_BPM:
       if (!std::isfinite(v) || v <= 0.0f) return -1;
-      h->params.bpm = v;
+      h->params.bpm = std::clamp(v, static_cast<float>(hydra::dsp::MidiClockSync::kMinBpm), static_cast<float>(hydra::dsp::MidiClockSync::kMaxBpm));
       break;
     case HYDRA_DSP_PARAM_HEADS_MUSICAL: h->params.headsMusical = v > 0.5f; break;
     case HYDRA_DSP_PARAM_GUITAR_FOCUS: h->params.guitarFocus = v > 0.5f; break;
@@ -400,9 +400,8 @@ int hydra_dsp_transport_locate(hydra_dsp_handle* handle, double musical_pos, uin
 
 int hydra_dsp_transport_set_bpm(hydra_dsp_handle* handle, float bpm) {
   if (!handle || !handle->core || !std::isfinite(bpm) || bpm <= 0.0f) return -1;
-  handle->core->transport().setBpm(bpm);
-  handle->params.bpm = static_cast<float>(handle->core->transport().bpm());
-  handle->core->updateParams(handle->params);
+  handle->core->setManualBpm(bpm);
+  handle->params.bpm = handle->core->manualBpm();
   return 0;
 }
 
@@ -446,7 +445,7 @@ int hydra_dsp_tap_tempo_event(hydra_dsp_handle* handle, uint64_t timestamp_frame
   if (!handle || !handle->core) return -1;
   const int res = handle->core->tapTempoEvent(timestamp_frames);
   if (res == 0) {
-    handle->params.bpm = static_cast<float>(handle->core->transport().bpm());
+    handle->params.bpm = handle->core->manualBpm();
   }
   return res;
 }
@@ -479,6 +478,63 @@ int hydra_dsp_tap_tempo_get_state(const hydra_dsp_handle* handle, hydra_dsp_tap_
 int hydra_dsp_tap_tempo_reset(hydra_dsp_handle* handle) {
   if (!handle || !handle->core) return -1;
   return handle->core->tapTempoReset();
+}
+
+int hydra_dsp_midi_clock_event(hydra_dsp_handle* handle, uint8_t midi_status, uint64_t timestamp_frames) {
+  if (!handle || !handle->core) return -1;
+  const int res = handle->core->midiClockEvent(midi_status, timestamp_frames);
+  if (res == 0) {
+    handle->params.bpm = handle->core->manualBpm();
+  }
+  return res;
+}
+
+int hydra_dsp_midi_clock_get_state(const hydra_dsp_handle* handle, hydra_dsp_midi_clock_state* out_state) {
+  if (!handle || !handle->core || !out_state) return -1;
+  static_assert(sizeof(hydra_dsp_midi_clock_state) == 48, "hydra_dsp_midi_clock_state size must be 48 bytes");
+  static_assert(offsetof(hydra_dsp_midi_clock_state, tempo_source) == 0, "tempo_source offset mismatch");
+  static_assert(offsetof(hydra_dsp_midi_clock_state, sync_status) == 4, "sync_status offset mismatch");
+  static_assert(offsetof(hydra_dsp_midi_clock_state, estimated_bpm) == 8, "estimated_bpm offset mismatch");
+  static_assert(offsetof(hydra_dsp_midi_clock_state, applied_bpm) == 12, "applied_bpm offset mismatch");
+  static_assert(offsetof(hydra_dsp_midi_clock_state, phase_error_beats) == 16, "phase_error_beats offset mismatch");
+  static_assert(offsetof(hydra_dsp_midi_clock_state, estimated_jitter_ms) == 20, "estimated_jitter_ms offset mismatch");
+  static_assert(offsetof(hydra_dsp_midi_clock_state, pulse_count) == 24, "pulse_count offset mismatch");
+  static_assert(offsetof(hydra_dsp_midi_clock_state, last_pulse_frame) == 32, "last_pulse_frame offset mismatch");
+  static_assert(offsetof(hydra_dsp_midi_clock_state, is_transport_running) == 40, "is_transport_running offset mismatch");
+  static_assert(offsetof(hydra_dsp_midi_clock_state, missed_pulses) == 44, "missed_pulses offset mismatch");
+
+  const auto& mc = handle->core->midiClock();
+  out_state->tempo_source = static_cast<uint32_t>(handle->core->tempoSource());
+  out_state->sync_status = static_cast<int>(mc.status());
+  out_state->estimated_bpm = static_cast<float>(mc.estimatedBpm());
+  out_state->applied_bpm = static_cast<float>(mc.appliedBpm());
+  out_state->phase_error_beats = static_cast<float>(mc.phaseErrorBeats());
+  out_state->estimated_jitter_ms = static_cast<float>(mc.estimatedJitterMs());
+  out_state->pulse_count = mc.pulseCount();
+  out_state->last_pulse_frame = mc.lastPulseFrame();
+  out_state->is_transport_running = mc.isTransportRunning() ? 1 : 0;
+  out_state->missed_pulses = mc.missedPulses();
+  return 0;
+}
+
+int hydra_dsp_midi_clock_reset(hydra_dsp_handle* handle) {
+  if (!handle || !handle->core) return -1;
+  return handle->core->midiClockReset();
+}
+
+int hydra_dsp_set_tempo_source(hydra_dsp_handle* handle, uint32_t source) {
+  if (!handle || !handle->core || source > 2) return -1;
+  const int res = handle->core->setTempoSource(static_cast<hydra::dsp::TempoSource>(source));
+  if (res == 0) {
+    handle->params.bpm = handle->core->manualBpm();
+  }
+  return res;
+}
+
+int hydra_dsp_get_tempo_source(const hydra_dsp_handle* handle, uint32_t* out_source) {
+  if (!handle || !handle->core || !out_source) return -1;
+  *out_source = static_cast<uint32_t>(handle->core->tempoSource());
+  return 0;
 }
 
 HYDRA_DSP_IRAM int hydra_dsp_process(hydra_dsp_handle* handle,

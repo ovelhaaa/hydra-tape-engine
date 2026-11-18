@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include "global_transport_clock.hpp"
+#include "midi_clock_sync.hpp"
 #include "tap_tempo.hpp"
 
 namespace hydra::dsp {
@@ -64,10 +65,22 @@ public:
   const GlobalTransportClock& transport() const;
   TapTempo& tapTempo();
   const TapTempo& tapTempo() const;
+  MidiClockSync& midiClock();
+  const MidiClockSync& midiClock() const;
+  TempoSource tempoSource() const;
+  int setTempoSource(TempoSource source);
+  float manualBpm() const;
+  void setManualBpm(float bpm);
+  double effectiveBpm() const;
+  double tapEstimatedBpm() const;
+  double midiEstimatedBpm() const;
+
   static constexpr uint64_t kTapTempoUseCurrentTime = UINT64_MAX;
   int tapTempoEvent(uint64_t timestamp_frames = kTapTempoUseCurrentTime);
   int tapTempoEventNow();
   int tapTempoReset();
+  int midiClockEvent(uint8_t statusByte, uint64_t timestamp_frames = kTapTempoUseCurrentTime);
+  int midiClockReset();
   float process(float input);
   void processStereo(float inL, float inR, float* outL, float* outR);
   void processStereoBlock(const float* inL, const float* inR, float* outL, float* outR, uint32_t frames);

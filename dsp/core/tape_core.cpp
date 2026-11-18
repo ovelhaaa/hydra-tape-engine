@@ -259,7 +259,7 @@ struct TapeCore::Impl {
     if (ptr) heap_caps_free(ptr);
   }
 #endif
-  explicit Impl(float fs,float maxDelayMs,float historyMs):sampleRate(fs),noiseGen(fs,123456789u),noiseGenR(fs,987654321u){ tanhLUT.init(); magneticsL.lut=&tanhLUT; magneticsR.lut=&tanhLUT; updateSampleRateConstants(); dropout.setSampleRate(fs); magneticsL.updateParams(fs,currentParams); magneticsR.updateParams(fs,currentParams); normalBufferSize=(int32_t)(fs*(maxDelayMs/1000.f)); bufferSize=(int32_t)(fs*(historyMs/1000.f)); bufferCapacity=bufferSize+TAPE_BUFFER_GUARD; delayLine=allocateDelayBuffer(bufferCapacity); delayLineR=allocateDelayBuffer(bufferCapacity); if(!delayLine||!delayLineR){freeDelayBuffer(delayLine);freeDelayBuffer(delayLineR);delayLine=delayLineR=nullptr;bufferSize=0;return;} static const float sc[6]={0.7f,0.65f,0.6f,0.6f,0.5f,0.5f}; static const int st[6]={223,367,491,647,821,1039}; for(int i=0;i<6;i++){springAP_L[i].init(st[i]);springAP_R[i].init(st[i]+23);springAP_L[i].setCoeff(sc[i]);springAP_R[i].setCoeff(sc[i]);springLPF_L[i].setLowpass(fs,2500,0.5f);springLPF_R[i].setLowpass(fs,2500,0.5f);} static const float rc[4]={0.6f,0.55f,0.5f,0.45f}; static const int rt[4]={151,313,569,797}; for(int i=0;i<4;i++){reverseAP_L[i].init(rt[i]);reverseAP_R[i].init(rt[i]+17);reverseAP_L[i].setCoeff(rc[i]);reverseAP_R[i].setCoeff(rc[i]);} updateFilters(); flutterLPF.setLowpass(fs,15,0.707f); flutterLPFR.setLowpass(fs,15,0.707f); warpHPF_L.setHighpass(fs,120.0f,0.707f); warpHPF_R.setHighpass(fs,120.0f,0.707f); warpLPF_L.setLowpass(fs,2200.0f,0.707f); warpLPF_R.setLowpass(fs,2200.0f,0.707f); smoothedGrainSamples=std::max(64.0f,80.0f*0.001f*fs); transportClock.prepare(fs); transportClock.setBpm(120.0f); tapTempo.prepare(fs); tapTempo.setAppliedBpm(120.0f);}
+  explicit Impl(float fs,float maxDelayMs,float historyMs):sampleRate(fs),noiseGen(fs,123456789u),noiseGenR(fs,987654321u){ tanhLUT.init(); magneticsL.lut=&tanhLUT; magneticsR.lut=&tanhLUT; updateSampleRateConstants(); dropout.setSampleRate(fs); magneticsL.updateParams(fs,currentParams); magneticsR.updateParams(fs,currentParams); normalBufferSize=(int32_t)(fs*(maxDelayMs/1000.f)); bufferSize=(int32_t)(fs*(historyMs/1000.f)); bufferCapacity=bufferSize+TAPE_BUFFER_GUARD; delayLine=allocateDelayBuffer(bufferCapacity); delayLineR=allocateDelayBuffer(bufferCapacity); if(!delayLine||!delayLineR){freeDelayBuffer(delayLine);freeDelayBuffer(delayLineR);delayLine=delayLineR=nullptr;bufferSize=0;return;} static const float sc[6]={0.7f,0.65f,0.6f,0.6f,0.5f,0.5f}; static const int st[6]={223,367,491,647,821,1039}; for(int i=0;i<6;i++){springAP_L[i].init(st[i]);springAP_R[i].init(st[i]+23);springAP_L[i].setCoeff(sc[i]);springAP_R[i].setCoeff(sc[i]);springLPF_L[i].setLowpass(fs,2500,0.5f);springLPF_R[i].setLowpass(fs,2500,0.5f);} static const float rc[4]={0.6f,0.55f,0.5f,0.45f}; static const int rt[4]={151,313,569,797}; for(int i=0;i<4;i++){reverseAP_L[i].init(rt[i]);reverseAP_R[i].init(rt[i]+17);reverseAP_L[i].setCoeff(rc[i]);reverseAP_R[i].setCoeff(rc[i]);} updateFilters(); flutterLPF.setLowpass(fs,15,0.707f); flutterLPFR.setLowpass(fs,15,0.707f); warpHPF_L.setHighpass(fs,120.0f,0.707f); warpHPF_R.setHighpass(fs,120.0f,0.707f); warpLPF_L.setLowpass(fs,2200.0f,0.707f); warpLPF_R.setLowpass(fs,2200.0f,0.707f); smoothedGrainSamples=std::max(64.0f,80.0f*0.001f*fs); transportClock.prepare(fs); transportClock.setBpm(120.0f); tapTempo.prepare(fs); tapTempo.setAppliedBpm(120.0f); midiClockSync.prepare(fs); midiClockSync.setAppliedBpm(120.0f);}
   ~Impl(){freeDelayBuffer(delayLine);freeDelayBuffer(delayLineR);}
   bool valid() const {return delayLine&&delayLineR&&bufferSize>0;}
   HYDRA_DSP_IRAM HYDRA_AUDIO_INLINE float feedbackCompressor(float x){ const float t=0.6f,r=1.5f,k=0.2f; float a=std::fabs(x); if(a<=t-k*0.5f)return x; if(a>=t+k*0.5f)return std::copysign(t+(a-t)/r,x); float kx=(a-(t-k*0.5f))/k; float ratio=1.f+(1.f/r-1.f)*kx*kx; return std::copysign(a*ratio,x);}
@@ -342,6 +342,27 @@ struct TapeCore::Impl {
   ReverseWindows reverseWindows;
   GlobalTransportClock transportClock;
   TapTempo tapTempo;
+  MidiClockSync midiClockSync;
+  TempoSource tempoSource = TempoSource::Internal;
+  float manualBpm = 120.0f;
+  double tapEstimatedBpm = 120.0;
+  double midiEstimatedBpm = 120.0;
+  float lastConfiguredReverseBpm = 120.0f;
+
+  void applyEffectiveBpm(double bpm) {
+    bpm = std::clamp(bpm, 30.0, 300.0);
+    transportClock.setBpm(bpm);
+    currentParams.bpm = static_cast<float>(bpm);
+
+    // Reverse V2 stability: avoid micro-reconfigurations of windows unless difference is significant
+    if (currentParams.reverse && currentParams.reverseMode == 0) {
+      if (std::fabs(lastConfiguredReverseBpm - static_cast<float>(bpm)) >= 0.1f) {
+        lastConfiguredReverseBpm = static_cast<float>(bpm);
+        reverseWindows.configure(sampleRate, bufferSize, static_cast<float>(bpm),
+                                 currentParams.reverseDivision, false, currentParams.delayTimeMs);
+      }
+    }
+  }
   float reverseBlend=0.f, reverseSmearBlend=0.f, reverseFadeStep=0.f;
   float reverseFeedback=0.f, smoothFeedback=0.f;
   float smoothTexture=0.f, smoothWet=0.f, reverseControlAlpha=0.f;
@@ -450,6 +471,53 @@ GlobalTransportClock& TapeCore::transport() { return impl_->transportClock; }
 const GlobalTransportClock& TapeCore::transport() const { return impl_->transportClock; }
 TapTempo& TapeCore::tapTempo() { return impl_->tapTempo; }
 const TapTempo& TapeCore::tapTempo() const { return impl_->tapTempo; }
+MidiClockSync& TapeCore::midiClock() { return impl_->midiClockSync; }
+const MidiClockSync& TapeCore::midiClock() const { return impl_->midiClockSync; }
+TempoSource TapeCore::tempoSource() const { return impl_ ? impl_->tempoSource : TempoSource::Internal; }
+float TapeCore::manualBpm() const { return impl_ ? impl_->manualBpm : 120.0f; }
+void TapeCore::setManualBpm(float bpm) {
+  if (!impl_) return;
+  impl_->manualBpm = std::clamp(bpm, static_cast<float>(MidiClockSync::kMinBpm), static_cast<float>(MidiClockSync::kMaxBpm));
+  if (impl_->tempoSource == TempoSource::Internal) {
+    impl_->applyEffectiveBpm(impl_->manualBpm);
+    impl_->tapTempo.setAppliedBpm(impl_->manualBpm);
+    impl_->midiClockSync.setAppliedBpm(impl_->manualBpm);
+  }
+}
+double TapeCore::effectiveBpm() const { return impl_ ? impl_->transportClock.bpm() : 120.0; }
+double TapeCore::tapEstimatedBpm() const { return impl_ ? impl_->tapEstimatedBpm : 120.0; }
+double TapeCore::midiEstimatedBpm() const { return impl_ ? impl_->midiEstimatedBpm : 120.0; }
+
+int TapeCore::setTempoSource(TempoSource source) {
+  if (!impl_) return -1;
+  impl_->tempoSource = source;
+  switch (source) {
+    case TempoSource::Internal: {
+      impl_->applyEffectiveBpm(impl_->manualBpm);
+      impl_->tapTempo.setAppliedBpm(impl_->manualBpm);
+      impl_->midiClockSync.setAppliedBpm(impl_->manualBpm);
+      break;
+    }
+    case TempoSource::Tap: {
+      const double tapBpm = (impl_->tapEstimatedBpm >= 30.0 && impl_->tapEstimatedBpm <= 300.0)
+                                ? impl_->tapEstimatedBpm
+                                : static_cast<double>(impl_->manualBpm);
+      impl_->applyEffectiveBpm(tapBpm);
+      impl_->midiClockSync.setAppliedBpm(tapBpm);
+      break;
+    }
+    case TempoSource::MidiExternal: {
+      if (impl_->midiClockSync.status() == MidiClockSyncStatus::Locked ||
+          impl_->midiClockSync.status() == MidiClockSyncStatus::Holdover) {
+        const double midiBpm = impl_->midiClockSync.appliedBpm();
+        impl_->applyEffectiveBpm(midiBpm);
+        impl_->tapTempo.setAppliedBpm(midiBpm);
+      }
+      break;
+    }
+  }
+  return 0;
+}
 
 int TapeCore::tapTempoEvent(uint64_t timestamp_frames) {
   if (!impl_) return -1;
@@ -464,11 +532,21 @@ int TapeCore::tapTempoEvent(uint64_t timestamp_frames) {
   }
 
   const TapResult result = impl_->tapTempo.recordTap(ts);
-  if (result.tempoUpdated && static_cast<float>(result.newBpm) != impl_->currentParams.bpm) {
-    TapeParams newP = impl_->currentParams;
-    newP.bpm = static_cast<float>(result.newBpm);
-    updateParams(newP);
+  if (result.accepted) {
+    impl_->tapEstimatedBpm = result.newBpm;
   }
+
+  if (impl_->tempoSource == TempoSource::Tap) {
+    if (result.tempoUpdated) {
+      impl_->applyEffectiveBpm(result.newBpm);
+    }
+  } else if (impl_->tempoSource == TempoSource::Internal) {
+    if (result.tempoUpdated) {
+      impl_->manualBpm = static_cast<float>(result.newBpm);
+      impl_->applyEffectiveBpm(result.newBpm);
+    }
+  }
+  // When in MidiExternal, taps are tracked in tapEstimatedBpm without assuming authority
   return result.accepted ? 0 : -1;
 }
 
@@ -479,6 +557,44 @@ int TapeCore::tapTempoEventNow() {
 int TapeCore::tapTempoReset() {
   if (!impl_) return -1;
   impl_->tapTempo.reset();
+  return 0;
+}
+
+int TapeCore::midiClockEvent(uint8_t statusByte, uint64_t timestamp_frames) {
+  if (!impl_) return -1;
+  const uint64_t currentSamplePos = impl_->transportClock.absoluteSamplePosition();
+  const uint64_t ts = (timestamp_frames == kTapTempoUseCurrentTime || (timestamp_frames == 0 && currentSamplePos > 0))
+                          ? currentSamplePos
+                          : timestamp_frames;
+  const double currentMusicalPos = impl_->transportClock.musicalPosition();
+  const MidiClockEventResult result = impl_->midiClockSync.processEvent(statusByte, ts, currentMusicalPos);
+
+  if (result.accepted) {
+    impl_->midiEstimatedBpm = result.estimatedBpm;
+  }
+
+  if (impl_->tempoSource == TempoSource::MidiExternal) {
+    if (result.transportAction == 1) { // Start (0xFA)
+      impl_->transportClock.locate(0.0);
+      impl_->transportClock.play();
+    } else if (result.transportAction == 2) { // Continue (0xFB)
+      impl_->transportClock.play();
+    } else if (result.transportAction == 3) { // Stop (0xFC)
+      impl_->transportClock.pause();
+    } else if (result.transportAction == 4) { // Large Phase Recovery Realignment
+      impl_->transportClock.locate(result.realignMusicalPos, impl_->transportClock.transportSamplePosition());
+    }
+
+    if (result.tempoUpdated) {
+      impl_->applyEffectiveBpm(result.appliedBpm);
+    }
+  }
+  return result.accepted ? 0 : -1;
+}
+
+int TapeCore::midiClockReset() {
+  if (!impl_) return -1;
+  impl_->midiClockSync.reset();
   return 0;
 }
 
@@ -498,6 +614,12 @@ void TapeCore::reset(){
   for(int i=0;i<6;i++){ impl_->springAP_L[i].clear(); impl_->springAP_R[i].clear(); impl_->springLPF_L[i].reset(); impl_->springLPF_R[i].reset(); }
   for(int i=0;i<4;i++){ impl_->reverseAP_L[i].clear(); impl_->reverseAP_R[i].clear(); }
   impl_->tapTempo.reset();
+  impl_->midiClockSync.reset();
+  impl_->tempoSource = TempoSource::Internal;
+  impl_->manualBpm = 120.0f;
+  impl_->tapEstimatedBpm = 120.0;
+  impl_->midiEstimatedBpm = 120.0;
+  impl_->applyEffectiveBpm(impl_->manualBpm);
   impl_->updateFilters();
 }
 
@@ -521,19 +643,27 @@ void TapeCore::updateParams(const TapeParams& newParams){
     impl_->warpLPF_L.reset(); impl_->warpLPF_R.reset();
   }
   const auto& previous = impl_->currentParams;
-  if (newParams.bpm != previous.bpm) {
-    impl_->transportClock.setBpm(newParams.bpm);
-    impl_->tapTempo.setAppliedBpm(newParams.bpm);
+  if (newParams.bpm != impl_->manualBpm) {
+    impl_->manualBpm = std::clamp(newParams.bpm, static_cast<float>(MidiClockSync::kMinBpm), static_cast<float>(MidiClockSync::kMaxBpm));
+    if (impl_->tempoSource == TempoSource::Internal) {
+      impl_->applyEffectiveBpm(impl_->manualBpm);
+      impl_->tapTempo.setAppliedBpm(impl_->manualBpm);
+      impl_->midiClockSync.setAppliedBpm(impl_->manualBpm);
+    }
   }
+
+  const float effectiveBpm = static_cast<float>(impl_->transportClock.bpm());
   if (newParams.reverse && newParams.reverseMode != 2 &&
       (!previous.reverse || previous.reverseMode != newParams.reverseMode ||
        (newParams.reverseMode == 1 && previous.delayTimeMs != newParams.delayTimeMs) ||
-       (newParams.reverseMode == 0 && (previous.bpm != newParams.bpm ||
+       (newParams.reverseMode == 0 && (std::fabs(impl_->lastConfiguredReverseBpm - effectiveBpm) >= 0.1f ||
         previous.reverseDivision != newParams.reverseDivision)))) {
-    impl_->reverseWindows.configure(impl_->sampleRate, impl_->bufferSize, newParams.bpm,
+    impl_->lastConfiguredReverseBpm = effectiveBpm;
+    impl_->reverseWindows.configure(impl_->sampleRate, impl_->bufferSize, effectiveBpm,
         newParams.reverseDivision, newParams.reverseMode == 1, newParams.delayTimeMs);
   }
   impl_->currentParams=newParams;
+  impl_->currentParams.bpm = effectiveBpm;
   impl_->dropout.setSeverity(clampf(newParams.dropoutSeverity * 0.01f, 0.0f, 1.0f));
   impl_->updateFilters();
 }
@@ -918,6 +1048,7 @@ HYDRA_DSP_IRAM void TapeCore::processStereoBlock(const float* inLBlock,const flo
   impl_->transportClock.tick();
   }
   impl_->tapTempo.update(impl_->transportClock.absoluteSamplePosition());
+  impl_->midiClockSync.update(impl_->transportClock.absoluteSamplePosition());
   impl_->flushDenormals();
 }
 

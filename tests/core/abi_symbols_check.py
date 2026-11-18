@@ -34,6 +34,11 @@ EXPECTED = {
     "hydra_dsp_tap_tempo_event",
     "hydra_dsp_tap_tempo_get_state",
     "hydra_dsp_tap_tempo_reset",
+    "hydra_dsp_midi_clock_event",
+    "hydra_dsp_midi_clock_get_state",
+    "hydra_dsp_midi_clock_reset",
+    "hydra_dsp_set_tempo_source",
+    "hydra_dsp_get_tempo_source",
 }
 
 

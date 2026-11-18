@@ -1160,6 +1160,7 @@ void printHelp() {
   dualPrintln("  tempo <bpm> : Set global BPM");
   dualPrintln("  transport <play|pause|stop|reset|status> : Transport controls");
   dualPrintln("  tap [status|reset] : Tap tempo input, query status, or reset estimator");
+  dualPrintln("  clock <source [internal|tap|midi]|status|reset> : MIDI Clock & Tempo Source controls");
   dualPrintln("");
   dualPrintln("  load <preset> : clean, lofi, dub, broken, warp_octave, warp_cascade");
   dualPrintln("  list          : Show Dashboard");
@@ -1718,6 +1719,68 @@ void executeCommand(String line) {
         }
       } else {
         dualPrintln("Usage: tap [status|reset]");
+      }
+    }
+    else if (cmd == "clock") {
+      valStr.trim();
+      if (valStr.startsWith("source")) {
+        String srcStr = valStr.substring(6);
+        srcStr.trim();
+        if (srcStr == "internal") {
+          if (tape) tape->postSetTempoSource(HYDRA_DSP_TEMPO_SOURCE_INTERNAL);
+          dualPrintln("Tempo Source: INTERNAL (Manual BPM)");
+        } else if (srcStr == "tap") {
+          if (tape) tape->postSetTempoSource(HYDRA_DSP_TEMPO_SOURCE_TAP);
+          dualPrintln("Tempo Source: TAP (Tap Tempo Estimator)");
+        } else if (srcStr == "midi" || srcStr == "midiexternal" || srcStr == "external") {
+          if (tape) tape->postSetTempoSource(HYDRA_DSP_TEMPO_SOURCE_MIDI_EXTERNAL);
+          dualPrintln("Tempo Source: MIDI EXTERNAL (MIDI Clock 24 PPQN)");
+        } else {
+          dualPrintln("Usage: clock source [internal|tap|midi]");
+        }
+      } else if (valStr == "reset") {
+        if (tape) tape->postMidiClockReset();
+        dualPrintln("MIDI Clock: RESET");
+      } else if (valStr.startsWith("event") || valStr.startsWith("tick")) {
+        uint8_t byte = 0xF8;
+        if (valStr.startsWith("event")) {
+          String hexStr = valStr.substring(5);
+          hexStr.trim();
+          if (hexStr.length() > 0) {
+            byte = (uint8_t)strtoul(hexStr.c_str(), nullptr, 16);
+          }
+        }
+        if (tape) tape->postMidiClockEvent(byte, 0, esp_timer_get_time());
+        dualPrintf("MIDI Clock Event sent: 0x%02X\n", byte);
+      } else if (valStr == "status" || valStr.length() == 0) {
+        hydra_dsp_midi_clock_state st{};
+        uint32_t src = 0;
+        if (tape && tape->midiClockGetState(&st) == 0 && tape->getTempoSource(&src) == 0) {
+          const char* srcName = "INTERNAL";
+          if (src == HYDRA_DSP_TEMPO_SOURCE_TAP) srcName = "TAP";
+          else if (src == HYDRA_DSP_TEMPO_SOURCE_MIDI_EXTERNAL) srcName = "MIDI EXTERNAL";
+
+          const char* statusStr = "DISCONNECTED";
+          if (st.sync_status == HYDRA_DSP_MIDI_CLOCK_ACQUIRING) statusStr = "ACQUIRING";
+          else if (st.sync_status == HYDRA_DSP_MIDI_CLOCK_LOCKED) statusStr = "LOCKED";
+          else if (st.sync_status == HYDRA_DSP_MIDI_CLOCK_HOLDOVER) statusStr = "HOLDOVER";
+          else if (st.sync_status == HYDRA_DSP_MIDI_CLOCK_LOST) statusStr = "LOST";
+
+          dualPrintln("=== CLOCK & MIDI SYNC STATUS ===");
+          dualPrintf("  Active Source       : %s\n", srcName);
+          dualPrintf("  Sync Status         : %s\n", statusStr);
+          dualPrintf("  External BPM        : %.2f\n", st.estimated_bpm);
+          dualPrintf("  Applied BPM         : %.2f\n", st.applied_bpm);
+          dualPrintf("  Pulse Count         : %llu (24 PPQN)\n", (unsigned long long)st.pulse_count);
+          dualPrintf("  Jitter              : %.2f ms\n", st.estimated_jitter_ms);
+          dualPrintf("  Phase Error         : %.4f beats\n", st.phase_error_beats);
+          dualPrintf("  Missed Pulses       : %u\n", st.missed_pulses);
+          dualPrintf("  Transport State     : %s\n", st.is_transport_running ? "RUNNING" : "STOPPED");
+        } else {
+          dualPrintln("MIDI Clock: Not initialized");
+        }
+      } else {
+        dualPrintln("Usage: clock [source <internal|tap|midi>|status|reset]");
       }
     }
     else if (cmd == "load")

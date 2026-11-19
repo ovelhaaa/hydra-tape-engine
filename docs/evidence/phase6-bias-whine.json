@@ -1,0 +1,336 @@
+{
+  "commit": "11c1c5d02b65f5a716772c7a2c825dfb4699b842",
+  "environment": {
+    "os": "Windows-10-10.0.19045-SP0",
+    "python": "3.14.0",
+    "numpy": "2.4.1",
+    "compiler": "c++.exe (MinGW-W64 x86_64-ucrt-posix-seh, built by Brecht Sanders, r2) 14.2.0"
+  },
+  "official_source_sha256": "deb499219f52900135f49c105fde020c7e1cdd4d91d6f1d0008971734b4c10dc",
+  "method": "Separate shared libraries from source copies; -O3 -DNDEBUG -std=c++17. Identical stimuli, seeds and scenario-01 parameters. PSD band RMS: +/-10Hz around carrier, Welch 48000 samples, stereo channels separately. Silence retains the configured hiss.",
+  "variants": {
+    "baseline": {
+      "source_sha256": "deb499219f52900135f49c105fde020c7e1cdd4d91d6f1d0008971734b4c10dc",
+      "library_sha256": "e83914bc281c7f8cdc5dab336643b30b0112184902cad781b495ca0ff63ff182",
+      "build_command": [
+        "c++.exe",
+        "-O3",
+        "-DNDEBUG",
+        "-std=c++17",
+        "-shared",
+        "-Wl,--export-all-symbols",
+        "-I{repo}/include",
+        "-I{repo}/dsp/core",
+        "{repo}/artifacts/bias-isolation/baseline/tape_core.cpp",
+        "{repo}/dsp/core/hydra_dsp_c_api.cpp",
+        "-o",
+        "{repo}/artifacts/bias-isolation/baseline/baseline.dll"
+      ],
+      "inputs": {
+        "musical": {
+          "band_3k_dbfs": [
+            -74.65335502075258,
+            -73.283427388362
+          ],
+          "band_6k_dbfs": [
+            -49.02764883517524,
+            -49.17738365786599
+          ],
+          "band_17k_dbfs": [
+            -112.44788312847493,
+            -111.15916945275583
+          ],
+          "band_18k_dbfs": [
+            -68.26387630185666,
+            -68.40335899037481
+          ],
+          "wav_sha256": "56e4936e3272f0fef3d685416e20f820fdc94c7f410452603ad9f85b559abce1",
+          "peak": 0.6686574816703796
+        },
+        "sine440": {
+          "band_3k_dbfs": [
+            -105.2869755540905,
+            -105.10926183831808
+          ],
+          "band_6k_dbfs": [
+            -48.72848097783289,
+            -48.715424863250846
+          ],
+          "band_17k_dbfs": [
+            -144.85393693586312,
+            -144.88384291276662
+          ],
+          "band_18k_dbfs": [
+            -67.97689430966669,
+            -67.96306927037104
+          ],
+          "wav_sha256": "5defa8ae6765c408f33f22d86617a5669f1b4986d101d4f77b6d78fdf25b9562",
+          "peak": 0.14577190577983856
+        },
+        "silence": {
+          "band_3k_dbfs": [
+            -92.13187077918124,
+            -92.077801990343
+          ],
+          "band_6k_dbfs": [
+            -48.66387868730821,
+            -48.64973035944652
+          ],
+          "band_17k_dbfs": [
+            -144.520904811026,
+            -144.75513036340718
+          ],
+          "band_18k_dbfs": [
+            -67.911120716542,
+            -67.89727986956778
+          ],
+          "wav_sha256": "bd91f4ad8fca461d63e35e762128bd3cc658bc48670aa4695152597ac98b954c",
+          "peak": 0.007508854381740093
+        }
+      }
+    },
+    "bias_off": {
+      "source_sha256": "7392f69cad5e1a10917ae929467f58360033164e4cdc9acace3c509c2c1b8b2e",
+      "library_sha256": "c1539754dbdde1b1978b1d2f4b5fe4196a7029c8c09afaf0054555c0472c1b0a",
+      "build_command": [
+        "c++.exe",
+        "-O3",
+        "-DNDEBUG",
+        "-std=c++17",
+        "-shared",
+        "-Wl,--export-all-symbols",
+        "-I{repo}/include",
+        "-I{repo}/dsp/core",
+        "{repo}/artifacts/bias-isolation/bias_off/tape_core.cpp",
+        "{repo}/dsp/core/hydra_dsp_c_api.cpp",
+        "-o",
+        "{repo}/artifacts/bias-isolation/bias_off/bias_off.dll"
+      ],
+      "inputs": {
+        "musical": {
+          "band_3k_dbfs": [
+            -74.65174184806025,
+            -73.27727621346088
+          ],
+          "band_6k_dbfs": [
+            -106.35592606739601,
+            -102.72805502592027
+          ],
+          "band_17k_dbfs": [
+            -113.00938577558364,
+            -112.23096369944957
+          ],
+          "band_18k_dbfs": [
+            -113.41245702191038,
+            -112.63819011901668
+          ],
+          "wav_sha256": "79452dbcfea1d62c12c76a45932d744e3c3889985db8c99052cbdaa992c9256b",
+          "peak": 0.6650331616401672
+        },
+        "sine440": {
+          "band_3k_dbfs": [
+            -105.21078306347049,
+            -105.1527923523096
+          ],
+          "band_6k_dbfs": [
+            -111.9287082559898,
+            -111.80758438714011
+          ],
+          "band_17k_dbfs": [
+            -168.10528605458413,
+            -168.1159158476949
+          ],
+          "band_18k_dbfs": [
+            -174.34576465173978,
+            -174.3197674766029
+          ],
+          "wav_sha256": "79f7fbcd1f5ea88bacb5b621a47eea3da1cfd9058f69017cc1ecc8ed0e1320f9",
+          "peak": 0.14224684238433838
+        },
+        "silence": {
+          "band_3k_dbfs": [
+            -92.11318659624375,
+            -92.09099822103433
+          ],
+          "band_6k_dbfs": [
+            -98.71459988476008,
+            -98.71482485715417
+          ],
+          "band_17k_dbfs": [
+            -155.44681546514144,
+            -155.43483964359928
+          ],
+          "band_18k_dbfs": [
+            -161.63835753003843,
+            -161.5723774393793
+          ],
+          "wav_sha256": "97e68539a5ff4ac3b8d31a929e8cc9b977d70566f8229d4195f6da0eebc7f790",
+          "peak": 0.0028072157874703407
+        }
+      }
+    },
+    "bias_sine_18k": {
+      "source_sha256": "6a271183e70f91255e3947fcbb7a9f685238154db1c3fc862291ccb7d46c730e",
+      "library_sha256": "e15f8268acae4fb30a313b3529d21be399e6862348cc76cd7d0d31aefe02bf50",
+      "build_command": [
+        "c++.exe",
+        "-O3",
+        "-DNDEBUG",
+        "-std=c++17",
+        "-shared",
+        "-Wl,--export-all-symbols",
+        "-I{repo}/include",
+        "-I{repo}/dsp/core",
+        "{repo}/artifacts/bias-isolation/bias_sine_18k/tape_core.cpp",
+        "{repo}/dsp/core/hydra_dsp_c_api.cpp",
+        "-o",
+        "{repo}/artifacts/bias-isolation/bias_sine_18k/bias_sine_18k.dll"
+      ],
+      "inputs": {
+        "musical": {
+          "band_3k_dbfs": [
+            -74.65425091548647,
+            -73.28031955644033
+          ],
+          "band_6k_dbfs": [
+            -104.16398408452729,
+            -102.13405669028396
+          ],
+          "band_17k_dbfs": [
+            -112.2465199198332,
+            -110.4089539688465
+          ],
+          "band_18k_dbfs": [
+            -66.90353767952006,
+            -67.04358727072987
+          ],
+          "wav_sha256": "96adccd11dd20f87da663a23edb0f10fa4d2306350dd5db561de3ccd3636fe38",
+          "peak": 0.6645005941390991
+        },
+        "sine440": {
+          "band_3k_dbfs": [
+            -105.23650426623405,
+            -105.18556045830476
+          ],
+          "band_6k_dbfs": [
+            -103.24771106395073,
+            -103.1348908701699
+          ],
+          "band_17k_dbfs": [
+            -143.28798729434357,
+            -143.31524677752967
+          ],
+          "band_18k_dbfs": [
+            -66.60174061756759,
+            -66.58791052752153
+          ],
+          "wav_sha256": "3e29198ddff66c8110892236c0bda5ba67147e190512df17fee34d20d820d07f",
+          "peak": 0.14233718812465668
+        },
+        "silence": {
+          "band_3k_dbfs": [
+            -92.11713110503852,
+            -92.09853911307312
+          ],
+          "band_6k_dbfs": [
+            -97.57444276381072,
+            -97.50166550371554
+          ],
+          "band_17k_dbfs": [
+            -142.9306841911826,
+            -143.06796021542078
+          ],
+          "band_18k_dbfs": [
+            -66.53597745155683,
+            -66.52214404119542
+          ],
+          "wav_sha256": "42452a13fd4e391b88baf051ea37e495474b5cbd992e28adc15b3e009890a650",
+          "peak": 0.006339008919894695
+        }
+      }
+    },
+    "bias_triangle_17k": {
+      "source_sha256": "2a4e94fd2a843bc9fdb32fd608566b480bc5c7386d8dbc22fe4a34d61d940dbd",
+      "library_sha256": "1ac2707eb3409e652d081dcb75edd89ba66499de3d879bb9abf0424dacf1ebe0",
+      "build_command": [
+        "c++.exe",
+        "-O3",
+        "-DNDEBUG",
+        "-std=c++17",
+        "-shared",
+        "-Wl,--export-all-symbols",
+        "-I{repo}/include",
+        "-I{repo}/dsp/core",
+        "{repo}/artifacts/bias-isolation/bias_triangle_17k/tape_core.cpp",
+        "{repo}/dsp/core/hydra_dsp_c_api.cpp",
+        "-o",
+        "{repo}/artifacts/bias-isolation/bias_triangle_17k/bias_triangle_17k.dll"
+      ],
+      "inputs": {
+        "musical": {
+          "band_3k_dbfs": [
+            -74.4439796763655,
+            -73.09403158019992
+          ],
+          "band_6k_dbfs": [
+            -106.11943228583726,
+            -102.54596617459315
+          ],
+          "band_17k_dbfs": [
+            -66.50957301016571,
+            -66.64452414049916
+          ],
+          "band_18k_dbfs": [
+            -113.24975484610286,
+            -112.28993920922987
+          ],
+          "wav_sha256": "0041a6705a1ded0c813d654435c8cc82a7af4ff1276b02d5c182907908c2288b",
+          "peak": 0.6651790738105774
+        },
+        "sine440": {
+          "band_3k_dbfs": [
+            -94.46671010406597,
+            -94.62111201030464
+          ],
+          "band_6k_dbfs": [
+            -111.8411960537806,
+            -111.75170295072195
+          ],
+          "band_17k_dbfs": [
+            -66.22428431439523,
+            -66.2116227150813
+          ],
+          "band_18k_dbfs": [
+            -149.3689128527802,
+            -148.6798539190451
+          ],
+          "wav_sha256": "26c3b21a04cb444f89e0ed84b7210428fbeca43f0bb8c2cea0c442212b1812f5",
+          "peak": 0.1426115185022354
+        },
+        "silence": {
+          "band_3k_dbfs": [
+            -90.0703346336906,
+            -90.3003700142063
+          ],
+          "band_6k_dbfs": [
+            -98.70237942065256,
+            -98.70850849547169
+          ],
+          "band_17k_dbfs": [
+            -66.15828303008394,
+            -66.1456259382987
+          ],
+          "band_18k_dbfs": [
+            -149.0445382174392,
+            -148.4639628600156
+          ],
+          "wav_sha256": "3ee6eb46698153a61051e24338d17e9541989480ac022a001332decb3f7c3301",
+          "peak": 0.004617705009877682
+        }
+      }
+    }
+  },
+  "copied_baseline_matches_official_wav": true,
+  "official_source_unchanged": true,
+  "build_command_paths_redacted": true
+}

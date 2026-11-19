@@ -118,6 +118,14 @@ jobs:
           if-no-files-found: error
           retention-days: 30
           compression-level: 0
+      - name: Exercise all 60 comparisons in real Chrome Web Audio
+        id: bias_browser
+        continue-on-error: true
+        env:
+          HYDRA_BROWSER_CHANNEL: chrome
+          HYDRA_LISTENING_PACKAGE: artifacts/listening-lab/phase6-bias-ab
+          HYDRA_BROWSER_REPORT: artifacts/bias-antialiasing/browser
+        run: npm run test:browser --prefix tools/phase6-listening-lab
       - name: Upload technical evidence including failures
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v4
@@ -140,7 +148,7 @@ jobs:
           steps = json.loads(os.environ['STEPS_JSON'])
           required = ['native_build', 'native_tests', 'diagnostics', 'engine', 'plots',
                       'emsdk', 'wasm_build', 'wasm_tests', 'equivalence', 'regression_diagnostics', 'firmware',
-                      'delivery_tests', 'package', 'artifact']
+                      'delivery_tests', 'package', 'artifact', 'bias_browser']
           failed = [name for name in required if steps.get(name, {}).get('outcome') != 'success']
           status = 'BLOCKED — REGRESSION / INCOMPLETE TECHNICAL GATES' if failed else 'READY FOR HUMAN A/B LISTENING'
           lines = [f'### {status}', '', 'Human audition: NOT REVIEWED. No merge or musical approval.',

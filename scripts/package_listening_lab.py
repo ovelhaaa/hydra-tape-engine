@@ -17,8 +17,9 @@ def validate(directory):
     if manifest.get("schema_version") != 1 or manifest.get("human_listening_signoff") != "PENDING_HUMAN_AUDITION":
         raise ValueError("Invalid manifest schema or agent-assigned human signoff")
     scenarios = manifest["scenarios"]
-    if len(scenarios) != 20 or [int(k[:2]) for k in scenarios] != list(range(1, 21)):
-        raise ValueError("Expected the ordered 20 scenarios")
+    expected = 60 if manifest.get("suite") == "Hydra Phase 6.2 Bias A/B" else 20
+    if len(scenarios) != expected or [int(k[:2]) for k in scenarios] != list(range(1, expected + 1)):
+        raise ValueError(f"Expected the ordered {expected} scenarios")
     if not re.fullmatch(r"[a-f0-9]{40}", manifest["reference_commit"]) or not manifest["api_version"]:
         raise ValueError("Missing provenance")
     total = 0
@@ -67,8 +68,14 @@ def package(directory, archive=None):
     reports = directory / "reports"
     reports.mkdir(exist_ok=True)
     (reports / "audio-analysis.json").write_text(json.dumps({k: v["analysis_metrics"] for k, v in manifest["scenarios"].items()}, indent=2, allow_nan=False), encoding="utf-8")
-    (reports / "validation-summary.md").write_text(f"# Listening Lab validation\n\nCommit: `{manifest['reference_commit']}`\n\n20 scenarios; 40 PCM24 stereo WAVs; 20 CSVs; {total} audio/telemetry bytes.\nAll hashes, frame counts and telemetry lengths verified.\nHuman listening: PENDING_HUMAN_AUDITION. Metrics are observations, not human approval.\n", encoding="utf-8")
-    shutil.copyfile(ROOT / "docs/PHASE6_LISTENING_GUIDE.md", directory / "listening-guide.md")
+    count = len(manifest["scenarios"])
+    (reports / "validation-summary.md").write_text(f"# Listening Lab validation\n\nCommit: `{manifest['reference_commit']}`\n\n{count} scenarios; {2 * count} PCM24 stereo WAVs; {count} CSVs; {total} audio/telemetry bytes.\nAll hashes, frame counts and telemetry lengths verified.\nHuman listening: PENDING_HUMAN_AUDITION. Metrics are observations, not human approval.\n", encoding="utf-8")
+    guide = "PHASE6_BIAS_AB_LISTENING_GUIDE.md" if manifest.get("suite") == "Hydra Phase 6.2 Bias A/B" else "PHASE6_LISTENING_GUIDE.md"
+    shutil.copyfile(ROOT / "docs" / guide, directory / "listening-guide.md")
+    if manifest.get("suite") == "Hydra Phase 6.2 Bias A/B":
+        report = ROOT / "docs/PHASE6_BIAS_ANTIALIASING_REPORT.md"
+        if report.exists():
+            shutil.copyfile(report, reports / "bias-antialiasing-report.md")
     shutil.copyfile(ROOT / "tools/phase6-listening-lab/README.md", directory / "README.md")
     shutil.copytree(ROOT / "tools/phase6-listening-lab", directory / "player", dirs_exist_ok=True,
                     ignore=shutil.ignore_patterns("tests", "node_modules"))
@@ -76,7 +83,7 @@ def package(directory, archive=None):
     if archive:
         result = shutil.make_archive(str(Path(archive).with_suffix("")), "zip", directory)
         print(f"ZIP: {result} ({Path(result).stat().st_size} bytes)")
-    print(f"VALID: 20 scenarios, 40 WAVs, 20 CSVs, {total} bytes; {manifest['reference_commit']}")
+    print(f"VALID: {count} scenarios, {2 * count} WAVs, {count} CSVs, {total} bytes; {manifest['reference_commit']}")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)

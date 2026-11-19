@@ -1,5 +1,7 @@
 # Hydra Listening Lab
 
+Fase6.2: o mesmo player aceita o suplemento `Hydra Phase 6.2 Bias A/B` com60pares. Consulte o [guia de escuta do bias](../../docs/PHASE6_BIAS_AB_LISTENING_GUIDE.md) e o [relatório técnico](../../docs/PHASE6_BIAS_ANTIALIASING_REPORT.md). A=baseline processado, B=variante processada; todos os estados começam NOT REVIEWED. O pacote original de20cenários continua válido como referência histórica. A distribuição complementar pode coexistir com CI bloqueada e não significa aprovação técnica/musical.
+
 Player offline dedicado à revisão da Fase 6.1; não altera a Web Demo nem os algoritmos DSP. Sem backend, telemetria de uso ou autoplay. Requer navegador moderno com Web Audio, seleção de diretório e Web Crypto em localhost (Chromium é testado).
 
 ## Reproduzir e executar

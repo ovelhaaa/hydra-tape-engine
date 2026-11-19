@@ -144,17 +144,16 @@ struct TapeMagnetics {
 
   HYDRA_DSP_IRAM HYDRA_AUDIO_INLINE float process(float x, bool allowBias) {
     if (!lut) return x;
-    biasPhase += biasPhaseInc;
-    while (biasPhase >= 1.0f) {
-      biasPhase -= 1.0f;
-    }
-    float tri = 4.0f * std::fabs(biasPhase - 0.5f) - 1.0f;
 
     const bool biasRequested = allowBias && std::fabs(x) > 1e-7f;
     biasGain = clampf(biasGain + (biasRequested ? biasGainStep : -biasGainStep), 0.0f, 1.0f);
-    float xb = x * drive + (biasAmount * biasGain * tri);
+    float xb = x * drive;
     float h = xb + coercivity * m;
-    float y = lut->process(h);
+    // Phase-average of the original triangle's uniform amplitude distribution.
+    // Two-point Gauss-Legendre: exact moments through order three.
+    // Keep the original coercivity, remanence, normalization and gain ramp.
+    const float b = biasAmount * biasGain * 0.5773502691896258f;
+    float y = 0.5f * (lut->process(h - b) + lut->process(h + b));
 
     m = remanence * m + (1.0f - remanence) * y;
 

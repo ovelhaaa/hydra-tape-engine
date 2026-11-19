@@ -1,0 +1,157 @@
+name: Phase 6.2 Bias Anti-Aliasing
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: bias-antialiasing-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate_bias:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    env:
+      PYTHONUTF8: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install analysis and firmware dependencies
+        run: |
+          python -m pip install -r scripts/listening-lab-requirements.txt matplotlib platformio
+          mkdir -p ci-reports/bias
+      - name: Build complete Native suite and ABI library
+        id: native_build
+        continue-on-error: true
+        run: |
+          cmake -S . -B build-native -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=ON
+          cmake --build build-native -j 2
+      - name: Run Native regressions without changing goldens
+        id: native_tests
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          ctest --test-dir build-native --output-on-failure | tee ci-reports/bias/native-ctest.txt
+      - name: Build isolated variants and enforce prospective spectral gates
+        id: diagnostics
+        continue-on-error: true
+        run: python scripts/bias_antialiasing.py --compiler g++
+      - name: Validate complete engine at both sample rates
+        id: engine
+        continue-on-error: true
+        run: python scripts/validate_bias_engine.py
+      - name: Generate comparative spectral and dynamic plots
+        id: plots
+        continue-on-error: true
+        run: python scripts/plot_bias_antialiasing.py
+      - name: Setup Emscripten
+        id: emsdk
+        continue-on-error: true
+        uses: mymindstorm/setup-emsdk@v14
+        with:
+          version: 3.1.62
+      - name: Build complete WASM suite
+        id: wasm_build
+        continue-on-error: true
+        run: |
+          emcmake cmake -S . -B build-wasm -DCMAKE_BUILD_TYPE=Release -DBUILD_WEB=ON -DBUILD_TESTING=ON
+          cmake --build build-wasm -j 2
+      - name: Run complete WASM regressions including goldens
+        id: wasm_tests
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          ctest --test-dir build-wasm --output-on-failure | tee ci-reports/bias/wasm-ctest.txt
+      - name: Compare Native and WASM with unchanged thresholds
+        id: equivalence
+        continue-on-error: true
+        run: |
+          python tests/core/compare_native_wasm.py \
+            --native build-native/hydra_render_trace_native \
+            --wasm-js build-wasm/wasm-tests/hydra_render_trace.js \
+            --test-name phase62_native_vs_wasm \
+            --max-abs-threshold 1e-5 --rmse-threshold 1e-6 \
+            --report-json ci-reports/bias/equivalence.json \
+            --report-txt ci-reports/bias/equivalence.txt \
+            --diff-csv ci-reports/bias/equivalence-diff.csv
+      - name: Diagnose original regression assertions and numerical baseline delta
+        id: regression_diagnostics
+        continue-on-error: true
+        run: python scripts/diagnose_bias_regressions.py
+      - name: Build ESP32-S3 firmware (no physical timing claim)
+        id: firmware
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          pio run -e esp32-s3-devkitc-1 | tee ci-reports/bias/esp32-build.txt
+      - name: Validate Listening Lab model and delivery
+        id: delivery_tests
+        continue-on-error: true
+        run: |
+          python -m unittest discover -s scripts -p test_listening_lab.py
+          npm ci --prefix tools/phase6-listening-lab
+          npm test --prefix tools/phase6-listening-lab
+      - name: Render and validate 60 controlled A/B pairs
+        id: package
+        continue-on-error: true
+        run: python scripts/package_bias_ab.py --archive artifacts/hydra-phase6-bias-ab.zip
+      - name: Upload validated A/B package for review, pending human audition
+        id: artifact
+        if: ${{ !cancelled() && steps.package.outcome == 'success' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: hydra-phase6-bias-ab-PENDING-HUMAN-AUDITION
+          path: artifacts/hydra-phase6-bias-ab.zip
+          if-no-files-found: error
+          retention-days: 30
+          compression-level: 0
+      - name: Upload technical evidence including failures
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: hydra-phase6-bias-technical-evidence
+          path: |
+            ci-reports/bias
+            artifacts/bias-antialiasing
+          if-no-files-found: error
+          retention-days: 30
+      - name: Publish actual artifact link and preserve required failures
+        if: ${{ !cancelled() }}
+        env:
+          STEPS_JSON: ${{ toJSON(steps) }}
+          ARTIFACT_URL: ${{ steps.artifact.outputs.artifact-url }}
+        run: |
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          steps = json.loads(os.environ['STEPS_JSON'])
+          required = ['native_build', 'native_tests', 'diagnostics', 'engine', 'plots',
+                      'emsdk', 'wasm_build', 'wasm_tests', 'equivalence', 'regression_diagnostics', 'firmware',
+                      'delivery_tests', 'package', 'artifact']
+          failed = [name for name in required if steps.get(name, {}).get('outcome') != 'success']
+          status = 'BLOCKED — REGRESSION / INCOMPLETE TECHNICAL GATES' if failed else 'READY FOR HUMAN A/B LISTENING'
+          lines = [f'### {status}', '', 'Human audition: NOT REVIEWED. No merge or musical approval.',
+                   'ESP32-S3 compilation does not establish physical performance.', '']
+          url = os.environ.get('ARTIFACT_URL')
+          if url:
+              lines += [f'[Download verified 60-pair A/B package]({url})', '']
+          lines += ['| Gate | Outcome |', '|---|---|']
+          lines += [f"| {name} | {steps.get(name, {}).get('outcome', 'missing')} |" for name in required]
+          with Path(os.environ['GITHUB_STEP_SUMMARY']).open('a') as stream:
+              stream.write('\n'.join(lines) + '\n')
+          if failed:
+              raise SystemExit('Required gates failed: ' + ', '.join(failed))
+          PY

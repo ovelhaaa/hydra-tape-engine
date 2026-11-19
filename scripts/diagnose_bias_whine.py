@@ -14,6 +14,7 @@ OUT = ROOT / "artifacts/bias-isolation"
 sys.path.insert(0, str(ROOT / 'scripts'))
 import render_phase6_review as render
 import musical_sources
+from bias_antialiasing import model_sources
 
 def sha(path):
     return hashlib.sha256(path.read_bytes()).hexdigest()
@@ -28,7 +29,9 @@ def band_db(audio, center, rate=48000):
 def main():
     OUT.mkdir(parents=True, exist_ok=True)
     source_path = ROOT / 'dsp/core/tape_core.cpp'
-    source = source_path.read_text(encoding='utf-8')
+    # Reconstruct Phase 6.1 even after production adopts the phase-averaged model.
+    # Never reinterpret the candidate as the historical triangular control.
+    source = model_sources()[0]['baseline']
     source_hash = sha(source_path)
     cache = dict(line.split('=', 1) for line in (ROOT / 'build-native/CMakeCache.txt').read_text().splitlines() if '=' in line and not line.startswith('//'))
     compiler = cache['CMAKE_CXX_COMPILER:FILEPATH']
@@ -54,6 +57,7 @@ def main():
         'commit': subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=ROOT, text=True).strip(),
         'environment': {'os': platform.platform(), 'python': platform.python_version(), 'numpy': np.__version__, 'compiler': subprocess.check_output([compiler, '--version'], text=True).splitlines()[0]},
         'official_source_sha256': source_hash,
+        'baseline_model_sha256': sha(ROOT/'dsp/diagnostics/tape_bias_baseline.inc'),
         'method': 'Separate shared libraries from source copies; -O3 -DNDEBUG -std=c++17. Identical stimuli, seeds and scenario-01 parameters. PSD band RMS: +/-10Hz around carrier, Welch 48000 samples, stereo channels separately. Silence retains the configured hiss.',
         'variants': {},
     }

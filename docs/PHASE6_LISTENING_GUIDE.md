@@ -1,5 +1,7 @@
 # Phase 6.1 — Guia de escuta
 
+Atualização Fase6.2: o pacote original de20cenários é referência histórica. Para comparar a candidata de correção do bias, use o [guia A/B complementar](PHASE6_BIAS_AB_LISTENING_GUIDE.md) e o artifact `hydra-phase6-bias-ab-PENDING-HUMAN-AUDITION` da PR#54. As60comparações usam A=saída triangular baseline e B=saída da variante, sem normalização. Nenhuma avaliação anterior é transferida à candidata; todos os estados começam NOT REVIEWED. Há bloqueios técnicos documentados no [relatório](PHASE6_BIAS_ANTIALIASING_REPORT.md).
+
 Use fones e monitores conhecidos, em ambiente silencioso. Desative melhorias do sistema operacional e confirme o roteamento estéreo. Comece com volume moderado: cenários 04, 09, 19 e 20 têm feedback elevado ou cadeias densas. O player começa em 35% de ganho de monitoração, sem autoplay. O mesmo ganho se aplica a A e B; não há normalização nem compensação de loudness.
 
 ## Preparação e pacote

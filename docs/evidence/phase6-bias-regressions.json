@@ -1,0 +1,616 @@
+{
+  "commit": "fa43cdefff22059b55adf3d2202a19f2571cf9d3",
+  "variants": {
+    "baseline": {
+      "source_sha256": "deb499219f52900135f49c105fde020c7e1cdd4d91d6f1d0008971734b4c10dc",
+      "builds": [
+        {
+          "command": [
+            "{compiler-bin}/c++.exe",
+            "-O3",
+            "-DNDEBUG",
+            "-std=c++17",
+            "-I{repo}\\include",
+            "-I{repo}\\dsp\\core",
+            "-I{repo}\\tests\\core",
+            "-I{repo}\\host\\native\\esp32",
+            "-c",
+            "{repo}\\artifacts\\bias-antialiasing\\regression-diagnostic\\baseline\\tape_core.cpp",
+            "-o",
+            "{repo}\\artifacts\\bias-antialiasing\\regression-diagnostic\\baseline\\tape_core.o"
+          ],
+          "returncode": 0,
+          "stdout": "",
+          "stderr": ""
+        },
+        {
+          "command": [
+            "{compiler-bin}/c++.exe",
+            "-O3",
+            "-DNDEBUG",
+            "-std=c++17",
+            "-I{repo}\\include",
+            "-I{repo}\\dsp\\core",
+            "-I{repo}\\tests\\core",
+            "-I{repo}\\host\\native\\esp32",
+            "-c",
+            "{repo}\\dsp\\core\\hydra_dsp_c_api.cpp",
+            "-o",
+            "{repo}\\artifacts\\bias-antialiasing\\regression-diagnostic\\baseline\\hydra_dsp_c_api.o"
+          ],
+          "returncode": 0,
+          "stdout": "",
+          "stderr": ""
+        },
+        {
+          "command": [
+            "{compiler-bin}/c++.exe",
+            "-O3",
+            "-DNDEBUG",
+            "-std=c++17",
+            "-I{repo}\\include",
+            "-I{repo}\\dsp\\core",
+            "-I{repo}\\tests\\core",
+            "-I{repo}\\host\\native\\esp32",
+            "-c",
+            "{repo}\\host\\native\\esp32\\hydra_dsp_esp32_adapter.cpp",
+            "-o",
+            "{repo}\\artifacts\\bias-antialiasing\\regression-diagnostic\\baseline\\hydra_dsp_esp32_adapter.o"
+          ],
+          "returncode": 0,
+          "stdout": "",
+          "stderr": ""
+        },
+        {
+          "command": [
+            "{compiler-bin}/c++.exe",
+            "-O3",
+            "-DNDEBUG",
+            "-std=c++17",
+            "-I{repo}\\include",
+            "-I{repo}\\dsp\\core",
+            "-I{repo}\\tests\\core",
+            "-I{repo}\\host\\native\\esp32",
+            "{repo}\\tests\\core\\warp_core_test.cpp",
+            "{repo}\\artifacts\\bias-antialiasing\\regression-diagnostic\\baseline\\tape_core.o",
+            "{repo}\\artifacts\\bias-antialiasing\\regression-diagnostic\\baseline\\hydra_dsp_c_api.o",
+            "{repo}\\artifacts\\bias-antialiasing\\regression-diagnostic\\baseline\\hydra_dsp_esp32_adapter.o",
+            "-o",
+            "{repo}\\artifacts\\bias-antialiasing\\regression-diagnostic\\baseline\\warp_core_test.exe"
+          ],
+          "returncode": 0,
+          "stdout": "",
+          "stderr": ""
+        },
+        {
+          "command": [
+            "{compiler-bin}/c++.exe",
+            "-O3",
+            "-DNDEBUG",
+            "-std=c++17",
+            "-I{repo}\\include",
+            "-I{repo}\\dsp\\core",
+            "-I{repo}\\tests\\core",
+            "-I{repo}\\host\\native\\esp32",
+            "{repo}\\artifacts\\bias-antialiasing\\regression-diagnostic\\baseline\\reverse_core_test.cpp",
+            "{repo}\\artifacts\\bias-antialiasing\\regression-diagnostic\\baseline\\tape_core.o",
+            "{repo}\\artifacts\\bias-antialiasing\\regression-diagnostic\\baseline\\hydra_dsp_c_api.o",
+            "{repo}\\artifacts\\bias-antialiasing\\regression-diagnostic\\baseline\\hydra_dsp_esp32_adapter.o",
+            "-o",
+            "{repo}\\artifacts\\bias-antialiasing\\regression-diagnostic\\baseline\\reverse_core_test.exe"
+          ],
+          "returncode": 0,
+          "stdout": "",
+          "stderr": ""
+        },
+        {
+          "command": [
+            "{compiler-bin}/c++.exe",
+            "-O3",
+            "-DNDEBUG",
+            "-std=c++17",
+            "-I{repo}\\include",
+            "-I{repo}\\dsp\\core",
+            "-I{repo}\\tests\\core",
+            "-I{repo}\\host\\native\\esp32",
+            "{repo}\\tests\\core\\listen.cpp",
+            "{repo}\\artifacts\\bias-antialiasing\\regression-diagnostic\\baseline\\tape_core.o",
+            "{repo}\\artifacts\\bias-antialiasing\\regression-diagnostic\\baseline\\hydra_dsp_c_api.o",
+            "{repo}\\artifacts\\bias-antialiasing\\regression-diagnostic\\baseline\\hydra_dsp_esp32_adapter.o",
+            "-o",
+            "{repo}\\artifacts\\bias-antialiasing\\regression-diagnostic\\baseline\\listen.exe"
+          ],
+          "returncode": 0,
+          "stdout": "",
+          "stderr": ""
+        },
+        {
+          "command": [
+            "{compiler-bin}/c++.exe",
+            "-O3",
+            "-DNDEBUG",
+            "-std=c++17",
+            "-I{repo}\\include",
+            "-I{repo}\\dsp\\core",
+            "-I{repo}\\tests\\core",
+            "-I{repo}\\host\\native\\esp32",
+            "{repo}\\tests\\core\\render_trace.cpp",
+            "{repo}\\artifacts\\bias-antialiasing\\regression-diagnostic\\baseline\\tape_core.o",
+            "{repo}\\artifacts\\bias-antialiasing\\regression-diagnostic\\baseline\\hydra_dsp_c_api.o",
+            "{repo}\\artifacts\\bias-antialiasing\\regression-diagnostic\\baseline\\hydra_dsp_esp32_adapter.o",
+            "-o",
+            "{repo}\\artifacts\\bias-antialiasing\\regression-diagnostic\\baseline\\render_trace.exe"
+          ],
+          "returncode": 0,
+          "stdout": "",
+          "stderr": ""
+        },
+        {
+          "command": [
+            "{compiler-bin}/c++.exe",
+            "-O3",
+            "-DNDEBUG",
+            "-std=c++17",
+            "-I{repo}\\include",
+            "-I{repo}\\dsp\\core",
+            "-I{repo}\\tests\\core",
+            "-I{repo}\\host\\native\\esp32",
+            "{repo}\\artifacts\\bias-antialiasing\\regression-diagnostic\\baseline\\reverse_3s.cpp",
+            "{repo}\\artifacts\\bias-antialiasing\\regression-diagnostic\\baseline\\tape_core.o",
+            "{repo}\\artifacts\\bias-antialiasing\\regression-diagnostic\\baseline\\hydra_dsp_c_api.o",
+            "{repo}\\artifacts\\bias-antialiasing\\regression-diagnostic\\baseline\\hydra_dsp_esp32_adapter.o",
+            "-o",
+            "{repo}\\artifacts\\bias-antialiasing\\regression-diagnostic\\baseline\\reverse_3s.exe"
+          ],
+          "returncode": 0,
+          "stdout": "",
+          "stderr": ""
+        }
+      ],
+      "tests": {
+        "warp_core_test": {
+          "command": [
+            "{repo}\\artifacts\\bias-antialiasing\\regression-diagnostic\\baseline\\warp_core_test.exe"
+          ],
+          "returncode": 0,
+          "stdout": "Running Accidental Warp V1.3 Comprehensive DSP Test Suite...\n[Warp Pitch Test] Freq Entrada: 440 Hz | Freq Medida Saida: 880 Hz\n[Warp Stereo Test] DiffSum L/R: 139.321\n[Warp Feedback 0%] Late Energy: 0\n[Warp repeat] 50% difference=3.4061\n[Warp repeat] 80% difference=3.72582\n[Warp Mode 0] Energy L: 534.43 | R: 538.09\n[Warp Mode 1] Energy L: 486.355 | R: 454.199\n[Warp Mode 2] Energy L: 486.215 | R: 453.974\n[Warp Mode 3] Energy L: 534.429 | R: 538.086\n[Bias gate] 44100 Hz peak=0.0028086 step=0.00361847\n[Bias decay] 44100 Hz Warp=0 0.185626 0.562045 0.626036 0.626024 0.626158\n[Bias decay] 44100 Hz Warp=1 0.00271751 0 0 0 0\n[Bias gate] 48000 Hz peak=0.00171019 step=0.00234598\n[Bias decay] 48000 Hz Warp=0 0.0949608 0.520467 0.58711 0.587127 0.587355\n[Bias decay] 48000 Hz Warp=1 0.00248488 0 0 0 0\nAll Accidental Warp V1.3 Tests PASSED successfully!\n",
+          "stderr": ""
+        },
+        "reverse_core_test": {
+          "command": [
+            "{repo}\\artifacts\\bias-antialiasing\\regression-diagnostic\\baseline\\reverse_core_test.exe"
+          ],
+          "returncode": 0,
+          "stdout": "Running Reverse Tape Echo V2 Comprehensive DSP Test Suite...\n[Test 0] ReverseWindows unit test: OK\n[Test A] Reverse Impulse Timing (rate=48000): Peak at 47973 (999.438 ms), mag=0.386083: OK\n[Test A] Reverse Impulse Timing (rate=44100): Peak at 44073 (999.388 ms), mag=0.395024: OK\n[Test B] Reverse Window Continuity (rate=48000): max step=0.0243093: OK\n[Test B] Reverse Window Continuity (rate=44100): max step=0.0249527: OK\n[Test C] BPM Accuracy across 60, 90, 120, 140, 180 BPM and 9 subdivisions: OK\n[Test D] Stereo Integrity & Ping-Pong: OK\n[Test E] Feedback Stability (0% to 95% 5s renders): OK\n[Test F] Parameter Automation (BPM, division, feedback, mode, reverse on/off): OK\n[Test G] Silence and Reset: OK\n[Test H] Block Size Independence (1 frame vs 128 frames, avgDiff=0): OK\n[Test I] Musical Timing Audit (30-300 BPM, 9 subdivisions, 10k cycles drift < 0.025 ms, jitter <= 1 frame): OK\n[Test J] Boundary Transitions Audit (BPM, subdivisions, modes, toggle): OK\n[Test K] Clique / Boundary Discontinuity Characterization (smoothstep windowing verified across 7 signals): OK\n[Test L] Reverse Status & Clamping Verification: OK\nAll Reverse Tape Echo V2 Tests PASSED successfully!\n",
+          "stderr": "DIAGNOSTIC energyPpL=0.813709 energyPpR=0.0126841\n"
+        },
+        "transition_characterization": {
+          "command": [
+            "C:\\Python314\\python.exe",
+            "{repo}\\tests\\core\\listening_review.py",
+            "--native",
+            "{repo}\\artifacts\\bias-antialiasing\\regression-diagnostic\\baseline\\listen.exe",
+            "--characterize-only",
+            "--output-dir",
+            "{repo}\\artifacts\\bias-antialiasing\\regression-diagnostic\\baseline\\transition"
+          ],
+          "returncode": 0,
+          "stdout": "Rendered 3 cases to {repo}\\artifacts\\bias-antialiasing\\regression-diagnostic\\baseline\\transition\n",
+          "stderr": ""
+        }
+      },
+      "marker_diagnostic": {
+        "required_window_peaks_lr": {
+          "1.25": [
+            0.011638220399618149,
+            0.011638220399618149
+          ],
+          "1.75": [
+            0.01160616334527731,
+            0.01160616334527731
+          ],
+          "2.4": [
+            0.371030330657959,
+            0.371030330657959
+          ],
+          "3.1": [
+            0.01160616334527731,
+            0.01160616334527731
+          ]
+        },
+        "one_second_delayed_peaks": [
+          {
+            "time": 0.0,
+            "amplitude": 0.0
+          },
+          {
+            "time": 1.7494375,
+            "amplitude": 0.3709215223789215
+          },
+          {
+            "time": 2.2494375,
+            "amplitude": 0.3712169826030731
+          },
+          {
+            "time": 3.8994375,
+            "amplitude": 0.371030330657959
+          },
+          {
+            "time": 4.0,
+            "amplitude": 0.0
+          }
+        ]
+      },
+      "three_second_pingpong_diagnostic": {
+        "command": [
+          "{repo}\\artifacts\\bias-antialiasing\\regression-diagnostic\\baseline\\reverse_3s.exe"
+        ],
+        "returncode": 0,
+        "stdout": "Running Reverse Tape Echo V2 Comprehensive DSP Test Suite...\n[Test 0] ReverseWindows unit test: OK\n[Test A] Reverse Impulse Timing (rate=48000): Peak at 47973 (999.438 ms), mag=0.386083: OK\n[Test A] Reverse Impulse Timing (rate=44100): Peak at 44073 (999.388 ms), mag=0.395024: OK\n[Test B] Reverse Window Continuity (rate=48000): max step=0.0243093: OK\n[Test B] Reverse Window Continuity (rate=44100): max step=0.0249527: OK\n[Test C] BPM Accuracy across 60, 90, 120, 140, 180 BPM and 9 subdivisions: OK\n[Test D] Stereo Integrity & Ping-Pong: OK\n[Test E] Feedback Stability (0% to 95% 5s renders): OK\n[Test F] Parameter Automation (BPM, division, feedback, mode, reverse on/off): OK\n[Test G] Silence and Reset: OK\n[Test H] Block Size Independence (1 frame vs 128 frames, avgDiff=0): OK\n[Test I] Musical Timing Audit (30-300 BPM, 9 subdivisions, 10k cycles drift < 0.025 ms, jitter <= 1 frame): OK\n[Test J] Boundary Transitions Audit (BPM, subdivisions, modes, toggle): OK\n[Test K] Clique / Boundary Discontinuity Characterization (smoothstep windowing verified across 7 signals): OK\n[Test L] Reverse Status & Clamping Verification: OK\nAll Reverse Tape Echo V2 Tests PASSED successfully!\n",
+        "stderr": "DIAGNOSTIC 3s energyPpL=0.818524 energyPpR=0.0582458\n"
+      }
+    },
+    "candidate": {
+      "source_sha256": "fd190ec171ee3c80a3349fdae2a0e5ddad4447dba9b1b1be3ddafb525090f0d9",
+      "builds": [
+        {
+          "command": [
+            "{compiler-bin}/c++.exe",
+            "-O3",
+            "-DNDEBUG",
+            "-std=c++17",
+            "-I{repo}\\include",
+            "-I{repo}\\dsp\\core",
+            "-I{repo}\\tests\\core",
+            "-I{repo}\\host\\native\\esp32",
+            "-c",
+            "{repo}\\artifacts\\bias-antialiasing\\regression-diagnostic\\candidate\\tape_core.cpp",
+            "-o",
+            "{repo}\\artifacts\\bias-antialiasing\\regression-diagnostic\\candidate\\tape_core.o"
+          ],
+          "returncode": 0,
+          "stdout": "",
+          "stderr": ""
+        },
+        {
+          "command": [
+            "{compiler-bin}/c++.exe",
+            "-O3",
+            "-DNDEBUG",
+            "-std=c++17",
+            "-I{repo}\\include",
+            "-I{repo}\\dsp\\core",
+            "-I{repo}\\tests\\core",
+            "-I{repo}\\host\\native\\esp32",
+            "-c",
+            "{repo}\\dsp\\core\\hydra_dsp_c_api.cpp",
+            "-o",
+            "{repo}\\artifacts\\bias-antialiasing\\regression-diagnostic\\candidate\\hydra_dsp_c_api.o"
+          ],
+          "returncode": 0,
+          "stdout": "",
+          "stderr": ""
+        },
+        {
+          "command": [
+            "{compiler-bin}/c++.exe",
+            "-O3",
+            "-DNDEBUG",
+            "-std=c++17",
+            "-I{repo}\\include",
+            "-I{repo}\\dsp\\core",
+            "-I{repo}\\tests\\core",
+            "-I{repo}\\host\\native\\esp32",
+            "-c",
+            "{repo}\\host\\native\\esp32\\hydra_dsp_esp32_adapter.cpp",
+            "-o",
+            "{repo}\\artifacts\\bias-antialiasing\\regression-diagnostic\\candidate\\hydra_dsp_esp32_adapter.o"
+          ],
+          "returncode": 0,
+          "stdout": "",
+          "stderr": ""
+        },
+        {
+          "command": [
+            "{compiler-bin}/c++.exe",
+            "-O3",
+            "-DNDEBUG",
+            "-std=c++17",
+            "-I{repo}\\include",
+            "-I{repo}\\dsp\\core",
+            "-I{repo}\\tests\\core",
+            "-I{repo}\\host\\native\\esp32",
+            "{repo}\\tests\\core\\warp_core_test.cpp",
+            "{repo}\\artifacts\\bias-antialiasing\\regression-diagnostic\\candidate\\tape_core.o",
+            "{repo}\\artifacts\\bias-antialiasing\\regression-diagnostic\\candidate\\hydra_dsp_c_api.o",
+            "{repo}\\artifacts\\bias-antialiasing\\regression-diagnostic\\candidate\\hydra_dsp_esp32_adapter.o",
+            "-o",
+            "{repo}\\artifacts\\bias-antialiasing\\regression-diagnostic\\candidate\\warp_core_test.exe"
+          ],
+          "returncode": 0,
+          "stdout": "",
+          "stderr": ""
+        },
+        {
+          "command": [
+            "{compiler-bin}/c++.exe",
+            "-O3",
+            "-DNDEBUG",
+            "-std=c++17",
+            "-I{repo}\\include",
+            "-I{repo}\\dsp\\core",
+            "-I{repo}\\tests\\core",
+            "-I{repo}\\host\\native\\esp32",
+            "{repo}\\artifacts\\bias-antialiasing\\regression-diagnostic\\candidate\\reverse_core_test.cpp",
+            "{repo}\\artifacts\\bias-antialiasing\\regression-diagnostic\\candidate\\tape_core.o",
+            "{repo}\\artifacts\\bias-antialiasing\\regression-diagnostic\\candidate\\hydra_dsp_c_api.o",
+            "{repo}\\artifacts\\bias-antialiasing\\regression-diagnostic\\candidate\\hydra_dsp_esp32_adapter.o",
+            "-o",
+            "{repo}\\artifacts\\bias-antialiasing\\regression-diagnostic\\candidate\\reverse_core_test.exe"
+          ],
+          "returncode": 0,
+          "stdout": "",
+          "stderr": ""
+        },
+        {
+          "command": [
+            "{compiler-bin}/c++.exe",
+            "-O3",
+            "-DNDEBUG",
+            "-std=c++17",
+            "-I{repo}\\include",
+            "-I{repo}\\dsp\\core",
+            "-I{repo}\\tests\\core",
+            "-I{repo}\\host\\native\\esp32",
+            "{repo}\\tests\\core\\listen.cpp",
+            "{repo}\\artifacts\\bias-antialiasing\\regression-diagnostic\\candidate\\tape_core.o",
+            "{repo}\\artifacts\\bias-antialiasing\\regression-diagnostic\\candidate\\hydra_dsp_c_api.o",
+            "{repo}\\artifacts\\bias-antialiasing\\regression-diagnostic\\candidate\\hydra_dsp_esp32_adapter.o",
+            "-o",
+            "{repo}\\artifacts\\bias-antialiasing\\regression-diagnostic\\candidate\\listen.exe"
+          ],
+          "returncode": 0,
+          "stdout": "",
+          "stderr": ""
+        },
+        {
+          "command": [
+            "{compiler-bin}/c++.exe",
+            "-O3",
+            "-DNDEBUG",
+            "-std=c++17",
+            "-I{repo}\\include",
+            "-I{repo}\\dsp\\core",
+            "-I{repo}\\tests\\core",
+            "-I{repo}\\host\\native\\esp32",
+            "{repo}\\tests\\core\\render_trace.cpp",
+            "{repo}\\artifacts\\bias-antialiasing\\regression-diagnostic\\candidate\\tape_core.o",
+            "{repo}\\artifacts\\bias-antialiasing\\regression-diagnostic\\candidate\\hydra_dsp_c_api.o",
+            "{repo}\\artifacts\\bias-antialiasing\\regression-diagnostic\\candidate\\hydra_dsp_esp32_adapter.o",
+            "-o",
+            "{repo}\\artifacts\\bias-antialiasing\\regression-diagnostic\\candidate\\render_trace.exe"
+          ],
+          "returncode": 0,
+          "stdout": "",
+          "stderr": ""
+        },
+        {
+          "command": [
+            "{compiler-bin}/c++.exe",
+            "-O3",
+            "-DNDEBUG",
+            "-std=c++17",
+            "-I{repo}\\include",
+            "-I{repo}\\dsp\\core",
+            "-I{repo}\\tests\\core",
+            "-I{repo}\\host\\native\\esp32",
+            "{repo}\\artifacts\\bias-antialiasing\\regression-diagnostic\\candidate\\reverse_3s.cpp",
+            "{repo}\\artifacts\\bias-antialiasing\\regression-diagnostic\\candidate\\tape_core.o",
+            "{repo}\\artifacts\\bias-antialiasing\\regression-diagnostic\\candidate\\hydra_dsp_c_api.o",
+            "{repo}\\artifacts\\bias-antialiasing\\regression-diagnostic\\candidate\\hydra_dsp_esp32_adapter.o",
+            "-o",
+            "{repo}\\artifacts\\bias-antialiasing\\regression-diagnostic\\candidate\\reverse_3s.exe"
+          ],
+          "returncode": 0,
+          "stdout": "",
+          "stderr": ""
+        }
+      ],
+      "tests": {
+        "warp_core_test": {
+          "command": [
+            "{repo}\\artifacts\\bias-antialiasing\\regression-diagnostic\\candidate\\warp_core_test.exe"
+          ],
+          "returncode": 1,
+          "stdout": "Running Accidental Warp V1.3 Comprehensive DSP Test Suite...\n[Warp Pitch Test] Freq Entrada: 440 Hz | Freq Medida Saida: 880 Hz\n[Warp Stereo Test] DiffSum L/R: 139.428\n[Warp Feedback 0%] Late Energy: 0\n[Warp repeat] 50% difference=0.077934\n[Warp repeat] 80% difference=0.135031\n[Warp Mode 0] Energy L: 534.835 | R: 538.499\n[Warp Mode 1] Energy L: 486.45 | R: 454.283\n[Warp Mode 2] Energy L: 486.067 | R: 454.049\n[Warp Mode 3] Energy L: 534.836 | R: 538.497\n[Bias gate] 44100 Hz peak=6.70577e-07 step=5.32471e-07\n",
+          "stderr": "{repo}\\tests\\core\\warp_core_test.cpp:713: check failed: peak > 1e-6f && step < 0.005f\n"
+        },
+        "reverse_core_test": {
+          "command": [
+            "{repo}\\artifacts\\bias-antialiasing\\regression-diagnostic\\candidate\\reverse_core_test.exe"
+          ],
+          "returncode": 1,
+          "stdout": "Running Reverse Tape Echo V2 Comprehensive DSP Test Suite...\n[Test 0] ReverseWindows unit test: OK\n[Test A] Reverse Impulse Timing (rate=48000): Peak at 47973 (999.438 ms), mag=0.386016: OK\n[Test A] Reverse Impulse Timing (rate=44100): Peak at 44073 (999.388 ms), mag=0.395063: OK\n[Test B] Reverse Window Continuity (rate=48000): max step=0.0142044: OK\n[Test B] Reverse Window Continuity (rate=44100): max step=0.0144748: OK\n[Test C] BPM Accuracy across 60, 90, 120, 140, 180 BPM and 9 subdivisions: OK\n",
+          "stderr": "DIAGNOSTIC energyPpL=0.472956 energyPpR=5.87901e-06\n{repo}\\artifacts\\bias-antialiasing\\regression-diagnostic\\candidate\\reverse_core_test.cpp:240: check failed: energyPpR > 0.001f\n"
+        },
+        "transition_characterization": {
+          "command": [
+            "C:\\Python314\\python.exe",
+            "{repo}\\tests\\core\\listening_review.py",
+            "--native",
+            "{repo}\\artifacts\\bias-antialiasing\\regression-diagnostic\\candidate\\listen.exe",
+            "--characterize-only",
+            "--output-dir",
+            "{repo}\\artifacts\\bias-antialiasing\\regression-diagnostic\\candidate\\transition"
+          ],
+          "returncode": 1,
+          "stdout": "",
+          "stderr": "Traceback (most recent call last):\n  File \"{repo}\\tests\\core\\listening_review.py\", line 298, in <module>\n    main()\n    ~~~~^^\n  File \"{repo}\\tests\\core\\listening_review.py\", line 277, in main\n    record[\"characterization\"][name] = characterize(scene, audio[name], cmd, input_path, work)\n                                       ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"{repo}\\tests\\core\\listening_review.py\", line 193, in characterize\n    raise ValueError(\"reverse marker missing\")\nValueError: reverse marker missing\n"
+        }
+      },
+      "marker_diagnostic": {
+        "required_window_peaks_lr": {
+          "1.25": [
+            3.276713687228039e-05,
+            3.276713687228039e-05
+          ],
+          "1.75": [
+            3.276688948972151e-05,
+            3.276664574514143e-05
+          ],
+          "2.4": [
+            0.37097156047821045,
+            0.37097156047821045
+          ],
+          "3.1": [
+            3.5772416140389396e-07,
+            3.5772416140389396e-07
+          ]
+        },
+        "one_second_delayed_peaks": [
+          {
+            "time": 0.0,
+            "amplitude": 0.0
+          },
+          {
+            "time": 1.7494375,
+            "amplitude": 0.3708649277687073
+          },
+          {
+            "time": 2.2494375,
+            "amplitude": 0.37115368247032166
+          },
+          {
+            "time": 3.8994375,
+            "amplitude": 0.37097156047821045
+          },
+          {
+            "time": 4.0,
+            "amplitude": 0.0
+          }
+        ]
+      },
+      "three_second_pingpong_diagnostic": {
+        "command": [
+          "{repo}\\artifacts\\bias-antialiasing\\regression-diagnostic\\candidate\\reverse_3s.exe"
+        ],
+        "returncode": 0,
+        "stdout": "Running Reverse Tape Echo V2 Comprehensive DSP Test Suite...\n[Test 0] ReverseWindows unit test: OK\n[Test A] Reverse Impulse Timing (rate=48000): Peak at 47973 (999.438 ms), mag=0.386016: OK\n[Test A] Reverse Impulse Timing (rate=44100): Peak at 44073 (999.388 ms), mag=0.395063: OK\n[Test B] Reverse Window Continuity (rate=48000): max step=0.0142044: OK\n[Test B] Reverse Window Continuity (rate=44100): max step=0.0144748: OK\n[Test C] BPM Accuracy across 60, 90, 120, 140, 180 BPM and 9 subdivisions: OK\n[Test D] Stereo Integrity & Ping-Pong: OK\n[Test E] Feedback Stability (0% to 95% 5s renders): OK\n[Test F] Parameter Automation (BPM, division, feedback, mode, reverse on/off): OK\n[Test G] Silence and Reset: OK\n[Test H] Block Size Independence (1 frame vs 128 frames, avgDiff=0): OK\n[Test I] Musical Timing Audit (30-300 BPM, 9 subdivisions, 10k cycles drift < 0.025 ms, jitter <= 1 frame): OK\n[Test J] Boundary Transitions Audit (BPM, subdivisions, modes, toggle): OK\n[Test K] Clique / Boundary Discontinuity Characterization (smoothstep windowing verified across 7 signals): OK\n[Test L] Reverse Status & Clamping Verification: OK\nAll Reverse Tape Echo V2 Tests PASSED successfully!\n",
+        "stderr": "DIAGNOSTIC 3s energyPpL=0.475694 energyPpR=0.0319015\n"
+      }
+    }
+  },
+  "baseline_wasm_build": {
+    "command": [
+      "C:\\emsdk\\upstream\\emscripten\\em++.bat",
+      "-O3",
+      "-DNDEBUG",
+      "-std=c++17",
+      "-I{repo}\\include",
+      "-I{repo}\\dsp\\core",
+      "{repo}\\artifacts\\bias-antialiasing\\regression-diagnostic\\baseline\\tape_core.cpp",
+      "{repo}\\dsp\\core\\hydra_dsp_c_api.cpp",
+      "{repo}\\tests\\core\\render_trace.cpp",
+      "-sENVIRONMENT=node",
+      "-o",
+      "{repo}\\artifacts\\bias-antialiasing\\regression-diagnostic\\baseline\\trace.js"
+    ],
+    "returncode": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  "baseline_equivalence": {
+    "command": [
+      "C:\\Python314\\python.exe",
+      "{repo}\\tests\\core\\compare_native_wasm.py",
+      "--native",
+      "{repo}\\artifacts\\bias-antialiasing\\regression-diagnostic\\baseline\\render_trace.exe",
+      "--wasm-js",
+      "{repo}\\artifacts\\bias-antialiasing\\regression-diagnostic\\baseline\\trace.js",
+      "--max-abs-threshold",
+      "1e-5",
+      "--rmse-threshold",
+      "1e-6",
+      "--report-json",
+      "{repo}\\artifacts\\bias-antialiasing\\regression-diagnostic\\baseline\\equivalence.json",
+      "--report-txt",
+      "{repo}\\artifacts\\bias-antialiasing\\regression-diagnostic\\baseline\\equivalence.txt",
+      "--diff-csv",
+      "{repo}\\artifacts\\bias-antialiasing\\regression-diagnostic\\baseline\\equivalence-diff.csv"
+    ],
+    "returncode": 1,
+    "stdout": "native_vs_wasm_equivalence: max_abs=5.968000000002e-06 rmse=2.344106157418e-06 status=FAIL\n",
+    "stderr": ""
+  },
+  "candidate_wasm_build": {
+    "command": [
+      "C:\\emsdk\\upstream\\emscripten\\em++.bat",
+      "-O3",
+      "-DNDEBUG",
+      "-std=c++17",
+      "-I{repo}\\include",
+      "-I{repo}\\dsp\\core",
+      "{repo}\\artifacts\\bias-antialiasing\\regression-diagnostic\\candidate\\tape_core.cpp",
+      "{repo}\\dsp\\core\\hydra_dsp_c_api.cpp",
+      "{repo}\\tests\\core\\render_trace.cpp",
+      "-sENVIRONMENT=node",
+      "-o",
+      "{repo}\\artifacts\\bias-antialiasing\\regression-diagnostic\\candidate\\trace.js"
+    ],
+    "returncode": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  "candidate_equivalence": {
+    "command": [
+      "C:\\Python314\\python.exe",
+      "{repo}\\tests\\core\\compare_native_wasm.py",
+      "--native",
+      "{repo}\\artifacts\\bias-antialiasing\\regression-diagnostic\\candidate\\render_trace.exe",
+      "--wasm-js",
+      "{repo}\\artifacts\\bias-antialiasing\\regression-diagnostic\\candidate\\trace.js",
+      "--max-abs-threshold",
+      "1e-5",
+      "--rmse-threshold",
+      "1e-6",
+      "--report-json",
+      "{repo}\\artifacts\\bias-antialiasing\\regression-diagnostic\\candidate\\equivalence.json",
+      "--report-txt",
+      "{repo}\\artifacts\\bias-antialiasing\\regression-diagnostic\\candidate\\equivalence.txt",
+      "--diff-csv",
+      "{repo}\\artifacts\\bias-antialiasing\\regression-diagnostic\\candidate\\equivalence-diff.csv"
+    ],
+    "returncode": 1,
+    "stdout": "native_vs_wasm_equivalence: max_abs=7.659000000021e-06 rmse=2.473002165970e-06 status=FAIL\n",
+    "stderr": ""
+  },
+  "equivalence_comparison": {
+    "baseline": {
+      "test_name": "native_vs_wasm_equivalence",
+      "samples": 2048,
+      "max_abs": 5.968000000002027e-06,
+      "rmse": 2.344106157417935e-06,
+      "status": "FAIL",
+      "thresholds": {
+        "max_abs": 1e-05,
+        "rmse": 1e-06
+      }
+    },
+    "candidate": {
+      "test_name": "native_vs_wasm_equivalence",
+      "samples": 2048,
+      "max_abs": 7.659000000020955e-06,
+      "rmse": 2.473002165970061e-06,
+      "status": "FAIL",
+      "thresholds": {
+        "max_abs": 1e-05,
+        "rmse": 1e-06
+      }
+    },
+    "rmse_change": 1.2889600855212622e-07,
+    "max_abs_change": 1.6910000000189274e-06,
+    "error_vector_difference_rmse": 3.877427214117934e-06,
+    "error_vector_difference_max_abs": 1.0810000000014e-05,
+    "limitation": "Same local O3 toolchain; not historical Linux CI measurement. Both fail unchanged RMSE threshold."
+  }
+}

@@ -5,7 +5,8 @@ export function validateManifest(manifest) {
   if (manifest.schema_version !== 1 || !/^[a-f0-9]{40}$/.test(manifest.reference_commit ?? '')) throw Error('Invalid manifest provenance/schema');
   const entries = Object.entries(manifest.scenarios ?? {});
   if (!(manifest.sample_rate_hz > 0)) throw Error('Missing package sample rate');
-  if (entries.length !== 20 || entries.some(([id], i) => Number(id.slice(0, 2)) !== i + 1)) throw Error('Expected 20 ordered scenarios');
+  const expected = manifest.suite === 'Hydra Phase 6.2 Bias A/B' ? 60 : 20;
+  if (entries.length !== expected || entries.some(([id], i) => Number(id.slice(0, 2)) !== i + 1)) throw Error(`Expected ${expected} ordered scenarios`);
   for (const [, s] of entries) {
     if (!(s.duration_sec > 0 && s.sample_rate_hz === manifest.sample_rate_hz) || !s.dsp_params || !s.analysis_metrics || !Array.isArray(s.markers)) throw Error('Invalid scenario metadata');
     for (const kind of ['original_wav', 'processed_wav', 'telemetry_csv']) {

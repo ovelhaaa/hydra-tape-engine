@@ -1,5 +1,11 @@
 # High-pitch whine — isolated bias diagnostic
 
+## Phase 6.2 continuation — 2026-11-19
+
+Historical measurements below were reproduced before production edits, including byte-identical scenario01 control audio. A phase-averaged magnetic-bias candidate now replaces carrier injection; the frozen original triangle is retained only in `dsp/diagnostics/tape_bias_baseline.inc`. `diagnose_bias_whine.py` reconstructs that original control after the production change. Original reference WAVs remain preserved; do not compare the control against a newly rendered candidate package as though it were the old reference.
+
+See [Phase6.2 report](PHASE6_BIAS_ANTIALIASING_REPORT.md) for six isolated variants,44.1/48/96kHz spectra, transfer tests, Native timings, complete-engine failures, numerical comparison and controlled60-pair supplement. Spectral gates49/49 pass, but full-engine22/27 and Native regression12/15 remain blocked. Human A/B is NOT REVIEWED; physical runtime performance is unverified. Historical conclusions below describe the pre-correction model, not approval of the candidate.
+
 Reference commit: `11c1c5d02b65f5a716772c7a2c825dfb4699b842`.
 
 Four separately compiled native libraries from source copies. The official DSP source and release WAVs were not modified. Control musical WAV is byte-identical to the official local scenario 01 WAV.

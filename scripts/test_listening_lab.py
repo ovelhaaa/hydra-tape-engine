@@ -17,9 +17,11 @@ class ListeningDeliveryTests(unittest.TestCase):
         self.addCleanup(self.temp.cleanup)
         self.root = Path(self.temp.name)
 
-    def fixture(self):
+    def fixture(self, count=20):
         manifest = {"schema_version": 1, "human_listening_signoff": "PENDING_HUMAN_AUDITION", "reference_commit": "a" * 40, "api_version": 10700, "scenarios": {}}
-        for i in range(1, 21):
+        if count == 60:
+            manifest["suite"] = "Hydra Phase 6.2 Bias A/B"
+        for i in range(1, count + 1):
             scenario = {"duration_sec": 512 / 48000, "sample_rate_hz": 48000, "dsp_params": {}, "markers": [], "analysis_metrics": {}, "events": [], "tempo_source": 0, "random_seed": i}
             scenario["reference_commit"] = manifest["reference_commit"]
             scenario["markers"] = [{"time": 0, "label": "Audio start"}, {"time": scenario["duration_sec"], "label": "Audio end"}]
@@ -40,6 +42,14 @@ class ListeningDeliveryTests(unittest.TestCase):
     def test_valid_manifest_and_twenty_filesets(self):
         self.fixture()
         self.assertGreater(validate(self.root)[1], 0)
+
+    def test_bias_supplement_requires_sixty_complete_filesets(self):
+        manifest = self.fixture(60)
+        self.assertGreater(validate(self.root)[1], 0)
+        del manifest["scenarios"]["60_test"]
+        (self.root / "manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
+        with self.assertRaisesRegex(ValueError, "60"):
+            validate(self.root)
 
     def test_missing_wav_csv_empty_hash_and_truncation(self):
         for failure in ("missing_wav", "missing_csv", "empty", "hash", "truncated", "truncated_data"):

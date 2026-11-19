@@ -1,6 +1,15 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {Audition, importReviews, exportReviews, verifiedFile, parseTelemetry} from '../engine.mjs';
+import {Audition, importReviews, exportReviews, verifiedFile, parseTelemetry, validateManifest} from '../engine.mjs';
+
+test('bias supplement accepts 60 ordered pairs while original suite keeps 20',()=>{
+ const scenario={duration_sec:6,sample_rate_hz:48000,dsp_params:{},analysis_metrics:{},markers:[]};
+ for(const kind of ['original_wav','processed_wav','telemetry_csv']){scenario[`${kind}_file`]=`${kind}.wav`;scenario[`${kind}_sha256`]='a'.repeat(64);}
+ const manifest={schema_version:1,reference_commit:'a'.repeat(40),sample_rate_hz:48000,suite:'Hydra Phase 6.2 Bias A/B',scenarios:Object.fromEntries(Array.from({length:60},(_,i)=>[`${String(i+1).padStart(2,'0')}_test`,{...scenario}]))};
+ assert.equal(validateManifest(manifest),manifest);
+ assert.throws(()=>validateManifest({...manifest,suite:'original'}),/20/);
+ delete manifest.scenarios['60_test']; assert.throws(()=>validateManifest(manifest),/60/);
+});
 function context() {
   return {currentTime:0,destination:{},resume:async()=>{},createGain:()=>({gain:{value:0,cancelAndHoldAtTime(){},linearRampToValueAtTime(){}},connect(){}}),createBufferSource:()=>({start(t,p){this.started=[t,p];},stop(){this.stopped=true;},connect(){},disconnect(){}})};
 }

@@ -76,6 +76,12 @@ def package(directory, archive=None):
         report = ROOT / "docs/PHASE6_BIAS_ANTIALIASING_REPORT.md"
         if report.exists():
             shutil.copyfile(report, reports / "bias-antialiasing-report.md")
+            shutil.copyfile(ROOT / "docs" / guide, reports / guide)
+            evidence = reports / "evidence"
+            evidence.mkdir(exist_ok=True)
+            for name in ("phase6-bias-antialiasing.json", "phase6-bias-engine.json", "phase6-bias-regressions.json"):
+                shutil.copyfile(ROOT / "docs/evidence" / name, evidence / name)
+            shutil.copytree(ROOT / "docs/evidence/phase6-bias-plots", evidence / "phase6-bias-plots", dirs_exist_ok=True)
     shutil.copyfile(ROOT / "tools/phase6-listening-lab/README.md", directory / "README.md")
     shutil.copytree(ROOT / "tools/phase6-listening-lab", directory / "player", dirs_exist_ok=True,
                     ignore=shutil.ignore_patterns("tests", "node_modules"))

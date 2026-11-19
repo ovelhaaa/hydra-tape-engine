@@ -77,12 +77,15 @@ def package(directory, archive=None):
         if report.exists():
             shutil.copyfile(report, reports / report.name)
             shutil.copyfile(ROOT / "docs/PHASE6_BIAS_HARDWARE_FOLLOWUP.md", reports / "PHASE6_BIAS_HARDWARE_FOLLOWUP.md")
+            shutil.copyfile(ROOT / "docs/PHASE6_BIAS_HUMAN_AUDITION.md", reports / "PHASE6_BIAS_HUMAN_AUDITION.md")
             shutil.copyfile(ROOT / "docs" / guide, reports / guide)
             evidence = reports / "evidence"
             evidence.mkdir(exist_ok=True)
             for name in ("phase6-bias-antialiasing.json", "phase6-bias-engine.json", "phase6-bias-regressions.json",
                          "phase6-bias-hardware.json", "phase6-bias-hardware-variants.json",
-                         "phase6-bias-linux-regressions.json", "phase6-bias-moment-probe.json"):
+                         "phase6-bias-linux-regressions.json", "phase6-bias-moment-probe.json",
+                         "phase6-bias-human-reviews-f0c16cd.json", "phase6-bias-human-reviewed-manifest-f0c16cd.json",
+                         "phase6-bias-human-signoff.json"):
                 shutil.copyfile(ROOT / "docs/evidence" / name, evidence / name)
             shutil.copytree(ROOT / "docs/evidence/phase6-bias-plots", evidence / "phase6-bias-plots", dirs_exist_ok=True)
             shutil.copytree(ROOT / "docs/evidence/phase6-bias-hardware", evidence / "phase6-bias-hardware", dirs_exist_ok=True)

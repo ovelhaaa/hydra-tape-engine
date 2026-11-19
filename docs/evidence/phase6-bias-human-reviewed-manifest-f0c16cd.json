@@ -1,0 +1,3669 @@
+{
+  "schema_version": 1,
+  "suite": "Hydra Phase 6.2 Bias A/B",
+  "reference_commit": "f0c16cddb891ba9079fa4dbbf98f29132ed5c9f0",
+  "api_version": 67328,
+  "native_library_sha256": "a24d2c76c22de104ca52a1b1e8876a100735d1a0e54552c0973f763289ba1314",
+  "working_tree_dirty": false,
+  "source_sha256": "fd190ec171ee3c80a3349fdae2a0e5ddad4447dba9b1b1be3ddafb525090f0d9",
+  "baseline_model_sha256": "1fcd099b0802855e5dbb206bbb7ba5d155fe872b1d83f1993b71c5a230b853bf",
+  "variant_library_sha256": {
+    "baseline": "a24d2c76c22de104ca52a1b1e8876a100735d1a0e54552c0973f763289ba1314",
+    "bias_off": "5646716a66d18310b5532df254cd585ee5cb97db752af87d656f1adc0988e802",
+    "sine": "d9c2c57e6adb4916526bd423d87088384610ca88a0bd289b08a4dc84805ddcff",
+    "bandlimited": "0bed6b53f84118ffb85c04518d0da39bfd2689cf5a60783bd624753d1c38143d",
+    "oversampled": "bf08103d48a945bcafef5569a50d4fccdb5a9a008aa8bc8048dd6b9041331426",
+    "averaged": "ba25a1cd612ecb71d75899b3fadac5f61449a16dc6fcb6f514c72b29a240556d"
+  },
+  "environment": {
+    "os": "Windows-10-10.0.19045-SP0",
+    "python": "3.14.0",
+    "numpy": "2.4.1"
+  },
+  "random_seed": 6200,
+  "sample_rate_hz": 48000,
+  "block_size_frames": 128,
+  "human_listening_signoff": "PENDING_HUMAN_AUDITION",
+  "scenarios": {
+    "01_01_bias_off": {
+      "name": "Clean guitar isolated notes: baseline vs bias_off",
+      "group": "Bias A/B \u2014 bias_off",
+      "description": "A / Original = triangular baseline output; B / Processed = variant output. Same gain; no normalization.",
+      "duration_sec": 6.0,
+      "bpm": 120.0,
+      "tempo_source": 0,
+      "reference_commit": "f0c16cddb891ba9079fa4dbbf98f29132ed5c9f0",
+      "random_seed": 6201,
+      "events": [],
+      "clock_pulses": [],
+      "sample_rate_hz": 48000,
+      "source_material": "clean_guitar",
+      "comparison_variant": "bias_off",
+      "comparison_case": 1,
+      "comparison_title": "Clean guitar isolated notes",
+      "human_review_state": "NOT REVIEWED",
+      "stimulus_sha256": "bc960ca6361d1a29b63551a77855dfac2e22f4aab1584a734c0420d524e6aeda",
+      "dsp_params": {
+        "0": 8.0,
+        "1": 6.0,
+        "3": 25.0,
+        "4": 10.0,
+        "11": 1.0,
+        "12": 500.0,
+        "13": 35.0,
+        "14": 50.0,
+        "15": 50.0,
+        "16": 4.0,
+        "17": 120.0,
+        "18": 0.0,
+        "21": 0.0,
+        "23": 0.0,
+        "30": 0.0,
+        "25": 0.0,
+        "36": 0.0,
+        "37": 0.0
+      },
+      "markers": [
+        {
+          "time": 0.0,
+          "label": "Audio start"
+        },
+        {
+          "time": 6.0,
+          "label": "Audio end"
+        }
+      ],
+      "analysis_metrics": {
+        "baseline_rms": 0.08435140068617095,
+        "variant_rms": 0.08434900935638767,
+        "variant_peak": 0.4978577494621277
+      },
+      "original_wav_file": "01_01_bias_off_original_wav.wav",
+      "original_wav_sha256": "3739aa6e87169c80d7eae80daccef2a8732ca995222598ca2f5997f555fa1f50",
+      "processed_wav_file": "01_01_bias_off_processed_wav.wav",
+      "processed_wav_sha256": "8fd52a300da8b8884c79bb2fcecb58b6698bbfe4e9ab720e1973ff735aa39596",
+      "telemetry_csv_file": "01_01_bias_off_telemetry.csv",
+      "telemetry_csv_sha256": "cad9d0f390acae1a12276d27e92c3432a6db1afac2135030332839eb870fcc2e"
+    },
+    "02_01_sine": {
+      "name": "Clean guitar isolated notes: baseline vs sine",
+      "group": "Bias A/B \u2014 sine",
+      "description": "A / Original = triangular baseline output; B / Processed = variant output. Same gain; no normalization.",
+      "duration_sec": 6.0,
+      "bpm": 120.0,
+      "tempo_source": 0,
+      "reference_commit": "f0c16cddb891ba9079fa4dbbf98f29132ed5c9f0",
+      "random_seed": 6201,
+      "events": [],
+      "clock_pulses": [],
+      "sample_rate_hz": 48000,
+      "source_material": "clean_guitar",
+      "comparison_variant": "sine",
+      "comparison_case": 1,
+      "comparison_title": "Clean guitar isolated notes",
+      "human_review_state": "NOT REVIEWED",
+      "stimulus_sha256": "bc960ca6361d1a29b63551a77855dfac2e22f4aab1584a734c0420d524e6aeda",
+      "dsp_params": {
+        "0": 8.0,
+        "1": 6.0,
+        "3": 25.0,
+        "4": 10.0,
+        "11": 1.0,
+        "12": 500.0,
+        "13": 35.0,
+        "14": 50.0,
+        "15": 50.0,
+        "16": 4.0,
+        "17": 120.0,
+        "18": 0.0,
+        "21": 0.0,
+        "23": 0.0,
+        "30": 0.0,
+        "25": 0.0,
+        "36": 0.0,
+        "37": 0.0
+      },
+      "markers": [
+        {
+          "time": 0.0,
+          "label": "Audio start"
+        },
+        {
+          "time": 6.0,
+          "label": "Audio end"
+        }
+      ],
+      "analysis_metrics": {
+        "baseline_rms": 0.08435140068617095,
+        "variant_rms": 0.0842550827219582,
+        "variant_peak": 0.4977973699569702
+      },
+      "original_wav_file": "02_01_sine_original_wav.wav",
+      "original_wav_sha256": "3739aa6e87169c80d7eae80daccef2a8732ca995222598ca2f5997f555fa1f50",
+      "processed_wav_file": "02_01_sine_processed_wav.wav",
+      "processed_wav_sha256": "948d77a4e3594965cc2c47a9c908a930a2d6036ef473406be7c1bcff42062e26",
+      "telemetry_csv_file": "02_01_sine_telemetry.csv",
+      "telemetry_csv_sha256": "8e554edda6586a4a515c5fe56d2116ec5d84d0b1ad07725e0df32e25b759db0f"
+    },
+    "03_01_bandlimited": {
+      "name": "Clean guitar isolated notes: baseline vs bandlimited",
+      "group": "Bias A/B \u2014 bandlimited",
+      "description": "A / Original = triangular baseline output; B / Processed = variant output. Same gain; no normalization.",
+      "duration_sec": 6.0,
+      "bpm": 120.0,
+      "tempo_source": 0,
+      "reference_commit": "f0c16cddb891ba9079fa4dbbf98f29132ed5c9f0",
+      "random_seed": 6201,
+      "events": [],
+      "clock_pulses": [],
+      "sample_rate_hz": 48000,
+      "source_material": "clean_guitar",
+      "comparison_variant": "bandlimited",
+      "comparison_case": 1,
+      "comparison_title": "Clean guitar isolated notes",
+      "human_review_state": "NOT REVIEWED",
+      "stimulus_sha256": "bc960ca6361d1a29b63551a77855dfac2e22f4aab1584a734c0420d524e6aeda",
+      "dsp_params": {
+        "0": 8.0,
+        "1": 6.0,
+        "3": 25.0,
+        "4": 10.0,
+        "11": 1.0,
+        "12": 500.0,
+        "13": 35.0,
+        "14": 50.0,
+        "15": 50.0,
+        "16": 4.0,
+        "17": 120.0,
+        "18": 0.0,
+        "21": 0.0,
+        "23": 0.0,
+        "30": 0.0,
+        "25": 0.0,
+        "36": 0.0,
+        "37": 0.0
+      },
+      "markers": [
+        {
+          "time": 0.0,
+          "label": "Audio start"
+        },
+        {
+          "time": 6.0,
+          "label": "Audio end"
+        }
+      ],
+      "analysis_metrics": {
+        "baseline_rms": 0.08435140068617095,
+        "variant_rms": 0.08428729252495266,
+        "variant_peak": 0.4976455569267273
+      },
+      "original_wav_file": "03_01_bandlimited_original_wav.wav",
+      "original_wav_sha256": "3739aa6e87169c80d7eae80daccef2a8732ca995222598ca2f5997f555fa1f50",
+      "processed_wav_file": "03_01_bandlimited_processed_wav.wav",
+      "processed_wav_sha256": "caf59552a19aaa48b29b56f027e400aed398f144170469fd811ce9cfc87d1246",
+      "telemetry_csv_file": "03_01_bandlimited_telemetry.csv",
+      "telemetry_csv_sha256": "d8c8cd8ba2f8d7f568c2f598747c356aee717491c8be35c61c85a37e6b17e314"
+    },
+    "04_01_oversampled": {
+      "name": "Clean guitar isolated notes: baseline vs oversampled",
+      "group": "Bias A/B \u2014 oversampled",
+      "description": "A / Original = triangular baseline output; B / Processed = variant output. Same gain; no normalization.",
+      "duration_sec": 6.0,
+      "bpm": 120.0,
+      "tempo_source": 0,
+      "reference_commit": "f0c16cddb891ba9079fa4dbbf98f29132ed5c9f0",
+      "random_seed": 6201,
+      "events": [],
+      "clock_pulses": [],
+      "sample_rate_hz": 48000,
+      "source_material": "clean_guitar",
+      "comparison_variant": "oversampled",
+      "comparison_case": 1,
+      "comparison_title": "Clean guitar isolated notes",
+      "human_review_state": "NOT REVIEWED",
+      "stimulus_sha256": "bc960ca6361d1a29b63551a77855dfac2e22f4aab1584a734c0420d524e6aeda",
+      "dsp_params": {
+        "0": 8.0,
+        "1": 6.0,
+        "3": 25.0,
+        "4": 10.0,
+        "11": 1.0,
+        "12": 500.0,
+        "13": 35.0,
+        "14": 50.0,
+        "15": 50.0,
+        "16": 4.0,
+        "17": 120.0,
+        "18": 0.0,
+        "21": 0.0,
+        "23": 0.0,
+        "30": 0.0,
+        "25": 0.0,
+        "36": 0.0,
+        "37": 0.0
+      },
+      "markers": [
+        {
+          "time": 0.0,
+          "label": "Audio start"
+        },
+        {
+          "time": 6.0,
+          "label": "Audio end"
+        }
+      ],
+      "analysis_metrics": {
+        "baseline_rms": 0.08435140068617095,
+        "variant_rms": 0.08082467532186378,
+        "variant_peak": 0.4871329069137573
+      },
+      "original_wav_file": "04_01_oversampled_original_wav.wav",
+      "original_wav_sha256": "3739aa6e87169c80d7eae80daccef2a8732ca995222598ca2f5997f555fa1f50",
+      "processed_wav_file": "04_01_oversampled_processed_wav.wav",
+      "processed_wav_sha256": "6b2cd403ae17486c96d5da42c31bec3826fc0702a6368639a50bab29175dd2e4",
+      "telemetry_csv_file": "04_01_oversampled_telemetry.csv",
+      "telemetry_csv_sha256": "d954450fff34b2208cce0123eef882fdb72bc90295d796de75fa6ab267a56acd"
+    },
+    "05_01_averaged": {
+      "name": "Clean guitar isolated notes: baseline vs averaged",
+      "group": "Bias A/B \u2014 averaged",
+      "description": "A / Original = triangular baseline output; B / Processed = variant output. Same gain; no normalization.",
+      "duration_sec": 6.0,
+      "bpm": 120.0,
+      "tempo_source": 0,
+      "reference_commit": "f0c16cddb891ba9079fa4dbbf98f29132ed5c9f0",
+      "random_seed": 6201,
+      "events": [],
+      "clock_pulses": [],
+      "sample_rate_hz": 48000,
+      "source_material": "clean_guitar",
+      "comparison_variant": "averaged",
+      "comparison_case": 1,
+      "comparison_title": "Clean guitar isolated notes",
+      "human_review_state": "NOT REVIEWED",
+      "stimulus_sha256": "bc960ca6361d1a29b63551a77855dfac2e22f4aab1584a734c0420d524e6aeda",
+      "dsp_params": {
+        "0": 8.0,
+        "1": 6.0,
+        "3": 25.0,
+        "4": 10.0,
+        "11": 1.0,
+        "12": 500.0,
+        "13": 35.0,
+        "14": 50.0,
+        "15": 50.0,
+        "16": 4.0,
+        "17": 120.0,
+        "18": 0.0,
+        "21": 0.0,
+        "23": 0.0,
+        "30": 0.0,
+        "25": 0.0,
+        "36": 0.0,
+        "37": 0.0
+      },
+      "markers": [
+        {
+          "time": 0.0,
+          "label": "Audio start"
+        },
+        {
+          "time": 6.0,
+          "label": "Audio end"
+        }
+      ],
+      "analysis_metrics": {
+        "baseline_rms": 0.08435140068617095,
+        "variant_rms": 0.08427438622359275,
+        "variant_peak": 0.49759912490844727
+      },
+      "original_wav_file": "05_01_averaged_original_wav.wav",
+      "original_wav_sha256": "3739aa6e87169c80d7eae80daccef2a8732ca995222598ca2f5997f555fa1f50",
+      "processed_wav_file": "05_01_averaged_processed_wav.wav",
+      "processed_wav_sha256": "be508e5d1a4b1aecc55b68de994eff1895403646c2788520fbaf31cfa0d17c21",
+      "telemetry_csv_file": "05_01_averaged_telemetry.csv",
+      "telemetry_csv_sha256": "6dffd17b2300b99543af1a368472e34bae9bfadd89107e7fa21cadead6c674f3"
+    },
+    "06_02_bias_off": {
+      "name": "Clean guitar chords: baseline vs bias_off",
+      "group": "Bias A/B \u2014 bias_off",
+      "description": "A / Original = triangular baseline output; B / Processed = variant output. Same gain; no normalization.",
+      "duration_sec": 6.0,
+      "bpm": 120.0,
+      "tempo_source": 0,
+      "reference_commit": "f0c16cddb891ba9079fa4dbbf98f29132ed5c9f0",
+      "random_seed": 6202,
+      "events": [],
+      "clock_pulses": [],
+      "sample_rate_hz": 48000,
+      "source_material": "clean_guitar",
+      "comparison_variant": "bias_off",
+      "comparison_case": 2,
+      "comparison_title": "Clean guitar chords",
+      "human_review_state": "NOT REVIEWED",
+      "stimulus_sha256": "0b52aa1f4de14990af89bb66e5ce2c458c3aee166dba16539f5b4c2e99b298d0",
+      "dsp_params": {
+        "0": 8.0,
+        "1": 6.0,
+        "3": 25.0,
+        "4": 10.0,
+        "11": 1.0,
+        "12": 500.0,
+        "13": 35.0,
+        "14": 50.0,
+        "15": 50.0,
+        "16": 4.0,
+        "17": 120.0,
+        "18": 0.0,
+        "21": 0.0,
+        "23": 0.0,
+        "30": 0.0,
+        "25": 0.0,
+        "36": 0.0,
+        "37": 0.0
+      },
+      "markers": [
+        {
+          "time": 0.0,
+          "label": "Audio start"
+        },
+        {
+          "time": 6.0,
+          "label": "Audio end"
+        }
+      ],
+      "analysis_metrics": {
+        "baseline_rms": 0.08921804300040806,
+        "variant_rms": 0.08922855058701563,
+        "variant_peak": 0.46402397751808167
+      },
+      "original_wav_file": "06_02_bias_off_original_wav.wav",
+      "original_wav_sha256": "0a666531067a5cd06752d46b9955235bd997fb4302c31c45787e016391cad97b",
+      "processed_wav_file": "06_02_bias_off_processed_wav.wav",
+      "processed_wav_sha256": "ab04c948c0a71569de0b1023e6c763bfba8d88062461485a7942a2d8d1360b3a",
+      "telemetry_csv_file": "06_02_bias_off_telemetry.csv",
+      "telemetry_csv_sha256": "650f5edd285bbc9bb944fe605dc3872f6f53d60481584a4c0dca14179de32be0"
+    },
+    "07_02_sine": {
+      "name": "Clean guitar chords: baseline vs sine",
+      "group": "Bias A/B \u2014 sine",
+      "description": "A / Original = triangular baseline output; B / Processed = variant output. Same gain; no normalization.",
+      "duration_sec": 6.0,
+      "bpm": 120.0,
+      "tempo_source": 0,
+      "reference_commit": "f0c16cddb891ba9079fa4dbbf98f29132ed5c9f0",
+      "random_seed": 6202,
+      "events": [],
+      "clock_pulses": [],
+      "sample_rate_hz": 48000,
+      "source_material": "clean_guitar",
+      "comparison_variant": "sine",
+      "comparison_case": 2,
+      "comparison_title": "Clean guitar chords",
+      "human_review_state": "NOT REVIEWED",
+      "stimulus_sha256": "0b52aa1f4de14990af89bb66e5ce2c458c3aee166dba16539f5b4c2e99b298d0",
+      "dsp_params": {
+        "0": 8.0,
+        "1": 6.0,
+        "3": 25.0,
+        "4": 10.0,
+        "11": 1.0,
+        "12": 500.0,
+        "13": 35.0,
+        "14": 50.0,
+        "15": 50.0,
+        "16": 4.0,
+        "17": 120.0,
+        "18": 0.0,
+        "21": 0.0,
+        "23": 0.0,
+        "30": 0.0,
+        "25": 0.0,
+        "36": 0.0,
+        "37": 0.0
+      },
+      "markers": [
+        {
+          "time": 0.0,
+          "label": "Audio start"
+        },
+        {
+          "time": 6.0,
+          "label": "Audio end"
+        }
+      ],
+      "analysis_metrics": {
+        "baseline_rms": 0.08921804300040806,
+        "variant_rms": 0.08912316574576101,
+        "variant_peak": 0.4638878107070923
+      },
+      "original_wav_file": "07_02_sine_original_wav.wav",
+      "original_wav_sha256": "0a666531067a5cd06752d46b9955235bd997fb4302c31c45787e016391cad97b",
+      "processed_wav_file": "07_02_sine_processed_wav.wav",
+      "processed_wav_sha256": "68f7be13170de0a32c9e0e6f6aa82cc4c0dc4a22553fc9b3ac4365c948421b57",
+      "telemetry_csv_file": "07_02_sine_telemetry.csv",
+      "telemetry_csv_sha256": "0b76e54950554ba0e5f7a014ad5ea618a04726f1648ce9a997352e122559067f"
+    },
+    "08_02_bandlimited": {
+      "name": "Clean guitar chords: baseline vs bandlimited",
+      "group": "Bias A/B \u2014 bandlimited",
+      "description": "A / Original = triangular baseline output; B / Processed = variant output. Same gain; no normalization.",
+      "duration_sec": 6.0,
+      "bpm": 120.0,
+      "tempo_source": 0,
+      "reference_commit": "f0c16cddb891ba9079fa4dbbf98f29132ed5c9f0",
+      "random_seed": 6202,
+      "events": [],
+      "clock_pulses": [],
+      "sample_rate_hz": 48000,
+      "source_material": "clean_guitar",
+      "comparison_variant": "bandlimited",
+      "comparison_case": 2,
+      "comparison_title": "Clean guitar chords",
+      "human_review_state": "NOT REVIEWED",
+      "stimulus_sha256": "0b52aa1f4de14990af89bb66e5ce2c458c3aee166dba16539f5b4c2e99b298d0",
+      "dsp_params": {
+        "0": 8.0,
+        "1": 6.0,
+        "3": 25.0,
+        "4": 10.0,
+        "11": 1.0,
+        "12": 500.0,
+        "13": 35.0,
+        "14": 50.0,
+        "15": 50.0,
+        "16": 4.0,
+        "17": 120.0,
+        "18": 0.0,
+        "21": 0.0,
+        "23": 0.0,
+        "30": 0.0,
+        "25": 0.0,
+        "36": 0.0,
+        "37": 0.0
+      },
+      "markers": [
+        {
+          "time": 0.0,
+          "label": "Audio start"
+        },
+        {
+          "time": 6.0,
+          "label": "Audio end"
+        }
+      ],
+      "analysis_metrics": {
+        "baseline_rms": 0.08921804300040806,
+        "variant_rms": 0.0891593248214239,
+        "variant_peak": 0.46355441212654114
+      },
+      "original_wav_file": "08_02_bandlimited_original_wav.wav",
+      "original_wav_sha256": "0a666531067a5cd06752d46b9955235bd997fb4302c31c45787e016391cad97b",
+      "processed_wav_file": "08_02_bandlimited_processed_wav.wav",
+      "processed_wav_sha256": "7edfaddc3ba443d1bfa1f69db241c142a0e973d810434a592d006230cb031884",
+      "telemetry_csv_file": "08_02_bandlimited_telemetry.csv",
+      "telemetry_csv_sha256": "c54282d1ac26fb4f67f623e5a149bf6d4018ebb4c65f3fb74b0b7fa85c13319a"
+    },
+    "09_02_oversampled": {
+      "name": "Clean guitar chords: baseline vs oversampled",
+      "group": "Bias A/B \u2014 oversampled",
+      "description": "A / Original = triangular baseline output; B / Processed = variant output. Same gain; no normalization.",
+      "duration_sec": 6.0,
+      "bpm": 120.0,
+      "tempo_source": 0,
+      "reference_commit": "f0c16cddb891ba9079fa4dbbf98f29132ed5c9f0",
+      "random_seed": 6202,
+      "events": [],
+      "clock_pulses": [],
+      "sample_rate_hz": 48000,
+      "source_material": "clean_guitar",
+      "comparison_variant": "oversampled",
+      "comparison_case": 2,
+      "comparison_title": "Clean guitar chords",
+      "human_review_state": "NOT REVIEWED",
+      "stimulus_sha256": "0b52aa1f4de14990af89bb66e5ce2c458c3aee166dba16539f5b4c2e99b298d0",
+      "dsp_params": {
+        "0": 8.0,
+        "1": 6.0,
+        "3": 25.0,
+        "4": 10.0,
+        "11": 1.0,
+        "12": 500.0,
+        "13": 35.0,
+        "14": 50.0,
+        "15": 50.0,
+        "16": 4.0,
+        "17": 120.0,
+        "18": 0.0,
+        "21": 0.0,
+        "23": 0.0,
+        "30": 0.0,
+        "25": 0.0,
+        "36": 0.0,
+        "37": 0.0
+      },
+      "markers": [
+        {
+          "time": 0.0,
+          "label": "Audio start"
+        },
+        {
+          "time": 6.0,
+          "label": "Audio end"
+        }
+      ],
+      "analysis_metrics": {
+        "baseline_rms": 0.08921804300040806,
+        "variant_rms": 0.08834279038332071,
+        "variant_peak": 0.4670172929763794
+      },
+      "original_wav_file": "09_02_oversampled_original_wav.wav",
+      "original_wav_sha256": "0a666531067a5cd06752d46b9955235bd997fb4302c31c45787e016391cad97b",
+      "processed_wav_file": "09_02_oversampled_processed_wav.wav",
+      "processed_wav_sha256": "bcd394ff061e2fe85ae35a821e1359284a680b651a6895d82d44ca82c97353a0",
+      "telemetry_csv_file": "09_02_oversampled_telemetry.csv",
+      "telemetry_csv_sha256": "455cd3c97fa2f8d1c553356996c2a982eb9e7cd572dad46bbaefa54ecc4cd5d3"
+    },
+    "10_02_averaged": {
+      "name": "Clean guitar chords: baseline vs averaged",
+      "group": "Bias A/B \u2014 averaged",
+      "description": "A / Original = triangular baseline output; B / Processed = variant output. Same gain; no normalization.",
+      "duration_sec": 6.0,
+      "bpm": 120.0,
+      "tempo_source": 0,
+      "reference_commit": "f0c16cddb891ba9079fa4dbbf98f29132ed5c9f0",
+      "random_seed": 6202,
+      "events": [],
+      "clock_pulses": [],
+      "sample_rate_hz": 48000,
+      "source_material": "clean_guitar",
+      "comparison_variant": "averaged",
+      "comparison_case": 2,
+      "comparison_title": "Clean guitar chords",
+      "human_review_state": "NOT REVIEWED",
+      "stimulus_sha256": "0b52aa1f4de14990af89bb66e5ce2c458c3aee166dba16539f5b4c2e99b298d0",
+      "dsp_params": {
+        "0": 8.0,
+        "1": 6.0,
+        "3": 25.0,
+        "4": 10.0,
+        "11": 1.0,
+        "12": 500.0,
+        "13": 35.0,
+        "14": 50.0,
+        "15": 50.0,
+        "16": 4.0,
+        "17": 120.0,
+        "18": 0.0,
+        "21": 0.0,
+        "23": 0.0,
+        "30": 0.0,
+        "25": 0.0,
+        "36": 0.0,
+        "37": 0.0
+      },
+      "markers": [
+        {
+          "time": 0.0,
+          "label": "Audio start"
+        },
+        {
+          "time": 6.0,
+          "label": "Audio end"
+        }
+      ],
+      "analysis_metrics": {
+        "baseline_rms": 0.08921804300040806,
+        "variant_rms": 0.08914539063552002,
+        "variant_peak": 0.46364232897758484
+      },
+      "original_wav_file": "10_02_averaged_original_wav.wav",
+      "original_wav_sha256": "0a666531067a5cd06752d46b9955235bd997fb4302c31c45787e016391cad97b",
+      "processed_wav_file": "10_02_averaged_processed_wav.wav",
+      "processed_wav_sha256": "81aa5f84ce449a810f909bd4963068e4046251f75c2db4b55e8155d290363fa2",
+      "telemetry_csv_file": "10_02_averaged_telemetry.csv",
+      "telemetry_csv_sha256": "a2c9c66fd323361ee53b7fdc7cade390c222523517ebae421f3193930f558813"
+    },
+    "11_03_bias_off": {
+      "name": "Driven guitar: baseline vs bias_off",
+      "group": "Bias A/B \u2014 bias_off",
+      "description": "A / Original = triangular baseline output; B / Processed = variant output. Same gain; no normalization.",
+      "duration_sec": 6.0,
+      "bpm": 120.0,
+      "tempo_source": 0,
+      "reference_commit": "f0c16cddb891ba9079fa4dbbf98f29132ed5c9f0",
+      "random_seed": 6203,
+      "events": [],
+      "clock_pulses": [],
+      "sample_rate_hz": 48000,
+      "source_material": "driven_guitar",
+      "comparison_variant": "bias_off",
+      "comparison_case": 3,
+      "comparison_title": "Driven guitar",
+      "human_review_state": "NOT REVIEWED",
+      "stimulus_sha256": "ce81fe7a5be302fed96cc95d07fda2d84873cc28f910876f9d97ee9cb331e1dc",
+      "dsp_params": {
+        "0": 8.0,
+        "1": 6.0,
+        "3": 100.0,
+        "4": 10.0,
+        "11": 1.0,
+        "12": 500.0,
+        "13": 35.0,
+        "14": 50.0,
+        "15": 50.0,
+        "16": 4.0,
+        "17": 120.0,
+        "18": 0.0,
+        "21": 0.0,
+        "23": 0.0,
+        "30": 0.0,
+        "25": 0.0,
+        "36": 0.0,
+        "37": 0.0
+      },
+      "markers": [
+        {
+          "time": 0.0,
+          "label": "Audio start"
+        },
+        {
+          "time": 6.0,
+          "label": "Audio end"
+        }
+      ],
+      "analysis_metrics": {
+        "baseline_rms": 0.4996054488867059,
+        "variant_rms": 0.49964447798436606,
+        "variant_peak": 0.9644038677215576
+      },
+      "original_wav_file": "11_03_bias_off_original_wav.wav",
+      "original_wav_sha256": "d6a10360a48adfbc3d5ad2b9563cbd4f38caccd499f758691fab66b08192e671",
+      "processed_wav_file": "11_03_bias_off_processed_wav.wav",
+      "processed_wav_sha256": "e5be4d17575556bcb8797f4f186a067dc5ef86e48b294b240ff19dfbb7b6ffee",
+      "telemetry_csv_file": "11_03_bias_off_telemetry.csv",
+      "telemetry_csv_sha256": "dcc4d126e279e8645bda25ef875866c9c6217444bd5e5bbc8ba58cc87bdcc07e"
+    },
+    "12_03_sine": {
+      "name": "Driven guitar: baseline vs sine",
+      "group": "Bias A/B \u2014 sine",
+      "description": "A / Original = triangular baseline output; B / Processed = variant output. Same gain; no normalization.",
+      "duration_sec": 6.0,
+      "bpm": 120.0,
+      "tempo_source": 0,
+      "reference_commit": "f0c16cddb891ba9079fa4dbbf98f29132ed5c9f0",
+      "random_seed": 6203,
+      "events": [],
+      "clock_pulses": [],
+      "sample_rate_hz": 48000,
+      "source_material": "driven_guitar",
+      "comparison_variant": "sine",
+      "comparison_case": 3,
+      "comparison_title": "Driven guitar",
+      "human_review_state": "NOT REVIEWED",
+      "stimulus_sha256": "ce81fe7a5be302fed96cc95d07fda2d84873cc28f910876f9d97ee9cb331e1dc",
+      "dsp_params": {
+        "0": 8.0,
+        "1": 6.0,
+        "3": 100.0,
+        "4": 10.0,
+        "11": 1.0,
+        "12": 500.0,
+        "13": 35.0,
+        "14": 50.0,
+        "15": 50.0,
+        "16": 4.0,
+        "17": 120.0,
+        "18": 0.0,
+        "21": 0.0,
+        "23": 0.0,
+        "30": 0.0,
+        "25": 0.0,
+        "36": 0.0,
+        "37": 0.0
+      },
+      "markers": [
+        {
+          "time": 0.0,
+          "label": "Audio start"
+        },
+        {
+          "time": 6.0,
+          "label": "Audio end"
+        }
+      ],
+      "analysis_metrics": {
+        "baseline_rms": 0.4996054488867059,
+        "variant_rms": 0.49958077050715227,
+        "variant_peak": 0.9643895030021667
+      },
+      "original_wav_file": "12_03_sine_original_wav.wav",
+      "original_wav_sha256": "d6a10360a48adfbc3d5ad2b9563cbd4f38caccd499f758691fab66b08192e671",
+      "processed_wav_file": "12_03_sine_processed_wav.wav",
+      "processed_wav_sha256": "c8c09591ed675492a59a21fea644b78be307bb2be1fbe6ff85f9178a1d91a6cb",
+      "telemetry_csv_file": "12_03_sine_telemetry.csv",
+      "telemetry_csv_sha256": "f0136e3b634539a327e2b632c77273a5aa722355d390290f1326b194b87c5d40"
+    },
+    "13_03_bandlimited": {
+      "name": "Driven guitar: baseline vs bandlimited",
+      "group": "Bias A/B \u2014 bandlimited",
+      "description": "A / Original = triangular baseline output; B / Processed = variant output. Same gain; no normalization.",
+      "duration_sec": 6.0,
+      "bpm": 120.0,
+      "tempo_source": 0,
+      "reference_commit": "f0c16cddb891ba9079fa4dbbf98f29132ed5c9f0",
+      "random_seed": 6203,
+      "events": [],
+      "clock_pulses": [],
+      "sample_rate_hz": 48000,
+      "source_material": "driven_guitar",
+      "comparison_variant": "bandlimited",
+      "comparison_case": 3,
+      "comparison_title": "Driven guitar",
+      "human_review_state": "NOT REVIEWED",
+      "stimulus_sha256": "ce81fe7a5be302fed96cc95d07fda2d84873cc28f910876f9d97ee9cb331e1dc",
+      "dsp_params": {
+        "0": 8.0,
+        "1": 6.0,
+        "3": 100.0,
+        "4": 10.0,
+        "11": 1.0,
+        "12": 500.0,
+        "13": 35.0,
+        "14": 50.0,
+        "15": 50.0,
+        "16": 4.0,
+        "17": 120.0,
+        "18": 0.0,
+        "21": 0.0,
+        "23": 0.0,
+        "30": 0.0,
+        "25": 0.0,
+        "36": 0.0,
+        "37": 0.0
+      },
+      "markers": [
+        {
+          "time": 0.0,
+          "label": "Audio start"
+        },
+        {
+          "time": 6.0,
+          "label": "Audio end"
+        }
+      ],
+      "analysis_metrics": {
+        "baseline_rms": 0.4996054488867059,
+        "variant_rms": 0.4996020556429101,
+        "variant_peak": 0.9643971920013428
+      },
+      "original_wav_file": "13_03_bandlimited_original_wav.wav",
+      "original_wav_sha256": "d6a10360a48adfbc3d5ad2b9563cbd4f38caccd499f758691fab66b08192e671",
+      "processed_wav_file": "13_03_bandlimited_processed_wav.wav",
+      "processed_wav_sha256": "3eba6a364e4ff3964f6dcace1d5ce9d6b4c0a48281dad20a610bb82d922529bc",
+      "telemetry_csv_file": "13_03_bandlimited_telemetry.csv",
+      "telemetry_csv_sha256": "10df4c17df8df3a2972e78ea586c2bc25339f15ffea862f19d47d334384273f7"
+    },
+    "14_03_oversampled": {
+      "name": "Driven guitar: baseline vs oversampled",
+      "group": "Bias A/B \u2014 oversampled",
+      "description": "A / Original = triangular baseline output; B / Processed = variant output. Same gain; no normalization.",
+      "duration_sec": 6.0,
+      "bpm": 120.0,
+      "tempo_source": 0,
+      "reference_commit": "f0c16cddb891ba9079fa4dbbf98f29132ed5c9f0",
+      "random_seed": 6203,
+      "events": [],
+      "clock_pulses": [],
+      "sample_rate_hz": 48000,
+      "source_material": "driven_guitar",
+      "comparison_variant": "oversampled",
+      "comparison_case": 3,
+      "comparison_title": "Driven guitar",
+      "human_review_state": "NOT REVIEWED",
+      "stimulus_sha256": "ce81fe7a5be302fed96cc95d07fda2d84873cc28f910876f9d97ee9cb331e1dc",
+      "dsp_params": {
+        "0": 8.0,
+        "1": 6.0,
+        "3": 100.0,
+        "4": 10.0,
+        "11": 1.0,
+        "12": 500.0,
+        "13": 35.0,
+        "14": 50.0,
+        "15": 50.0,
+        "16": 4.0,
+        "17": 120.0,
+        "18": 0.0,
+        "21": 0.0,
+        "23": 0.0,
+        "30": 0.0,
+        "25": 0.0,
+        "36": 0.0,
+        "37": 0.0
+      },
+      "markers": [
+        {
+          "time": 0.0,
+          "label": "Audio start"
+        },
+        {
+          "time": 6.0,
+          "label": "Audio end"
+        }
+      ],
+      "analysis_metrics": {
+        "baseline_rms": 0.4996054488867059,
+        "variant_rms": 0.508917976861246,
+        "variant_peak": 0.9637188911437988
+      },
+      "original_wav_file": "14_03_oversampled_original_wav.wav",
+      "original_wav_sha256": "d6a10360a48adfbc3d5ad2b9563cbd4f38caccd499f758691fab66b08192e671",
+      "processed_wav_file": "14_03_oversampled_processed_wav.wav",
+      "processed_wav_sha256": "0920efb8e25e7cf771abb787494e39030c1b5c69589c0ab50bfc80af78bae9cd",
+      "telemetry_csv_file": "14_03_oversampled_telemetry.csv",
+      "telemetry_csv_sha256": "3b81490930ef8ac7542e31477dceba1a46f9d4119bc254fad5d81d7c0a829646"
+    },
+    "15_03_averaged": {
+      "name": "Driven guitar: baseline vs averaged",
+      "group": "Bias A/B \u2014 averaged",
+      "description": "A / Original = triangular baseline output; B / Processed = variant output. Same gain; no normalization.",
+      "duration_sec": 6.0,
+      "bpm": 120.0,
+      "tempo_source": 0,
+      "reference_commit": "f0c16cddb891ba9079fa4dbbf98f29132ed5c9f0",
+      "random_seed": 6203,
+      "events": [],
+      "clock_pulses": [],
+      "sample_rate_hz": 48000,
+      "source_material": "driven_guitar",
+      "comparison_variant": "averaged",
+      "comparison_case": 3,
+      "comparison_title": "Driven guitar",
+      "human_review_state": "NOT REVIEWED",
+      "stimulus_sha256": "ce81fe7a5be302fed96cc95d07fda2d84873cc28f910876f9d97ee9cb331e1dc",
+      "dsp_params": {
+        "0": 8.0,
+        "1": 6.0,
+        "3": 100.0,
+        "4": 10.0,
+        "11": 1.0,
+        "12": 500.0,
+        "13": 35.0,
+        "14": 50.0,
+        "15": 50.0,
+        "16": 4.0,
+        "17": 120.0,
+        "18": 0.0,
+        "21": 0.0,
+        "23": 0.0,
+        "30": 0.0,
+        "25": 0.0,
+        "36": 0.0,
+        "37": 0.0
+      },
+      "markers": [
+        {
+          "time": 0.0,
+          "label": "Audio start"
+        },
+        {
+          "time": 6.0,
+          "label": "Audio end"
+        }
+      ],
+      "analysis_metrics": {
+        "baseline_rms": 0.4996054488867059,
+        "variant_rms": 0.4995996519578639,
+        "variant_peak": 0.9643924832344055
+      },
+      "original_wav_file": "15_03_averaged_original_wav.wav",
+      "original_wav_sha256": "d6a10360a48adfbc3d5ad2b9563cbd4f38caccd499f758691fab66b08192e671",
+      "processed_wav_file": "15_03_averaged_processed_wav.wav",
+      "processed_wav_sha256": "17fb7d0c7967279cdc2d32ad5117c75c7ee2ddd15fc29d229ff44c6ca8caa077",
+      "telemetry_csv_file": "15_03_averaged_telemetry.csv",
+      "telemetry_csv_sha256": "e8244e1f1f3e70893ce2ba74aad55356c3353e72a7b50b17f547c0bec6259f48"
+    },
+    "16_04_bias_off": {
+      "name": "Monophonic synthesizer: baseline vs bias_off",
+      "group": "Bias A/B \u2014 bias_off",
+      "description": "A / Original = triangular baseline output; B / Processed = variant output. Same gain; no normalization.",
+      "duration_sec": 6.0,
+      "bpm": 120.0,
+      "tempo_source": 0,
+      "reference_commit": "f0c16cddb891ba9079fa4dbbf98f29132ed5c9f0",
+      "random_seed": 6204,
+      "events": [],
+      "clock_pulses": [],
+      "sample_rate_hz": 48000,
+      "source_material": "mono_synth",
+      "comparison_variant": "bias_off",
+      "comparison_case": 4,
+      "comparison_title": "Monophonic synthesizer",
+      "human_review_state": "NOT REVIEWED",
+      "stimulus_sha256": "cccca85dd2c52da00cc0333bd3a0fe93ea9b3e16d40eaa5111025cb6839ed6b5",
+      "dsp_params": {
+        "0": 8.0,
+        "1": 6.0,
+        "3": 25.0,
+        "4": 10.0,
+        "11": 1.0,
+        "12": 500.0,
+        "13": 35.0,
+        "14": 50.0,
+        "15": 50.0,
+        "16": 4.0,
+        "17": 120.0,
+        "18": 0.0,
+        "21": 0.0,
+        "23": 0.0,
+        "30": 0.0,
+        "25": 0.0,
+        "36": 0.0,
+        "37": 0.0
+      },
+      "markers": [
+        {
+          "time": 0.0,
+          "label": "Audio start"
+        },
+        {
+          "time": 6.0,
+          "label": "Audio end"
+        }
+      ],
+      "analysis_metrics": {
+        "baseline_rms": 0.14731257982251628,
+        "variant_rms": 0.14737652340789112,
+        "variant_peak": 0.7288522720336914
+      },
+      "original_wav_file": "16_04_bias_off_original_wav.wav",
+      "original_wav_sha256": "e8e7bae243b60304c48494b02a5aa5f227bd15ccf195794c024536dc7471bc16",
+      "processed_wav_file": "16_04_bias_off_processed_wav.wav",
+      "processed_wav_sha256": "149cc62a97444cf6b72d2d63687b14b07d3bb0cde33691b1e7a34b0a4c53b516",
+      "telemetry_csv_file": "16_04_bias_off_telemetry.csv",
+      "telemetry_csv_sha256": "44146f0ba4ebaaea5072b40d05a538847d85d17ed392dc6c29ac779bef4941be"
+    },
+    "17_04_sine": {
+      "name": "Monophonic synthesizer: baseline vs sine",
+      "group": "Bias A/B \u2014 sine",
+      "description": "A / Original = triangular baseline output; B / Processed = variant output. Same gain; no normalization.",
+      "duration_sec": 6.0,
+      "bpm": 120.0,
+      "tempo_source": 0,
+      "reference_commit": "f0c16cddb891ba9079fa4dbbf98f29132ed5c9f0",
+      "random_seed": 6204,
+      "events": [],
+      "clock_pulses": [],
+      "sample_rate_hz": 48000,
+      "source_material": "mono_synth",
+      "comparison_variant": "sine",
+      "comparison_case": 4,
+      "comparison_title": "Monophonic synthesizer",
+      "human_review_state": "NOT REVIEWED",
+      "stimulus_sha256": "cccca85dd2c52da00cc0333bd3a0fe93ea9b3e16d40eaa5111025cb6839ed6b5",
+      "dsp_params": {
+        "0": 8.0,
+        "1": 6.0,
+        "3": 25.0,
+        "4": 10.0,
+        "11": 1.0,
+        "12": 500.0,
+        "13": 35.0,
+        "14": 50.0,
+        "15": 50.0,
+        "16": 4.0,
+        "17": 120.0,
+        "18": 0.0,
+        "21": 0.0,
+        "23": 0.0,
+        "30": 0.0,
+        "25": 0.0,
+        "36": 0.0,
+        "37": 0.0
+      },
+      "markers": [
+        {
+          "time": 0.0,
+          "label": "Audio start"
+        },
+        {
+          "time": 6.0,
+          "label": "Audio end"
+        }
+      ],
+      "analysis_metrics": {
+        "baseline_rms": 0.14731257982251628,
+        "variant_rms": 0.1472335421025265,
+        "variant_peak": 0.7282785177230835
+      },
+      "original_wav_file": "17_04_sine_original_wav.wav",
+      "original_wav_sha256": "e8e7bae243b60304c48494b02a5aa5f227bd15ccf195794c024536dc7471bc16",
+      "processed_wav_file": "17_04_sine_processed_wav.wav",
+      "processed_wav_sha256": "248b4942429aa65c0be27965f74911e7da6906fa29fd2050401a667098a586ed",
+      "telemetry_csv_file": "17_04_sine_telemetry.csv",
+      "telemetry_csv_sha256": "3cd26e84d1512224f5c315afdcaf2d0261b88135a7234293b4d14f1fdeedb07f"
+    },
+    "18_04_bandlimited": {
+      "name": "Monophonic synthesizer: baseline vs bandlimited",
+      "group": "Bias A/B \u2014 bandlimited",
+      "description": "A / Original = triangular baseline output; B / Processed = variant output. Same gain; no normalization.",
+      "duration_sec": 6.0,
+      "bpm": 120.0,
+      "tempo_source": 0,
+      "reference_commit": "f0c16cddb891ba9079fa4dbbf98f29132ed5c9f0",
+      "random_seed": 6204,
+      "events": [],
+      "clock_pulses": [],
+      "sample_rate_hz": 48000,
+      "source_material": "mono_synth",
+      "comparison_variant": "bandlimited",
+      "comparison_case": 4,
+      "comparison_title": "Monophonic synthesizer",
+      "human_review_state": "NOT REVIEWED",
+      "stimulus_sha256": "cccca85dd2c52da00cc0333bd3a0fe93ea9b3e16d40eaa5111025cb6839ed6b5",
+      "dsp_params": {
+        "0": 8.0,
+        "1": 6.0,
+        "3": 25.0,
+        "4": 10.0,
+        "11": 1.0,
+        "12": 500.0,
+        "13": 35.0,
+        "14": 50.0,
+        "15": 50.0,
+        "16": 4.0,
+        "17": 120.0,
+        "18": 0.0,
+        "21": 0.0,
+        "23": 0.0,
+        "30": 0.0,
+        "25": 0.0,
+        "36": 0.0,
+        "37": 0.0
+      },
+      "markers": [
+        {
+          "time": 0.0,
+          "label": "Audio start"
+        },
+        {
+          "time": 6.0,
+          "label": "Audio end"
+        }
+      ],
+      "analysis_metrics": {
+        "baseline_rms": 0.14731257982251628,
+        "variant_rms": 0.14728579742544184,
+        "variant_peak": 0.7282634973526001
+      },
+      "original_wav_file": "18_04_bandlimited_original_wav.wav",
+      "original_wav_sha256": "e8e7bae243b60304c48494b02a5aa5f227bd15ccf195794c024536dc7471bc16",
+      "processed_wav_file": "18_04_bandlimited_processed_wav.wav",
+      "processed_wav_sha256": "2d29cba720ed13dde8b5cb8a272761ee7cf4d308305db936771356a3f155f378",
+      "telemetry_csv_file": "18_04_bandlimited_telemetry.csv",
+      "telemetry_csv_sha256": "f223434add829c9645730464ed933bb453be889d6cded85388097625e111acf4"
+    },
+    "19_04_oversampled": {
+      "name": "Monophonic synthesizer: baseline vs oversampled",
+      "group": "Bias A/B \u2014 oversampled",
+      "description": "A / Original = triangular baseline output; B / Processed = variant output. Same gain; no normalization.",
+      "duration_sec": 6.0,
+      "bpm": 120.0,
+      "tempo_source": 0,
+      "reference_commit": "f0c16cddb891ba9079fa4dbbf98f29132ed5c9f0",
+      "random_seed": 6204,
+      "events": [],
+      "clock_pulses": [],
+      "sample_rate_hz": 48000,
+      "source_material": "mono_synth",
+      "comparison_variant": "oversampled",
+      "comparison_case": 4,
+      "comparison_title": "Monophonic synthesizer",
+      "human_review_state": "NOT REVIEWED",
+      "stimulus_sha256": "cccca85dd2c52da00cc0333bd3a0fe93ea9b3e16d40eaa5111025cb6839ed6b5",
+      "dsp_params": {
+        "0": 8.0,
+        "1": 6.0,
+        "3": 25.0,
+        "4": 10.0,
+        "11": 1.0,
+        "12": 500.0,
+        "13": 35.0,
+        "14": 50.0,
+        "15": 50.0,
+        "16": 4.0,
+        "17": 120.0,
+        "18": 0.0,
+        "21": 0.0,
+        "23": 0.0,
+        "30": 0.0,
+        "25": 0.0,
+        "36": 0.0,
+        "37": 0.0
+      },
+      "markers": [
+        {
+          "time": 0.0,
+          "label": "Audio start"
+        },
+        {
+          "time": 6.0,
+          "label": "Audio end"
+        }
+      ],
+      "analysis_metrics": {
+        "baseline_rms": 0.14731257982251628,
+        "variant_rms": 0.14846729113287382,
+        "variant_peak": 0.8269845247268677
+      },
+      "original_wav_file": "19_04_oversampled_original_wav.wav",
+      "original_wav_sha256": "e8e7bae243b60304c48494b02a5aa5f227bd15ccf195794c024536dc7471bc16",
+      "processed_wav_file": "19_04_oversampled_processed_wav.wav",
+      "processed_wav_sha256": "e5367b2a7111e117e0faabbccc89d67b32e29ba0c7d3480d15935a3268f69542",
+      "telemetry_csv_file": "19_04_oversampled_telemetry.csv",
+      "telemetry_csv_sha256": "d09a8e7d72474460d9750f1aef417e5552ea6a503a00d298a456de3bb4df9db3"
+    },
+    "20_04_averaged": {
+      "name": "Monophonic synthesizer: baseline vs averaged",
+      "group": "Bias A/B \u2014 averaged",
+      "description": "A / Original = triangular baseline output; B / Processed = variant output. Same gain; no normalization.",
+      "duration_sec": 6.0,
+      "bpm": 120.0,
+      "tempo_source": 0,
+      "reference_commit": "f0c16cddb891ba9079fa4dbbf98f29132ed5c9f0",
+      "random_seed": 6204,
+      "events": [],
+      "clock_pulses": [],
+      "sample_rate_hz": 48000,
+      "source_material": "mono_synth",
+      "comparison_variant": "averaged",
+      "comparison_case": 4,
+      "comparison_title": "Monophonic synthesizer",
+      "human_review_state": "NOT REVIEWED",
+      "stimulus_sha256": "cccca85dd2c52da00cc0333bd3a0fe93ea9b3e16d40eaa5111025cb6839ed6b5",
+      "dsp_params": {
+        "0": 8.0,
+        "1": 6.0,
+        "3": 25.0,
+        "4": 10.0,
+        "11": 1.0,
+        "12": 500.0,
+        "13": 35.0,
+        "14": 50.0,
+        "15": 50.0,
+        "16": 4.0,
+        "17": 120.0,
+        "18": 0.0,
+        "21": 0.0,
+        "23": 0.0,
+        "30": 0.0,
+        "25": 0.0,
+        "36": 0.0,
+        "37": 0.0
+      },
+      "markers": [
+        {
+          "time": 0.0,
+          "label": "Audio start"
+        },
+        {
+          "time": 6.0,
+          "label": "Audio end"
+        }
+      ],
+      "analysis_metrics": {
+        "baseline_rms": 0.14731257982251628,
+        "variant_rms": 0.14726596572263842,
+        "variant_peak": 0.7285134792327881
+      },
+      "original_wav_file": "20_04_averaged_original_wav.wav",
+      "original_wav_sha256": "e8e7bae243b60304c48494b02a5aa5f227bd15ccf195794c024536dc7471bc16",
+      "processed_wav_file": "20_04_averaged_processed_wav.wav",
+      "processed_wav_sha256": "0ff4de3e3e3afb594ecc0d6b61b0336c3c47f4d5b7af118e0c509436080bf2a3",
+      "telemetry_csv_file": "20_04_averaged_telemetry.csv",
+      "telemetry_csv_sha256": "8ce3f27c36546e7c50597ceb7910bce0873b2bcc4470e8476cafeb7f481d01e2"
+    },
+    "21_05_bias_off": {
+      "name": "Polyphonic synthesizer: baseline vs bias_off",
+      "group": "Bias A/B \u2014 bias_off",
+      "description": "A / Original = triangular baseline output; B / Processed = variant output. Same gain; no normalization.",
+      "duration_sec": 6.0,
+      "bpm": 120.0,
+      "tempo_source": 0,
+      "reference_commit": "f0c16cddb891ba9079fa4dbbf98f29132ed5c9f0",
+      "random_seed": 6205,
+      "events": [],
+      "clock_pulses": [],
+      "sample_rate_hz": 48000,
+      "source_material": "poly_synth",
+      "comparison_variant": "bias_off",
+      "comparison_case": 5,
+      "comparison_title": "Polyphonic synthesizer",
+      "human_review_state": "NOT REVIEWED",
+      "stimulus_sha256": "d2961597969c2b173ec3f8084c7dec4e3b42a8770a5a0c9fbcc6ae7d00de6f7f",
+      "dsp_params": {
+        "0": 8.0,
+        "1": 6.0,
+        "3": 25.0,
+        "4": 10.0,
+        "11": 1.0,
+        "12": 500.0,
+        "13": 35.0,
+        "14": 50.0,
+        "15": 50.0,
+        "16": 4.0,
+        "17": 120.0,
+        "18": 0.0,
+        "21": 0.0,
+        "23": 0.0,
+        "30": 0.0,
+        "25": 0.0,
+        "36": 0.0,
+        "37": 0.0
+      },
+      "markers": [
+        {
+          "time": 0.0,
+          "label": "Audio start"
+        },
+        {
+          "time": 6.0,
+          "label": "Audio end"
+        }
+      ],
+      "analysis_metrics": {
+        "baseline_rms": 0.1468003376622006,
+        "variant_rms": 0.14687088948750965,
+        "variant_peak": 0.6219231486320496
+      },
+      "original_wav_file": "21_05_bias_off_original_wav.wav",
+      "original_wav_sha256": "80f71bc1396ab32b88e846240f6055743d898a7950577420ade92ec0fa6de7fe",
+      "processed_wav_file": "21_05_bias_off_processed_wav.wav",
+      "processed_wav_sha256": "50d901c943eb2da2571f768041b23e3cc52a44656d2ef4f03b20718ba99594b4",
+      "telemetry_csv_file": "21_05_bias_off_telemetry.csv",
+      "telemetry_csv_sha256": "084950817bf11ca5fb4ecf5b47c51594325a7bd2e4c6744fd06df37238de12cb"
+    },
+    "22_05_sine": {
+      "name": "Polyphonic synthesizer: baseline vs sine",
+      "group": "Bias A/B \u2014 sine",
+      "description": "A / Original = triangular baseline output; B / Processed = variant output. Same gain; no normalization.",
+      "duration_sec": 6.0,
+      "bpm": 120.0,
+      "tempo_source": 0,
+      "reference_commit": "f0c16cddb891ba9079fa4dbbf98f29132ed5c9f0",
+      "random_seed": 6205,
+      "events": [],
+      "clock_pulses": [],
+      "sample_rate_hz": 48000,
+      "source_material": "poly_synth",
+      "comparison_variant": "sine",
+      "comparison_case": 5,
+      "comparison_title": "Polyphonic synthesizer",
+      "human_review_state": "NOT REVIEWED",
+      "stimulus_sha256": "d2961597969c2b173ec3f8084c7dec4e3b42a8770a5a0c9fbcc6ae7d00de6f7f",
+      "dsp_params": {
+        "0": 8.0,
+        "1": 6.0,
+        "3": 25.0,
+        "4": 10.0,
+        "11": 1.0,
+        "12": 500.0,
+        "13": 35.0,
+        "14": 50.0,
+        "15": 50.0,
+        "16": 4.0,
+        "17": 120.0,
+        "18": 0.0,
+        "21": 0.0,
+        "23": 0.0,
+        "30": 0.0,
+        "25": 0.0,
+        "36": 0.0,
+        "37": 0.0
+      },
+      "markers": [
+        {
+          "time": 0.0,
+          "label": "Audio start"
+        },
+        {
+          "time": 6.0,
+          "label": "Audio end"
+        }
+      ],
+      "analysis_metrics": {
+        "baseline_rms": 0.1468003376622006,
+        "variant_rms": 0.14672448220472464,
+        "variant_peak": 0.621590793132782
+      },
+      "original_wav_file": "22_05_sine_original_wav.wav",
+      "original_wav_sha256": "80f71bc1396ab32b88e846240f6055743d898a7950577420ade92ec0fa6de7fe",
+      "processed_wav_file": "22_05_sine_processed_wav.wav",
+      "processed_wav_sha256": "f7e813e6c7216e681f3f10d1c592da31f23a97eefd01d92ac281f4e5a338040c",
+      "telemetry_csv_file": "22_05_sine_telemetry.csv",
+      "telemetry_csv_sha256": "5054d7cdd9fdeb14052c239e5283e81137413571070f44a53f46ada9507fa083"
+    },
+    "23_05_bandlimited": {
+      "name": "Polyphonic synthesizer: baseline vs bandlimited",
+      "group": "Bias A/B \u2014 bandlimited",
+      "description": "A / Original = triangular baseline output; B / Processed = variant output. Same gain; no normalization.",
+      "duration_sec": 6.0,
+      "bpm": 120.0,
+      "tempo_source": 0,
+      "reference_commit": "f0c16cddb891ba9079fa4dbbf98f29132ed5c9f0",
+      "random_seed": 6205,
+      "events": [],
+      "clock_pulses": [],
+      "sample_rate_hz": 48000,
+      "source_material": "poly_synth",
+      "comparison_variant": "bandlimited",
+      "comparison_case": 5,
+      "comparison_title": "Polyphonic synthesizer",
+      "human_review_state": "NOT REVIEWED",
+      "stimulus_sha256": "d2961597969c2b173ec3f8084c7dec4e3b42a8770a5a0c9fbcc6ae7d00de6f7f",
+      "dsp_params": {
+        "0": 8.0,
+        "1": 6.0,
+        "3": 25.0,
+        "4": 10.0,
+        "11": 1.0,
+        "12": 500.0,
+        "13": 35.0,
+        "14": 50.0,
+        "15": 50.0,
+        "16": 4.0,
+        "17": 120.0,
+        "18": 0.0,
+        "21": 0.0,
+        "23": 0.0,
+        "30": 0.0,
+        "25": 0.0,
+        "36": 0.0,
+        "37": 0.0
+      },
+      "markers": [
+        {
+          "time": 0.0,
+          "label": "Audio start"
+        },
+        {
+          "time": 6.0,
+          "label": "Audio end"
+        }
+      ],
+      "analysis_metrics": {
+        "baseline_rms": 0.1468003376622006,
+        "variant_rms": 0.1467746680605262,
+        "variant_peak": 0.6219052076339722
+      },
+      "original_wav_file": "23_05_bandlimited_original_wav.wav",
+      "original_wav_sha256": "80f71bc1396ab32b88e846240f6055743d898a7950577420ade92ec0fa6de7fe",
+      "processed_wav_file": "23_05_bandlimited_processed_wav.wav",
+      "processed_wav_sha256": "8db1abf34fa26571dce37f3b7996d43f9d3bc8aa96c313214ceff30d354fdb43",
+      "telemetry_csv_file": "23_05_bandlimited_telemetry.csv",
+      "telemetry_csv_sha256": "97501331647a85df9cbe1a4d075814f7960ec640bfd9b4c50e8f9d417199978a"
+    },
+    "24_05_oversampled": {
+      "name": "Polyphonic synthesizer: baseline vs oversampled",
+      "group": "Bias A/B \u2014 oversampled",
+      "description": "A / Original = triangular baseline output; B / Processed = variant output. Same gain; no normalization.",
+      "duration_sec": 6.0,
+      "bpm": 120.0,
+      "tempo_source": 0,
+      "reference_commit": "f0c16cddb891ba9079fa4dbbf98f29132ed5c9f0",
+      "random_seed": 6205,
+      "events": [],
+      "clock_pulses": [],
+      "sample_rate_hz": 48000,
+      "source_material": "poly_synth",
+      "comparison_variant": "oversampled",
+      "comparison_case": 5,
+      "comparison_title": "Polyphonic synthesizer",
+      "human_review_state": "NOT REVIEWED",
+      "stimulus_sha256": "d2961597969c2b173ec3f8084c7dec4e3b42a8770a5a0c9fbcc6ae7d00de6f7f",
+      "dsp_params": {
+        "0": 8.0,
+        "1": 6.0,
+        "3": 25.0,
+        "4": 10.0,
+        "11": 1.0,
+        "12": 500.0,
+        "13": 35.0,
+        "14": 50.0,
+        "15": 50.0,
+        "16": 4.0,
+        "17": 120.0,
+        "18": 0.0,
+        "21": 0.0,
+        "23": 0.0,
+        "30": 0.0,
+        "25": 0.0,
+        "36": 0.0,
+        "37": 0.0
+      },
+      "markers": [
+        {
+          "time": 0.0,
+          "label": "Audio start"
+        },
+        {
+          "time": 6.0,
+          "label": "Audio end"
+        }
+      ],
+      "analysis_metrics": {
+        "baseline_rms": 0.1468003376622006,
+        "variant_rms": 0.1444701238044666,
+        "variant_peak": 0.5955095291137695
+      },
+      "original_wav_file": "24_05_oversampled_original_wav.wav",
+      "original_wav_sha256": "80f71bc1396ab32b88e846240f6055743d898a7950577420ade92ec0fa6de7fe",
+      "processed_wav_file": "24_05_oversampled_processed_wav.wav",
+      "processed_wav_sha256": "c9658a8e258b9eb29b72d71cb75116d20d181ace4120934fb13a6e452bbcec6c",
+      "telemetry_csv_file": "24_05_oversampled_telemetry.csv",
+      "telemetry_csv_sha256": "22d8cfd63efb3e1e1e6416fd3b0164260bb9418e02aec0897d60a102ddd82d75"
+    },
+    "25_05_averaged": {
+      "name": "Polyphonic synthesizer: baseline vs averaged",
+      "group": "Bias A/B \u2014 averaged",
+      "description": "A / Original = triangular baseline output; B / Processed = variant output. Same gain; no normalization.",
+      "duration_sec": 6.0,
+      "bpm": 120.0,
+      "tempo_source": 0,
+      "reference_commit": "f0c16cddb891ba9079fa4dbbf98f29132ed5c9f0",
+      "random_seed": 6205,
+      "events": [],
+      "clock_pulses": [],
+      "sample_rate_hz": 48000,
+      "source_material": "poly_synth",
+      "comparison_variant": "averaged",
+      "comparison_case": 5,
+      "comparison_title": "Polyphonic synthesizer",
+      "human_review_state": "NOT REVIEWED",
+      "stimulus_sha256": "d2961597969c2b173ec3f8084c7dec4e3b42a8770a5a0c9fbcc6ae7d00de6f7f",
+      "dsp_params": {
+        "0": 8.0,
+        "1": 6.0,
+        "3": 25.0,
+        "4": 10.0,
+        "11": 1.0,
+        "12": 500.0,
+        "13": 35.0,
+        "14": 50.0,
+        "15": 50.0,
+        "16": 4.0,
+        "17": 120.0,
+        "18": 0.0,
+        "21": 0.0,
+        "23": 0.0,
+        "30": 0.0,
+        "25": 0.0,
+        "36": 0.0,
+        "37": 0.0
+      },
+      "markers": [
+        {
+          "time": 0.0,
+          "label": "Audio start"
+        },
+        {
+          "time": 6.0,
+          "label": "Audio end"
+        }
+      ],
+      "analysis_metrics": {
+        "baseline_rms": 0.1468003376622006,
+        "variant_rms": 0.14675562632274813,
+        "variant_peak": 0.6214603185653687
+      },
+      "original_wav_file": "25_05_averaged_original_wav.wav",
+      "original_wav_sha256": "80f71bc1396ab32b88e846240f6055743d898a7950577420ade92ec0fa6de7fe",
+      "processed_wav_file": "25_05_averaged_processed_wav.wav",
+      "processed_wav_sha256": "c67c7aee1a45576b39d243fb2eec1cf8880f154a188576b4e6da7f011c569ace",
+      "telemetry_csv_file": "25_05_averaged_telemetry.csv",
+      "telemetry_csv_sha256": "ee687ea9a74ed68372efbe524d64453a4a63c5ed429fb2fbaf293fa356948965"
+    },
+    "26_06_bias_off": {
+      "name": "Drum machine: baseline vs bias_off",
+      "group": "Bias A/B \u2014 bias_off",
+      "description": "A / Original = triangular baseline output; B / Processed = variant output. Same gain; no normalization.",
+      "duration_sec": 6.0,
+      "bpm": 120.0,
+      "tempo_source": 0,
+      "reference_commit": "f0c16cddb891ba9079fa4dbbf98f29132ed5c9f0",
+      "random_seed": 6206,
+      "events": [],
+      "clock_pulses": [],
+      "sample_rate_hz": 48000,
+      "source_material": "drum_machine",
+      "comparison_variant": "bias_off",
+      "comparison_case": 6,
+      "comparison_title": "Drum machine",
+      "human_review_state": "NOT REVIEWED",
+      "stimulus_sha256": "4d13cf2630acdaf91fe5bbe6090c02674b24f10c71446e7d55dde157cec5e9db",
+      "dsp_params": {
+        "0": 8.0,
+        "1": 6.0,
+        "3": 25.0,
+        "4": 10.0,
+        "11": 1.0,
+        "12": 500.0,
+        "13": 35.0,
+        "14": 50.0,
+        "15": 50.0,
+        "16": 4.0,
+        "17": 120.0,
+        "18": 0.0,
+        "21": 0.0,
+        "23": 0.0,
+        "30": 0.0,
+        "25": 0.0,
+        "36": 0.0,
+        "37": 0.0
+      },
+      "markers": [
+        {
+          "time": 0.0,
+          "label": "Audio start"
+        },
+        {
+          "time": 6.0,
+          "label": "Audio end"
+        }
+      ],
+      "analysis_metrics": {
+        "baseline_rms": 0.09876706303223806,
+        "variant_rms": 0.09878009289820872,
+        "variant_peak": 0.676884651184082
+      },
+      "original_wav_file": "26_06_bias_off_original_wav.wav",
+      "original_wav_sha256": "3f7ae74f03ce678e1f3dd31a6c03d3c629635f12a4623f36c71cd8bd631c8d45",
+      "processed_wav_file": "26_06_bias_off_processed_wav.wav",
+      "processed_wav_sha256": "c9fdd98460ddeeca7302f3e8b31bfe24588d59584e303832fee410a72a751d66",
+      "telemetry_csv_file": "26_06_bias_off_telemetry.csv",
+      "telemetry_csv_sha256": "5eb35ba896c98f26338825d8bebcee1c7e31041be681087a3641e9ceaef1d58b"
+    },
+    "27_06_sine": {
+      "name": "Drum machine: baseline vs sine",
+      "group": "Bias A/B \u2014 sine",
+      "description": "A / Original = triangular baseline output; B / Processed = variant output. Same gain; no normalization.",
+      "duration_sec": 6.0,
+      "bpm": 120.0,
+      "tempo_source": 0,
+      "reference_commit": "f0c16cddb891ba9079fa4dbbf98f29132ed5c9f0",
+      "random_seed": 6206,
+      "events": [],
+      "clock_pulses": [],
+      "sample_rate_hz": 48000,
+      "source_material": "drum_machine",
+      "comparison_variant": "sine",
+      "comparison_case": 6,
+      "comparison_title": "Drum machine",
+      "human_review_state": "NOT REVIEWED",
+      "stimulus_sha256": "4d13cf2630acdaf91fe5bbe6090c02674b24f10c71446e7d55dde157cec5e9db",
+      "dsp_params": {
+        "0": 8.0,
+        "1": 6.0,
+        "3": 25.0,
+        "4": 10.0,
+        "11": 1.0,
+        "12": 500.0,
+        "13": 35.0,
+        "14": 50.0,
+        "15": 50.0,
+        "16": 4.0,
+        "17": 120.0,
+        "18": 0.0,
+        "21": 0.0,
+        "23": 0.0,
+        "30": 0.0,
+        "25": 0.0,
+        "36": 0.0,
+        "37": 0.0
+      },
+      "markers": [
+        {
+          "time": 0.0,
+          "label": "Audio start"
+        },
+        {
+          "time": 6.0,
+          "label": "Audio end"
+        }
+      ],
+      "analysis_metrics": {
+        "baseline_rms": 0.09876706303223806,
+        "variant_rms": 0.09868214613464477,
+        "variant_peak": 0.6768914461135864
+      },
+      "original_wav_file": "27_06_sine_original_wav.wav",
+      "original_wav_sha256": "3f7ae74f03ce678e1f3dd31a6c03d3c629635f12a4623f36c71cd8bd631c8d45",
+      "processed_wav_file": "27_06_sine_processed_wav.wav",
+      "processed_wav_sha256": "29007f49858fe5f55fe91dd89ffe77896ea0df478e5d8ddb2330db8a7ceed3de",
+      "telemetry_csv_file": "27_06_sine_telemetry.csv",
+      "telemetry_csv_sha256": "fb72889092339f149a4742e5d8e830643b8188bcfab900714bdabe9f9c196aa0"
+    },
+    "28_06_bandlimited": {
+      "name": "Drum machine: baseline vs bandlimited",
+      "group": "Bias A/B \u2014 bandlimited",
+      "description": "A / Original = triangular baseline output; B / Processed = variant output. Same gain; no normalization.",
+      "duration_sec": 6.0,
+      "bpm": 120.0,
+      "tempo_source": 0,
+      "reference_commit": "f0c16cddb891ba9079fa4dbbf98f29132ed5c9f0",
+      "random_seed": 6206,
+      "events": [],
+      "clock_pulses": [],
+      "sample_rate_hz": 48000,
+      "source_material": "drum_machine",
+      "comparison_variant": "bandlimited",
+      "comparison_case": 6,
+      "comparison_title": "Drum machine",
+      "human_review_state": "NOT REVIEWED",
+      "stimulus_sha256": "4d13cf2630acdaf91fe5bbe6090c02674b24f10c71446e7d55dde157cec5e9db",
+      "dsp_params": {
+        "0": 8.0,
+        "1": 6.0,
+        "3": 25.0,
+        "4": 10.0,
+        "11": 1.0,
+        "12": 500.0,
+        "13": 35.0,
+        "14": 50.0,
+        "15": 50.0,
+        "16": 4.0,
+        "17": 120.0,
+        "18": 0.0,
+        "21": 0.0,
+        "23": 0.0,
+        "30": 0.0,
+        "25": 0.0,
+        "36": 0.0,
+        "37": 0.0
+      },
+      "markers": [
+        {
+          "time": 0.0,
+          "label": "Audio start"
+        },
+        {
+          "time": 6.0,
+          "label": "Audio end"
+        }
+      ],
+      "analysis_metrics": {
+        "baseline_rms": 0.09876706303223806,
+        "variant_rms": 0.09871460327714819,
+        "variant_peak": 0.6760836839675903
+      },
+      "original_wav_file": "28_06_bandlimited_original_wav.wav",
+      "original_wav_sha256": "3f7ae74f03ce678e1f3dd31a6c03d3c629635f12a4623f36c71cd8bd631c8d45",
+      "processed_wav_file": "28_06_bandlimited_processed_wav.wav",
+      "processed_wav_sha256": "a977d49aaf6e31c7636b35cb6df09556f393241d77db777cb1c2b4b569565078",
+      "telemetry_csv_file": "28_06_bandlimited_telemetry.csv",
+      "telemetry_csv_sha256": "2c33efe6d55ef2c294ce48a25a5c072630a24cdc0e7aa1010b352f9d0432d57a"
+    },
+    "29_06_oversampled": {
+      "name": "Drum machine: baseline vs oversampled",
+      "group": "Bias A/B \u2014 oversampled",
+      "description": "A / Original = triangular baseline output; B / Processed = variant output. Same gain; no normalization.",
+      "duration_sec": 6.0,
+      "bpm": 120.0,
+      "tempo_source": 0,
+      "reference_commit": "f0c16cddb891ba9079fa4dbbf98f29132ed5c9f0",
+      "random_seed": 6206,
+      "events": [],
+      "clock_pulses": [],
+      "sample_rate_hz": 48000,
+      "source_material": "drum_machine",
+      "comparison_variant": "oversampled",
+      "comparison_case": 6,
+      "comparison_title": "Drum machine",
+      "human_review_state": "NOT REVIEWED",
+      "stimulus_sha256": "4d13cf2630acdaf91fe5bbe6090c02674b24f10c71446e7d55dde157cec5e9db",
+      "dsp_params": {
+        "0": 8.0,
+        "1": 6.0,
+        "3": 25.0,
+        "4": 10.0,
+        "11": 1.0,
+        "12": 500.0,
+        "13": 35.0,
+        "14": 50.0,
+        "15": 50.0,
+        "16": 4.0,
+        "17": 120.0,
+        "18": 0.0,
+        "21": 0.0,
+        "23": 0.0,
+        "30": 0.0,
+        "25": 0.0,
+        "36": 0.0,
+        "37": 0.0
+      },
+      "markers": [
+        {
+          "time": 0.0,
+          "label": "Audio start"
+        },
+        {
+          "time": 6.0,
+          "label": "Audio end"
+        }
+      ],
+      "analysis_metrics": {
+        "baseline_rms": 0.09876706303223806,
+        "variant_rms": 0.09656944595081424,
+        "variant_peak": 0.625929594039917
+      },
+      "original_wav_file": "29_06_oversampled_original_wav.wav",
+      "original_wav_sha256": "3f7ae74f03ce678e1f3dd31a6c03d3c629635f12a4623f36c71cd8bd631c8d45",
+      "processed_wav_file": "29_06_oversampled_processed_wav.wav",
+      "processed_wav_sha256": "45569b37cdb61bfb1be7a9035f0f7b267c95866198c3863848b3545108c9f889",
+      "telemetry_csv_file": "29_06_oversampled_telemetry.csv",
+      "telemetry_csv_sha256": "41ab784ed454bc3e6ab90bf96070de18639d4a4e92cee0ce6a273d77ba9dcafb"
+    },
+    "30_06_averaged": {
+      "name": "Drum machine: baseline vs averaged",
+      "group": "Bias A/B \u2014 averaged",
+      "description": "A / Original = triangular baseline output; B / Processed = variant output. Same gain; no normalization.",
+      "duration_sec": 6.0,
+      "bpm": 120.0,
+      "tempo_source": 0,
+      "reference_commit": "f0c16cddb891ba9079fa4dbbf98f29132ed5c9f0",
+      "random_seed": 6206,
+      "events": [],
+      "clock_pulses": [],
+      "sample_rate_hz": 48000,
+      "source_material": "drum_machine",
+      "comparison_variant": "averaged",
+      "comparison_case": 6,
+      "comparison_title": "Drum machine",
+      "human_review_state": "NOT REVIEWED",
+      "stimulus_sha256": "4d13cf2630acdaf91fe5bbe6090c02674b24f10c71446e7d55dde157cec5e9db",
+      "dsp_params": {
+        "0": 8.0,
+        "1": 6.0,
+        "3": 25.0,
+        "4": 10.0,
+        "11": 1.0,
+        "12": 500.0,
+        "13": 35.0,
+        "14": 50.0,
+        "15": 50.0,
+        "16": 4.0,
+        "17": 120.0,
+        "18": 0.0,
+        "21": 0.0,
+        "23": 0.0,
+        "30": 0.0,
+        "25": 0.0,
+        "36": 0.0,
+        "37": 0.0
+      },
+      "markers": [
+        {
+          "time": 0.0,
+          "label": "Audio start"
+        },
+        {
+          "time": 6.0,
+          "label": "Audio end"
+        }
+      ],
+      "analysis_metrics": {
+        "baseline_rms": 0.09876706303223806,
+        "variant_rms": 0.09870108219186689,
+        "variant_peak": 0.6765871047973633
+      },
+      "original_wav_file": "30_06_averaged_original_wav.wav",
+      "original_wav_sha256": "3f7ae74f03ce678e1f3dd31a6c03d3c629635f12a4623f36c71cd8bd631c8d45",
+      "processed_wav_file": "30_06_averaged_processed_wav.wav",
+      "processed_wav_sha256": "dbbcc380eff877a7bf218d394d7bf35097093da3bf39aeb741c4bdbf818b729c",
+      "telemetry_csv_file": "30_06_averaged_telemetry.csv",
+      "telemetry_csv_sha256": "19f2ac4807d3f2f0f26f71fcce8ba65e8f50d15f024414185ea9928090dcca65"
+    },
+    "31_07_bias_off": {
+      "name": "Moderate feedback: baseline vs bias_off",
+      "group": "Bias A/B \u2014 bias_off",
+      "description": "A / Original = triangular baseline output; B / Processed = variant output. Same gain; no normalization.",
+      "duration_sec": 6.0,
+      "bpm": 120.0,
+      "tempo_source": 0,
+      "reference_commit": "f0c16cddb891ba9079fa4dbbf98f29132ed5c9f0",
+      "random_seed": 6207,
+      "events": [],
+      "clock_pulses": [],
+      "sample_rate_hz": 48000,
+      "source_material": "clean_guitar",
+      "comparison_variant": "bias_off",
+      "comparison_case": 7,
+      "comparison_title": "Moderate feedback",
+      "human_review_state": "NOT REVIEWED",
+      "stimulus_sha256": "9c7bbb776afc5bc4abe12d5dc1bebff198dc0df4274c13e40f2080d17d095b0b",
+      "dsp_params": {
+        "0": 8.0,
+        "1": 6.0,
+        "3": 25.0,
+        "4": 10.0,
+        "11": 1.0,
+        "12": 500.0,
+        "13": 45.0,
+        "14": 50.0,
+        "15": 50.0,
+        "16": 4.0,
+        "17": 120.0,
+        "18": 0.0,
+        "21": 0.0,
+        "23": 0.0,
+        "30": 0.0,
+        "25": 0.0,
+        "36": 0.0,
+        "37": 0.0
+      },
+      "markers": [
+        {
+          "time": 0.0,
+          "label": "Audio start"
+        },
+        {
+          "time": 6.0,
+          "label": "Audio end"
+        },
+        {
+          "time": 2.0,
+          "label": "Input silenced"
+        }
+      ],
+      "analysis_metrics": {
+        "baseline_rms": 0.09744656135695579,
+        "variant_rms": 0.0974680128360551,
+        "variant_peak": 0.6589910984039307
+      },
+      "original_wav_file": "31_07_bias_off_original_wav.wav",
+      "original_wav_sha256": "9f24b1296727d8c3919fbf4784401d4ead82cd21eaeecc11cd37f3da22b48b02",
+      "processed_wav_file": "31_07_bias_off_processed_wav.wav",
+      "processed_wav_sha256": "5b76b3991d01831016ae9564ea2dc282f3619b561610b1a8107e72d2c6f6da82",
+      "telemetry_csv_file": "31_07_bias_off_telemetry.csv",
+      "telemetry_csv_sha256": "9978aa2462e5fb962d5f690744b4d80953f59e66046aa8f1025ba4a1d45790f2"
+    },
+    "32_07_sine": {
+      "name": "Moderate feedback: baseline vs sine",
+      "group": "Bias A/B \u2014 sine",
+      "description": "A / Original = triangular baseline output; B / Processed = variant output. Same gain; no normalization.",
+      "duration_sec": 6.0,
+      "bpm": 120.0,
+      "tempo_source": 0,
+      "reference_commit": "f0c16cddb891ba9079fa4dbbf98f29132ed5c9f0",
+      "random_seed": 6207,
+      "events": [],
+      "clock_pulses": [],
+      "sample_rate_hz": 48000,
+      "source_material": "clean_guitar",
+      "comparison_variant": "sine",
+      "comparison_case": 7,
+      "comparison_title": "Moderate feedback",
+      "human_review_state": "NOT REVIEWED",
+      "stimulus_sha256": "9c7bbb776afc5bc4abe12d5dc1bebff198dc0df4274c13e40f2080d17d095b0b",
+      "dsp_params": {
+        "0": 8.0,
+        "1": 6.0,
+        "3": 25.0,
+        "4": 10.0,
+        "11": 1.0,
+        "12": 500.0,
+        "13": 45.0,
+        "14": 50.0,
+        "15": 50.0,
+        "16": 4.0,
+        "17": 120.0,
+        "18": 0.0,
+        "21": 0.0,
+        "23": 0.0,
+        "30": 0.0,
+        "25": 0.0,
+        "36": 0.0,
+        "37": 0.0
+      },
+      "markers": [
+        {
+          "time": 0.0,
+          "label": "Audio start"
+        },
+        {
+          "time": 6.0,
+          "label": "Audio end"
+        },
+        {
+          "time": 2.0,
+          "label": "Input silenced"
+        }
+      ],
+      "analysis_metrics": {
+        "baseline_rms": 0.09744656135695579,
+        "variant_rms": 0.09735791358176507,
+        "variant_peak": 0.6591689586639404
+      },
+      "original_wav_file": "32_07_sine_original_wav.wav",
+      "original_wav_sha256": "9f24b1296727d8c3919fbf4784401d4ead82cd21eaeecc11cd37f3da22b48b02",
+      "processed_wav_file": "32_07_sine_processed_wav.wav",
+      "processed_wav_sha256": "83ba7a2b3517e2d000799de58fc45f3eec1ef5bb44399cd10f68a405ad47b4ef",
+      "telemetry_csv_file": "32_07_sine_telemetry.csv",
+      "telemetry_csv_sha256": "9b6361a062ccb5d6970d4f5b953cec066175235703d5bbeebccc2d76e8381e64"
+    },
+    "33_07_bandlimited": {
+      "name": "Moderate feedback: baseline vs bandlimited",
+      "group": "Bias A/B \u2014 bandlimited",
+      "description": "A / Original = triangular baseline output; B / Processed = variant output. Same gain; no normalization.",
+      "duration_sec": 6.0,
+      "bpm": 120.0,
+      "tempo_source": 0,
+      "reference_commit": "f0c16cddb891ba9079fa4dbbf98f29132ed5c9f0",
+      "random_seed": 6207,
+      "events": [],
+      "clock_pulses": [],
+      "sample_rate_hz": 48000,
+      "source_material": "clean_guitar",
+      "comparison_variant": "bandlimited",
+      "comparison_case": 7,
+      "comparison_title": "Moderate feedback",
+      "human_review_state": "NOT REVIEWED",
+      "stimulus_sha256": "9c7bbb776afc5bc4abe12d5dc1bebff198dc0df4274c13e40f2080d17d095b0b",
+      "dsp_params": {
+        "0": 8.0,
+        "1": 6.0,
+        "3": 25.0,
+        "4": 10.0,
+        "11": 1.0,
+        "12": 500.0,
+        "13": 45.0,
+        "14": 50.0,
+        "15": 50.0,
+        "16": 4.0,
+        "17": 120.0,
+        "18": 0.0,
+        "21": 0.0,
+        "23": 0.0,
+        "30": 0.0,
+        "25": 0.0,
+        "36": 0.0,
+        "37": 0.0
+      },
+      "markers": [
+        {
+          "time": 0.0,
+          "label": "Audio start"
+        },
+        {
+          "time": 6.0,
+          "label": "Audio end"
+        },
+        {
+          "time": 2.0,
+          "label": "Input silenced"
+        }
+      ],
+      "analysis_metrics": {
+        "baseline_rms": 0.09744656135695579,
+        "variant_rms": 0.09739563183516095,
+        "variant_peak": 0.6587990522384644
+      },
+      "original_wav_file": "33_07_bandlimited_original_wav.wav",
+      "original_wav_sha256": "9f24b1296727d8c3919fbf4784401d4ead82cd21eaeecc11cd37f3da22b48b02",
+      "processed_wav_file": "33_07_bandlimited_processed_wav.wav",
+      "processed_wav_sha256": "05968dbc7e490055cd275323b490ab9a1b1f9e7a2827683bb1126af5eba3d3eb",
+      "telemetry_csv_file": "33_07_bandlimited_telemetry.csv",
+      "telemetry_csv_sha256": "4258539c11e2e0cbc55359bd93cbe6646d0376a9bf30ed9ef507952dd4f94b38"
+    },
+    "34_07_oversampled": {
+      "name": "Moderate feedback: baseline vs oversampled",
+      "group": "Bias A/B \u2014 oversampled",
+      "description": "A / Original = triangular baseline output; B / Processed = variant output. Same gain; no normalization.",
+      "duration_sec": 6.0,
+      "bpm": 120.0,
+      "tempo_source": 0,
+      "reference_commit": "f0c16cddb891ba9079fa4dbbf98f29132ed5c9f0",
+      "random_seed": 6207,
+      "events": [],
+      "clock_pulses": [],
+      "sample_rate_hz": 48000,
+      "source_material": "clean_guitar",
+      "comparison_variant": "oversampled",
+      "comparison_case": 7,
+      "comparison_title": "Moderate feedback",
+      "human_review_state": "NOT REVIEWED",
+      "stimulus_sha256": "9c7bbb776afc5bc4abe12d5dc1bebff198dc0df4274c13e40f2080d17d095b0b",
+      "dsp_params": {
+        "0": 8.0,
+        "1": 6.0,
+        "3": 25.0,
+        "4": 10.0,
+        "11": 1.0,
+        "12": 500.0,
+        "13": 45.0,
+        "14": 50.0,
+        "15": 50.0,
+        "16": 4.0,
+        "17": 120.0,
+        "18": 0.0,
+        "21": 0.0,
+        "23": 0.0,
+        "30": 0.0,
+        "25": 0.0,
+        "36": 0.0,
+        "37": 0.0
+      },
+      "markers": [
+        {
+          "time": 0.0,
+          "label": "Audio start"
+        },
+        {
+          "time": 6.0,
+          "label": "Audio end"
+        },
+        {
+          "time": 2.0,
+          "label": "Input silenced"
+        }
+      ],
+      "analysis_metrics": {
+        "baseline_rms": 0.09744656135695579,
+        "variant_rms": 0.09841101656097957,
+        "variant_peak": 0.6982114315032959
+      },
+      "original_wav_file": "34_07_oversampled_original_wav.wav",
+      "original_wav_sha256": "9f24b1296727d8c3919fbf4784401d4ead82cd21eaeecc11cd37f3da22b48b02",
+      "processed_wav_file": "34_07_oversampled_processed_wav.wav",
+      "processed_wav_sha256": "927152d8653c888aa9694eadffe6fe8ae2ed84a94b9758e47a9833777d3d85ae",
+      "telemetry_csv_file": "34_07_oversampled_telemetry.csv",
+      "telemetry_csv_sha256": "877f3273954962cf70c5a376d41d0224c204faba6374cc8f1b967a5fa073dedd"
+    },
+    "35_07_averaged": {
+      "name": "Moderate feedback: baseline vs averaged",
+      "group": "Bias A/B \u2014 averaged",
+      "description": "A / Original = triangular baseline output; B / Processed = variant output. Same gain; no normalization.",
+      "duration_sec": 6.0,
+      "bpm": 120.0,
+      "tempo_source": 0,
+      "reference_commit": "f0c16cddb891ba9079fa4dbbf98f29132ed5c9f0",
+      "random_seed": 6207,
+      "events": [],
+      "clock_pulses": [],
+      "sample_rate_hz": 48000,
+      "source_material": "clean_guitar",
+      "comparison_variant": "averaged",
+      "comparison_case": 7,
+      "comparison_title": "Moderate feedback",
+      "human_review_state": "NOT REVIEWED",
+      "stimulus_sha256": "9c7bbb776afc5bc4abe12d5dc1bebff198dc0df4274c13e40f2080d17d095b0b",
+      "dsp_params": {
+        "0": 8.0,
+        "1": 6.0,
+        "3": 25.0,
+        "4": 10.0,
+        "11": 1.0,
+        "12": 500.0,
+        "13": 45.0,
+        "14": 50.0,
+        "15": 50.0,
+        "16": 4.0,
+        "17": 120.0,
+        "18": 0.0,
+        "21": 0.0,
+        "23": 0.0,
+        "30": 0.0,
+        "25": 0.0,
+        "36": 0.0,
+        "37": 0.0
+      },
+      "markers": [
+        {
+          "time": 0.0,
+          "label": "Audio start"
+        },
+        {
+          "time": 6.0,
+          "label": "Audio end"
+        },
+        {
+          "time": 2.0,
+          "label": "Input silenced"
+        }
+      ],
+      "analysis_metrics": {
+        "baseline_rms": 0.09744656135695579,
+        "variant_rms": 0.09738230418330578,
+        "variant_peak": 0.6586293578147888
+      },
+      "original_wav_file": "35_07_averaged_original_wav.wav",
+      "original_wav_sha256": "9f24b1296727d8c3919fbf4784401d4ead82cd21eaeecc11cd37f3da22b48b02",
+      "processed_wav_file": "35_07_averaged_processed_wav.wav",
+      "processed_wav_sha256": "df2310cffc92212fa3b81e6425696ffdfd16b4532c439c378d98cc3d4845d95c",
+      "telemetry_csv_file": "35_07_averaged_telemetry.csv",
+      "telemetry_csv_sha256": "aac151905547bfebb1611cf2cd023ed388d4e41a0a95bb1ba3cb6cf811e82593"
+    },
+    "36_08_bias_off": {
+      "name": "High feedback: baseline vs bias_off",
+      "group": "Bias A/B \u2014 bias_off",
+      "description": "A / Original = triangular baseline output; B / Processed = variant output. Same gain; no normalization.",
+      "duration_sec": 6.0,
+      "bpm": 120.0,
+      "tempo_source": 0,
+      "reference_commit": "f0c16cddb891ba9079fa4dbbf98f29132ed5c9f0",
+      "random_seed": 6208,
+      "events": [],
+      "clock_pulses": [],
+      "sample_rate_hz": 48000,
+      "source_material": "clean_guitar",
+      "comparison_variant": "bias_off",
+      "comparison_case": 8,
+      "comparison_title": "High feedback",
+      "human_review_state": "NOT REVIEWED",
+      "stimulus_sha256": "9c7bbb776afc5bc4abe12d5dc1bebff198dc0df4274c13e40f2080d17d095b0b",
+      "dsp_params": {
+        "0": 8.0,
+        "1": 6.0,
+        "3": 25.0,
+        "4": 10.0,
+        "11": 1.0,
+        "12": 500.0,
+        "13": 95.0,
+        "14": 50.0,
+        "15": 50.0,
+        "16": 4.0,
+        "17": 120.0,
+        "18": 0.0,
+        "21": 0.0,
+        "23": 0.0,
+        "30": 0.0,
+        "25": 0.0,
+        "36": 0.0,
+        "37": 0.0
+      },
+      "markers": [
+        {
+          "time": 0.0,
+          "label": "Audio start"
+        },
+        {
+          "time": 6.0,
+          "label": "Audio end"
+        },
+        {
+          "time": 2.0,
+          "label": "Input silenced"
+        }
+      ],
+      "analysis_metrics": {
+        "baseline_rms": 0.10087939271999513,
+        "variant_rms": 0.10092033864421343,
+        "variant_peak": 0.6554838418960571
+      },
+      "original_wav_file": "36_08_bias_off_original_wav.wav",
+      "original_wav_sha256": "041283cd62be9ea624ded9d80d77cc7c57994b9feb5890027b63a06ddc598b39",
+      "processed_wav_file": "36_08_bias_off_processed_wav.wav",
+      "processed_wav_sha256": "e7e7af0c024666547e41fec0c4d1a76b5b637a37a39c42a14fa8b36fd85b04fc",
+      "telemetry_csv_file": "36_08_bias_off_telemetry.csv",
+      "telemetry_csv_sha256": "2f68d91ec335706d905c962a5004bc0b864fedc6a1070eee6af022b1bd21bf49"
+    },
+    "37_08_sine": {
+      "name": "High feedback: baseline vs sine",
+      "group": "Bias A/B \u2014 sine",
+      "description": "A / Original = triangular baseline output; B / Processed = variant output. Same gain; no normalization.",
+      "duration_sec": 6.0,
+      "bpm": 120.0,
+      "tempo_source": 0,
+      "reference_commit": "f0c16cddb891ba9079fa4dbbf98f29132ed5c9f0",
+      "random_seed": 6208,
+      "events": [],
+      "clock_pulses": [],
+      "sample_rate_hz": 48000,
+      "source_material": "clean_guitar",
+      "comparison_variant": "sine",
+      "comparison_case": 8,
+      "comparison_title": "High feedback",
+      "human_review_state": "NOT REVIEWED",
+      "stimulus_sha256": "9c7bbb776afc5bc4abe12d5dc1bebff198dc0df4274c13e40f2080d17d095b0b",
+      "dsp_params": {
+        "0": 8.0,
+        "1": 6.0,
+        "3": 25.0,
+        "4": 10.0,
+        "11": 1.0,
+        "12": 500.0,
+        "13": 95.0,
+        "14": 50.0,
+        "15": 50.0,
+        "16": 4.0,
+        "17": 120.0,
+        "18": 0.0,
+        "21": 0.0,
+        "23": 0.0,
+        "30": 0.0,
+        "25": 0.0,
+        "36": 0.0,
+        "37": 0.0
+      },
+      "markers": [
+        {
+          "time": 0.0,
+          "label": "Audio start"
+        },
+        {
+          "time": 6.0,
+          "label": "Audio end"
+        },
+        {
+          "time": 2.0,
+          "label": "Input silenced"
+        }
+      ],
+      "analysis_metrics": {
+        "baseline_rms": 0.10087939271999513,
+        "variant_rms": 0.10080601308189324,
+        "variant_peak": 0.6553664803504944
+      },
+      "original_wav_file": "37_08_sine_original_wav.wav",
+      "original_wav_sha256": "041283cd62be9ea624ded9d80d77cc7c57994b9feb5890027b63a06ddc598b39",
+      "processed_wav_file": "37_08_sine_processed_wav.wav",
+      "processed_wav_sha256": "4fba19cc659b4401490846e6da22ee3f4614a87c1b62980a9d633e5625acb9b8",
+      "telemetry_csv_file": "37_08_sine_telemetry.csv",
+      "telemetry_csv_sha256": "86683c7200f2eab73c0dcf2ca6bb240f74a84a0e65ce13c8dfa5ca0c221a8941"
+    },
+    "38_08_bandlimited": {
+      "name": "High feedback: baseline vs bandlimited",
+      "group": "Bias A/B \u2014 bandlimited",
+      "description": "A / Original = triangular baseline output; B / Processed = variant output. Same gain; no normalization.",
+      "duration_sec": 6.0,
+      "bpm": 120.0,
+      "tempo_source": 0,
+      "reference_commit": "f0c16cddb891ba9079fa4dbbf98f29132ed5c9f0",
+      "random_seed": 6208,
+      "events": [],
+      "clock_pulses": [],
+      "sample_rate_hz": 48000,
+      "source_material": "clean_guitar",
+      "comparison_variant": "bandlimited",
+      "comparison_case": 8,
+      "comparison_title": "High feedback",
+      "human_review_state": "NOT REVIEWED",
+      "stimulus_sha256": "9c7bbb776afc5bc4abe12d5dc1bebff198dc0df4274c13e40f2080d17d095b0b",
+      "dsp_params": {
+        "0": 8.0,
+        "1": 6.0,
+        "3": 25.0,
+        "4": 10.0,
+        "11": 1.0,
+        "12": 500.0,
+        "13": 95.0,
+        "14": 50.0,
+        "15": 50.0,
+        "16": 4.0,
+        "17": 120.0,
+        "18": 0.0,
+        "21": 0.0,
+        "23": 0.0,
+        "30": 0.0,
+        "25": 0.0,
+        "36": 0.0,
+        "37": 0.0
+      },
+      "markers": [
+        {
+          "time": 0.0,
+          "label": "Audio start"
+        },
+        {
+          "time": 6.0,
+          "label": "Audio end"
+        },
+        {
+          "time": 2.0,
+          "label": "Input silenced"
+        }
+      ],
+      "analysis_metrics": {
+        "baseline_rms": 0.10087939271999513,
+        "variant_rms": 0.10084520028074018,
+        "variant_peak": 0.6554975509643555
+      },
+      "original_wav_file": "38_08_bandlimited_original_wav.wav",
+      "original_wav_sha256": "041283cd62be9ea624ded9d80d77cc7c57994b9feb5890027b63a06ddc598b39",
+      "processed_wav_file": "38_08_bandlimited_processed_wav.wav",
+      "processed_wav_sha256": "3360aa42e2333fe55cd90fd75977c6863866353cb9ed9d509b9f73bbb782cc8d",
+      "telemetry_csv_file": "38_08_bandlimited_telemetry.csv",
+      "telemetry_csv_sha256": "e6fae8a76884a08c00251f699801a494a7e241cde7dfb70d7db676b4673e11ef"
+    },
+    "39_08_oversampled": {
+      "name": "High feedback: baseline vs oversampled",
+      "group": "Bias A/B \u2014 oversampled",
+      "description": "A / Original = triangular baseline output; B / Processed = variant output. Same gain; no normalization.",
+      "duration_sec": 6.0,
+      "bpm": 120.0,
+      "tempo_source": 0,
+      "reference_commit": "f0c16cddb891ba9079fa4dbbf98f29132ed5c9f0",
+      "random_seed": 6208,
+      "events": [],
+      "clock_pulses": [],
+      "sample_rate_hz": 48000,
+      "source_material": "clean_guitar",
+      "comparison_variant": "oversampled",
+      "comparison_case": 8,
+      "comparison_title": "High feedback",
+      "human_review_state": "NOT REVIEWED",
+      "stimulus_sha256": "9c7bbb776afc5bc4abe12d5dc1bebff198dc0df4274c13e40f2080d17d095b0b",
+      "dsp_params": {
+        "0": 8.0,
+        "1": 6.0,
+        "3": 25.0,
+        "4": 10.0,
+        "11": 1.0,
+        "12": 500.0,
+        "13": 95.0,
+        "14": 50.0,
+        "15": 50.0,
+        "16": 4.0,
+        "17": 120.0,
+        "18": 0.0,
+        "21": 0.0,
+        "23": 0.0,
+        "30": 0.0,
+        "25": 0.0,
+        "36": 0.0,
+        "37": 0.0
+      },
+      "markers": [
+        {
+          "time": 0.0,
+          "label": "Audio start"
+        },
+        {
+          "time": 6.0,
+          "label": "Audio end"
+        },
+        {
+          "time": 2.0,
+          "label": "Input silenced"
+        }
+      ],
+      "analysis_metrics": {
+        "baseline_rms": 0.10087939271999513,
+        "variant_rms": 0.1008219822257922,
+        "variant_peak": 0.7058899402618408
+      },
+      "original_wav_file": "39_08_oversampled_original_wav.wav",
+      "original_wav_sha256": "041283cd62be9ea624ded9d80d77cc7c57994b9feb5890027b63a06ddc598b39",
+      "processed_wav_file": "39_08_oversampled_processed_wav.wav",
+      "processed_wav_sha256": "d8eda952835ecb24ee8925c9ac91eaa07051b365d26839d51009001a525beae0",
+      "telemetry_csv_file": "39_08_oversampled_telemetry.csv",
+      "telemetry_csv_sha256": "99d4e34258dd8b696e623307248ed5c334ca5fa556afd99b3d1a0b391f29a408"
+    },
+    "40_08_averaged": {
+      "name": "High feedback: baseline vs averaged",
+      "group": "Bias A/B \u2014 averaged",
+      "description": "A / Original = triangular baseline output; B / Processed = variant output. Same gain; no normalization.",
+      "duration_sec": 6.0,
+      "bpm": 120.0,
+      "tempo_source": 0,
+      "reference_commit": "f0c16cddb891ba9079fa4dbbf98f29132ed5c9f0",
+      "random_seed": 6208,
+      "events": [],
+      "clock_pulses": [],
+      "sample_rate_hz": 48000,
+      "source_material": "clean_guitar",
+      "comparison_variant": "averaged",
+      "comparison_case": 8,
+      "comparison_title": "High feedback",
+      "human_review_state": "NOT REVIEWED",
+      "stimulus_sha256": "9c7bbb776afc5bc4abe12d5dc1bebff198dc0df4274c13e40f2080d17d095b0b",
+      "dsp_params": {
+        "0": 8.0,
+        "1": 6.0,
+        "3": 25.0,
+        "4": 10.0,
+        "11": 1.0,
+        "12": 500.0,
+        "13": 95.0,
+        "14": 50.0,
+        "15": 50.0,
+        "16": 4.0,
+        "17": 120.0,
+        "18": 0.0,
+        "21": 0.0,
+        "23": 0.0,
+        "30": 0.0,
+        "25": 0.0,
+        "36": 0.0,
+        "37": 0.0
+      },
+      "markers": [
+        {
+          "time": 0.0,
+          "label": "Audio start"
+        },
+        {
+          "time": 6.0,
+          "label": "Audio end"
+        },
+        {
+          "time": 2.0,
+          "label": "Input silenced"
+        }
+      ],
+      "analysis_metrics": {
+        "baseline_rms": 0.10087939271999513,
+        "variant_rms": 0.10081937245435449,
+        "variant_peak": 0.6550805568695068
+      },
+      "original_wav_file": "40_08_averaged_original_wav.wav",
+      "original_wav_sha256": "041283cd62be9ea624ded9d80d77cc7c57994b9feb5890027b63a06ddc598b39",
+      "processed_wav_file": "40_08_averaged_processed_wav.wav",
+      "processed_wav_sha256": "55f9dd9e83a21de40334c8aff779b4e325bfbecfb0b9b3fc182bf081cdf45c4e",
+      "telemetry_csv_file": "40_08_averaged_telemetry.csv",
+      "telemetry_csv_sha256": "80d71d255eaf413bc0d23fb5b1cda1e03628d3922a230b65dbae0633ae4f4492"
+    },
+    "41_09_bias_off": {
+      "name": "Reverse V2: baseline vs bias_off",
+      "group": "Bias A/B \u2014 bias_off",
+      "description": "A / Original = triangular baseline output; B / Processed = variant output. Same gain; no normalization.",
+      "duration_sec": 6.0,
+      "bpm": 120.0,
+      "tempo_source": 0,
+      "reference_commit": "f0c16cddb891ba9079fa4dbbf98f29132ed5c9f0",
+      "random_seed": 6209,
+      "events": [],
+      "clock_pulses": [],
+      "sample_rate_hz": 48000,
+      "source_material": "clean_guitar",
+      "comparison_variant": "bias_off",
+      "comparison_case": 9,
+      "comparison_title": "Reverse V2",
+      "human_review_state": "NOT REVIEWED",
+      "stimulus_sha256": "5f95b1b5f4be2702c181e3c4a79a546fb49d4b7c1888d7b45f7a58e5b9d970f0",
+      "dsp_params": {
+        "0": 8.0,
+        "1": 6.0,
+        "3": 25.0,
+        "4": 10.0,
+        "11": 1.0,
+        "12": 500.0,
+        "13": 35.0,
+        "14": 50.0,
+        "15": 50.0,
+        "16": 4.0,
+        "17": 120.0,
+        "18": 0.0,
+        "21": 0.0,
+        "23": 1.0,
+        "30": 0.0,
+        "25": 0.0,
+        "36": 0.0,
+        "37": 0.0
+      },
+      "markers": [
+        {
+          "time": 0.0,
+          "label": "Audio start"
+        },
+        {
+          "time": 6.0,
+          "label": "Audio end"
+        }
+      ],
+      "analysis_metrics": {
+        "baseline_rms": 0.14368146181827932,
+        "variant_rms": 0.14376426807417556,
+        "variant_peak": 0.6479172110557556
+      },
+      "original_wav_file": "41_09_bias_off_original_wav.wav",
+      "original_wav_sha256": "6c5fd79f53e67c3f00dd2bb707baf3a5053b04d6d400596cdf654c9264ef7f7a",
+      "processed_wav_file": "41_09_bias_off_processed_wav.wav",
+      "processed_wav_sha256": "6a4261cbb2b08ede1bc9aed3cb5e6c97d4fc3c85f7636218f12600c54f711dc2",
+      "telemetry_csv_file": "41_09_bias_off_telemetry.csv",
+      "telemetry_csv_sha256": "eda8db47cf10f9c8cb8e37b579b523782422dd17d33f1d1f7cefa866a38094cf"
+    },
+    "42_09_sine": {
+      "name": "Reverse V2: baseline vs sine",
+      "group": "Bias A/B \u2014 sine",
+      "description": "A / Original = triangular baseline output; B / Processed = variant output. Same gain; no normalization.",
+      "duration_sec": 6.0,
+      "bpm": 120.0,
+      "tempo_source": 0,
+      "reference_commit": "f0c16cddb891ba9079fa4dbbf98f29132ed5c9f0",
+      "random_seed": 6209,
+      "events": [],
+      "clock_pulses": [],
+      "sample_rate_hz": 48000,
+      "source_material": "clean_guitar",
+      "comparison_variant": "sine",
+      "comparison_case": 9,
+      "comparison_title": "Reverse V2",
+      "human_review_state": "NOT REVIEWED",
+      "stimulus_sha256": "5f95b1b5f4be2702c181e3c4a79a546fb49d4b7c1888d7b45f7a58e5b9d970f0",
+      "dsp_params": {
+        "0": 8.0,
+        "1": 6.0,
+        "3": 25.0,
+        "4": 10.0,
+        "11": 1.0,
+        "12": 500.0,
+        "13": 35.0,
+        "14": 50.0,
+        "15": 50.0,
+        "16": 4.0,
+        "17": 120.0,
+        "18": 0.0,
+        "21": 0.0,
+        "23": 1.0,
+        "30": 0.0,
+        "25": 0.0,
+        "36": 0.0,
+        "37": 0.0
+      },
+      "markers": [
+        {
+          "time": 0.0,
+          "label": "Audio start"
+        },
+        {
+          "time": 6.0,
+          "label": "Audio end"
+        }
+      ],
+      "analysis_metrics": {
+        "baseline_rms": 0.14368146181827932,
+        "variant_rms": 0.14351628741344305,
+        "variant_peak": 0.6467771530151367
+      },
+      "original_wav_file": "42_09_sine_original_wav.wav",
+      "original_wav_sha256": "6c5fd79f53e67c3f00dd2bb707baf3a5053b04d6d400596cdf654c9264ef7f7a",
+      "processed_wav_file": "42_09_sine_processed_wav.wav",
+      "processed_wav_sha256": "4708e5934eb93388e2ed5879a2f0d5e558f00d7784c6a7b21f79517a3728ce3f",
+      "telemetry_csv_file": "42_09_sine_telemetry.csv",
+      "telemetry_csv_sha256": "941fc9e1cdb569f6f5a2495cf1cb9fa0471ff4a5d2412c0f7d2022df7258ba9d"
+    },
+    "43_09_bandlimited": {
+      "name": "Reverse V2: baseline vs bandlimited",
+      "group": "Bias A/B \u2014 bandlimited",
+      "description": "A / Original = triangular baseline output; B / Processed = variant output. Same gain; no normalization.",
+      "duration_sec": 6.0,
+      "bpm": 120.0,
+      "tempo_source": 0,
+      "reference_commit": "f0c16cddb891ba9079fa4dbbf98f29132ed5c9f0",
+      "random_seed": 6209,
+      "events": [],
+      "clock_pulses": [],
+      "sample_rate_hz": 48000,
+      "source_material": "clean_guitar",
+      "comparison_variant": "bandlimited",
+      "comparison_case": 9,
+      "comparison_title": "Reverse V2",
+      "human_review_state": "NOT REVIEWED",
+      "stimulus_sha256": "5f95b1b5f4be2702c181e3c4a79a546fb49d4b7c1888d7b45f7a58e5b9d970f0",
+      "dsp_params": {
+        "0": 8.0,
+        "1": 6.0,
+        "3": 25.0,
+        "4": 10.0,
+        "11": 1.0,
+        "12": 500.0,
+        "13": 35.0,
+        "14": 50.0,
+        "15": 50.0,
+        "16": 4.0,
+        "17": 120.0,
+        "18": 0.0,
+        "21": 0.0,
+        "23": 1.0,
+        "30": 0.0,
+        "25": 0.0,
+        "36": 0.0,
+        "37": 0.0
+      },
+      "markers": [
+        {
+          "time": 0.0,
+          "label": "Audio start"
+        },
+        {
+          "time": 6.0,
+          "label": "Audio end"
+        }
+      ],
+      "analysis_metrics": {
+        "baseline_rms": 0.14368146181827932,
+        "variant_rms": 0.1436626855417742,
+        "variant_peak": 0.6473950147628784
+      },
+      "original_wav_file": "43_09_bandlimited_original_wav.wav",
+      "original_wav_sha256": "6c5fd79f53e67c3f00dd2bb707baf3a5053b04d6d400596cdf654c9264ef7f7a",
+      "processed_wav_file": "43_09_bandlimited_processed_wav.wav",
+      "processed_wav_sha256": "3652dc86d28d5f1dc2558848eb9fb6a72a23ad20def09b226c98eb653a419a02",
+      "telemetry_csv_file": "43_09_bandlimited_telemetry.csv",
+      "telemetry_csv_sha256": "aee19c1700f2f240c0f1b1a7521fb2069fb491714fc1ccf5732be6f6093f581a"
+    },
+    "44_09_oversampled": {
+      "name": "Reverse V2: baseline vs oversampled",
+      "group": "Bias A/B \u2014 oversampled",
+      "description": "A / Original = triangular baseline output; B / Processed = variant output. Same gain; no normalization.",
+      "duration_sec": 6.0,
+      "bpm": 120.0,
+      "tempo_source": 0,
+      "reference_commit": "f0c16cddb891ba9079fa4dbbf98f29132ed5c9f0",
+      "random_seed": 6209,
+      "events": [],
+      "clock_pulses": [],
+      "sample_rate_hz": 48000,
+      "source_material": "clean_guitar",
+      "comparison_variant": "oversampled",
+      "comparison_case": 9,
+      "comparison_title": "Reverse V2",
+      "human_review_state": "NOT REVIEWED",
+      "stimulus_sha256": "5f95b1b5f4be2702c181e3c4a79a546fb49d4b7c1888d7b45f7a58e5b9d970f0",
+      "dsp_params": {
+        "0": 8.0,
+        "1": 6.0,
+        "3": 25.0,
+        "4": 10.0,
+        "11": 1.0,
+        "12": 500.0,
+        "13": 35.0,
+        "14": 50.0,
+        "15": 50.0,
+        "16": 4.0,
+        "17": 120.0,
+        "18": 0.0,
+        "21": 0.0,
+        "23": 1.0,
+        "30": 0.0,
+        "25": 0.0,
+        "36": 0.0,
+        "37": 0.0
+      },
+      "markers": [
+        {
+          "time": 0.0,
+          "label": "Audio start"
+        },
+        {
+          "time": 6.0,
+          "label": "Audio end"
+        }
+      ],
+      "analysis_metrics": {
+        "baseline_rms": 0.14368146181827932,
+        "variant_rms": 0.14638980887683622,
+        "variant_peak": 0.6902482509613037
+      },
+      "original_wav_file": "44_09_oversampled_original_wav.wav",
+      "original_wav_sha256": "6c5fd79f53e67c3f00dd2bb707baf3a5053b04d6d400596cdf654c9264ef7f7a",
+      "processed_wav_file": "44_09_oversampled_processed_wav.wav",
+      "processed_wav_sha256": "1241e5d9e4f9505e5f9de8ba56330427d1ae52cbf7e69326c82c448609fe60ed",
+      "telemetry_csv_file": "44_09_oversampled_telemetry.csv",
+      "telemetry_csv_sha256": "0dd8eeb28d01badf751105403ebfccfd497ff663cfab52e017c5c7fdedbb45dc"
+    },
+    "45_09_averaged": {
+      "name": "Reverse V2: baseline vs averaged",
+      "group": "Bias A/B \u2014 averaged",
+      "description": "A / Original = triangular baseline output; B / Processed = variant output. Same gain; no normalization.",
+      "duration_sec": 6.0,
+      "bpm": 120.0,
+      "tempo_source": 0,
+      "reference_commit": "f0c16cddb891ba9079fa4dbbf98f29132ed5c9f0",
+      "random_seed": 6209,
+      "events": [],
+      "clock_pulses": [],
+      "sample_rate_hz": 48000,
+      "source_material": "clean_guitar",
+      "comparison_variant": "averaged",
+      "comparison_case": 9,
+      "comparison_title": "Reverse V2",
+      "human_review_state": "NOT REVIEWED",
+      "stimulus_sha256": "5f95b1b5f4be2702c181e3c4a79a546fb49d4b7c1888d7b45f7a58e5b9d970f0",
+      "dsp_params": {
+        "0": 8.0,
+        "1": 6.0,
+        "3": 25.0,
+        "4": 10.0,
+        "11": 1.0,
+        "12": 500.0,
+        "13": 35.0,
+        "14": 50.0,
+        "15": 50.0,
+        "16": 4.0,
+        "17": 120.0,
+        "18": 0.0,
+        "21": 0.0,
+        "23": 1.0,
+        "30": 0.0,
+        "25": 0.0,
+        "36": 0.0,
+        "37": 0.0
+      },
+      "markers": [
+        {
+          "time": 0.0,
+          "label": "Audio start"
+        },
+        {
+          "time": 6.0,
+          "label": "Audio end"
+        }
+      ],
+      "analysis_metrics": {
+        "baseline_rms": 0.14368146181827932,
+        "variant_rms": 0.14363727288121034,
+        "variant_peak": 0.6474860906600952
+      },
+      "original_wav_file": "45_09_averaged_original_wav.wav",
+      "original_wav_sha256": "6c5fd79f53e67c3f00dd2bb707baf3a5053b04d6d400596cdf654c9264ef7f7a",
+      "processed_wav_file": "45_09_averaged_processed_wav.wav",
+      "processed_wav_sha256": "f6ec6c3122f75b36fa884616c7acecab423d2d05802317d5c804c22f9ab156fb",
+      "telemetry_csv_file": "45_09_averaged_telemetry.csv",
+      "telemetry_csv_sha256": "8dd83ab9e4b7dbd50ecac88697fd55d078b1a904edc908e8085186d9d4296e1c"
+    },
+    "46_10_bias_off": {
+      "name": "Multi-Head: baseline vs bias_off",
+      "group": "Bias A/B \u2014 bias_off",
+      "description": "A / Original = triangular baseline output; B / Processed = variant output. Same gain; no normalization.",
+      "duration_sec": 6.0,
+      "bpm": 120.0,
+      "tempo_source": 0,
+      "reference_commit": "f0c16cddb891ba9079fa4dbbf98f29132ed5c9f0",
+      "random_seed": 6210,
+      "events": [],
+      "clock_pulses": [],
+      "sample_rate_hz": 48000,
+      "source_material": "drum_machine",
+      "comparison_variant": "bias_off",
+      "comparison_case": 10,
+      "comparison_title": "Multi-Head",
+      "human_review_state": "NOT REVIEWED",
+      "stimulus_sha256": "bf6d60ea05c965d2375710a247bd4656e0d5bb936d3b13fb0738935569132dfc",
+      "dsp_params": {
+        "0": 8.0,
+        "1": 6.0,
+        "3": 25.0,
+        "4": 10.0,
+        "11": 1.0,
+        "12": 500.0,
+        "13": 35.0,
+        "14": 50.0,
+        "15": 50.0,
+        "16": 7.0,
+        "17": 120.0,
+        "18": 0.0,
+        "21": 0.0,
+        "23": 0.0,
+        "30": 0.0,
+        "25": 0.0,
+        "36": 0.0,
+        "37": 0.0
+      },
+      "markers": [
+        {
+          "time": 0.0,
+          "label": "Audio start"
+        },
+        {
+          "time": 6.0,
+          "label": "Audio end"
+        }
+      ],
+      "analysis_metrics": {
+        "baseline_rms": 0.08517682563145183,
+        "variant_rms": 0.08516439883518788,
+        "variant_peak": 0.46822625398635864
+      },
+      "original_wav_file": "46_10_bias_off_original_wav.wav",
+      "original_wav_sha256": "2b68a69305b0610a9d51501cd67b32fa5d767665db90533bf12da20d3ffe8c6e",
+      "processed_wav_file": "46_10_bias_off_processed_wav.wav",
+      "processed_wav_sha256": "b44c8e24e52d6b32a882f8ffa69f1feb3825a4274037922e1b2bf2a3289b9ea9",
+      "telemetry_csv_file": "46_10_bias_off_telemetry.csv",
+      "telemetry_csv_sha256": "78e866b3beb832f0a19f5ee652fc5b43973e629cd8082ecee801fd4ad5d05930"
+    },
+    "47_10_sine": {
+      "name": "Multi-Head: baseline vs sine",
+      "group": "Bias A/B \u2014 sine",
+      "description": "A / Original = triangular baseline output; B / Processed = variant output. Same gain; no normalization.",
+      "duration_sec": 6.0,
+      "bpm": 120.0,
+      "tempo_source": 0,
+      "reference_commit": "f0c16cddb891ba9079fa4dbbf98f29132ed5c9f0",
+      "random_seed": 6210,
+      "events": [],
+      "clock_pulses": [],
+      "sample_rate_hz": 48000,
+      "source_material": "drum_machine",
+      "comparison_variant": "sine",
+      "comparison_case": 10,
+      "comparison_title": "Multi-Head",
+      "human_review_state": "NOT REVIEWED",
+      "stimulus_sha256": "bf6d60ea05c965d2375710a247bd4656e0d5bb936d3b13fb0738935569132dfc",
+      "dsp_params": {
+        "0": 8.0,
+        "1": 6.0,
+        "3": 25.0,
+        "4": 10.0,
+        "11": 1.0,
+        "12": 500.0,
+        "13": 35.0,
+        "14": 50.0,
+        "15": 50.0,
+        "16": 7.0,
+        "17": 120.0,
+        "18": 0.0,
+        "21": 0.0,
+        "23": 0.0,
+        "30": 0.0,
+        "25": 0.0,
+        "36": 0.0,
+        "37": 0.0
+      },
+      "markers": [
+        {
+          "time": 0.0,
+          "label": "Audio start"
+        },
+        {
+          "time": 6.0,
+          "label": "Audio end"
+        }
+      ],
+      "analysis_metrics": {
+        "baseline_rms": 0.08517682563145183,
+        "variant_rms": 0.0850841423452403,
+        "variant_peak": 0.4679792523384094
+      },
+      "original_wav_file": "47_10_sine_original_wav.wav",
+      "original_wav_sha256": "2b68a69305b0610a9d51501cd67b32fa5d767665db90533bf12da20d3ffe8c6e",
+      "processed_wav_file": "47_10_sine_processed_wav.wav",
+      "processed_wav_sha256": "c2db2468c2b0d69ade0e5faedd933d0e6039209688f2a0c8b25959037c169980",
+      "telemetry_csv_file": "47_10_sine_telemetry.csv",
+      "telemetry_csv_sha256": "504b79f19f06d3575f7bfda1388121d680e607bcd9dd6b05a654fb10db9f1a8a"
+    },
+    "48_10_bandlimited": {
+      "name": "Multi-Head: baseline vs bandlimited",
+      "group": "Bias A/B \u2014 bandlimited",
+      "description": "A / Original = triangular baseline output; B / Processed = variant output. Same gain; no normalization.",
+      "duration_sec": 6.0,
+      "bpm": 120.0,
+      "tempo_source": 0,
+      "reference_commit": "f0c16cddb891ba9079fa4dbbf98f29132ed5c9f0",
+      "random_seed": 6210,
+      "events": [],
+      "clock_pulses": [],
+      "sample_rate_hz": 48000,
+      "source_material": "drum_machine",
+      "comparison_variant": "bandlimited",
+      "comparison_case": 10,
+      "comparison_title": "Multi-Head",
+      "human_review_state": "NOT REVIEWED",
+      "stimulus_sha256": "bf6d60ea05c965d2375710a247bd4656e0d5bb936d3b13fb0738935569132dfc",
+      "dsp_params": {
+        "0": 8.0,
+        "1": 6.0,
+        "3": 25.0,
+        "4": 10.0,
+        "11": 1.0,
+        "12": 500.0,
+        "13": 35.0,
+        "14": 50.0,
+        "15": 50.0,
+        "16": 7.0,
+        "17": 120.0,
+        "18": 0.0,
+        "21": 0.0,
+        "23": 0.0,
+        "30": 0.0,
+        "25": 0.0,
+        "36": 0.0,
+        "37": 0.0
+      },
+      "markers": [
+        {
+          "time": 0.0,
+          "label": "Audio start"
+        },
+        {
+          "time": 6.0,
+          "label": "Audio end"
+        }
+      ],
+      "analysis_metrics": {
+        "baseline_rms": 0.08517682563145183,
+        "variant_rms": 0.0851119492436782,
+        "variant_peak": 0.4678052067756653
+      },
+      "original_wav_file": "48_10_bandlimited_original_wav.wav",
+      "original_wav_sha256": "2b68a69305b0610a9d51501cd67b32fa5d767665db90533bf12da20d3ffe8c6e",
+      "processed_wav_file": "48_10_bandlimited_processed_wav.wav",
+      "processed_wav_sha256": "f8885719fe1a48a738e65a30f1d3e222c8c7db56180fcf9918533256b4404555",
+      "telemetry_csv_file": "48_10_bandlimited_telemetry.csv",
+      "telemetry_csv_sha256": "f3bb0769a4f9d75e4df3e4ecce16fbb3918f43ba9de87459121042129a4942e5"
+    },
+    "49_10_oversampled": {
+      "name": "Multi-Head: baseline vs oversampled",
+      "group": "Bias A/B \u2014 oversampled",
+      "description": "A / Original = triangular baseline output; B / Processed = variant output. Same gain; no normalization.",
+      "duration_sec": 6.0,
+      "bpm": 120.0,
+      "tempo_source": 0,
+      "reference_commit": "f0c16cddb891ba9079fa4dbbf98f29132ed5c9f0",
+      "random_seed": 6210,
+      "events": [],
+      "clock_pulses": [],
+      "sample_rate_hz": 48000,
+      "source_material": "drum_machine",
+      "comparison_variant": "oversampled",
+      "comparison_case": 10,
+      "comparison_title": "Multi-Head",
+      "human_review_state": "NOT REVIEWED",
+      "stimulus_sha256": "bf6d60ea05c965d2375710a247bd4656e0d5bb936d3b13fb0738935569132dfc",
+      "dsp_params": {
+        "0": 8.0,
+        "1": 6.0,
+        "3": 25.0,
+        "4": 10.0,
+        "11": 1.0,
+        "12": 500.0,
+        "13": 35.0,
+        "14": 50.0,
+        "15": 50.0,
+        "16": 7.0,
+        "17": 120.0,
+        "18": 0.0,
+        "21": 0.0,
+        "23": 0.0,
+        "30": 0.0,
+        "25": 0.0,
+        "36": 0.0,
+        "37": 0.0
+      },
+      "markers": [
+        {
+          "time": 0.0,
+          "label": "Audio start"
+        },
+        {
+          "time": 6.0,
+          "label": "Audio end"
+        }
+      ],
+      "analysis_metrics": {
+        "baseline_rms": 0.08517682563145183,
+        "variant_rms": 0.0816076691436814,
+        "variant_peak": 0.47727102041244507
+      },
+      "original_wav_file": "49_10_oversampled_original_wav.wav",
+      "original_wav_sha256": "2b68a69305b0610a9d51501cd67b32fa5d767665db90533bf12da20d3ffe8c6e",
+      "processed_wav_file": "49_10_oversampled_processed_wav.wav",
+      "processed_wav_sha256": "13793543d9278c713620eeace3e9fc7a4dbbc3b9f50cd7eac3635c3ef7b86bd6",
+      "telemetry_csv_file": "49_10_oversampled_telemetry.csv",
+      "telemetry_csv_sha256": "4cf0fdeb9b3d3213d9ad71a1a38968364e5cd6614954311d333708c955d3c57c"
+    },
+    "50_10_averaged": {
+      "name": "Multi-Head: baseline vs averaged",
+      "group": "Bias A/B \u2014 averaged",
+      "description": "A / Original = triangular baseline output; B / Processed = variant output. Same gain; no normalization.",
+      "duration_sec": 6.0,
+      "bpm": 120.0,
+      "tempo_source": 0,
+      "reference_commit": "f0c16cddb891ba9079fa4dbbf98f29132ed5c9f0",
+      "random_seed": 6210,
+      "events": [],
+      "clock_pulses": [],
+      "sample_rate_hz": 48000,
+      "source_material": "drum_machine",
+      "comparison_variant": "averaged",
+      "comparison_case": 10,
+      "comparison_title": "Multi-Head",
+      "human_review_state": "NOT REVIEWED",
+      "stimulus_sha256": "bf6d60ea05c965d2375710a247bd4656e0d5bb936d3b13fb0738935569132dfc",
+      "dsp_params": {
+        "0": 8.0,
+        "1": 6.0,
+        "3": 25.0,
+        "4": 10.0,
+        "11": 1.0,
+        "12": 500.0,
+        "13": 35.0,
+        "14": 50.0,
+        "15": 50.0,
+        "16": 7.0,
+        "17": 120.0,
+        "18": 0.0,
+        "21": 0.0,
+        "23": 0.0,
+        "30": 0.0,
+        "25": 0.0,
+        "36": 0.0,
+        "37": 0.0
+      },
+      "markers": [
+        {
+          "time": 0.0,
+          "label": "Audio start"
+        },
+        {
+          "time": 6.0,
+          "label": "Audio end"
+        }
+      ],
+      "analysis_metrics": {
+        "baseline_rms": 0.08517682563145183,
+        "variant_rms": 0.08510017852704711,
+        "variant_peak": 0.4679607152938843
+      },
+      "original_wav_file": "50_10_averaged_original_wav.wav",
+      "original_wav_sha256": "2b68a69305b0610a9d51501cd67b32fa5d767665db90533bf12da20d3ffe8c6e",
+      "processed_wav_file": "50_10_averaged_processed_wav.wav",
+      "processed_wav_sha256": "d743c3b14cc473351d57af3a55099330ffd81407cb6ae8f0bdd5e8aa15448505",
+      "telemetry_csv_file": "50_10_averaged_telemetry.csv",
+      "telemetry_csv_sha256": "34cca1428a5ac177ebee7f3ddef07b0ca1a63bcb5ec9c74d0d3b824184d957fb"
+    },
+    "51_11_bias_off": {
+      "name": "Digital silence with hiss: baseline vs bias_off",
+      "group": "Bias A/B \u2014 bias_off",
+      "description": "A / Original = triangular baseline output; B / Processed = variant output. Same gain; no normalization.",
+      "duration_sec": 6.0,
+      "bpm": 120.0,
+      "tempo_source": 0,
+      "reference_commit": "f0c16cddb891ba9079fa4dbbf98f29132ed5c9f0",
+      "random_seed": 6211,
+      "events": [],
+      "clock_pulses": [],
+      "sample_rate_hz": 48000,
+      "source_material": "silence",
+      "comparison_variant": "bias_off",
+      "comparison_case": 11,
+      "comparison_title": "Digital silence with hiss",
+      "human_review_state": "NOT REVIEWED",
+      "stimulus_sha256": "0d2039545940e7775d22c8d82079282c91be29af0203faa77e2bff78a67bed0f",
+      "dsp_params": {
+        "0": 8.0,
+        "1": 6.0,
+        "3": 25.0,
+        "4": 30.0,
+        "11": 1.0,
+        "12": 500.0,
+        "13": 35.0,
+        "14": 50.0,
+        "15": 50.0,
+        "16": 4.0,
+        "17": 120.0,
+        "18": 0.0,
+        "21": 0.0,
+        "23": 0.0,
+        "30": 0.0,
+        "25": 0.0,
+        "36": 0.0,
+        "37": 0.0
+      },
+      "markers": [
+        {
+          "time": 0.0,
+          "label": "Audio start"
+        },
+        {
+          "time": 6.0,
+          "label": "Audio end"
+        }
+      ],
+      "analysis_metrics": {
+        "baseline_rms": 0.004172911432367221,
+        "variant_rms": 0.0021570745449778204,
+        "variant_peak": 0.00842174980789423
+      },
+      "original_wav_file": "51_11_bias_off_original_wav.wav",
+      "original_wav_sha256": "fcd1fe2391675e43229862a0b4bc530ca85b90262b5659c696b659cdec6e9844",
+      "processed_wav_file": "51_11_bias_off_processed_wav.wav",
+      "processed_wav_sha256": "c84c4985171e2f499a9b48a9d210e10d82a99c8d66ef428708a331019d9c3ad5",
+      "telemetry_csv_file": "51_11_bias_off_telemetry.csv",
+      "telemetry_csv_sha256": "47d1e43b596468d9a8cab3042f5213258b29386752a1d1f158aa0f46f37d7b84"
+    },
+    "52_11_sine": {
+      "name": "Digital silence with hiss: baseline vs sine",
+      "group": "Bias A/B \u2014 sine",
+      "description": "A / Original = triangular baseline output; B / Processed = variant output. Same gain; no normalization.",
+      "duration_sec": 6.0,
+      "bpm": 120.0,
+      "tempo_source": 0,
+      "reference_commit": "f0c16cddb891ba9079fa4dbbf98f29132ed5c9f0",
+      "random_seed": 6211,
+      "events": [],
+      "clock_pulses": [],
+      "sample_rate_hz": 48000,
+      "source_material": "silence",
+      "comparison_variant": "sine",
+      "comparison_case": 11,
+      "comparison_title": "Digital silence with hiss",
+      "human_review_state": "NOT REVIEWED",
+      "stimulus_sha256": "0d2039545940e7775d22c8d82079282c91be29af0203faa77e2bff78a67bed0f",
+      "dsp_params": {
+        "0": 8.0,
+        "1": 6.0,
+        "3": 25.0,
+        "4": 30.0,
+        "11": 1.0,
+        "12": 500.0,
+        "13": 35.0,
+        "14": 50.0,
+        "15": 50.0,
+        "16": 4.0,
+        "17": 120.0,
+        "18": 0.0,
+        "21": 0.0,
+        "23": 0.0,
+        "30": 0.0,
+        "25": 0.0,
+        "36": 0.0,
+        "37": 0.0
+      },
+      "markers": [
+        {
+          "time": 0.0,
+          "label": "Audio start"
+        },
+        {
+          "time": 6.0,
+          "label": "Audio end"
+        }
+      ],
+      "analysis_metrics": {
+        "baseline_rms": 0.004172911432367221,
+        "variant_rms": 0.002201203829417176,
+        "variant_peak": 0.00887203961610794
+      },
+      "original_wav_file": "52_11_sine_original_wav.wav",
+      "original_wav_sha256": "fcd1fe2391675e43229862a0b4bc530ca85b90262b5659c696b659cdec6e9844",
+      "processed_wav_file": "52_11_sine_processed_wav.wav",
+      "processed_wav_sha256": "6988e7964c7a07dc89414644b9092c8984efc8696102633cccb977ffbef6edff",
+      "telemetry_csv_file": "52_11_sine_telemetry.csv",
+      "telemetry_csv_sha256": "3e86e67bb020501488aca77b295d1f505d9f46159d2fb3af7f02a401d61879b1"
+    },
+    "53_11_bandlimited": {
+      "name": "Digital silence with hiss: baseline vs bandlimited",
+      "group": "Bias A/B \u2014 bandlimited",
+      "description": "A / Original = triangular baseline output; B / Processed = variant output. Same gain; no normalization.",
+      "duration_sec": 6.0,
+      "bpm": 120.0,
+      "tempo_source": 0,
+      "reference_commit": "f0c16cddb891ba9079fa4dbbf98f29132ed5c9f0",
+      "random_seed": 6211,
+      "events": [],
+      "clock_pulses": [],
+      "sample_rate_hz": 48000,
+      "source_material": "silence",
+      "comparison_variant": "bandlimited",
+      "comparison_case": 11,
+      "comparison_title": "Digital silence with hiss",
+      "human_review_state": "NOT REVIEWED",
+      "stimulus_sha256": "0d2039545940e7775d22c8d82079282c91be29af0203faa77e2bff78a67bed0f",
+      "dsp_params": {
+        "0": 8.0,
+        "1": 6.0,
+        "3": 25.0,
+        "4": 30.0,
+        "11": 1.0,
+        "12": 500.0,
+        "13": 35.0,
+        "14": 50.0,
+        "15": 50.0,
+        "16": 4.0,
+        "17": 120.0,
+        "18": 0.0,
+        "21": 0.0,
+        "23": 0.0,
+        "30": 0.0,
+        "25": 0.0,
+        "36": 0.0,
+        "37": 0.0
+      },
+      "markers": [
+        {
+          "time": 0.0,
+          "label": "Audio start"
+        },
+        {
+          "time": 6.0,
+          "label": "Audio end"
+        }
+      ],
+      "analysis_metrics": {
+        "baseline_rms": 0.004172911432367221,
+        "variant_rms": 0.002186133063072393,
+        "variant_peak": 0.008651838637888432
+      },
+      "original_wav_file": "53_11_bandlimited_original_wav.wav",
+      "original_wav_sha256": "fcd1fe2391675e43229862a0b4bc530ca85b90262b5659c696b659cdec6e9844",
+      "processed_wav_file": "53_11_bandlimited_processed_wav.wav",
+      "processed_wav_sha256": "f67f250a5928fcfd93cae92c8867b5d47f7fc3bb60f072071ee1928281fe0ef9",
+      "telemetry_csv_file": "53_11_bandlimited_telemetry.csv",
+      "telemetry_csv_sha256": "3f50563a52b41cf780013ba9b27d39bfb02e5c9019f92751e6d8c21f48f5370c"
+    },
+    "54_11_oversampled": {
+      "name": "Digital silence with hiss: baseline vs oversampled",
+      "group": "Bias A/B \u2014 oversampled",
+      "description": "A / Original = triangular baseline output; B / Processed = variant output. Same gain; no normalization.",
+      "duration_sec": 6.0,
+      "bpm": 120.0,
+      "tempo_source": 0,
+      "reference_commit": "f0c16cddb891ba9079fa4dbbf98f29132ed5c9f0",
+      "random_seed": 6211,
+      "events": [],
+      "clock_pulses": [],
+      "sample_rate_hz": 48000,
+      "source_material": "silence",
+      "comparison_variant": "oversampled",
+      "comparison_case": 11,
+      "comparison_title": "Digital silence with hiss",
+      "human_review_state": "NOT REVIEWED",
+      "stimulus_sha256": "0d2039545940e7775d22c8d82079282c91be29af0203faa77e2bff78a67bed0f",
+      "dsp_params": {
+        "0": 8.0,
+        "1": 6.0,
+        "3": 25.0,
+        "4": 30.0,
+        "11": 1.0,
+        "12": 500.0,
+        "13": 35.0,
+        "14": 50.0,
+        "15": 50.0,
+        "16": 4.0,
+        "17": 120.0,
+        "18": 0.0,
+        "21": 0.0,
+        "23": 0.0,
+        "30": 0.0,
+        "25": 0.0,
+        "36": 0.0,
+        "37": 0.0
+      },
+      "markers": [
+        {
+          "time": 0.0,
+          "label": "Audio start"
+        },
+        {
+          "time": 6.0,
+          "label": "Audio end"
+        }
+      ],
+      "analysis_metrics": {
+        "baseline_rms": 0.004172911432367221,
+        "variant_rms": 0.0024456931370809595,
+        "variant_peak": 0.009883745573461056
+      },
+      "original_wav_file": "54_11_oversampled_original_wav.wav",
+      "original_wav_sha256": "fcd1fe2391675e43229862a0b4bc530ca85b90262b5659c696b659cdec6e9844",
+      "processed_wav_file": "54_11_oversampled_processed_wav.wav",
+      "processed_wav_sha256": "202a22fe626d2ec93554c0532b268260133eea9c3dc964fd12bdc0b9bfc4ce90",
+      "telemetry_csv_file": "54_11_oversampled_telemetry.csv",
+      "telemetry_csv_sha256": "b9df2a40b4b0d4b5ee674188286f0af5d68cdeb7d30cba8463d407605b5e8ec3"
+    },
+    "55_11_averaged": {
+      "name": "Digital silence with hiss: baseline vs averaged",
+      "group": "Bias A/B \u2014 averaged",
+      "description": "A / Original = triangular baseline output; B / Processed = variant output. Same gain; no normalization.",
+      "duration_sec": 6.0,
+      "bpm": 120.0,
+      "tempo_source": 0,
+      "reference_commit": "f0c16cddb891ba9079fa4dbbf98f29132ed5c9f0",
+      "random_seed": 6211,
+      "events": [],
+      "clock_pulses": [],
+      "sample_rate_hz": 48000,
+      "source_material": "silence",
+      "comparison_variant": "averaged",
+      "comparison_case": 11,
+      "comparison_title": "Digital silence with hiss",
+      "human_review_state": "NOT REVIEWED",
+      "stimulus_sha256": "0d2039545940e7775d22c8d82079282c91be29af0203faa77e2bff78a67bed0f",
+      "dsp_params": {
+        "0": 8.0,
+        "1": 6.0,
+        "3": 25.0,
+        "4": 30.0,
+        "11": 1.0,
+        "12": 500.0,
+        "13": 35.0,
+        "14": 50.0,
+        "15": 50.0,
+        "16": 4.0,
+        "17": 120.0,
+        "18": 0.0,
+        "21": 0.0,
+        "23": 0.0,
+        "30": 0.0,
+        "25": 0.0,
+        "36": 0.0,
+        "37": 0.0
+      },
+      "markers": [
+        {
+          "time": 0.0,
+          "label": "Audio start"
+        },
+        {
+          "time": 6.0,
+          "label": "Audio end"
+        }
+      ],
+      "analysis_metrics": {
+        "baseline_rms": 0.004172911432367221,
+        "variant_rms": 0.0021569962226599144,
+        "variant_peak": 0.008421765640377998
+      },
+      "original_wav_file": "55_11_averaged_original_wav.wav",
+      "original_wav_sha256": "fcd1fe2391675e43229862a0b4bc530ca85b90262b5659c696b659cdec6e9844",
+      "processed_wav_file": "55_11_averaged_processed_wav.wav",
+      "processed_wav_sha256": "c9bf6470deea0c82a88d764b9fe3e9ee661b81a1972a4c81735d712636737c1a",
+      "telemetry_csv_file": "55_11_averaged_telemetry.csv",
+      "telemetry_csv_sha256": "49ac40b734ab27457119bef7218ac50a2ea2e4966023c9263a2625d721fbb1ac"
+    },
+    "56_12_bias_off": {
+      "name": "440 Hz sine: baseline vs bias_off",
+      "group": "Bias A/B \u2014 bias_off",
+      "description": "A / Original = triangular baseline output; B / Processed = variant output. Same gain; no normalization.",
+      "duration_sec": 6.0,
+      "bpm": 120.0,
+      "tempo_source": 0,
+      "reference_commit": "f0c16cddb891ba9079fa4dbbf98f29132ed5c9f0",
+      "random_seed": 6212,
+      "events": [],
+      "clock_pulses": [],
+      "sample_rate_hz": 48000,
+      "source_material": "sine440",
+      "comparison_variant": "bias_off",
+      "comparison_case": 12,
+      "comparison_title": "440 Hz sine",
+      "human_review_state": "NOT REVIEWED",
+      "stimulus_sha256": "d2b75c372fa245cd8701e22ed3601ea4853b0afe2018f351772a74ccd262563a",
+      "dsp_params": {
+        "0": 0.0,
+        "1": 0.0,
+        "3": 25.0,
+        "4": 0.0,
+        "11": 1.0,
+        "12": 500.0,
+        "13": 35.0,
+        "14": 50.0,
+        "15": 50.0,
+        "16": 4.0,
+        "17": 120.0,
+        "18": 0.0,
+        "21": 0.0,
+        "23": 0.0,
+        "30": 0.0,
+        "25": 0.0,
+        "36": 0.0,
+        "37": 0.0
+      },
+      "markers": [
+        {
+          "time": 0.0,
+          "label": "Audio start"
+        },
+        {
+          "time": 6.0,
+          "label": "Audio end"
+        }
+      ],
+      "analysis_metrics": {
+        "baseline_rms": 0.0947364695179081,
+        "variant_rms": 0.09473455897387142,
+        "variant_peak": 0.14216548204421997
+      },
+      "original_wav_file": "56_12_bias_off_original_wav.wav",
+      "original_wav_sha256": "0da9b18220dc9576b87b929a81f5f89e091c839b3536c02a8a88880646b33f8b",
+      "processed_wav_file": "56_12_bias_off_processed_wav.wav",
+      "processed_wav_sha256": "fa2389343cee1d869f1cfdb377a0a1597168661fb2fa1c14c822b6e58b0d910a",
+      "telemetry_csv_file": "56_12_bias_off_telemetry.csv",
+      "telemetry_csv_sha256": "431930e51b857bd9573f86079eb6a5b1cba6681b5cbaf6b69de6db5e190c729c"
+    },
+    "57_12_sine": {
+      "name": "440 Hz sine: baseline vs sine",
+      "group": "Bias A/B \u2014 sine",
+      "description": "A / Original = triangular baseline output; B / Processed = variant output. Same gain; no normalization.",
+      "duration_sec": 6.0,
+      "bpm": 120.0,
+      "tempo_source": 0,
+      "reference_commit": "f0c16cddb891ba9079fa4dbbf98f29132ed5c9f0",
+      "random_seed": 6212,
+      "events": [],
+      "clock_pulses": [],
+      "sample_rate_hz": 48000,
+      "source_material": "sine440",
+      "comparison_variant": "sine",
+      "comparison_case": 12,
+      "comparison_title": "440 Hz sine",
+      "human_review_state": "NOT REVIEWED",
+      "stimulus_sha256": "d2b75c372fa245cd8701e22ed3601ea4853b0afe2018f351772a74ccd262563a",
+      "dsp_params": {
+        "0": 0.0,
+        "1": 0.0,
+        "3": 25.0,
+        "4": 0.0,
+        "11": 1.0,
+        "12": 500.0,
+        "13": 35.0,
+        "14": 50.0,
+        "15": 50.0,
+        "16": 4.0,
+        "17": 120.0,
+        "18": 0.0,
+        "21": 0.0,
+        "23": 0.0,
+        "30": 0.0,
+        "25": 0.0,
+        "36": 0.0,
+        "37": 0.0
+      },
+      "markers": [
+        {
+          "time": 0.0,
+          "label": "Audio start"
+        },
+        {
+          "time": 6.0,
+          "label": "Audio end"
+        }
+      ],
+      "analysis_metrics": {
+        "baseline_rms": 0.0947364695179081,
+        "variant_rms": 0.09464997634147233,
+        "variant_peak": 0.14227405190467834
+      },
+      "original_wav_file": "57_12_sine_original_wav.wav",
+      "original_wav_sha256": "0da9b18220dc9576b87b929a81f5f89e091c839b3536c02a8a88880646b33f8b",
+      "processed_wav_file": "57_12_sine_processed_wav.wav",
+      "processed_wav_sha256": "61b73d7986ee0076722f65771e55d2ac2521e78ff8d5c597fa23bcbf45d424cb",
+      "telemetry_csv_file": "57_12_sine_telemetry.csv",
+      "telemetry_csv_sha256": "6500a0380c22c3f1bef6e1d95f1adb95ae47204d184118fb0fd7e30d9e795f22"
+    },
+    "58_12_bandlimited": {
+      "name": "440 Hz sine: baseline vs bandlimited",
+      "group": "Bias A/B \u2014 bandlimited",
+      "description": "A / Original = triangular baseline output; B / Processed = variant output. Same gain; no normalization.",
+      "duration_sec": 6.0,
+      "bpm": 120.0,
+      "tempo_source": 0,
+      "reference_commit": "f0c16cddb891ba9079fa4dbbf98f29132ed5c9f0",
+      "random_seed": 6212,
+      "events": [],
+      "clock_pulses": [],
+      "sample_rate_hz": 48000,
+      "source_material": "sine440",
+      "comparison_variant": "bandlimited",
+      "comparison_case": 12,
+      "comparison_title": "440 Hz sine",
+      "human_review_state": "NOT REVIEWED",
+      "stimulus_sha256": "d2b75c372fa245cd8701e22ed3601ea4853b0afe2018f351772a74ccd262563a",
+      "dsp_params": {
+        "0": 0.0,
+        "1": 0.0,
+        "3": 25.0,
+        "4": 0.0,
+        "11": 1.0,
+        "12": 500.0,
+        "13": 35.0,
+        "14": 50.0,
+        "15": 50.0,
+        "16": 4.0,
+        "17": 120.0,
+        "18": 0.0,
+        "21": 0.0,
+        "23": 0.0,
+        "30": 0.0,
+        "25": 0.0,
+        "36": 0.0,
+        "37": 0.0
+      },
+      "markers": [
+        {
+          "time": 0.0,
+          "label": "Audio start"
+        },
+        {
+          "time": 6.0,
+          "label": "Audio end"
+        }
+      ],
+      "analysis_metrics": {
+        "baseline_rms": 0.0947364695179081,
+        "variant_rms": 0.09467902120444587,
+        "variant_peak": 0.14219658076763153
+      },
+      "original_wav_file": "58_12_bandlimited_original_wav.wav",
+      "original_wav_sha256": "0da9b18220dc9576b87b929a81f5f89e091c839b3536c02a8a88880646b33f8b",
+      "processed_wav_file": "58_12_bandlimited_processed_wav.wav",
+      "processed_wav_sha256": "9044a3bf511f56ba9295430db23ed755d44f9daf490bac3b18b76132d1f68dad",
+      "telemetry_csv_file": "58_12_bandlimited_telemetry.csv",
+      "telemetry_csv_sha256": "94337bc79cba55ffb45906fec43fcf9beac2b44e5939ab6fd4aca1a31f4f0695"
+    },
+    "59_12_oversampled": {
+      "name": "440 Hz sine: baseline vs oversampled",
+      "group": "Bias A/B \u2014 oversampled",
+      "description": "A / Original = triangular baseline output; B / Processed = variant output. Same gain; no normalization.",
+      "duration_sec": 6.0,
+      "bpm": 120.0,
+      "tempo_source": 0,
+      "reference_commit": "f0c16cddb891ba9079fa4dbbf98f29132ed5c9f0",
+      "random_seed": 6212,
+      "events": [],
+      "clock_pulses": [],
+      "sample_rate_hz": 48000,
+      "source_material": "sine440",
+      "comparison_variant": "oversampled",
+      "comparison_case": 12,
+      "comparison_title": "440 Hz sine",
+      "human_review_state": "NOT REVIEWED",
+      "stimulus_sha256": "d2b75c372fa245cd8701e22ed3601ea4853b0afe2018f351772a74ccd262563a",
+      "dsp_params": {
+        "0": 0.0,
+        "1": 0.0,
+        "3": 25.0,
+        "4": 0.0,
+        "11": 1.0,
+        "12": 500.0,
+        "13": 35.0,
+        "14": 50.0,
+        "15": 50.0,
+        "16": 4.0,
+        "17": 120.0,
+        "18": 0.0,
+        "21": 0.0,
+        "23": 0.0,
+        "30": 0.0,
+        "25": 0.0,
+        "36": 0.0,
+        "37": 0.0
+      },
+      "markers": [
+        {
+          "time": 0.0,
+          "label": "Audio start"
+        },
+        {
+          "time": 6.0,
+          "label": "Audio end"
+        }
+      ],
+      "analysis_metrics": {
+        "baseline_rms": 0.0947364695179081,
+        "variant_rms": 0.10125363405000898,
+        "variant_peak": 0.1491173803806305
+      },
+      "original_wav_file": "59_12_oversampled_original_wav.wav",
+      "original_wav_sha256": "0da9b18220dc9576b87b929a81f5f89e091c839b3536c02a8a88880646b33f8b",
+      "processed_wav_file": "59_12_oversampled_processed_wav.wav",
+      "processed_wav_sha256": "63f2221595be37ab1281d447ebb85ff5aed9c9910d1387e0f9247d80b00e9921",
+      "telemetry_csv_file": "59_12_oversampled_telemetry.csv",
+      "telemetry_csv_sha256": "9f824746df93efff4169805cd44efdb2e674702dd7975a13724d589555c52f8f"
+    },
+    "60_12_averaged": {
+      "name": "440 Hz sine: baseline vs averaged",
+      "group": "Bias A/B \u2014 averaged",
+      "description": "A / Original = triangular baseline output; B / Processed = variant output. Same gain; no normalization.",
+      "duration_sec": 6.0,
+      "bpm": 120.0,
+      "tempo_source": 0,
+      "reference_commit": "f0c16cddb891ba9079fa4dbbf98f29132ed5c9f0",
+      "random_seed": 6212,
+      "events": [],
+      "clock_pulses": [],
+      "sample_rate_hz": 48000,
+      "source_material": "sine440",
+      "comparison_variant": "averaged",
+      "comparison_case": 12,
+      "comparison_title": "440 Hz sine",
+      "human_review_state": "NOT REVIEWED",
+      "stimulus_sha256": "d2b75c372fa245cd8701e22ed3601ea4853b0afe2018f351772a74ccd262563a",
+      "dsp_params": {
+        "0": 0.0,
+        "1": 0.0,
+        "3": 25.0,
+        "4": 0.0,
+        "11": 1.0,
+        "12": 500.0,
+        "13": 35.0,
+        "14": 50.0,
+        "15": 50.0,
+        "16": 4.0,
+        "17": 120.0,
+        "18": 0.0,
+        "21": 0.0,
+        "23": 0.0,
+        "30": 0.0,
+        "25": 0.0,
+        "36": 0.0,
+        "37": 0.0
+      },
+      "markers": [
+        {
+          "time": 0.0,
+          "label": "Audio start"
+        },
+        {
+          "time": 6.0,
+          "label": "Audio end"
+        }
+      ],
+      "analysis_metrics": {
+        "baseline_rms": 0.0947364695179081,
+        "variant_rms": 0.09466228418395026,
+        "variant_peak": 0.14205530285835266
+      },
+      "original_wav_file": "60_12_averaged_original_wav.wav",
+      "original_wav_sha256": "0da9b18220dc9576b87b929a81f5f89e091c839b3536c02a8a88880646b33f8b",
+      "processed_wav_file": "60_12_averaged_processed_wav.wav",
+      "processed_wav_sha256": "945aaa5a04ec4737d7630e04416eb3def1de0720f1bb3065c005f70c6f134cd0",
+      "telemetry_csv_file": "60_12_averaged_telemetry.csv",
+      "telemetry_csv_sha256": "05b52deb818d2b783d4911491f55ee3abf8b573d0294859f1eba9c2eaa4e2142"
+    }
+  }
+}

@@ -1,6 +1,6 @@
 # Phase 6.2 — escuta controlada do bias
 
-A candidata permanece **BLOCKED — REGRESSION / PERFORMANCE / HUMAN AUDITION**. A medição física encontrou overruns no Reverse rítmico tanto no baseline quanto na candidata; consulte o [acompanhamento físico](PHASE6_BIAS_HARDWARE_FOLLOWUP.md). A disponibilidade deste pacote não representa aprovação técnica ou musical.
+A candidata permanece **BLOCKED — REGRESSION / PERFORMANCE**. A escuta humana da candidata foi aprovada em 12/12 cenários do pacote local f0c16cd, com hashes verificados. Essa aprovação está vinculada ao conteúdo ouvido; novos renders continuam começando sem avaliação. A medição física encontrou overruns no Reverse rítmico tanto no baseline quanto na candidata; consulte o [acompanhamento físico](PHASE6_BIAS_HARDWARE_FOLLOWUP.md). A aprovação de escuta não representa aprovação dos gates técnicos.
 
 Abra o player existente em `player/` por localhost e selecione a pasta extraída `phase6-bias-ab`. O pacote complementar contém 60 comparações: 12 fontes/configurações, cada uma contra cinco variantes. Os 20 cenários originais são preservados.
 

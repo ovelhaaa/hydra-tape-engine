@@ -2,7 +2,7 @@
 
 2026-11-19. This supplements the [anti-aliasing report](PHASE6_BIAS_ANTIALIASING_REPORT.md). DSP source tested: `5e3d2bfa4ee8c5e6e765f7e11b12c6ffe87063c6`; subsequent evidence/tooling changes do not change the magnetic algorithm.
 
-**BLOCKED — REGRESSION / PERFORMANCE / HUMAN AUDITION.** The phase-averaged candidate remains the best measured compromise among the six alternatives, but rhythmic Reverse exceeds the physical block deadline in both baseline and candidate. No budget, threshold, original assertion, golden or Reverse algorithm was changed. Human states remain NOT REVIEWED. No merge.
+**BLOCKED — REGRESSION / PERFORMANCE.** The phase-averaged candidate remains the best measured compromise among the six alternatives, but rhythmic Reverse exceeds the physical block deadline in both baseline and candidate. No budget, threshold, original assertion, golden or Reverse algorithm was changed. Subsequent human audition approved the candidate 12/12 in the exact f0c16cd local package; see the [human audition record](PHASE6_BIAS_HUMAN_AUDITION.md). No merge.
 
 ## Identified board and firmware provenance
 

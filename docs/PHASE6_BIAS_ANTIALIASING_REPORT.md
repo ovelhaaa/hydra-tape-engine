@@ -2,11 +2,15 @@
 
 Date: 2026-11-19. Existing PR: [#54](https://github.com/ovelhaaa/hydra-tape-engine/pull/54). Branch: `feature/musical-validation-phase6`; destination: `main`. Audited/fetched baseline: `fa43cdefff22059b55adf3d2202a19f2571cf9d3`; no intervening remote commits at initial fetch. Existing untracked `scripts/create_phase6_pr.py` was preserved and excluded.
 
-**Candidate: phase-averaged magnetic bias. Release classification: BLOCKED — REGRESSION; BLOCKED — PERFORMANCE; BLOCKED — HUMAN AUDITION. Physical tests now expose rhythmic Reverse overload in baseline and candidate. No merge, musical signoff, threshold changes or golden updates.** The A/B package is available for investigation even when CI is red. A reduction in whistles does not establish preservation of tape character.
+**Candidate: phase-averaged magnetic bias. Release classification: BLOCKED — REGRESSION; BLOCKED — PERFORMANCE. Candidate human audition: PASS (12/12, reviewed f0c16cd local package). Physical tests now expose rhythmic Reverse overload in baseline and candidate. No merge, threshold changes or golden updates. Human approval scope is recorded below.** The A/B package is available for investigation even when CI is red. A reduction in whistles does not establish preservation of tape character.
+
+## Human approval — 2026-11-19
+
+The responsible user approved all 12 candidate listening scenarios in the f0c16cd local Windows package. All exported content hashes were verified; see the [human audition record](PHASE6_BIAS_HUMAN_AUDITION.md). Per-criterion scores were not supplied and are not inferred. Historical NOT REVIEWED statements below describe package publication or fresh render defaults. Human audition is cleared for this scope; technical regression/performance gates remain blocked.
 
 ## Physical and CI follow-up
 
-[Verified board measurements, all six variants, restore evidence and actual CI artifacts](PHASE6_BIAS_HARDWARE_FOLLOWUP.md) supersede the initial unverified-physical-performance statements below. The selected algorithm is unchanged. Physical findings establish a performance block; no musical approval or merge.
+[Verified board measurements, all six variants, restore evidence and actual CI artifacts](PHASE6_BIAS_HARDWARE_FOLLOWUP.md) supersede the initial unverified-physical-performance statements below. The selected algorithm is unchanged. Physical findings establish a performance block. Subsequent human approval is recorded above; no merge.
 
 ## Audit and reproduced cause
 

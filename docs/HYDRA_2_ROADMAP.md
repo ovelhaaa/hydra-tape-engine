@@ -2,7 +2,7 @@
 
 ## Fase 6.2 — candidata de anti-aliasing do bias (2026-11-19)
 
-**BLOCKED — REGRESSION / PERFORMANCE / HUMAN AUDITION.** Média de fase do bias selecionada após seis variantes isoladas; critérios espectrais/transferência 49/49, ensaio completo 22/27 e Native 12/15. Goldens preservados e aprovados; equivalência estrita Native/WASM continua falhando. Build ESP32-S3 aprovado, benchmark físico medido: Reverse excede o orçamento no baseline e na candidata. O suplemento de 60 pares usa o Listening Lab existente, todos NOT REVIEWED. Ver [relatório e pendências](PHASE6_BIAS_ANTIALIASING_REPORT.md). Próximos gates: revisão das asserções dependentes da portadora, clicks/feedback, issue #48, revisão do desempenho físico e JSON de escuta do responsável. Não realizar merge.
+**BLOCKED — REGRESSION / PERFORMANCE.** Média de fase do bias selecionada após seis variantes isoladas; critérios espectrais/transferência 49/49, ensaio completo 22/27 e Native 12/15. Goldens preservados e aprovados; equivalência estrita Native/WASM continua falhando. Build ESP32-S3 aprovado, benchmark físico medido: Reverse excede o orçamento no baseline e na candidata. O suplemento de 60 pares usa o Listening Lab existente, candidata aprovada por escuta humana em 12/12 cenários do pacote local f0c16cd (hashes verificados). Ver [relatório e pendências](PHASE6_BIAS_ANTIALIASING_REPORT.md). Próximos gates: revisão das asserções dependentes da portadora, clicks/feedback, issue #48, revisão do desempenho físico. Ver [registro de aprovação humana](PHASE6_BIAS_HUMAN_AUDITION.md). Não realizar merge.
 
 ## 1. Visão Geral das Fases de Desenvolvimento
 

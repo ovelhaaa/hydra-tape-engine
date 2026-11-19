@@ -1,6 +1,20 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {Audition, importReviews, exportReviews, verifiedFile, parseTelemetry, validateManifest} from '../engine.mjs';
+import {Audition, importReviews, exportReviews, verifiedFile, parseTelemetry, validateManifest, auditionDetails, reviewCriteria, reviewStorageKey} from '../engine.mjs';
+
+test('bias audition identifies processed sides and accepts bias criteria without colliding with musical reviews',()=>{
+ const base={reference_commit:'a'.repeat(40),scenarios:{one:{duration_sec:6}}};
+ const bias={...base,suite:'Hydra Phase 6.2 Bias A/B'};
+ const s={name:'Clean guitar: baseline vs averaged',comparison_variant:'averaged'};
+ assert.deepEqual(auditionDetails(bias,s),{a:'Triangular baseline',b:'Phase average (candidate)',group:'Clean guitar',title:'Phase average (candidate)'});
+ assert.ok(reviewCriteria(bias).includes('Residual whine'));
+ assert.notEqual(reviewStorageKey(base),reviewStorageKey(bias));
+ const reviews={one:{state:'NEEDS ATTENTION',comments:'Whine check',notes:[],criteria:{'Residual whine':'PASS','Magnetic compression':'NEEDS ATTENTION'}}};
+ assert.deepEqual(importReviews(exportReviews(bias,reviews),bias),reviews);
+ assert.throws(()=>importReviews(exportReviews(base,reviews),base),/criterion/);
+ const musical={name:'Original scenario',group:'Tape Echo'};
+ assert.equal(auditionDetails(base,musical).b,'Processed');
+});
 
 test('bias supplement accepts 60 ordered pairs while original suite keeps 20',()=>{
  const scenario={duration_sec:6,sample_rate_hz:48000,dsp_params:{},analysis_metrics:{},markers:[]};

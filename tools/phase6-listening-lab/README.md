@@ -2,6 +2,8 @@
 
 Fase6.2: o mesmo player aceita o suplemento `Hydra Phase 6.2 Bias A/B` com60pares. Consulte o [guia de escuta do bias](../../docs/PHASE6_BIAS_AB_LISTENING_GUIDE.md) e o [relatório técnico](../../docs/PHASE6_BIAS_ANTIALIASING_REPORT.md). A=baseline processado, B=variante processada; todos os estados começam NOT REVIEWED. O pacote original de20cenários continua válido como referência histórica. A distribuição complementar pode coexistir com CI bloqueada e não significa aprovação técnica/musical.
 
+Ao carregar o suplemento, o player identifica a Fase 6.2, agrupa os pares por seus 12 cenários e abre a média de fase candidata. Botões e waveforms identificam baseline e variante; o painel mostra dez critérios específicos de bias. Notas são separadas por pacote e commit, com importação compatível dos JSONs anteriores. O pacote musical mantém seus rótulos e critérios originais.
+
 Player offline dedicado à revisão da Fase 6.1; não altera a Web Demo nem os algoritmos DSP. Sem backend, telemetria de uso ou autoplay. Requer navegador moderno com Web Audio, seleção de diretório e Web Crypto em localhost (Chromium é testado).
 
 ## Reproduzir e executar

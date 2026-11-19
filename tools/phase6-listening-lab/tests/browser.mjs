@@ -26,6 +26,14 @@ try{
  await page.waitForFunction(()=>!document.getElementById('play').disabled || document.getElementById('message').className==='error');
  assert.equal(await page.locator('#message.error').count(),0,await page.locator('#message').textContent());
  assert.equal(await page.locator('#library button').count(),scenarioCount);
+ if(inputManifest.suite==='Hydra Phase 6.2 Bias A/B'){
+  assert.match(await page.locator('#edition').innerText(),/PHASE 6.2/);
+  assert.equal(await page.locator('#library h3').count(),12);
+  assert.equal(await page.locator('#a').innerText(),'A · Triangular baseline');
+  assert.equal(await page.locator('#b').innerText(),'B · Phase average (candidate)');
+  assert.equal(await page.locator('#criteria select').count(),10);
+  assert.match(await page.locator('#wave').getAttribute('aria-label'),/Phase average/);
+ }
  assert.equal(await page.evaluate(()=>audioStarts.length),0,'no autoplay after decoding');
  await page.locator('#play').click();await page.waitForTimeout(200);
  const started=await page.evaluate(()=>audioStarts);assert.equal(started.length,2);assert.deepEqual(started[0],started[1]);
@@ -36,6 +44,8 @@ try{
  await page.locator('#loop-start').fill('0.5');await page.locator('#loop-end').fill('0.8');await page.locator('#loop').check();await page.waitForTimeout(850);
  const loopPos=Number(await page.locator('#seek').inputValue());assert.ok(loopPos>=.5 && loopPos<.8,`loop position ${loopPos}`);
  const stopsBefore=await page.evaluate(()=>audioStops);await page.locator('#library button').nth(1).click();await page.waitForFunction(()=>!document.getElementById('play').disabled);
+ assert.equal(await page.locator('#a').getAttribute('aria-pressed'),'true');
+ assert.equal(await page.locator('#b').getAttribute('aria-pressed'),'false');
  assert.ok(await page.evaluate(()=>audioStops)>=stopsBefore+2);
  const startsAfterSwitch=await page.evaluate(()=>audioStarts.length);await page.waitForTimeout(150);assert.equal(await page.evaluate(()=>audioStarts.length),startsAfterSwitch);assert.equal(await page.locator('#seek').inputValue(),'0');
  await page.locator('#state').selectOption('NEEDS ATTENTION');await page.locator('#comments').fill('Browser test review');await page.locator('#note-time').fill('1.5');await page.locator('#note-description').fill('Inspect repeat');await page.locator('#add-note').click();

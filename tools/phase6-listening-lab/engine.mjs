@@ -1,5 +1,15 @@
 export const STATES = ['NOT REVIEWED', 'PASS', 'NEEDS ATTENTION', 'FAIL'];
 export const CRITERIA = ['Rhythmic clarity', 'Natural repeats', 'Continuity', 'Clicks', 'Tail preservation', 'Feedback stability', 'Reverse musicality', 'Tape character'];
+export const BIAS_CRITERIA = ['Residual whine', 'Artificial harshness', 'Natural highs', 'Magnetic compression', 'Musical harmonics', 'Transients', 'Tape character', 'Feedback stability', 'Reverse musicality', 'Stereo coherence'];
+export const isBiasPackage = manifest => manifest?.suite === 'Hydra Phase 6.2 Bias A/B';
+export const reviewCriteria = manifest => isBiasPackage(manifest) ? BIAS_CRITERIA : CRITERIA;
+export const reviewStorageKey = manifest => `hydra-lab:${manifest.reference_commit}:${manifest.suite ?? 'musical-validation'}`;
+export function auditionDetails(manifest, scenario) {
+  if (!isBiasPackage(manifest)) return {a:'Original', b:'Processed', group:scenario.group, title:scenario.name};
+  const variants = {bias_off:'Bias off (diagnostic)', sine:'Sine bias', bandlimited:'Band-limited bias', oversampled:'Local 2× oversampling', averaged:'Phase average (candidate)'};
+  const variant = variants[scenario.comparison_variant] ?? scenario.comparison_variant;
+  return {a:'Triangular baseline', b:variant, group:scenario.comparison_title ?? scenario.name.split(': baseline vs ')[0], title:variant};
+}
 
 export function validateManifest(manifest) {
   if (manifest.schema_version !== 1 || !/^[a-f0-9]{40}$/.test(manifest.reference_commit ?? '')) throw Error('Invalid manifest provenance/schema');
@@ -114,7 +124,7 @@ export function importReviews(text, manifest) {
   if (JSON.stringify(data.package_hashes) !== JSON.stringify(packageHashes(manifest))) throw Error('Reviews belong to different audio/telemetry content');
   for (const [id, review] of Object.entries(data.reviews)) {
     if (!manifest.scenarios[id] || !STATES.includes(review.state) || typeof review.comments !== 'string' || !Array.isArray(review.notes) || !review.criteria || typeof review.criteria !== 'object') throw Error('Invalid review');
-    for (const [criterion, state] of Object.entries(review.criteria)) if (!CRITERIA.includes(criterion) || !['N/A', ...STATES].includes(state)) throw Error('Invalid criterion');
+    for (const [criterion, state] of Object.entries(review.criteria)) if (![...CRITERIA, ...reviewCriteria(manifest)].includes(criterion) || !['N/A', ...STATES].includes(state)) throw Error('Invalid criterion');
     for (const note of review.notes) if (typeof note.description !== 'string' || !Number.isFinite(note.time) || note.time < 0 || note.time > manifest.scenarios[id].duration_sec || !['low', 'medium', 'high'].includes(note.severity)) throw Error('Invalid timestamped note');
   }
   return data.reviews;

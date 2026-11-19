@@ -1,9 +1,10 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Hydra • Listening Lab</title><link rel="stylesheet" href="style.css"></head>
-<body><header><div><small>HYDRA TAPE ENGINE 2.0 / PHASE 6.1</small><h1>Listening Lab</h1></div><div class="imports"><label class="button">Open extracted package<input id="package" type="file" webkitdirectory multiple hidden></label><button id="export" disabled>Export reviews</button><label class="button">Import reviews<input id="import" type="file" accept=".json" hidden></label></div></header>
+<body><header><div><small id="edition">HYDRA TAPE ENGINE 2.0 / LISTENING LAB</small><h1>Listening Lab</h1></div><div class="imports"><label class="button">Open extracted package<input id="package" type="file" webkitdirectory multiple hidden></label><button id="export" disabled>Export reviews</button><label class="button">Import reviews<input id="import" type="file" accept=".json" hidden></label></div></header>
 <p id="message" role="status">Open the folder containing manifest.json and the WAV/CSV files. Playback starts only when you press Play.</p>
-<main><nav id="library" aria-label="Scenario library"><h2>20 musical scenarios</h2><p>Four groups. One shared audio clock.</p></nav>
+<main><nav id="library" aria-label="Scenario library"><h2>Scenario library</h2><p>Open a package to begin.</p></nav>
 <section aria-label="Audition"><small id="group">SELECT A SCENARIO</small><h2 id="title">Hear the details.</h2><p id="description">Compare the source and the processed signal at the same position. No normalization. Start with moderate monitoring volume, especially with high feedback.</p>
+<p id="comparison-help" class="muted">One shared audio clock. No normalization.</p>
 <div id="transport"><button id="play" disabled>Play / Pause</button><button id="stop" disabled>Stop</button><button id="restart" disabled>Restart</button><button id="a" disabled aria-pressed="true">A · Original</button><button id="b" disabled aria-pressed="false">B · Processed</button></div>
 <label>Monitoring volume <input id="volume" type="range" min="0" max="1" value="0.35" step="0.01"><output id="volume-value">35%</output></label>
 <p><span id="time">0.000 / 0.000 s</span> <span class="muted">8 ms linear A/B crossfade · uncompensated</span></p>

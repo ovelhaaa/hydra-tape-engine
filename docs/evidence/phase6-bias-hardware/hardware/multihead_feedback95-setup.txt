@@ -1,0 +1,33 @@
+Bypass: OFF
+Generator: ON
+Source: 1 (0=MP3, 1=SYNTH, 2=I2S)
+Engine Mode: TAPE DELAY
+> mod updated
+Delay: 500 ms
+Feedback     [#######-------------] 39%
+> hds updated
+> wet updated
+Drive        [###############-----] 75%
+Noise        [#-------------------] 9%
+Flutter      [#-------------------] 8%
+Wow          [#-------------------] 6%
+Dropouts     [--------------------] 0%
+Speed        [##########----------] 50%
+Age          [##########----------] 50%
+Ping-Pong: OFF
+> ppg updated
+Freeze: OFF
+> frz updated
+Freeverb: OFF
+> frv updated
+Accidental Warp: OFF
+> wrp updated
+Reverse: OFF
+> rev updated
+Spring Reverb: OFF
+> spr updated
+Transport: PLAY
+
+> transport updated
+> hds updated
+Feedback     [###################-] 95%

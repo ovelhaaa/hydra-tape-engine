@@ -1,0 +1,25 @@
+
+=== HYDRA DSP PERFORMANCE TELEMETRY ===
+
+Block Size          : 128 frames
+Sample Rate         : 44100 Hz
+CPU Clock           : 240 MHz
+Block Time Budget   : 2902.5 us
+Blocks Processed    : 115047
+Avg DSP Block Time  : 1918 us
+Last DSP Block Time : 1924 us
+Peak DSP Block Time : 3199 us
+DSP Budget Use (EMA): 66.7 %
+DSP Budget Overruns : 351
+I2S TX Write Failures: 0
+Internal Free Heap  : 122728 bytes
+SPIRAM (PSRAM) Free : 1663048 bytes
+Warp Active         : YES
+  Mode              : 0
+  Speed Multiplier  : 1.00x (v_eff = 2.00x)
+  Grain Window      : 80.0 ms
+  Stereo Offset     : 0.50
+  Warp Feedback     : 0.0 %
+========================================
+
+

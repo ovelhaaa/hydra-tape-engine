@@ -1,0 +1,9 @@
+
+=== BENCH RESULT (FW Nov 18 2026 17:37:16) ===
+Cfg: src=1 gen=1 byp=0 mod=1 dly=500 fbk=40 hds=4 tps=50 tpa=50 drv=75 nlv=10 ftd=4 wwd=2 dps=0 wrp=0 wmd=0 wsp=1.00 wgr=80 wst=0.50 wfb=0 fv=0 ngt=0.0010 ppg=0 frz=0 rev=1 spr=0
+Blocks=3000 Warmup=256 WallMs=8707.1 BudgetUs=2902.49
+MeanUs=2830.39 MinUs=2788 P50Us=2815 P95Us=2878 P99Us=2965 PeakUs=3100
+BudgetMeanPct=97.52% BudgetP99Pct=102.15% Overruns=67 (2.23%) SatBins=0
+I2SFailDelta=0 HeapStart=122864 HeapEnd=122864 HeapMin=122864 PsramStart=1663048 PsramEnd=1663048 MaxParamUpdUs=81816
+=========================================
+

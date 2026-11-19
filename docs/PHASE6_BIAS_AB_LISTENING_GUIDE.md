@@ -1,5 +1,7 @@
 # Phase 6.2 — escuta controlada do bias
 
+A candidata permanece **BLOCKED — REGRESSION / PERFORMANCE / HUMAN AUDITION**. A medição física encontrou overruns no Reverse rítmico tanto no baseline quanto na candidata; consulte o [acompanhamento físico](PHASE6_BIAS_HARDWARE_FOLLOWUP.md). A disponibilidade deste pacote não representa aprovação técnica ou musical.
+
 Abra o player existente em `player/` por localhost e selecione a pasta extraída `phase6-bias-ab`. O pacote complementar contém 60 comparações: 12 fontes/configurações, cada uma contra cinco variantes. Os 20 cenários originais são preservados.
 
 **A / Original representa a saída do baseline triangular; B / Processed representa a saída da variante.** Ambos são sinais processados. Não há normalização nem compensação automática de volume. Cada par usa a mesma fonte, seed, parâmetros, BPM, duração de seis segundos e eventos. Os hashes de bibliotecas, fonte e áudio constam no manifesto. Os trechos curtos complementam, mas não substituem, os ensaios de estabilidade e decay prolongado.

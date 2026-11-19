@@ -117,7 +117,7 @@ def main():
             max_abs_change=comparisons['candidate']['max_abs']-comparisons['baseline']['max_abs'],
             error_vector_difference_rmse=float(np.sqrt(np.mean(difference**2))),
             error_vector_difference_max_abs=float(np.max(np.abs(difference))),
-            limitation='Same local O3 toolchain; not the historical Linux CI measurement. Both fail unchanged RMSE threshold.')
+            limitation='Matched O3 builds within this execution; separate from historical CI baseline. Both fail unchanged RMSE threshold.')
     (OUT/'results.json').write_text(json.dumps(report,indent=2))
     print('Evidence:',OUT/'results.json')
 

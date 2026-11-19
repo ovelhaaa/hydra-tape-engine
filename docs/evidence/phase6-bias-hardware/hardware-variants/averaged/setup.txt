@@ -1,0 +1,40 @@
+Bypass: OFF
+BubblesEngine: PSRAM allocation SUCCESS
+
+Audio Task: BubblesEngine allocated (~1.5s buffer)
+
+Audio Task: FreeverbEngine allocated (~100KB)
+
+Audio Task: Starting audio processing...
+
+Audio Task: ptrs tape=0x3c0919c0 freeverb=0x3fcbbb48 melody=0x3fcd50ac gate=0x3fca67a8 hist=0x3c6f1bf8
+Generator: ON
+Source: 1 (0=MP3, 1=SYNTH, 2=I2S)
+Engine Mode: TAPE DELAY
+> mod updated
+Delay: 500 ms
+Feedback     [#######-------------] 39%
+> hds updated
+Mix          [##########----------] 50%
+Drive        [###############-----] 75%
+Noise        [#-------------------] 9%
+Flutter      [#-------------------] 8%
+Wow          [#-------------------] 6%
+Dropouts     [--------------------] 0%
+Speed        [##########----------] 50%
+Age          [##########----------] 50%
+Ping-Pong: OFF
+> ppg updated
+Freeze: OFF
+> frz updated
+Freeverb: OFF
+> frv updated
+Accidental Warp: OFF
+> wrp updated
+Reverse: OFF
+> rev updated
+Spring Reverb: OFF
+> spr updated
+Transport: PLAY
+
+> transport updated

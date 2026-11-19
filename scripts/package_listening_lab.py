@@ -75,13 +75,20 @@ def package(directory, archive=None):
     if manifest.get("suite") == "Hydra Phase 6.2 Bias A/B":
         report = ROOT / "docs/PHASE6_BIAS_ANTIALIASING_REPORT.md"
         if report.exists():
-            shutil.copyfile(report, reports / "bias-antialiasing-report.md")
+            shutil.copyfile(report, reports / report.name)
+            shutil.copyfile(ROOT / "docs/PHASE6_BIAS_HARDWARE_FOLLOWUP.md", reports / "PHASE6_BIAS_HARDWARE_FOLLOWUP.md")
             shutil.copyfile(ROOT / "docs" / guide, reports / guide)
             evidence = reports / "evidence"
             evidence.mkdir(exist_ok=True)
-            for name in ("phase6-bias-antialiasing.json", "phase6-bias-engine.json", "phase6-bias-regressions.json"):
+            for name in ("phase6-bias-antialiasing.json", "phase6-bias-engine.json", "phase6-bias-regressions.json",
+                         "phase6-bias-hardware.json", "phase6-bias-hardware-variants.json",
+                         "phase6-bias-linux-regressions.json", "phase6-bias-moment-probe.json"):
                 shutil.copyfile(ROOT / "docs/evidence" / name, evidence / name)
             shutil.copytree(ROOT / "docs/evidence/phase6-bias-plots", evidence / "phase6-bias-plots", dirs_exist_ok=True)
+            shutil.copytree(ROOT / "docs/evidence/phase6-bias-hardware", evidence / "phase6-bias-hardware", dirs_exist_ok=True)
+            offline_guide = directory / "listening-guide.md"
+            offline_guide.write_text(offline_guide.read_text(encoding="utf-8").replace(
+                "](PHASE6_BIAS_HARDWARE_FOLLOWUP.md)", "](reports/PHASE6_BIAS_HARDWARE_FOLLOWUP.md)"), encoding="utf-8")
     shutil.copyfile(ROOT / "tools/phase6-listening-lab/README.md", directory / "README.md")
     shutil.copytree(ROOT / "tools/phase6-listening-lab", directory / "player", dirs_exist_ok=True,
                     ignore=shutil.ignore_patterns("tests", "node_modules"))

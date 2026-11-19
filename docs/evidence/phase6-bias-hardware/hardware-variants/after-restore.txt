@@ -1,0 +1,27 @@
+Generator: OFF
+Reverse: OFF
+> rev updated
+Accidental Warp: OFF
+> wrp updated
+Spring Reverb: OFF
+> spr updated
+
+=== HYDRA DSP PERFORMANCE TELEMETRY ===
+
+Block Size          : 128 frames
+Sample Rate         : 44100 Hz
+CPU Clock           : 240 MHz
+Block Time Budget   : 2902.5 us
+Blocks Processed    : 7410
+Avg DSP Block Time  : 1491 us
+Last DSP Block Time : 1446 us
+Peak DSP Block Time : 1841 us
+DSP Budget Use (EMA): 49.7 %
+DSP Budget Overruns : 0
+I2S TX Write Failures: 0
+Internal Free Heap  : 122928 bytes
+SPIRAM (PSRAM) Free : 1663048 bytes
+Warp Active         : NO
+========================================
+
+

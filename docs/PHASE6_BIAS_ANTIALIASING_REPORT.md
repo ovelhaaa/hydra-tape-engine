@@ -2,7 +2,11 @@
 
 Date: 2026-11-19. Existing PR: [#54](https://github.com/ovelhaaa/hydra-tape-engine/pull/54). Branch: `feature/musical-validation-phase6`; destination: `main`. Audited/fetched baseline: `fa43cdefff22059b55adf3d2202a19f2571cf9d3`; no intervening remote commits at initial fetch. Existing untracked `scripts/create_phase6_pr.py` was preserved and excluded.
 
-**Candidate: phase-averaged magnetic bias. Release classification: BLOCKED — REGRESSION; BLOCKED — HUMAN AUDITION. Physical performance remains unverified. No merge, musical signoff, threshold changes or golden updates.** The A/B package is available for investigation even when CI is red. A reduction in whistles does not establish preservation of tape character.
+**Candidate: phase-averaged magnetic bias. Release classification: BLOCKED — REGRESSION; BLOCKED — PERFORMANCE; BLOCKED — HUMAN AUDITION. Physical tests now expose rhythmic Reverse overload in baseline and candidate. No merge, musical signoff, threshold changes or golden updates.** The A/B package is available for investigation even when CI is red. A reduction in whistles does not establish preservation of tape character.
+
+## Physical and CI follow-up
+
+[Verified board measurements, all six variants, restore evidence and actual CI artifacts](PHASE6_BIAS_HARDWARE_FOLLOWUP.md) supersede the initial unverified-physical-performance statements below. The selected algorithm is unchanged. Physical findings establish a performance block; no musical approval or merge.
 
 ## Audit and reproduced cause
 
@@ -67,7 +71,7 @@ Matched WindowsMinGW/Emscripten local comparison: baseline max_abs5.968e-6/RMSE2
 
 ESP32-S3 firmware builds successfully with local PlatformIO6.2 tooling, Xtensa14.2,240MHz configuration: static RAM25920/327680bytes; flash618463/16777216bytes. These are link sizes, not heap/stack/PSRAM runtime measurements. Python3.14's alternate PIO installation was unsupported; the existing `C:/.platformio/penv` installation completed the build.
 
-Native benchmarks below cover3000 measured blocks after100 warmup, stereo128frames, every variant. Magnetic timing is C++chrono; total-engine timing surrounds the CAPI call and includes ctypes overhead. OS scheduling and benchmark order affect results. These values do not prove ESP32 deadline compliance or a speedup. No fresh physical firmware run, I2S-failure measurement, allocation instrumentation, heap, PSRAM or stack measurement was performed in this phase. Serial ports being enumerated is not runtime evidence. Required board P99<~2032µs, zerooverruns/I2Sfailures and memory measurements remain pending.
+Native benchmarks below cover3000 measured blocks after100 warmup, stereo128frames, every variant. Magnetic timing is C++chrono; total-engine timing surrounds the CAPI call and includes ctypes overhead. OS scheduling and benchmark order affect results. These values do not prove ESP32 deadline compliance or a speedup. Before the follow-up linked above, no fresh physical firmware run, I2S-failure measurement, allocation instrumentation, heap, PSRAM or stack measurement had been performed. Serial ports being enumerated is not runtime evidence. Required board P99<~2032µs, zerooverruns/I2Sfailures and memory measurements remain pending.
 
 Production changes only the magnetic evaluation: one extra LUT call, fixed scalar state, no new dynamic allocation, lock, buffer or latency. The existing callback allocation/concurrency design is unchanged; absence of newly added allocation is a source audit, not an instrumented zero-allocation proof.2× diagnostic uses fixed FIR state; no global oversampling was implemented.
 
@@ -95,7 +99,7 @@ Machine-readable results: [isolated stage](evidence/phase6-bias-antialiasing.jso
 
 <!-- GENERATED_MEASUREMENTS -->
 
-| Variant | Stage6k @48k dBFS | Stage18k @48k dBFS | Nonharmonic @44.1k dBFS | Native magnetic mean/P99 �s |
+| Variant | Stage6k @48k dBFS | Stage18k @48k dBFS | Nonharmonic @44.1k dBFS | Native magnetic mean/P99 µs |
 |---|---:|---:|---:|---:|
 | baseline | -45.71 | -30.38 | -30.77 | 4.04/5.10 |
 | bias_off | -162.24 | -166.80 | -136.31 | 3.18/3.30 |
@@ -112,7 +116,7 @@ These isolated-stage values include no playback attenuation and are not directly
 | 48000 | -138.87 | -130.17 | 0.001474 |
 | 96000 | -146.15 | -133.21 | 0.000308 |
 
-| Variant | Complete engine44.1k mean/P95/P99/peak �s | Complete engine48k mean/P95/P99/peak �s |
+| Variant | Complete engine44.1k mean/P95/P99/peak µs | Complete engine48k mean/P95/P99/peak µs |
 |---|---:|---:|
 | baseline | 24.94/25.50/31.10/47.70 | 24.65/25.10/26.80/49.70 |
 | bias_off | 24.74/25.60/31.40/51.30 | 23.84/24.50/26.00/52.10 |
@@ -121,7 +125,7 @@ These isolated-stage values include no playback attenuation and are not directly
 | oversampled | 90.05/96.10/102.00/126.50 | 90.75/93.80/107.20/141.80 |
 | averaged | 25.32/26.10/32.70/58.90 | 24.62/25.30/26.60/42.50 |
 
-Native deadline-exceedance counts were zero in these short host benchmarks. Physical overruns/I2S failures remain unmeasured.
+Native deadline-exceedance counts were zero in these short host benchmarks. See the physical follow-up for measured board overruns and I2S write-failure counts; stack/allocation counts remain unmeasured.
 
 The event-window step at44.1k was0.08783 baseline versus0.05122 F (speed change); both exceed0.03. At48k F maximum0.02540 meets this limited event test.
 

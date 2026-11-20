@@ -4,12 +4,14 @@ Date: 2026-11-19. PR: [#54](https://github.com/ovelhaaa/hydra-tape-engine/pull/5
 `feature/musical-validation-phase6`; destination: `main`. Audited HEAD:
 `c7c807a5bc182fdadd8b7d0067f8b4e9b5af10bf`. Approved DSP baseline: `5e3d2bf`.
 
-**Classification: READY FOR HUMAN REVIEW. No merge.** The three carrier-dependent Native
-tests pass, the full Native suite is 15/15, the physical Reverse runs with zero overruns,
-and the 82 ms parameter-update stall is gone. The approved phase-averaged bias is
-untouched and the before/after audio is bit-exact. Residual release blockers that predate
-this work remain explicitly listed below (issue #48, four tail-growth criteria and the
-44.1 kHz parameter-transition criterion).
+**Candidate human audition: PASS — 10/10 (hash-verified `7431a6d` package). Technical
+classification: BLOCKED — REGRESSION (issue #48 and complete-engine criteria). No merge.**
+The three carrier-dependent Native tests pass, the full Native suite is 15/15, the physical
+Reverse runs with zero overruns, and the 82 ms parameter-update stall is gone. The approved
+phase-averaged bias is untouched and the before/after audio is bit-exact. Residual release
+blockers that predate this work remain explicitly listed below (issue #48, four tail-growth
+criteria and the 44.1 kHz parameter-transition criterion). See the
+[human audition record](PHASE6_REVERSE_OPTIMIZATION_HUMAN_AUDITION.md).
 
 ## Baseline and failing tests
 
@@ -116,9 +118,11 @@ DSP from commit `5e3d2bf` and the optimized DSP from the working tree with the s
 renders ten pairs (Reverse 1/4, 1/8, 1/16, high feedback, BPM change, MIDI clock, Multi-Head,
 delay, Warp, combined stress) and compares them: **max_abs = 0, RMSE = 0, bit_exact = true**
 for all ten. Package: `artifacts/listening-lab/phase6-reverse-optimization/` (20 WAVs, 10 CSVs,
-manifest, player); archive `artifacts/hydra-phase6-reverse-ab.zip`. Human state remains
-`NOT REVIEWED`; bit-exactness is not human approval. The Phase 6.2 listening package is
-preserved unchanged.
+manifest, player); archive `artifacts/hydra-phase6-reverse-ab.zip`. The responsible
+reviewer exported a review JSON for this exact commit: **10/10 scenarios PASS**, all 30
+WAV/CSV hashes verified; per-criterion dictionaries were empty, so no individual criterion
+is inferred. See the [human audition record](PHASE6_REVERSE_OPTIMIZATION_HUMAN_AUDITION.md).
+The Phase 6.2 listening package is preserved unchanged.
 
 ## Validation
 
@@ -132,6 +136,7 @@ preserved unchanged.
 | GTC / Tap Tempo / MIDI Clock | tests pass |
 | Bias | phase-averaged implementation untouched (same source hash) |
 | Goldens | all Native and WASM goldens pass unchanged |
+| Human audition | **PASS 10/10** for the hash-verified `7431a6d` package; no per-criterion scores supplied |
 
 CI (`.github/workflows/reverse-realtime.yml`) runs Native 15/15, the functional WASM suite,
 both firmware builds, and the ten-pair A/B render, and uploads the artifact. It is

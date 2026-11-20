@@ -1,6 +1,6 @@
 {
   "phase": "6.3",
-  "audited_head": "7431a6db05abfde97838721cd089f94c7fed5047",
+  "audited_head": "b1bff478f0e67d52c8c229a49bb7f1e0fd707e18",
   "source_sha256": "cc7e55a621f3a0819cd0b96a0fd9441a033028425fea858a43232ea3e4853bdd",
   "transport_clock_sha256": "451389feddc1d43c86bbd95225c329e66b09420acab92876c2705f924c79f0ed",
   "approved_bias_source_sha256": "fd190ec171ee3c80a3349fdae2a0e5ddad4447dba9b1b1be3ddafb525090f0d9",
@@ -184,7 +184,16 @@
     "max_abs_max": 0.0,
     "rmse_max": 0.0
   },
-  "human_listening": "NOT REVIEWED \u2014 bit-exactness is not human approval",
+  "human_listening": "PASS 10/10 \u2014 scenario-level, hash-verified 7431a6d package; no per-criterion scores supplied",
+  "human_audition": {
+    "status": "PASS",
+    "scenarios": 10,
+    "reference_commit": "7431a6db05abfde97838721cd089f94c7fed5047",
+    "review_file": "docs/evidence/phase6-reverse-human-reviews-7431a6d.json",
+    "review_sha256": "9e04193c046737cd8c7829f19c7724eec0a3a368f0d0d7f7b93f2bb779c5e740",
+    "hashes_verified": true,
+    "per_criterion": "not supplied"
+  },
   "ci": {
     "run": 44650706120,
     "artifact": 14590009952,

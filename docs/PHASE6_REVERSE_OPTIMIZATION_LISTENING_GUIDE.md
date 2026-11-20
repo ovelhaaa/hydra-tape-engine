@@ -37,7 +37,9 @@ Registre divergências de volume como observação, sem compensar cada versão.
 
 Todos os itens começam em `NOT REVIEWED`. Use `PASS`, `NEEDS ATTENTION` ou `FAIL` somente
 após a escuta e exporte o JSON por **Export reviews**. Métricas ou equivalência bit-exact
-não substituem o registro humano. O pacote de escuta da Fase 6.2 permanece preservado em
-`artifacts/listening-lab/phase6-bias-ab/`.
+não substituem o registro humano. O pacote da Fase 6.3 no commit `7431a6d` foi revisado
+pelo responsável com **10/10 PASS** e hashes verificados; novos renders e commits
+posteriores continuam começando sem avaliação. O pacote de escuta da Fase 6.2 permanece
+preservado em `artifacts/listening-lab/phase6-bias-ab/`.
 
 Reprodução: `python scripts/package_reverse_ab.py`.

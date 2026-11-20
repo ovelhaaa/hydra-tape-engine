@@ -1,6 +1,6 @@
 {
   "phase": "6.3",
-  "audited_head": "b878d8700694cdb1898d69328494b444d20334b5",
+  "audited_head": "7431a6db05abfde97838721cd089f94c7fed5047",
   "source_sha256": "cc7e55a621f3a0819cd0b96a0fd9441a033028425fea858a43232ea3e4853bdd",
   "transport_clock_sha256": "451389feddc1d43c86bbd95225c329e66b09420acab92876c2705f924c79f0ed",
   "approved_bias_source_sha256": "fd190ec171ee3c80a3349fdae2a0e5ddad4447dba9b1b1be3ddafb525090f0d9",
@@ -177,8 +177,8 @@
     }
   },
   "audio_comparison": {
-    "before_library_sha256": "c2479d64a8ac2ebe4835b2b11fb9266e7a943ce217a0979f482d03daab68443f",
-    "after_library_sha256": "0065a19c526097ef07a82b73eb960d8b26239aeee581cb418a91644147adb498",
+    "before_library_sha256": "2e61ef75b1e61ec56252a59eab9d104f5bf2c34f18802fcb1106dac5dc5e1029",
+    "after_library_sha256": "e9f96c69af48a08fe0d98a3d8e6c13b809138df6c1018fc079e5982bcb1153ab",
     "bit_exact_count": 10,
     "scenarios": 10,
     "max_abs_max": 0.0,

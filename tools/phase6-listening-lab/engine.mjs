@@ -2,6 +2,7 @@ export const STATES = ['NOT REVIEWED', 'PASS', 'NEEDS ATTENTION', 'FAIL'];
 export const CRITERIA = ['Rhythmic clarity', 'Natural repeats', 'Continuity', 'Clicks', 'Tail preservation', 'Feedback stability', 'Reverse musicality', 'Tape character'];
 export const BIAS_CRITERIA = ['Residual whine', 'Artificial harshness', 'Natural highs', 'Magnetic compression', 'Musical harmonics', 'Transients', 'Tape character', 'Feedback stability', 'Reverse musicality', 'Stereo coherence'];
 export const isBiasPackage = manifest => manifest?.suite === 'Hydra Phase 6.2 Bias A/B';
+const SUITE_SCENARIO_COUNTS = {'Hydra Phase 6.2 Bias A/B': 60, 'Hydra Phase 6.3 Reverse A/B': 10};
 export const reviewCriteria = manifest => isBiasPackage(manifest) ? BIAS_CRITERIA : CRITERIA;
 export const reviewStorageKey = manifest => `hydra-lab:${manifest.reference_commit}:${manifest.suite ?? 'musical-validation'}`;
 export function auditionDetails(manifest, scenario) {
@@ -15,7 +16,7 @@ export function validateManifest(manifest) {
   if (manifest.schema_version !== 1 || !/^[a-f0-9]{40}$/.test(manifest.reference_commit ?? '')) throw Error('Invalid manifest provenance/schema');
   const entries = Object.entries(manifest.scenarios ?? {});
   if (!(manifest.sample_rate_hz > 0)) throw Error('Missing package sample rate');
-  const expected = manifest.suite === 'Hydra Phase 6.2 Bias A/B' ? 60 : 20;
+  const expected = SUITE_SCENARIO_COUNTS[manifest.suite] ?? 20;
   if (entries.length !== expected || entries.some(([id], i) => Number(id.slice(0, 2)) !== i + 1)) throw Error(`Expected ${expected} ordered scenarios`);
   for (const [, s] of entries) {
     if (!(s.duration_sec > 0 && s.sample_rate_hz === manifest.sample_rate_hz) || !s.dsp_params || !s.analysis_metrics || !Array.isArray(s.markers)) throw Error('Invalid scenario metadata');

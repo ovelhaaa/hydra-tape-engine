@@ -1,6 +1,6 @@
 {
   "phase": "6.3",
-  "audited_head": "5ea0a26dac5defdcd5861048d8500c4713fda8b4",
+  "audited_head": "b878d8700694cdb1898d69328494b444d20334b5",
   "source_sha256": "cc7e55a621f3a0819cd0b96a0fd9441a033028425fea858a43232ea3e4853bdd",
   "transport_clock_sha256": "451389feddc1d43c86bbd95225c329e66b09420acab92876c2705f924c79f0ed",
   "approved_bias_source_sha256": "fd190ec171ee3c80a3349fdae2a0e5ddad4447dba9b1b1be3ddafb525090f0d9",
@@ -185,6 +185,17 @@
     "rmse_max": 0.0
   },
   "human_listening": "NOT REVIEWED \u2014 bit-exactness is not human approval",
+  "ci": {
+    "run": 44650706120,
+    "artifact": 14590009952,
+    "artifact_size_bytes": 33514230,
+    "ubuntu_equivalence": {
+      "max_abs": 3.2217e-05,
+      "rmse": 1.317145864513e-05,
+      "status": "FAIL \u2014 issue #48, identical to Phase 6.2"
+    },
+    "job_result": "failure only at the explicit issue #48 gate; Native/A-B/ESP32 steps pass"
+  },
   "physical_firmware": {
     "dsp_source_commit": "ac6814071c5ec5819763c60a3f986f4595808964",
     "final_head": "01275347e9d199eaf020f271f592fcf96ec48495 (CI-only change after ac68140)",

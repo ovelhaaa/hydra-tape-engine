@@ -125,8 +125,8 @@ preserved unchanged.
 | Gate | Result |
 |---|---|
 | Native CTest | **15/15**, including the three recovered tests and the new equivalence test |
-| WASM CTest | 13/15; all functional/golden/ABI tests pass; only issue #48 equivalence fails |
-| Native/WASM (unchanged thresholds) | max_abs 7.659e-6 / RMSE 2.473e-6 — identical to Phase 6.2; no new divergence |
+| WASM functional CTest | 13/13 functional/golden/ABI tests pass; the two comparison tests are configured explicitly (see next row) |
+| Native/WASM, unchanged thresholds | Ubuntu CI: max_abs 3.2217e-5 / RMSE 1.317145864513e-5. Windows local: max_abs 7.659e-6 / RMSE 2.473e-6. Both are **identical to Phase 6.2**; no new divergence. Issue #48 remains |
 | ESP32-S3 build | SUCCESS, production and profile envs |
 | ABI C 1.7 | symbol, layout, ID, preset and legacy-consumer tests pass |
 | GTC / Tap Tempo / MIDI Clock | tests pass |
@@ -137,7 +137,10 @@ CI (`.github/workflows/reverse-realtime.yml`) runs Native 15/15, the functional 
 both firmware builds, and the ten-pair A/B render, and uploads the artifact. It is
 **intentionally red** at the explicit issue #48 comparison gate (`max_abs 1e-5`,
 `RMSE 1e-6`, unchanged): the artifact is published before that gate. A green functional
-run must not be read as issue #48 being fixed.
+run must not be read as issue #48 being fixed. Verified run
+[44650706120](https://github.com/ovelhaaa/hydra-tape-engine/actions/runs/44650706120),
+artifact [14590009952](https://github.com/ovelhaaa/hydra-tape-engine/actions/runs/44650706120/artifacts/14590009952)
+(`hydra-phase6-reverse-ab`, 33 514 230 bytes, 10 pairs bit-exact).
 
 ## Residual limitations and explicit blockers
 

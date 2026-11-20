@@ -18,7 +18,8 @@ def validate(directory):
         raise ValueError("Invalid manifest schema or agent-assigned human signoff")
     scenarios = manifest["scenarios"]
     expected = {"Hydra Phase 6.2 Bias A/B": 60,
-                "Hydra Phase 6.3 Reverse A/B": 10}.get(manifest.get("suite"), 20)
+                "Hydra Phase 6.3 Reverse A/B": 10,
+                "Hydra Phase 6.4 Final A/B": 10}.get(manifest.get("suite"), 20)
     if len(scenarios) != expected or [int(k[:2]) for k in scenarios] != list(range(1, expected + 1)):
         raise ValueError(f"Expected the ordered {expected} scenarios")
     if not re.fullmatch(r"[a-f0-9]{40}", manifest["reference_commit"]) or not manifest["api_version"]:
@@ -80,6 +81,14 @@ def package(directory, archive=None):
         if report.exists():
             shutil.copyfile(report, reports / report.name)
             shutil.copyfile(ROOT / "docs" / guide, reports / guide)
+    if manifest.get("suite") == "Hydra Phase 6.4 Final A/B":
+        reports.mkdir(exist_ok=True)
+        for name in ("PHASE6_NUMERICAL_EQUIVALENCE.md", "PHASE6_FEEDBACK_STABILITY.md",
+                     "PHASE6_TRANSITION_ANALYSIS.md", "PHASE6_RELEASE_DECISION.md",
+                     "PHASE6_RESET_CONTRACT.md"):
+            source = ROOT / "docs" / name
+            if source.exists():
+                shutil.copyfile(source, reports / name)
     if manifest.get("suite") == "Hydra Phase 6.2 Bias A/B":
         report = ROOT / "docs/PHASE6_BIAS_ANTIALIASING_REPORT.md"
         if report.exists():

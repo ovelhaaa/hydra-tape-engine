@@ -2,7 +2,7 @@ export const STATES = ['NOT REVIEWED', 'PASS', 'NEEDS ATTENTION', 'FAIL'];
 export const CRITERIA = ['Rhythmic clarity', 'Natural repeats', 'Continuity', 'Clicks', 'Tail preservation', 'Feedback stability', 'Reverse musicality', 'Tape character'];
 export const BIAS_CRITERIA = ['Residual whine', 'Artificial harshness', 'Natural highs', 'Magnetic compression', 'Musical harmonics', 'Transients', 'Tape character', 'Feedback stability', 'Reverse musicality', 'Stereo coherence'];
 export const isBiasPackage = manifest => manifest?.suite === 'Hydra Phase 6.2 Bias A/B';
-const SUITE_SCENARIO_COUNTS = {'Hydra Phase 6.2 Bias A/B': 60, 'Hydra Phase 6.3 Reverse A/B': 10};
+const SUITE_SCENARIO_COUNTS = {'Hydra Phase 6.2 Bias A/B': 60, 'Hydra Phase 6.3 Reverse A/B': 10, 'Hydra Phase 6.4 Final A/B': 10};
 export const reviewCriteria = manifest => isBiasPackage(manifest) ? BIAS_CRITERIA : CRITERIA;
 export const reviewStorageKey = manifest => `hydra-lab:${manifest.reference_commit}:${manifest.suite ?? 'musical-validation'}`;
 export function auditionDetails(manifest, scenario) {

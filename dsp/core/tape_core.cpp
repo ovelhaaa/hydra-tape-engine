@@ -89,24 +89,24 @@ inline void freeDelayBuffer(float* buffer) {
 #endif
 }
 
-struct FastTanhLUT {
-  static constexpr int N = 1024;
-  float table[N + 1]{};
+// The table constants are committed, not evaluated at run time. std::tanh is a
+// platform libm call: glibc, the Windows UCRT and musl/Emscripten disagree on
+// the last bit of some results, and after quantisation to float the old
+// runtime table differed in 84 of 1025 entries between Native and WASM. That
+// was the first stage where the two builds diverged (issue #48). The mapping,
+// interpolation and clamping below are unchanged.
+#include "fast_tanh_table.inc"
 
-  void init() {
-    for (int i = 0; i <= N; ++i) {
-      float x = -4.0f + 8.0f * (float(i) / float(N));
-      table[i] = std::tanh(x);
-    }
-  }
+struct FastTanhLUT {
+  static constexpr int N = kFastTanhTableSize;
 
   HYDRA_AUDIO_INLINE float process(float x) const {
     x = clampf(x, -4.0f, 4.0f);
     float u = (x + 4.0f) * (float(N) * 0.125f);
     int i = static_cast<int>(u);
-    if (i >= N) return table[N];
+    if (i >= N) return kFastTanhTable[N];
     float f = u - float(i);
-    return table[i] + f * (table[i + 1] - table[i]);
+    return kFastTanhTable[i] + f * (kFastTanhTable[i + 1] - kFastTanhTable[i]);
   }
 };
 
@@ -259,7 +259,7 @@ struct TapeCore::Impl {
     if (ptr) heap_caps_free(ptr);
   }
 #endif
-  explicit Impl(float fs,float maxDelayMs,float historyMs):sampleRate(fs),noiseGen(fs,123456789u),noiseGenR(fs,987654321u){ tanhLUT.init(); magneticsL.lut=&tanhLUT; magneticsR.lut=&tanhLUT; updateSampleRateConstants(); dropout.setSampleRate(fs); magneticsL.updateParams(fs,currentParams); magneticsR.updateParams(fs,currentParams); normalBufferSize=(int32_t)(fs*(maxDelayMs/1000.f)); bufferSize=(int32_t)(fs*(historyMs/1000.f)); bufferCapacity=bufferSize+TAPE_BUFFER_GUARD; delayLine=allocateDelayBuffer(bufferCapacity); delayLineR=allocateDelayBuffer(bufferCapacity); if(!delayLine||!delayLineR){freeDelayBuffer(delayLine);freeDelayBuffer(delayLineR);delayLine=delayLineR=nullptr;bufferSize=0;return;} static const float sc[6]={0.7f,0.65f,0.6f,0.6f,0.5f,0.5f}; static const int st[6]={223,367,491,647,821,1039}; for(int i=0;i<6;i++){springAP_L[i].init(st[i]);springAP_R[i].init(st[i]+23);springAP_L[i].setCoeff(sc[i]);springAP_R[i].setCoeff(sc[i]);springLPF_L[i].setLowpass(fs,2500,0.5f);springLPF_R[i].setLowpass(fs,2500,0.5f);} static const float rc[4]={0.6f,0.55f,0.5f,0.45f}; static const int rt[4]={151,313,569,797}; for(int i=0;i<4;i++){reverseAP_L[i].init(rt[i]);reverseAP_R[i].init(rt[i]+17);reverseAP_L[i].setCoeff(rc[i]);reverseAP_R[i].setCoeff(rc[i]);} updateFilters(); flutterLPF.setLowpass(fs,15,0.707f); flutterLPFR.setLowpass(fs,15,0.707f); warpHPF_L.setHighpass(fs,120.0f,0.707f); warpHPF_R.setHighpass(fs,120.0f,0.707f); warpLPF_L.setLowpass(fs,2200.0f,0.707f); warpLPF_R.setLowpass(fs,2200.0f,0.707f); smoothedGrainSamples=std::max(64.0f,80.0f*0.001f*fs); transportClock.prepare(fs); transportClock.setBpm(120.0f); tapTempo.prepare(fs); tapTempo.setAppliedBpm(120.0f); midiClockSync.prepare(fs); midiClockSync.setAppliedBpm(120.0f);}
+  explicit Impl(float fs,float maxDelayMs,float historyMs):sampleRate(fs),noiseGen(fs,123456789u),noiseGenR(fs,987654321u){ magneticsL.lut=&tanhLUT; magneticsR.lut=&tanhLUT; updateSampleRateConstants(); dropout.setSampleRate(fs); magneticsL.updateParams(fs,currentParams); magneticsR.updateParams(fs,currentParams); normalBufferSize=(int32_t)(fs*(maxDelayMs/1000.f)); bufferSize=(int32_t)(fs*(historyMs/1000.f)); bufferCapacity=bufferSize+TAPE_BUFFER_GUARD; delayLine=allocateDelayBuffer(bufferCapacity); delayLineR=allocateDelayBuffer(bufferCapacity); if(!delayLine||!delayLineR){freeDelayBuffer(delayLine);freeDelayBuffer(delayLineR);delayLine=delayLineR=nullptr;bufferSize=0;return;} static const float sc[6]={0.7f,0.65f,0.6f,0.6f,0.5f,0.5f}; static const int st[6]={223,367,491,647,821,1039}; for(int i=0;i<6;i++){springAP_L[i].init(st[i]);springAP_R[i].init(st[i]+23);springAP_L[i].setCoeff(sc[i]);springAP_R[i].setCoeff(sc[i]);springLPF_L[i].setLowpass(fs,2500,0.5f);springLPF_R[i].setLowpass(fs,2500,0.5f);} static const float rc[4]={0.6f,0.55f,0.5f,0.45f}; static const int rt[4]={151,313,569,797}; for(int i=0;i<4;i++){reverseAP_L[i].init(rt[i]);reverseAP_R[i].init(rt[i]+17);reverseAP_L[i].setCoeff(rc[i]);reverseAP_R[i].setCoeff(rc[i]);} updateFilters(); flutterLPF.setLowpass(fs,15,0.707f); flutterLPFR.setLowpass(fs,15,0.707f); warpHPF_L.setHighpass(fs,120.0f,0.707f); warpHPF_R.setHighpass(fs,120.0f,0.707f); warpLPF_L.setLowpass(fs,2200.0f,0.707f); warpLPF_R.setLowpass(fs,2200.0f,0.707f); smoothedGrainSamples=std::max(64.0f,80.0f*0.001f*fs); transportClock.prepare(fs); transportClock.setBpm(120.0f); tapTempo.prepare(fs); tapTempo.setAppliedBpm(120.0f); midiClockSync.prepare(fs); midiClockSync.setAppliedBpm(120.0f);}
   ~Impl(){freeDelayBuffer(delayLine);freeDelayBuffer(delayLineR);}
   bool valid() const {return delayLine&&delayLineR&&bufferSize>0;}
   HYDRA_DSP_IRAM HYDRA_AUDIO_INLINE float feedbackCompressor(float x){ const float t=0.6f,r=1.5f,k=0.2f; float a=std::fabs(x); if(a<=t-k*0.5f)return x; if(a>=t+k*0.5f)return std::copysign(t+(a-t)/r,x); float kx=(a-(t-k*0.5f))/k; float ratio=1.f+(1.f/r-1.f)*kx*kx; return std::copysign(a*ratio,x);}
@@ -325,6 +325,7 @@ struct TapeCore::Impl {
   void updateSampleRateConstants(){ const float fs=std::max(1.0f,sampleRate); invSampleRate=1.0f/fs; reverseFadeStep=1.f/std::max(1.f,0.010f*fs); reverseControlAlpha=1.f-std::exp(-1.f/(0.015f*fs)); maxDropoutFc=0.45f*fs; delaySmoothAlpha=1.f-std::exp(-1.f/(0.200f*fs)); delayRampInc=1.f/(0.250f*fs); azimuthInc=0.2f*invSampleRate; mechNoiseSlowAlpha=mechNoiseOnePoleAlpha(fs,kMechNoiseSlowTimeSeconds); mechNoiseFastAlpha=mechNoiseOnePoleAlpha(fs,kMechNoiseFastTimeSeconds); duckAttackCoeff=1.f-std::exp(-1.f/(kHissDuckAttackTimeSeconds*fs)); duckReleaseCoeff=1.f-std::exp(-1.f/(kHissDuckReleaseTimeSeconds*fs)); }
   void updateCachedParams();
   void updateFilters();
+  void updatePlaybackFilters();
   void flushDenormals();
   FastTanhLUT tanhLUT; TapeMagnetics magneticsL,magneticsR; float sampleRate; float invSampleRate=1.0f/48000.0f,maxDropoutFc=21600.0f,invHeadGainSum=1.0f; TapeParams currentParams{}; float flutterPhase=0,wowPhase=0,azimuthPhase=0; float flutterInc=0,wowInc=0,azimuthInc=0,delaySmoothAlpha=0,delayRampInc=0,mechNoiseSlowAlpha=0,mechNoiseFastAlpha=0;
   float driveGain=0,dryGain=0.5f,textureWetGain=0.5f,delayWetGain=0.5f,safeFeedback=0,feedbackWearAmount=0;
@@ -336,6 +337,12 @@ struct TapeCore::Impl {
   float inEnvL=0,inEnvR=0,duckAttackCoeff=0,duckReleaseCoeff=0,noiseBaseGain=0,noiseMinDuckGain=kHissNoiseMinDuckGain,noiseDuckStrength=10.0f;
   float tapeSpeedNorm=0.5f,tapeAgeNorm=0.4f,toneNorm=0.5f,azimuthErrorNorm=0;
   float feedbackPreEmph=1.12f,feedbackDeEmph=1.0f/1.12f;
+  // Playback-filter coefficient transition state. Coeffs are derived from tape
+  // speed, age, tone and head bump; changing them while the biquad state is
+  // retained clicks, so post-start changes ramp per block (see updateFilters).
+  float pbSpeed=0,pbAge=0,pbTone=0,pbBump=0;
+  float pbSpeedTarget=0,pbAgeTarget=0,pbToneTarget=0,pbBumpTarget=0;
+  bool pbPrimed=false,pbTransition=false,hasProcessed=false;
   float musicalHeadDelay1=0,musicalHeadDelay2=0,musicalHeadDelay3=0,springFeedbackGain=0,springWetGain=0.5f;
   int springStages=3;
   uint8_t activeHeadMask=4;
@@ -451,14 +458,31 @@ void TapeCore::Impl::updateFilters(){
   float bumpFreq=60.f+(speedMod*140.f);
   float reproBumpGain=clampf(currentParams.headBumpAmount*0.06f,0.f,6.f);
   float feedbackBumpGain=clampf(currentParams.headBumpAmount*0.02f,0.f,2.f);
-  reproHeadBump.setPeak(sampleRate,bumpFreq,0.9f,reproBumpGain); reproHeadBumpR.setPeak(sampleRate,bumpFreq,0.9f,reproBumpGain);
   feedbackHeadBump.setPeak(sampleRate,bumpFreq,0.8f,feedbackBumpGain); feedbackHeadBumpR.setPeak(sampleRate,bumpFreq,0.8f,feedbackBumpGain);
-  float baseFreq=6000+(speedMod*10000),ageFactor=1-(ageMod*0.90f),toneFactor=(toneMod-0.5f)*2; if(toneFactor>0){ageFactor+=toneFactor*0.5f;if(ageFactor>1)ageFactor=1;} else ageFactor*=1+(toneFactor*0.5f); float cut=std::max(400.f,baseFreq*ageFactor);
-  tapeRolloff.setHighShelf(sampleRate,cut*2.f,0.5f,-12.f); tapeRolloffR.setHighShelf(sampleRate,cut*2.f,0.5f,-12.f); gapLossLPF.setLowpass(sampleRate,cut,0.707f); gapLossLPFR.setLowpass(sampleRate,cut,0.707f);
+  // The playback head bump, rolloff shelf and gap-loss lowpass are derived from
+  // tape speed, age, tone and head bump. Re-deriving them in one step while the
+  // biquad state is retained produced a one-sample discontinuity at the block
+  // where the parameter was applied (0.0495 at 44.1 kHz, Phase 6.4). The first
+  // configuration is applied at once so offline renders are unchanged; later
+  // changes ramp per block in processStereoBlock.
+  pbSpeedTarget=speedMod; pbAgeTarget=ageMod; pbToneTarget=toneMod; pbBumpTarget=reproBumpGain;
+  if(!pbPrimed||!hasProcessed){
+    pbSpeed=pbSpeedTarget; pbAge=pbAgeTarget; pbTone=pbToneTarget; pbBump=pbBumpTarget;
+    pbPrimed=true; pbTransition=false; updatePlaybackFilters();
+  } else if(pbSpeed!=pbSpeedTarget||pbAge!=pbAgeTarget||pbTone!=pbToneTarget||pbBump!=pbBumpTarget){
+    pbTransition=true;
+  }
   float feedbackWearAmount=ageMod; float fb=(9000+(speedMod*7000))*(1-(feedbackWearAmount*0.65f)); fb=std::max(1600.f,fb); feedbackGapLoss.setCutoff(sampleRate,fb); feedbackGapLossR.setCutoff(sampleRate,fb); feedbackHPF.setHighpass(sampleRate,300,0.5f); feedbackHPFR.setHighpass(sampleRate,300,0.5f);
   float ap=0.3f+feedbackWearAmount*0.4f; feedbackPhase.setCoeff(ap); feedbackPhaseR.setCoeff(ap);  float flutterCutoff=clampf(currentParams.flutterRate*1.6f,4.f,12.f); flutterLPF.setLowpass(sampleRate,flutterCutoff,0.707f); flutterLPFR.setLowpass(sampleRate,flutterCutoff,0.707f);
   float springDecayMod=currentParams.springDecay*0.01f,springDampMod=currentParams.springDamping*0.01f,springCoeff=0.4f+springDecayMod*0.45f,dampFreq=1500+springDampMod*3000;
   for(int i=0;i<6;i++){springAP_L[i].setCoeff(springCoeff);springAP_R[i].setCoeff(springCoeff);springLPF_L[i].setLowpass(sampleRate,dampFreq,0.5f);springLPF_R[i].setLowpass(sampleRate,dampFreq,0.5f);}
+}
+
+void TapeCore::Impl::updatePlaybackFilters(){
+  const float bumpFreq=60.f+(pbSpeed*140.f);
+  reproHeadBump.setPeak(sampleRate,bumpFreq,0.9f,pbBump); reproHeadBumpR.setPeak(sampleRate,bumpFreq,0.9f,pbBump);
+  float baseFreq=6000+(pbSpeed*10000),ageFactor=1-(pbAge*0.90f),toneFactor=(pbTone-0.5f)*2; if(toneFactor>0){ageFactor+=toneFactor*0.5f;if(ageFactor>1)ageFactor=1;} else ageFactor*=1+(toneFactor*0.5f); float cut=std::max(400.f,baseFreq*ageFactor);
+  tapeRolloff.setHighShelf(sampleRate,cut*2.f,0.5f,-12.f); tapeRolloffR.setHighShelf(sampleRate,cut*2.f,0.5f,-12.f); gapLossLPF.setLowpass(sampleRate,cut,0.707f); gapLossLPFR.setLowpass(sampleRate,cut,0.707f);
 }
 
 TapeCore::TapeCore(float sampleRate,float maxDelayMs)
@@ -628,6 +652,9 @@ void TapeCore::reset(){
   impl_->tapEstimatedBpm = 120.0;
   impl_->midiEstimatedBpm = 120.0;
   impl_->applyEffectiveBpm(impl_->manualBpm);
+  // A destructive reset is a defined state boundary: snap the playback-filter
+  // transition state instead of ramping from whatever was configured before.
+  impl_->pbPrimed=false;
   impl_->updateFilters();
 }
 
@@ -722,6 +749,21 @@ HYDRA_DSP_IRAM void TapeCore::processStereoBlock(const float* inLBlock,const flo
     return;
   }
   TapeParams* p=&impl_->currentParams;
+  if(impl_->pbTransition){
+    const float alpha=1.f-std::exp(-static_cast<float>(frames)/(0.020f*std::max(1.0f,impl_->sampleRate)));
+    impl_->pbSpeed+=alpha*(impl_->pbSpeedTarget-impl_->pbSpeed);
+    impl_->pbAge+=alpha*(impl_->pbAgeTarget-impl_->pbAge);
+    impl_->pbTone+=alpha*(impl_->pbToneTarget-impl_->pbTone);
+    impl_->pbBump+=alpha*(impl_->pbBumpTarget-impl_->pbBump);
+    if(std::fabs(impl_->pbSpeedTarget-impl_->pbSpeed)<1e-4f&&std::fabs(impl_->pbAgeTarget-impl_->pbAge)<1e-4f&&
+       std::fabs(impl_->pbToneTarget-impl_->pbTone)<1e-4f&&std::fabs(impl_->pbBumpTarget-impl_->pbBump)<1e-4f){
+      impl_->pbSpeed=impl_->pbSpeedTarget; impl_->pbAge=impl_->pbAgeTarget;
+      impl_->pbTone=impl_->pbToneTarget; impl_->pbBump=impl_->pbBumpTarget;
+      impl_->pbTransition=false;
+    }
+    impl_->updatePlaybackFilters();
+  }
+  impl_->hasProcessed=true;
   // Reverse V2 boundary detection used to evaluate double-precision musical
   // positions twice per sample. The Xtensa LX7 has no double FPU, so that path
   // dominated Reverse cost. Boundaries are block-invariant: collect them once

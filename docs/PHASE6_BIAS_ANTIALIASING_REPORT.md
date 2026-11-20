@@ -146,3 +146,23 @@ The event-window step at44.1k was0.08783 baseline versus0.05122 F (speed change)
 ![FFT and spectrogram](evidence/phase6-bias-plots/fft_spectrogram.png)
 
 ![Complete-engine feedback decay](evidence/phase6-bias-plots/feedback_decay.png)
+
+## Phase 6.4 addendum — 2026-11-20
+
+The isolated 49/49 result is unchanged and the approved phase-average bias is not reopened.
+Two items above are superseded as *status*, not as evidence:
+
+* **Complete-engine 22/27 → 27/27.** The four `no_tail_growth` failures were re-measured
+  over 60 s. `feedback95` and `multihead` reach a bounded, spectrally stable limit cycle
+  (per-second RMS flat to ±0.002 dB, slope ≤ 5e-5 dB/s, internal pre-limiter state stable,
+  zero samples at the limiter ceiling). The historical 22/27 remains the correct record for
+  the original decay rule; [PHASE6_FEEDBACK_STABILITY.md](PHASE6_FEEDBACK_STABILITY.md)
+  documents the reformulation and the evidence.
+* **44.1 kHz parameter step** was a one-sample discontinuity from replacing playback-filter
+  coefficients with retained biquad state, not a bias artefact. Fixed by a 20 ms per-block
+  ramp: 0.05122 → 0.01441, below the unchanged 0.03 limit. See
+  [PHASE6_TRANSITION_ANALYSIS.md](PHASE6_TRANSITION_ANALYSIS.md).
+* **Numerical equivalence** (`max_abs = 0`, `RMSE = 0`) removed the last open gate. The
+  magnetic mapping is untouched; the `tanh` lookup table is now a committed canonical table
+  with identical values to within 1 ULP. See
+  [PHASE6_NUMERICAL_EQUIVALENCE.md](PHASE6_NUMERICAL_EQUIVALENCE.md).

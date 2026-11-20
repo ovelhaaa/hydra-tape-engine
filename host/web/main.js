@@ -491,10 +491,43 @@ bypassBtn.addEventListener('click', () => {
   setActionFeedback(bypass ? 'Plugin bypassed' : 'Plugin active', bypass ? 'warning' : 'success');
 });
 
-resetBtn.addEventListener('click', () => {
-  post({ type: 'reset' });
-  setStatus('DSP Core clear command sent.', 'info');
-  setActionFeedback('DSP buffers cleared', 'success');
+// hydra_dsp_reset() clears the whole delay history synchronously: up to 6.2 MB
+// at the 16.1 s web history configuration. The AudioWorklet message handler
+// runs on the audio rendering thread, so issuing the reset there would do that
+// wipe between render quanta and could miss the deadline. The contract is
+// therefore "suspend, reset, resume": the wipe happens while no quantum is due,
+// and the ack confirms it finished before audio resumes.
+function resetWithAudioSuspended() {
+  return new Promise((resolve) => {
+    if (!fxNode) { resolve(false); return; }
+    const finish = (acked) => {
+      fxNode.port.removeEventListener('message', onAck);
+      clearTimeout(timer);
+      resolve(acked);
+    };
+    const onAck = (event) => {
+      if (event.data?.type === 'stateAck' && event.data.key === 'reset') finish(true);
+    };
+    const timer = setTimeout(() => finish(false), 2000);
+    fxNode.port.addEventListener('message', onAck);
+    fxNode.port.start();
+    post({ type: 'reset' });
+  });
+}
+
+resetBtn.addEventListener('click', async () => {
+  const wasRunning = !!context && context.state === 'running';
+  if (wasRunning) await context.suspend();
+  let acked = false;
+  try {
+    acked = await resetWithAudioSuspended();
+  } finally {
+    if (wasRunning) await context.resume();
+  }
+  setStatus(acked
+    ? 'DSP Core cleared with the audio context suspended.'
+    : 'DSP Core clear sent without an acknowledgement.', acked ? 'info' : 'warning');
+  setActionFeedback(acked ? 'DSP buffers cleared' : 'Clear sent, no acknowledgement', acked ? 'success' : 'warning');
 });
 
 function updateTransportUI(data) {

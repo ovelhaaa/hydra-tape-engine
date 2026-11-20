@@ -176,3 +176,26 @@ python scripts/package_reverse_ab.py
 The profile command requires `env:esp32-s3-stageprofile`; the benchmark requires the
 production firmware. Raw serial captures accompany every physical number in
 `artifacts/bias-antialiasing/reverse-bench-final.json`.
+
+## Phase 6.4 addendum — 2026-11-20
+
+The two blockers recorded above are resolved and the physical baseline is preserved.
+
+* **Issue #48: PASS.** Native/WASM are bit-exact (`max_abs = 0`, `RMSE = 0`). The divergence
+  came from two platform libm values rounded to float: the comparator stimulus (`std::sin`,
+  3/2048 samples) and the magnetic `tanh` table (84/1025 entries). The Reverse path itself
+  was never implicated. See [PHASE6_NUMERICAL_EQUIVALENCE.md](PHASE6_NUMERICAL_EQUIVALENCE.md).
+* **Complete-engine criteria: 27/27.** The four tail gates were reclassified as bounded
+  sustain and replaced by explicit stability gates; the 44.1 kHz transition was a
+  one-sample filter-coefficient discontinuity and is fixed by a 20 ms per-block ramp.
+  See [PHASE6_FEEDBACK_STABILITY.md](PHASE6_FEEDBACK_STABILITY.md) and
+  [PHASE6_TRANSITION_ANALYSIS.md](PHASE6_TRANSITION_ANALYSIS.md).
+* **Reverse V2, the delay epoch, the boundary optimisation and the 82 ms wipe removal are
+  unchanged** by Phase 6.4. The only DSP changes are the tanh table constants and the
+  playback-filter coefficient ramp, neither of which touches the Reverse path.
+* **Audio itself changes**, so the 10/10 Phase 6.3 approval does not carry over. A new
+  10-pair package is published at `artifacts/listening-lab/phase6-final-review/` with
+  human listening **PENDING**.
+* The physical firmware was rebuilt after the change. Physical runtime numbers are recorded
+  in [PHASE6_RELEASE_DECISION.md](PHASE6_RELEASE_DECISION.md).
+

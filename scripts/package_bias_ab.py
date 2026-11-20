@@ -49,6 +49,8 @@ def main():
                     source_sha256=render.sha256_file(ROOT / "dsp/core/tape_core.cpp"),
                     baseline_model_sha256=render.sha256_file(ROOT / "dsp/diagnostics/tape_bias_baseline.inc"),
                     variant_library_sha256={name: runner.library_sha256 for name, runner in runners.items()},
+                    variant_build_provenance={name: json.loads((Path(libraries[name]).parent/'build.json').read_text(encoding='utf-8'))
+                                              for name in runners},
                     environment=dict(os=platform.platform(), python=platform.python_version(), numpy=np.__version__),
                     random_seed=6200, sample_rate_hz=render.RATE, block_size_frames=render.BLOCK,
                     human_listening_signoff="PENDING_HUMAN_AUDITION", scenarios={})

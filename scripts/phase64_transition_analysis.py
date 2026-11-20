@@ -26,6 +26,8 @@ EVENTS = [
     {"time_sec": 2, "type": "param", "id": 3, "value": 100, "label": "drive 25->100"},
     {"time_sec": 3, "type": "param", "id": 5, "value": 0, "label": "tape speed 50->0"},
     {"time_sec": 4, "type": "param", "id": 6, "value": 100, "label": "tape age 50->100"},
+    {"time_sec": 5, "type": "param", "id": 20, "value": 0, "label": "tone 100->0"},
+    {"time_sec": 6, "type": "param", "id": 7, "value": 100, "label": "head bump 0->100"},
 ]
 
 
@@ -34,7 +36,7 @@ def stimulus(rate, seconds=6.0):
     return np.repeat((0.02 * np.sin(2 * np.pi * 110 * t))[:, None], 2, axis=1).astype(np.float32)
 
 
-def run(lib, rate, events, seconds=6.0):
+def run(lib, rate, events, seconds=8.0):
     cfg = dict(stimulus=stimulus(rate, seconds), params=BASE_PARAMS, sample_rate=rate,
                tempo_source=0, events=events)
     return render.run_simulation(lib, cfg)["output"]
@@ -99,6 +101,12 @@ def main():
     (args.output / "transitions.json").write_text(json.dumps(report, indent=2, allow_nan=False),
                                                   encoding="utf-8")
     print("wrote", args.output / "transitions.json")
+    failures = [f"{rate}/{mode}/{label}" for rate, entry in report["cases"].items()
+                for mode in ("all_events", "isolated")
+                for label, value in entry[mode].items()
+                if not np.isfinite(value["gate_step"]) or value["gate_step"] > 0.03]
+    if failures:
+        raise SystemExit("Transition step exceeds unchanged 0.03 limit: " + ", ".join(failures))
 
 
 if __name__ == "__main__":

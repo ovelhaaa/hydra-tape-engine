@@ -22,6 +22,8 @@ target_include_directories(hydra_dsp_core
 if(BUILD_TESTING)
   include(CTest)
   find_package(Python3 COMPONENTS Interpreter REQUIRED)
+  add_test(NAME fast_tanh_integrity
+    COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/tests/core/fast_tanh_integrity.py)
 
   add_executable(hydra_core_smoke tests/core/smoke_core.cpp)
   target_link_libraries(hydra_core_smoke PRIVATE hydra_dsp_core)
@@ -196,6 +198,7 @@ if(BUILD_WEB)
       "${CMAKE_CURRENT_SOURCE_DIR}/host/web/transportController.js"
       "${CMAKE_CURRENT_SOURCE_DIR}/host/web/presetSerialization.js"
       "${CMAKE_CURRENT_SOURCE_DIR}/host/web/runtimeDiagnostics.js"
+      "${CMAKE_CURRENT_SOURCE_DIR}/host/web/resetController.js"
       "${CMAKE_CURRENT_SOURCE_DIR}/host/web/webMidiTime.js"
       "${HYDRA_WEB_DIR}"
     VERBATIM

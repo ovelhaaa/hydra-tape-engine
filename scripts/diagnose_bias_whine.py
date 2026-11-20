@@ -14,7 +14,7 @@ OUT = ROOT / "artifacts/bias-isolation"
 sys.path.insert(0, str(ROOT / 'scripts'))
 import render_phase6_review as render
 import musical_sources
-from bias_antialiasing import model_sources
+from bias_antialiasing import model_sources, variant_provenance
 
 def sha(path):
     return hashlib.sha256(path.read_bytes()).hexdigest()
@@ -66,12 +66,15 @@ def main():
         directory.mkdir(exist_ok=True)
         cpp = directory / 'tape_core.cpp'
         cpp.write_text(text, encoding='utf-8')
-        lib = directory / f'{name}.dll'
-        command = [compiler, '-O3', '-DNDEBUG', '-std=c++17', '-shared', '-Wl,--export-all-symbols', '-I'+str(ROOT/'include'), '-I'+str(ROOT/'dsp/core'), str(cpp), str(ROOT/'dsp/core/hydra_dsp_c_api.cpp'), '-o', str(lib)]
+        windows = platform.system() == 'Windows'
+        lib = directory / (f'{name}.dll' if windows else f'lib{name}.so')
+        shared_flags = ['-Wl,--export-all-symbols'] if windows else ['-fPIC']
+        command = [compiler, '-O3', '-DNDEBUG', '-std=c++17', '-shared', *shared_flags, '-I'+str(ROOT/'include'), '-I'+str(ROOT/'dsp/core'), str(cpp), str(ROOT/'dsp/core/hydra_dsp_c_api.cpp'), '-o', str(lib)]
         print(f'Building {name}...', flush=True)
         subprocess.run(command, check=True, capture_output=True)
         runner = render.HydraEngineRunner(lib)
-        entry = {'source_sha256': sha(cpp), 'library_sha256': sha(lib), 'build_command': command, 'inputs': {}}
+        entry = variant_provenance(name, text, compiler, command)
+        entry.update(source_sha256=sha(cpp), library_sha256=sha(lib), build_command=command, inputs={})
         for input_name, stimulus in inputs.items():
             audio = render.run_simulation(runner, {'stimulus': stimulus, 'params': params, 'initial_bpm': 120, 'tempo_source': 0})['output']
             path = directory / f'{input_name}.wav'

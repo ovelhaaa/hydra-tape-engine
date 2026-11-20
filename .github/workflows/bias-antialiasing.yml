@@ -49,10 +49,35 @@ jobs:
         id: diagnostics
         continue-on-error: true
         run: python scripts/bias_antialiasing.py --compiler g++
-      - name: Validate complete engine at both sample rates
+      # The Phase 6.4 60-second stability gate runs once in reverse-realtime.yml.
+      # Preserve the old six-second decay measurements for comparison and plots.
+      - name: Check complete engine and retain superseded decay observations
         id: engine
         continue-on-error: true
-        run: python scripts/validate_bias_engine.py
+        run: |
+          python - <<'PY'
+          import json, subprocess, sys
+          from pathlib import Path
+          report = Path('artifacts/bias-antialiasing/engine-results.json')
+          report.unlink(missing_ok=True)
+          run = subprocess.run([sys.executable, 'scripts/validate_bias_engine.py'])
+          if run.returncode not in (0, 1) or not report.exists():
+              raise SystemExit('Complete-engine measurement did not finish')
+          data = json.loads(report.read_text())
+          gates = data['gates']
+          assert len(gates) == 27, 'Missing complete-engine scenarios'
+          failed = {gate['name'] for gate in gates if not gate['pass_']}
+          historical = {f'{rate}/{case}/no_tail_growth' for rate in (44100, 48000)
+                        for case in ('feedback95', 'multihead')}
+          assert (run.returncode == 0) == (not failed), 'Exit status and measurements disagree'
+          assert not (failed - historical), f'Current regression: {sorted(failed - historical)}'
+          print('Historical six-second decay failures (NOT a stability PASS):', sorted(failed))
+          print('Release stability requires the separate 60-second Phase 6.4 gate.')
+          with Path(__import__('os').environ['GITHUB_STEP_SUMMARY']).open('a') as stream:
+              stream.write(f'Historical six-second engine criteria: {27-len(failed)}/27; '
+                           f'superseded decay failures: {sorted(failed)}. '
+                           'Current stability: see mandatory Phase 6.4 60-second gate.\n')
+          PY
       - name: Generate comparative spectral and dynamic plots
         id: plots
         continue-on-error: true

@@ -90,7 +90,20 @@ def model_sources():
     oversampled = oversampled.replace('  inline void flushDenormals()', code+'\n  inline void flushDenormals()')
     oversampled = oversampled.replace('    m = 0.0f;\n    biasPhase', '    std::fill_n(up,49,0.0f); std::fill_n(down,49,0.0f); pos=0;\n    m = 0.0f;\n    biasPhase')
     models['oversampled'] = oversampled
-    return {name: official[:a]+models[name]+'\n'+official[b:] for name in NAMES}, averaged
+    # A-E are historical experiments: retain their original libm-generated LUT.
+    # F must be the production source byte for byte, including the canonical LUT.
+    legacy = (ROOT/'dsp/diagnostics/fast_tanh_legacy.inc').read_text()
+    lut_start = official.index('struct FastTanhLUT {')
+    sources = {}
+    for name in NAMES:
+        if name == 'averaged':
+            sources[name] = official
+            continue
+        source = official[:lut_start].replace('#include "fast_tanh_table.inc"', '// Historical LUT explicitly substituted below.') + legacy + '\n' + models[name] + '\n' + official[b:]
+        needle = 'magneticsL.lut=&tanhLUT;'
+        assert source.count(needle) == 1
+        sources[name] = source.replace(needle, 'tanhLUT.init(); ' + needle, 1)
+    return sources, averaged
 
 
 WRAPPER = r'''
@@ -98,14 +111,14 @@ WRAPPER = r'''
 #include "tape_core.cpp"
 extern "C" {
 void bias_stage(const float* input, float* output, int n, float fs, float drive, float age, float speed) {
-  hydra::dsp::FastTanhLUT lut; lut.init();
+  hydra::dsp::FastTanhLUT lut; LUT_INIT
   hydra::dsp::TapeMagnetics model; model.lut=&lut;
   hydra::dsp::TapeParams p; p.drive=drive; p.tapeAge=age; p.tapeSpeed=speed;
   model.updateParams(fs,p); model.reset();
   for(int i=0;i<n;++i) output[i]=model.process(input[i],true);
 }
 void bias_benchmark(double* timings, int blocks, float fs) {
-  hydra::dsp::FastTanhLUT lut; lut.init();
+  hydra::dsp::FastTanhLUT lut; LUT_INIT
   hydra::dsp::TapeMagnetics model; model.lut=&lut;
   hydra::dsp::TapeParams p; p.drive=75; model.updateParams(fs,p);
   volatile float sink=0;
@@ -120,6 +133,25 @@ void bias_benchmark(double* timings, int blocks, float fs) {
 '''
 
 
+def variant_provenance(name, source, compiler, command):
+    historical = name != 'averaged'
+    return {
+        'commit': subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=ROOT, text=True).strip(),
+        'production_source_sha256': sha(ROOT/'dsp/core/tape_core.cpp'),
+        'c_api_sha256': sha(ROOT/'dsp/core/hydra_dsp_c_api.cpp'),
+        'bias_code': name,
+        'bias_model_source': 'dsp/diagnostics/tape_bias_baseline.inc' if historical else 'dsp/core/tape_core.cpp',
+        'bias_model_sha256': sha(ROOT/('dsp/diagnostics/tape_bias_baseline.inc' if historical else 'dsp/core/tape_core.cpp')),
+        'lut_version': 'fa43cde runtime std::tanh(float)' if historical else 'phase6.4 canonical float32',
+        'lut_source': 'dsp/diagnostics/fast_tanh_legacy.inc' if historical else 'dsp/core/fast_tanh_table.inc',
+        'lut_sha256': sha(ROOT/('dsp/diagnostics/fast_tanh_legacy.inc' if historical else 'dsp/core/fast_tanh_table.inc')),
+        'engine_base': 'current checkout with explicitly frozen bias and LUT' if historical else 'current production, unmodified',
+        'source_text_sha256': hashlib.sha256(source.encode()).hexdigest(),
+        'compiler': subprocess.check_output([compiler, '--version'], text=True).splitlines()[0],
+        'command': command,
+    }
+
+
 def build(out, compiler):
     sources, _ = model_sources()
     windows = platform.system() == 'Windows'
@@ -130,7 +162,7 @@ def build(out, compiler):
         directory.mkdir(parents=True, exist_ok=True)
         cpp = directory/'tape_core.cpp'
         cpp.write_text(text)
-        (directory/'wrapper.cpp').write_text(WRAPPER)
+        (directory/'wrapper.cpp').write_text(WRAPPER.replace('LUT_INIT', '' if name == 'averaged' else 'lut.init();'))
         lib = directory / ('bias.dll' if windows else 'libbias.so')
         cmd = [compiler, '-O3', '-DNDEBUG', '-std=c++17', '-shared', '-Wno-subobject-linkage']
         cmd += ['-Wl,--export-all-symbols'] if windows else ['-fPIC']
@@ -138,7 +170,10 @@ def build(out, compiler):
         print('Building', name, flush=True)
         subprocess.run(cmd, check=True)
         libraries[name] = str(lib.resolve())
-        (directory/'build.json').write_text(json.dumps({'source_sha256': sha(cpp), 'library_sha256': sha(lib), 'command': cmd}, indent=2))
+        provenance = variant_provenance(name, text, compiler, cmd)
+        provenance.update(source_sha256=sha(cpp), library_sha256=sha(lib),
+                          wrapper_sha256=sha(directory/'wrapper.cpp'))
+        (directory/'build.json').write_text(json.dumps(provenance, indent=2))
     (out/'libraries.json').write_text(json.dumps(libraries, indent=2))
     return libraries
 
@@ -300,8 +335,8 @@ def main():
     args=parser.parse_args(); args.output.mkdir(parents=True,exist_ok=True)
     dll_dirs=[]
     if platform.system()=='Windows':
-        cache=(ROOT/'build-native/CMakeCache.txt').read_text()
-        local_compiler=next(line.split('=',1)[1] for line in cache.splitlines() if line.startswith('CMAKE_CXX_COMPILER:FILEPATH='))
+        cache=(ROOT/'build-native/CMakeCache.txt').read_text() if not args.compiler else ''
+        local_compiler=args.compiler or next(line.split('=',1)[1] for line in cache.splitlines() if line.startswith('CMAKE_CXX_COMPILER:FILEPATH='))
         dll_dirs.append(os.add_dll_directory(str(Path(args.compiler or local_compiler).parent)))
     if args.skip_build: libraries=json.loads((args.output/'libraries.json').read_text())
     else:

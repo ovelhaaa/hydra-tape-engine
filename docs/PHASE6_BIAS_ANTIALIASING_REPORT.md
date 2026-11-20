@@ -1,5 +1,58 @@
 # Phase 6.2 — bias anti-aliasing and magnetic character
 
+## Phase 6.4.1 diagnostic recovery — 2026-11-20
+
+The Phase 6.4 statement below that the isolated result was “unchanged” was not
+fresh CI evidence: the official workflow could not compile the diagnostic wrappers.
+On the unchanged `eaa233f` checkout a clean local build reproduced both errors:
+`FastTanhLUT has no member named init` in `bias_stage` and `bias_benchmark`.
+The production LUT became immutable in Phase 6.4; the wrappers still called its
+removed runtime initializer.
+
+The wrappers now initialize only historical LUTs. `dsp/diagnostics/fast_tanh_legacy.inc`
+freezes the exact `FastTanhLUT` definition from `fa43cde`, including `std::tanh(float)`.
+A–E use that definition and its explicit initialization. They reconstruct historical
+magnetic models inside the **current** full engine; they are not labelled original
+full-engine builds. F (`averaged`) compiles the current production source unchanged,
+including the canonical table and playback smoothing. No production bias algorithm,
+threshold, ABI, golden or parameter mapping changed. Each variant's `build.json`
+records the bias and LUT versions, source and library SHA-256, compiler, flags,
+command and checkout commit. The whine diagnostic records the same provenance and
+supports Linux shared-library flags rather than assuming a Windows DLL.
+
+Fresh local Windows/UCRT validation of the recovered scripts:
+
+- All six libraries compiled from regenerated source copies.
+- Isolated spectral, transfer and deterministic gates: **49/49 PASS**, 44.1/48/96 kHz.
+- `diagnose_bias_whine.py`: all four ablations compiled; the baseline musical WAV
+  matched the preserved local Phase 6.1 WAV byte for byte (SHA-256
+  `56e4936e3272f0fef3d685416e20f820fdc94c7f410452603ad9f85b559abce1`).
+  The baseline 6 kHz bands were −49.02765/−49.17738 dBFS.
+- Historical six-second full-engine criteria: **23/27**, with four failing
+  `no_tail_growth` observations (`feedback95` and `multihead`, both rates).
+  These measurements remain failures under that original decay rule; they do not
+  establish a failure or a PASS of the separate 60-second stability rule.
+- Comparative PSD, transfer, transient, FFT, spectrogram and historical decay plots
+  regenerated successfully.
+- Bias supplement packaging and manifest/hash validation: **60 scenarios, 120 PCM24
+  stereo WAVs, 60 telemetry CSVs**, 210,286,841 bytes of audio/telemetry; ZIP
+  194,822,444 bytes. These are local checks, not a publication link or human signoff.
+
+The bias workflow retains all 27 measurements. Only those four named historical
+monotonic-decay observations are separated from current acceptance, explicitly
+reported in the job summary; any other failure or incomplete measurement fails the
+step. Current 60-second feedback and five-parameter transition gates run once in
+`reverse-realtime.yml`, preserving Phase 6.4's approved limits. Linux CI status and
+published artifacts must be taken from the actual final run linked in the release
+decision, not inferred from these Windows results. Historical human approval does
+not apply to newly rendered canonical-LUT audio.
+
+
+Date: 2026-11-19. Existing PR: [#54](https://github.com/ovelhaaa/hydra-tape-engine/pull/54). Branch: `feature/musical-validation-phase6`; destination: `main`. Audited/fetched baseline: `fa43cdefff22059b55adf3d2202a19f2571cf9d3`; no intervening remote commits at initial fetch. Existing untracked `scripts/create_phase6_pr.py` was preserved and excluded.
+
+**Candidate: phase-averaged magnetic bias. Phase 6.3 recovered the three Native regressions and removed the physical Reverse deadline failures without changing this DSP; residual release blockers are the complete-engine tail/transition criteria and issue #48. Candidate human audition: PASS (12/12, reviewed f0c16cd local package). See the [Phase 6.3 report](PHASE6_REVERSE_REALTIME_OPTIMIZATION.md). No merge, threshold changes or golden updates. Human approval scope is recorded below.** The A/B package is available for investigation even when CI is red. A reduction in whistles does not establish preservation of tape character.
+
+
 Date: 2026-11-19. Existing PR: [#54](https://github.com/ovelhaaa/hydra-tape-engine/pull/54). Branch: `feature/musical-validation-phase6`; destination: `main`. Audited/fetched baseline: `fa43cdefff22059b55adf3d2202a19f2571cf9d3`; no intervening remote commits at initial fetch. Existing untracked `scripts/create_phase6_pr.py` was preserved and excluded.
 
 **Candidate: phase-averaged magnetic bias. Phase 6.3 recovered the three Native regressions and removed the physical Reverse deadline failures without changing this DSP; residual release blockers are the complete-engine tail/transition criteria and issue #48. Candidate human audition: PASS (12/12, reviewed f0c16cd local package). See the [Phase 6.3 report](PHASE6_REVERSE_REALTIME_OPTIMIZATION.md). No merge, threshold changes or golden updates. Human approval scope is recorded below.** The A/B package is available for investigation even when CI is red. A reduction in whistles does not establish preservation of tape character.

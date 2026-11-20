@@ -38,7 +38,7 @@ jobs:
           cmake -S . -B build-native -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=ON
           cmake --build build-native -j 2
 
-      - name: Run Native regression (must be 15/15)
+      - name: Run all Native regressions
         run: |
           set -o pipefail
           ctest --test-dir build-native --output-on-failure | tee ci-reports/reverse/native-ctest.txt
@@ -50,32 +50,17 @@ jobs:
 
       - name: Build WASM suite
         run: |
-          emcmake cmake -S . -B build-wasm -DCMAKE_BUILD_TYPE=Release -DBUILD_WEB=ON -DBUILD_TESTING=ON
+          emcmake cmake -S . -B build-wasm -DCMAKE_BUILD_TYPE=Release -DBUILD_WEB=ON -DBUILD_TESTING=ON -DHYDRA_NATIVE_TRACE_RUNNER="$PWD/build-native/hydra_render_trace_native"
           cmake --build build-wasm -j 2
 
       - name: Run WASM regressions
         id: wasm
-        continue-on-error: true
         run: |
           set -o pipefail
           ctest --test-dir build-wasm --output-on-failure | tee ci-reports/reverse/wasm-ctest.txt
 
-      - name: Confirm only issue #48 equivalence failed
-        run: |
-          python - <<'PY'
-          import re, pathlib, sys
-          text = pathlib.Path('ci-reports/reverse/wasm-ctest.txt').read_text()
-          failed = sorted(set(re.findall(r'\d+ - (\S+) \(Failed\)', text)))
-          expected = {'native_vs_wasm_equivalence', 'native_wasm_ab_review_package'}
-          if set(failed) - expected:
-              print('Unexpected WASM failures:', sorted(set(failed) - expected))
-              sys.exit(1)
-          print('WASM functional tests pass; issue #48 equivalence remains:', failed)
-          PY
-
       - name: Compare Native and WASM with unchanged thresholds (issue #48)
         id: equivalence
-        continue-on-error: true
         run: |
           set -o pipefail
           python tests/core/compare_native_wasm.py \
@@ -87,16 +72,22 @@ jobs:
             --report-txt ci-reports/reverse/equivalence.txt \
             --diff-csv ci-reports/reverse/equivalence-diff.csv
 
+      - name: Validate 60-second feedback, full engine and five parameter transitions
+        run: |
+          python scripts/phase64_validate_engine.py --library "$PWD/build-native/libhydra_abi_test_library.so" --output ci-reports/reverse/engine
+          python scripts/phase64_feedback_stability.py --library "$PWD/build-native/libhydra_abi_test_library.so" --seconds 60 --stages --output ci-reports/reverse/feedback
+          python scripts/phase64_transition_analysis.py --library "$PWD/build-native/libhydra_abi_test_library.so" --output ci-reports/reverse/transitions
+
       - name: Build ESP32-S3 production and diagnostic firmware
         run: |
           set -o pipefail
           pio run -e esp32-s3-devkitc-1 | tee ci-reports/reverse/esp32-production.txt
           pio run -e esp32-s3-stageprofile | tee ci-reports/reverse/esp32-stageprofile.txt
 
-      - name: Render and validate ten before/after pairs
+      - name: Preserve frozen Phase 6.3 optimization equivalence (current audio reviewed separately)
         run: |
           set -o pipefail
-          python scripts/package_reverse_ab.py --archive artifacts/hydra-phase6-reverse-ab.zip | tee ci-reports/reverse/ab-package.txt
+          python scripts/package_reverse_ab.py --after-commit 7431a6db05abfde97838721cd089f94c7fed5047 --archive artifacts/hydra-phase6-reverse-ab.zip | tee ci-reports/reverse/ab-package.txt
           python - <<'PY'
           import json, pathlib, sys
           report = json.loads(pathlib.Path('artifacts/listening-lab/phase6-reverse-optimization/reports/comparison.json').read_text())
@@ -119,11 +110,11 @@ jobs:
             artifacts/hydra-phase6-reverse-ab.zip
           retention-days: 30
 
-      - name: Preserve known blocker and require human review
+      - name: Require strict equivalence and preserve pending human review
         if: always()
         run: |
-          echo "Native 15/15 and A/B package are expected. Issue #48 strict Native/WASM equivalence is unchanged and remains an explicit blocker."
-          echo "No merge is authorized; the Phase 6.3 A/B package is NOT REVIEWED."
+          echo "All Native/WASM tests and strict numerical equivalence are mandatory."
+          echo "Phase 6.3 optimization is checked using frozen historical sources. Current Phase 6.4.1 audio is published in the final Listening Lab artifact and requires fresh human review. No merge is authorized."
           if [ "${{ steps.equivalence.outcome }}" != "success" ]; then
             echo "::error::Issue #48 strict Native/WASM equivalence still fails with unchanged thresholds; this is documented, not new and blocks merge readiness."
             exit 1

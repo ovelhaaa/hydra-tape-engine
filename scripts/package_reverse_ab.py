@@ -96,6 +96,7 @@ def main():
                         default=ROOT / "artifacts/hydra-phase6-reverse-ab.zip")
     parser.add_argument("--work", type=Path, default=ROOT / "artifacts/tmp/phase63-before")
     parser.add_argument("--before-commit", default=BEFORE_COMMIT)
+    parser.add_argument("--after-commit", help="Freeze the optimized historical DSP; omitted uses working tree")
     args = parser.parse_args()
 
     extract_commit(args.before_commit, args.work)
@@ -104,7 +105,11 @@ def main():
     before_lib = build_dir / "before.dll"
     after_lib = build_dir / "after.dll"
     before_hash, before_cmd = build_library(args.work, before_lib)
-    after_hash, after_cmd = build_library(ROOT, after_lib)
+    after_root = ROOT
+    if args.after_commit:
+        after_root = args.work / 'optimized-source'
+        extract_commit(args.after_commit, after_root)
+    after_hash, after_cmd = build_library(after_root, after_lib)
     before = render.HydraEngineRunner(before_lib)
     after = render.HydraEngineRunner(after_lib)
     if before.api_version != after.api_version:
@@ -117,11 +122,12 @@ def main():
     manifest = dict(
         schema_version=1, suite=SUITE, reference_commit=commit,
         before_commit=args.before_commit,
+        after_commit=args.after_commit or commit,
         api_version=after.api_version,
         native_library_sha256=before_hash,
         working_tree_dirty=bool(subprocess.check_output(
             ["git", "status", "--porcelain", "--untracked-files=no"], cwd=ROOT, text=True).strip()),
-        source_sha256=render.sha256_file(ROOT / "dsp/core/tape_core.cpp"),
+        source_sha256=render.sha256_file(after_root / "dsp/core/tape_core.cpp"),
         before_library_sha256=before_hash, after_library_sha256=after_hash,
         environment=dict(os=platform.platform(), python=platform.python_version(),
                          numpy=np.__version__),
@@ -180,6 +186,7 @@ def main():
     reports.mkdir(exist_ok=True)
     (reports / "comparison.json").write_text(json.dumps(
         {"before_commit": args.before_commit,
+         "after_commit": args.after_commit or commit,
          "before_library_sha256": before_hash, "after_library_sha256": after_hash,
          "before_build": before_cmd, "after_build": after_cmd,
          "comparisons": comparisons}, indent=2), encoding="utf-8")

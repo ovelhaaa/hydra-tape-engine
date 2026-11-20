@@ -78,23 +78,60 @@ outside the audio callback, but the only shipping caller did the opposite.
 | R7 | If a host needs a reset during performance, it must stop or suspend audio, perform the reset, and resume. |
 | R8 | The ABI is unchanged: `hydra_dsp_reset` and parameter id 29 keep their destructive meaning. |
 
-## 5. Fix applied to the web host
+## 5. Phase 6.4.1 browser verification and host correction
 
-`host/web/main.js` no longer posts `reset` while audio is running. The reset button now:
+A real Chrome AudioContext, AudioWorkletNode and WASM baseline probe confirmed that
+messages **are processed while the context is suspended** on this tested browser.
+The existing suspend/reset/ack/resume approach works here; graph reconstruction is
+unnecessary. This is evidence for Chrome, not a guarantee about other browsers.
 
-1. suspends the `AudioContext` if it is running;
-2. posts `{type:'reset'}`;
-3. waits for the existing `stateAck` with `key === 'reset'` (2 s timeout);
-4. resumes the context.
+The former host accepted any reset acknowledgement, allowed overlapping resets, and
+resumed even after timeout. A delayed reset could then execute after audio resumed.
+`resetController.js` now coalesces concurrent requests, correlates the acknowledgement
+with a monotonically increasing request ID, and resumes only after that acknowledgement.
+The worklet catches reset exceptions and replies with a correlated `resetError`.
+The Reset button is disabled during the operation, and displays an error on failure.
+A stopped/suspended context remains stopped after success. An error or **2000 ms**
+timeout leaves the context suspended and never reports success. A later explicit retry
+can clear the error; its acknowledgement must match its own request ID.
 
-While the context is suspended no render quantum is due, so the 6.18 MB wipe cannot miss a
-deadline, and the acknowledgement proves the wipe finished before audio resumes. If no
-acknowledgement arrives the context is still resumed, and the UI reports
-"clear sent, no acknowledgement" instead of claiming success.
+Reproducible browser test:
 
-No DSP, ABI or worklet message-format change is required; the worklet already replies with
-`stateAck`. Browser-level verification of this flow (headless Chromium with an
-`AudioWorkletNode`) is **pending**; the change is host-only and does not alter audio.
+```sh
+cd tools/phase6-listening-lab && npm ci && npx playwright install --with-deps chrome
+cd ../..
+HYDRA_WEB_BUILD=build-web/web HYDRA_BROWSER_CHANNEL=chrome node tools/phase6-listening-lab/tests/resetBrowser.mjs
+```
+
+`Web Demo` now runs this against its freshly compiled WASM and publishes
+`audio-worklet-reset-evidence` containing `result.json`, including browser version,
+WASM/source SHA-256, events, context states and timings. This workflow result must
+be checked separately; local success alone does not establish Linux CI success.
+
+Local Chrome **157.0.8103.51**, 48 kHz, 2026-11-20:
+
+| Scenario | Result | Observed end-to-end time | Final context |
+|---|---|---:|---|
+| A: running audio | PASS; suspend → reset → ack → resume | 21.7 ms | running |
+| B: stopped audio | PASS; no unintended resume | 1.5 ms | suspended |
+| C: controlled reset exception | PASS; error propagated | 1.4 ms | suspended |
+| D: concurrent repeated requests | PASS; one request, shared promise | 19.7 ms | running |
+| E: acknowledgement suppressed | PASS; rejects at timeout | 2001.4 ms | suspended |
+
+These times include host messaging and suspension/resumption; they are **not** the
+isolated cost of the buffer wipe. The harness renders an actual oscillator through
+the real WASM and checks nonzero audio energy. It checks that the context audio time
+is unchanged between posting reset and receiving ack, and advances again only in the
+running-success cases. Error and timeout injection use a **test-only subclass** of the
+real processor: one throws from its reset API, the other executes the real reset but
+suppresses its acknowledgement. Normal/repeated/stopped cases use the unmodified
+shipping processor and shipping host reset controller. No production fault hook exists.
+
+Evidence: `artifacts/reset-browser/baseline.json` (pre-fix suspended message probe),
+`artifacts/reset-browser/result.json` (five functional scenarios). The local WASM was
+an existing build; the official workflow uses a clean build and records its own hash.
+Human interaction with the full demo UI, other browser engines and hardware audio
+latency are not inferred from this harness.
 
 ## 6. Residual risk
 

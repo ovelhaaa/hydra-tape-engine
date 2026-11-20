@@ -131,14 +131,142 @@ def output_stages(stdout):
     return values
 
 
+
+def instrument_current_core(core):
+    """Diagnostic-only probes; fail closed if a current-core anchor changes."""
+    header = """
+#include <cstdio>
+static int audit_frame = -1;
+static int audit_channel = -1;
+#define AUDIT_CURRENT(key, value) std::fprintf(stderr, "%s.%d,%d,%a\\n", key, audit_channel, audit_frame, double(value))
+"""
+    for name in ("LowShelf", "Lowpass", "Highpass", "Peak", "HighShelf"):
+        match = re.search(rf"(?m)^  void set{name}\(.*?\}}$", core)
+        if not match:
+            raise ValueError(f"missing current filter setter: {name}")
+        values = ["fs", "freq", "Q", "w0"]
+        if name in ("LowShelf", "HighShelf", "Peak"):
+            values += ["gainDB", "A"]
+        values += ["s", "c"] if name == "Peak" else ["sinw0", "cosw0"]
+        values += ["alpha", "a0", "b0", "b1", "b2", "a1", "a2"]
+        probes = "".join(f' AUDIT_CURRENT("{name}.{value}",{value});' for value in values)
+        core = replace_once(core, match[0], match[0][:-1] + probes + " }")
+    replacements = [
+        ("  impl_->flutterPhase += impl_->flutterInc;", "  ++audit_frame; audit_channel=-1;\n  impl_->flutterPhase += impl_->flutterInc;"),
+        ("    frame.conditionedInput=iLP.process(iHP.process(input));",
+         '    audit_channel=(buffer==impl_->delayLine)?0:1; AUDIT_CURRENT("input",input);\n'
+         '    const float audit_hp=iHP.process(input); AUDIT_CURRENT("inputHPF",audit_hp);\n'
+         '    frame.conditionedInput=iLP.process(audit_hp); AUDIT_CURRENT("conditionedInput",frame.conditionedInput);'),
+        ("    frame.tapeOutput=outputGapLossFilter.process(",
+         '    AUDIT_CURRENT("prePlayback",tapeSig); AUDIT_CURRENT("readModulation",mod);\n    frame.tapeOutput=outputGapLossFilter.process('),
+        ("    return frame;", '    AUDIT_CURRENT("tapeOutput",frame.tapeOutput);\n    return frame;'),
+        ("    const float freshInput = frame.conditionedInput * impl_->driveGain;",
+         '    audit_channel=(buffer==impl_->delayLine)?0:1;\n    const float freshInput = frame.conditionedInput * impl_->driveGain;'),
+        ("    // --- magnetic saturation/write ---",
+         '    AUDIT_CURRENT("recordInput",recSig); AUDIT_CURRENT("feedbackInput",feedbackInput);\n    // --- magnetic saturation/write ---'),
+        ("    HYDRA_PROFILE_END(MagneticWrite, tMagWrite);",
+         '    HYDRA_PROFILE_END(MagneticWrite, tMagWrite);\n    AUDIT_CURRENT("recordedSample",buffer[impl_->writeHead]);'),
+        ("    return limited;", '    AUDIT_CURRENT("limitedOutput",limited);\n    return limited;'),
+        ("    float y = 0.5f * (lut->process(h - b) + lut->process(h + b));",
+         '    AUDIT_CURRENT("magLutInput",h); AUDIT_CURRENT("magBias",b); AUDIT_CURRENT("magPriorState",m);\n'
+         '    float y = 0.5f * (lut->process(h - b) + lut->process(h + b));\n    AUDIT_CURRENT("magLutOutput",y);'),
+        ("    m = remanence * m + (1.0f - remanence) * y;",
+         '    m = remanence * m + (1.0f - remanence) * y;\n    AUDIT_CURRENT("magState",m);'),
+    ]
+    for anchor, replacement in replacements:
+        core = replace_once(core, anchor, replacement)
+    return header + core
+
+
+def current_diagnostic(args):
+    """Compile clean copies of the working tree, never modifying production DSP."""
+    import platform
+    import shutil
+    root = Path(__file__).resolve().parents[2]
+    output = args.output.resolve()
+    work = output.parent / (output.stem + "-probe-build")
+    # Unique directories avoid reusing any previous compiler output/cache.
+    work.mkdir(parents=True, exist_ok=True)
+    work = Path(tempfile.mkdtemp(prefix="clean-", dir=work))
+    hashes = {}
+    for directory, suffixes in (("include", (".h", ".hpp")), ("dsp/core", (".h", ".hpp", ".cpp", ".inc"))):
+        for path in (root / directory).iterdir():
+            if path.suffix in suffixes:
+                shutil.copyfile(path, work / path.name)
+                hashes[str(path.relative_to(root))] = hashlib.sha256(path.read_bytes()).hexdigest()
+    for filename in ("render_trace.cpp", "check.h", "canonical_trace_input.inc"):
+        path = root / "tests/core" / filename
+        if path.exists():
+            shutil.copyfile(path, work / filename)
+            hashes[str(path.relative_to(root))] = hashlib.sha256(path.read_bytes()).hexdigest()
+    compilers = [shlex.split(args.native_cxx), shlex.split(args.wasm_cxx)]
+    flags = ["-std=c++17", "-O3", "-DNDEBUG", "-I."] + shlex.split(args.extra_flags)
+    result = {"mode": "current-working-tree-diagnostic-only", "checkout_sha": run(["git", "rev-parse", "HEAD"], cwd=root).stdout.strip(),
+              "platform": platform.platform(), "libc": platform.libc_ver(), "source_sha256": hashes,
+              "compilers": [run(c + ["--version"]).stdout for c in compilers], "flags": flags,
+              "build_directory": str(work), "scenarios": {}, "commands": []}
+    core = (work / "tape_core.cpp").read_text(encoding="utf-8")
+    binaries = {}
+    for variant in ("release", "instrumented"):
+        (work / "tape_core.cpp").write_text(instrument_current_core(core) if variant == "instrumented" else core, encoding="utf-8")
+        binaries[variant] = []
+        for label, compiler, wasm in zip(("native", "wasm"), compilers, (False, True), strict=True):
+            binary = work / f"{variant}-{label}{'.js' if wasm else '.exe'}"
+            cmd = compiler + flags + ["tape_core.cpp", "hydra_dsp_c_api.cpp", "render_trace.cpp", "-o", str(binary)]
+            if wasm:
+                cmd += ["-sENVIRONMENT=node"]
+            result["commands"].append(cmd)
+            compiled = run(cmd, cwd=work)
+            (work / f"{variant}-{label}-compiler.log").write_text(compiled.stdout + compiled.stderr, encoding="utf-8")
+            result.setdefault("binary_sha256", {})[binary.name] = hashlib.sha256(binary.read_bytes()).hexdigest()
+            if wasm:
+                module = binary.with_suffix(".wasm")
+                result["binary_sha256"][module.name] = hashlib.sha256(module.read_bytes()).hexdigest()
+            binaries[variant].append((["node"] if wasm else []) + [str(binary)])
+    scenarios = run(binaries["release"][0] + ["--list-scenarios"]).stdout.splitlines()
+    for scenario in scenarios:
+        variants = {}
+        for variant, commands in binaries.items():
+            samples = []
+            for label, command in zip(("native", "wasm"), commands, strict=True):
+                sample = run(command + ["--scenario", scenario])
+                for stream in ("stdout", "stderr"):
+                    (work / f"{scenario}-{variant}-{label}.{stream}.csv").write_text(getattr(sample, stream), encoding="utf-8")
+                samples.append(sample)
+            n, w = samples
+            native, wasm = output_stages(n.stdout), output_stages(w.stdout)
+            errors = [abs(a[1] - b[1]) for channel in native for a, b in zip(native[channel], wasm[channel], strict=True)]
+            metrics = {"max_abs": max(errors), "rmse": math.sqrt(math.fsum(e*e for e in errors)/len(errors)),
+                       "channels": compare(native, wasm), "trace_sha256": [hashlib.sha256(s.stdout.encode("ascii")).hexdigest() for s in samples]}
+            if variant == "instrumented":
+                probes = [read_probes(s.stderr) for s in samples]
+                metrics["operations"] = compare(*probes)
+                metrics["probe_counts"] = {stage: len(values) for stage, values in probes[0].items()}
+            variants[variant] = metrics
+        variants["instrumentation_preserves_output_per_backend"] = variants["release"]["trace_sha256"] == variants["instrumented"]["trace_sha256"]
+        result["scenarios"][scenario] = variants
+        print(f'{scenario}: release max_abs={variants["release"]["max_abs"]:.12g} rmse={variants["release"]["rmse"]:.12g}; instrumented output unchanged={variants["instrumentation_preserves_output_per_backend"]}')
+        for stage, difference in variants["instrumented"]["operations"].items():
+            print(f'  {stage}: first_frame={difference["first"]["frame"]} occurrence={difference["first"]["occurrence"]} abs={difference["first"]["abs_error"]:.9g} count={difference["count"]}')
+    output.parent.mkdir(parents=True, exist_ok=True)
+    output.write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
+    print(f"Diagnostic evidence: {output}; raw probes and clean binaries: {work}")
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--base", required=True)
+    parser.add_argument("--base")
+    parser.add_argument("--current", action="store_true", help="Audit clean copies of current sources; no historical LUT anchors")
+    parser.add_argument("--extra-flags", default="", help="Additional flags for both diagnostic compilers")
     parser.add_argument("--head", default="HEAD")
     parser.add_argument("--native-cxx", default="c++")
     parser.add_argument("--wasm-cxx", default="em++")
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
+    if args.current:
+        current_diagnostic(args)
+        return
+    if not args.base:
+        parser.error("--base is required unless --current is selected")
     compilers = [shlex.split(args.native_cxx), shlex.split(args.wasm_cxx)]
     result = {"compilers": [run(c + ["--version"]).stdout for c in compilers]}
     macros = subprocess.run(compilers[0] + ["-dM", "-E", "-x", "c++", "-"],

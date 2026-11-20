@@ -39,7 +39,9 @@ jobs:
           cmake --build build-native -j 2
 
       - name: Run Native regression (must be 15/15)
-        run: ctest --test-dir build-native --output-on-failure | tee ci-reports/reverse/native-ctest.txt
+        run: |
+          set -o pipefail
+          ctest --test-dir build-native --output-on-failure | tee ci-reports/reverse/native-ctest.txt
 
       - name: Setup Emscripten
         uses: mymindstorm/setup-emsdk@v14
@@ -54,7 +56,9 @@ jobs:
       - name: Run WASM regressions
         id: wasm
         continue-on-error: true
-        run: ctest --test-dir build-wasm --output-on-failure | tee ci-reports/reverse/wasm-ctest.txt
+        run: |
+          set -o pipefail
+          ctest --test-dir build-wasm --output-on-failure | tee ci-reports/reverse/wasm-ctest.txt
 
       - name: Confirm only issue #48 equivalence failed
         run: |
@@ -71,11 +75,13 @@ jobs:
 
       - name: Build ESP32-S3 production and diagnostic firmware
         run: |
+          set -o pipefail
           pio run -e esp32-s3-devkitc-1 | tee ci-reports/reverse/esp32-production.txt
           pio run -e esp32-s3-stageprofile | tee ci-reports/reverse/esp32-stageprofile.txt
 
       - name: Render and validate ten before/after pairs
         run: |
+          set -o pipefail
           python scripts/package_reverse_ab.py --archive artifacts/hydra-phase6-reverse-ab.zip | tee ci-reports/reverse/ab-package.txt
           python - <<'PY'
           import json, pathlib, sys

@@ -41,7 +41,10 @@ def extract_commit(commit, destination):
     destination.mkdir(parents=True)
     data = subprocess.check_output(["git", "archive", commit], cwd=ROOT)
     with tarfile.open(fileobj=io.BytesIO(data)) as archive:
-        archive.extractall(destination, filter="data")
+        try:
+            archive.extractall(destination, filter="data")
+        except TypeError:  # Python < 3.12
+            archive.extractall(destination)
 
 
 def build_library(root, output):

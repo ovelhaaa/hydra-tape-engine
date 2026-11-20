@@ -11,6 +11,7 @@ import json
 import platform
 import shutil
 import subprocess
+import sys
 import tarfile
 from pathlib import Path
 
@@ -49,11 +50,12 @@ def extract_commit(commit, destination):
 
 def build_library(root, output):
     compiler = compiler_path()
-    command = [compiler, "-O3", "-DNDEBUG", "-std=c++17", "-shared",
-               "-Wl,--export-all-symbols",
-               f"-I{root / 'include'}", f"-I{root / 'dsp/core'}",
-               str(root / "dsp/core/tape_core.cpp"),
-               str(root / "dsp/core/hydra_dsp_c_api.cpp"), "-o", str(output)]
+    command = [compiler, "-O3", "-DNDEBUG", "-std=c++17", "-shared", "-fPIC"]
+    if sys.platform == "win32":
+        command.append("-Wl,--export-all-symbols")
+    command += [f"-I{root / 'include'}", f"-I{root / 'dsp/core'}",
+                str(root / "dsp/core/tape_core.cpp"),
+                str(root / "dsp/core/hydra_dsp_c_api.cpp"), "-o", str(output)]
     subprocess.run(command, check=True, capture_output=True)
     return hashlib.sha256(Path(output).read_bytes()).hexdigest(), command
 

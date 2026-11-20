@@ -1,0 +1,1832 @@
+{
+  "schema_version": 1,
+  "suite": "Hydra Phase 6.3 Reverse A/B",
+  "reference_commit": "b626f98e83c7770c1f004dc6aa50e2be23269883",
+  "before_commit": "5e3d2bfa4ee8c5e6e765f7e11b12c6ffe87063c6",
+  "api_version": 67328,
+  "native_library_sha256": "44c9cebd07ba8c8150c5915510bede1e30d4e85a5e5811951960f070d997f37a",
+  "working_tree_dirty": true,
+  "source_sha256": "cc7e55a621f3a0819cd0b96a0fd9441a033028425fea858a43232ea3e4853bdd",
+  "before_library_sha256": "44c9cebd07ba8c8150c5915510bede1e30d4e85a5e5811951960f070d997f37a",
+  "after_library_sha256": "26058742f032ac86c183b90b0ebb877f1b218b16a950016c2922f2396b23e19b",
+  "environment": {
+    "os": "Windows-10-10.0.19045-SP0",
+    "python": "3.14.0",
+    "numpy": "2.4.1"
+  },
+  "random_seed": 6300,
+  "sample_rate_hz": 48000,
+  "block_size_frames": 128,
+  "human_listening_signoff": "PENDING_HUMAN_AUDITION",
+  "scenarios": {
+    "01_reverse_01": {
+      "name": "Reverse 1/4: Phase 6.2 vs Phase 6.3",
+      "group": "Reverse A/B \u2014 optimization",
+      "description": "A / Original = Phase 6.2 output; B / Processed = Phase 6.3 output. Identical source, gain, BPM, events and seed; no normalization.",
+      "duration_sec": 6.0,
+      "bpm": 120.0,
+      "tempo_source": 0,
+      "reference_commit": "b626f98e83c7770c1f004dc6aa50e2be23269883",
+      "random_seed": 6301,
+      "events": [],
+      "clock_pulses": [],
+      "sample_rate_hz": 48000,
+      "source_material": "clean_guitar",
+      "comparison_variant": "optimized",
+      "comparison_case": 1,
+      "comparison_title": "Reverse 1/4",
+      "human_review_state": "NOT REVIEWED",
+      "stimulus_sha256": "5f95b1b5f4be2702c181e3c4a79a546fb49d4b7c1888d7b45f7a58e5b9d970f0",
+      "dsp_params": {
+        "0": 8.0,
+        "1": 6.0,
+        "3": 25.0,
+        "4": 10.0,
+        "11": 1.0,
+        "12": 500.0,
+        "13": 40.0,
+        "14": 50.0,
+        "15": 50.0,
+        "16": 4.0,
+        "17": 120.0,
+        "18": 0.0,
+        "21": 0.0,
+        "23": 1.0,
+        "30": 0.0,
+        "25": 0.0,
+        "36": 0.0,
+        "37": 0.0
+      },
+      "markers": [
+        {
+          "time": 0.0,
+          "label": "Audio start"
+        },
+        {
+          "time": 6.0,
+          "label": "Audio end"
+        }
+      ],
+      "analysis_metrics": {
+        "before_rms": 0.14406743862555582,
+        "after_rms": 0.14406743862555582,
+        "after_peak": 0.6556986570358276,
+        "max_abs": 0.0,
+        "rmse": 0.0,
+        "envelope_max_abs": 0.0,
+        "bit_exact": true
+      },
+      "original_wav_file": "01_reverse_01_original_wav.wav",
+      "original_wav_sha256": "b7d480e75939fff0f88bab5aebb60a33ad19e09752b5e73f93ab060181cd7c06",
+      "processed_wav_file": "01_reverse_01_processed_wav.wav",
+      "processed_wav_sha256": "b7d480e75939fff0f88bab5aebb60a33ad19e09752b5e73f93ab060181cd7c06",
+      "telemetry_csv_file": "01_reverse_01_telemetry.csv",
+      "telemetry_csv_sha256": "183a413a1fd5345ac7e14e6ee0c7bfe45f0f262ea29d431bfe6386cede485c98"
+    },
+    "02_reverse_02": {
+      "name": "Reverse 1/8: Phase 6.2 vs Phase 6.3",
+      "group": "Reverse A/B \u2014 optimization",
+      "description": "A / Original = Phase 6.2 output; B / Processed = Phase 6.3 output. Identical source, gain, BPM, events and seed; no normalization.",
+      "duration_sec": 6.0,
+      "bpm": 120.0,
+      "tempo_source": 0,
+      "reference_commit": "b626f98e83c7770c1f004dc6aa50e2be23269883",
+      "random_seed": 6302,
+      "events": [],
+      "clock_pulses": [],
+      "sample_rate_hz": 48000,
+      "source_material": "clean_guitar",
+      "comparison_variant": "optimized",
+      "comparison_case": 2,
+      "comparison_title": "Reverse 1/8",
+      "human_review_state": "NOT REVIEWED",
+      "stimulus_sha256": "5f95b1b5f4be2702c181e3c4a79a546fb49d4b7c1888d7b45f7a58e5b9d970f0",
+      "dsp_params": {
+        "0": 8.0,
+        "1": 6.0,
+        "3": 25.0,
+        "4": 10.0,
+        "11": 1.0,
+        "12": 500.0,
+        "13": 40.0,
+        "14": 50.0,
+        "15": 50.0,
+        "16": 4.0,
+        "17": 120.0,
+        "18": 0.0,
+        "21": 0.0,
+        "23": 1.0,
+        "30": 0.0,
+        "25": 0.0,
+        "36": 0.0,
+        "37": 3.0
+      },
+      "markers": [
+        {
+          "time": 0.0,
+          "label": "Audio start"
+        },
+        {
+          "time": 6.0,
+          "label": "Audio end"
+        }
+      ],
+      "analysis_metrics": {
+        "before_rms": 0.14418685073111803,
+        "after_rms": 0.14418685073111803,
+        "after_peak": 0.6580306887626648,
+        "max_abs": 0.0,
+        "rmse": 0.0,
+        "envelope_max_abs": 0.0,
+        "bit_exact": true
+      },
+      "original_wav_file": "02_reverse_02_original_wav.wav",
+      "original_wav_sha256": "6de40f974117972f46f63a5c460be393f7fbe5f71265b735d47d2edc7b6c0bd5",
+      "processed_wav_file": "02_reverse_02_processed_wav.wav",
+      "processed_wav_sha256": "6de40f974117972f46f63a5c460be393f7fbe5f71265b735d47d2edc7b6c0bd5",
+      "telemetry_csv_file": "02_reverse_02_telemetry.csv",
+      "telemetry_csv_sha256": "c0b3a9b9e923bc67e78560aa6c7352906e4df476bc6576aa43232021b0607501"
+    },
+    "03_reverse_03": {
+      "name": "Reverse 1/16: Phase 6.2 vs Phase 6.3",
+      "group": "Reverse A/B \u2014 optimization",
+      "description": "A / Original = Phase 6.2 output; B / Processed = Phase 6.3 output. Identical source, gain, BPM, events and seed; no normalization.",
+      "duration_sec": 6.0,
+      "bpm": 120.0,
+      "tempo_source": 0,
+      "reference_commit": "b626f98e83c7770c1f004dc6aa50e2be23269883",
+      "random_seed": 6303,
+      "events": [],
+      "clock_pulses": [],
+      "sample_rate_hz": 48000,
+      "source_material": "clean_guitar",
+      "comparison_variant": "optimized",
+      "comparison_case": 3,
+      "comparison_title": "Reverse 1/16",
+      "human_review_state": "NOT REVIEWED",
+      "stimulus_sha256": "5f95b1b5f4be2702c181e3c4a79a546fb49d4b7c1888d7b45f7a58e5b9d970f0",
+      "dsp_params": {
+        "0": 8.0,
+        "1": 6.0,
+        "3": 25.0,
+        "4": 10.0,
+        "11": 1.0,
+        "12": 500.0,
+        "13": 40.0,
+        "14": 50.0,
+        "15": 50.0,
+        "16": 4.0,
+        "17": 120.0,
+        "18": 0.0,
+        "21": 0.0,
+        "23": 1.0,
+        "30": 0.0,
+        "25": 0.0,
+        "36": 0.0,
+        "37": 4.0
+      },
+      "markers": [
+        {
+          "time": 0.0,
+          "label": "Audio start"
+        },
+        {
+          "time": 6.0,
+          "label": "Audio end"
+        }
+      ],
+      "analysis_metrics": {
+        "before_rms": 0.13765726468615974,
+        "after_rms": 0.13765726468615974,
+        "after_peak": 0.6271156072616577,
+        "max_abs": 0.0,
+        "rmse": 0.0,
+        "envelope_max_abs": 0.0,
+        "bit_exact": true
+      },
+      "original_wav_file": "03_reverse_03_original_wav.wav",
+      "original_wav_sha256": "4dfaaac72dda14d3370cdab013c22dcd519643f93e531c61d422ad8f111a3eb6",
+      "processed_wav_file": "03_reverse_03_processed_wav.wav",
+      "processed_wav_sha256": "4dfaaac72dda14d3370cdab013c22dcd519643f93e531c61d422ad8f111a3eb6",
+      "telemetry_csv_file": "03_reverse_03_telemetry.csv",
+      "telemetry_csv_sha256": "64cf490026950a5e8544f7c785f61541d7138f76d81b376e24aef640e39bad51"
+    },
+    "04_reverse_04": {
+      "name": "Reverse high feedback: Phase 6.2 vs Phase 6.3",
+      "group": "Reverse A/B \u2014 optimization",
+      "description": "A / Original = Phase 6.2 output; B / Processed = Phase 6.3 output. Identical source, gain, BPM, events and seed; no normalization.",
+      "duration_sec": 6.0,
+      "bpm": 120.0,
+      "tempo_source": 0,
+      "reference_commit": "b626f98e83c7770c1f004dc6aa50e2be23269883",
+      "random_seed": 6304,
+      "events": [],
+      "clock_pulses": [],
+      "sample_rate_hz": 48000,
+      "source_material": "clean_guitar",
+      "comparison_variant": "optimized",
+      "comparison_case": 4,
+      "comparison_title": "Reverse high feedback",
+      "human_review_state": "NOT REVIEWED",
+      "stimulus_sha256": "5f95b1b5f4be2702c181e3c4a79a546fb49d4b7c1888d7b45f7a58e5b9d970f0",
+      "dsp_params": {
+        "0": 8.0,
+        "1": 6.0,
+        "3": 25.0,
+        "4": 10.0,
+        "11": 1.0,
+        "12": 500.0,
+        "13": 95.0,
+        "14": 50.0,
+        "15": 50.0,
+        "16": 4.0,
+        "17": 120.0,
+        "18": 0.0,
+        "21": 0.0,
+        "23": 1.0,
+        "30": 0.0,
+        "25": 0.0,
+        "36": 0.0,
+        "37": 0.0
+      },
+      "markers": [
+        {
+          "time": 0.0,
+          "label": "Audio start"
+        },
+        {
+          "time": 6.0,
+          "label": "Audio end"
+        }
+      ],
+      "analysis_metrics": {
+        "before_rms": 0.15011460199627732,
+        "after_rms": 0.15011460199627732,
+        "after_peak": 0.7546534538269043,
+        "max_abs": 0.0,
+        "rmse": 0.0,
+        "envelope_max_abs": 0.0,
+        "bit_exact": true
+      },
+      "original_wav_file": "04_reverse_04_original_wav.wav",
+      "original_wav_sha256": "404eebade087877d643f9428b64abb3936dd69c49a4a7bd36640be061ae0eac4",
+      "processed_wav_file": "04_reverse_04_processed_wav.wav",
+      "processed_wav_sha256": "404eebade087877d643f9428b64abb3936dd69c49a4a7bd36640be061ae0eac4",
+      "telemetry_csv_file": "04_reverse_04_telemetry.csv",
+      "telemetry_csv_sha256": "8d51e8dabb9870654e7bec569e829a68f372f997b129424ffd20ba13d7cc4e19"
+    },
+    "05_reverse_05": {
+      "name": "Reverse with BPM change: Phase 6.2 vs Phase 6.3",
+      "group": "Reverse A/B \u2014 optimization",
+      "description": "A / Original = Phase 6.2 output; B / Processed = Phase 6.3 output. Identical source, gain, BPM, events and seed; no normalization.",
+      "duration_sec": 6.0,
+      "bpm": 120.0,
+      "tempo_source": 0,
+      "reference_commit": "b626f98e83c7770c1f004dc6aa50e2be23269883",
+      "random_seed": 6305,
+      "events": [
+        {
+          "time_sec": 3.0,
+          "type": "bpm",
+          "bpm": 137.0
+        }
+      ],
+      "clock_pulses": [],
+      "sample_rate_hz": 48000,
+      "source_material": "clean_guitar",
+      "comparison_variant": "optimized",
+      "comparison_case": 5,
+      "comparison_title": "Reverse with BPM change",
+      "human_review_state": "NOT REVIEWED",
+      "stimulus_sha256": "5f95b1b5f4be2702c181e3c4a79a546fb49d4b7c1888d7b45f7a58e5b9d970f0",
+      "dsp_params": {
+        "0": 8.0,
+        "1": 6.0,
+        "3": 25.0,
+        "4": 10.0,
+        "11": 1.0,
+        "12": 500.0,
+        "13": 40.0,
+        "14": 50.0,
+        "15": 50.0,
+        "16": 4.0,
+        "17": 120.0,
+        "18": 0.0,
+        "21": 0.0,
+        "23": 1.0,
+        "30": 0.0,
+        "25": 0.0,
+        "36": 0.0,
+        "37": 0.0
+      },
+      "markers": [
+        {
+          "time": 0.0,
+          "label": "Audio start"
+        },
+        {
+          "time": 6.0,
+          "label": "Audio end"
+        }
+      ],
+      "analysis_metrics": {
+        "before_rms": 0.13960094315198368,
+        "after_rms": 0.13960094315198368,
+        "after_peak": 0.6556986570358276,
+        "max_abs": 0.0,
+        "rmse": 0.0,
+        "envelope_max_abs": 0.0,
+        "bit_exact": true
+      },
+      "original_wav_file": "05_reverse_05_original_wav.wav",
+      "original_wav_sha256": "52972a715d4fa7b1b26da73cd132918ed4f1ab4ce4171bbd6f754e57f24438fd",
+      "processed_wav_file": "05_reverse_05_processed_wav.wav",
+      "processed_wav_sha256": "52972a715d4fa7b1b26da73cd132918ed4f1ab4ce4171bbd6f754e57f24438fd",
+      "telemetry_csv_file": "05_reverse_05_telemetry.csv",
+      "telemetry_csv_sha256": "ea8ef4fa4a9c08c10c165adb364b39c2919edb65e1ff5827cb42eb9b029fb0bc"
+    },
+    "06_reverse_06": {
+      "name": "Reverse with MIDI clock: Phase 6.2 vs Phase 6.3",
+      "group": "Reverse A/B \u2014 optimization",
+      "description": "A / Original = Phase 6.2 output; B / Processed = Phase 6.3 output. Identical source, gain, BPM, events and seed; no normalization.",
+      "duration_sec": 6.0,
+      "bpm": 120.0,
+      "tempo_source": 2,
+      "reference_commit": "b626f98e83c7770c1f004dc6aa50e2be23269883",
+      "random_seed": 6306,
+      "events": [],
+      "clock_pulses": [
+        {
+          "frame": 0,
+          "status": 250
+        },
+        {
+          "frame": 0,
+          "status": 248
+        },
+        {
+          "frame": 1000,
+          "status": 248
+        },
+        {
+          "frame": 2000,
+          "status": 248
+        },
+        {
+          "frame": 3000,
+          "status": 248
+        },
+        {
+          "frame": 4000,
+          "status": 248
+        },
+        {
+          "frame": 5000,
+          "status": 248
+        },
+        {
+          "frame": 6000,
+          "status": 248
+        },
+        {
+          "frame": 7000,
+          "status": 248
+        },
+        {
+          "frame": 8000,
+          "status": 248
+        },
+        {
+          "frame": 9000,
+          "status": 248
+        },
+        {
+          "frame": 10000,
+          "status": 248
+        },
+        {
+          "frame": 11000,
+          "status": 248
+        },
+        {
+          "frame": 12000,
+          "status": 248
+        },
+        {
+          "frame": 13000,
+          "status": 248
+        },
+        {
+          "frame": 14000,
+          "status": 248
+        },
+        {
+          "frame": 15000,
+          "status": 248
+        },
+        {
+          "frame": 16000,
+          "status": 248
+        },
+        {
+          "frame": 17000,
+          "status": 248
+        },
+        {
+          "frame": 18000,
+          "status": 248
+        },
+        {
+          "frame": 19000,
+          "status": 248
+        },
+        {
+          "frame": 20000,
+          "status": 248
+        },
+        {
+          "frame": 21000,
+          "status": 248
+        },
+        {
+          "frame": 22000,
+          "status": 248
+        },
+        {
+          "frame": 23000,
+          "status": 248
+        },
+        {
+          "frame": 24000,
+          "status": 248
+        },
+        {
+          "frame": 25000,
+          "status": 248
+        },
+        {
+          "frame": 26000,
+          "status": 248
+        },
+        {
+          "frame": 27000,
+          "status": 248
+        },
+        {
+          "frame": 28000,
+          "status": 248
+        },
+        {
+          "frame": 29000,
+          "status": 248
+        },
+        {
+          "frame": 30000,
+          "status": 248
+        },
+        {
+          "frame": 31000,
+          "status": 248
+        },
+        {
+          "frame": 32000,
+          "status": 248
+        },
+        {
+          "frame": 33000,
+          "status": 248
+        },
+        {
+          "frame": 34000,
+          "status": 248
+        },
+        {
+          "frame": 35000,
+          "status": 248
+        },
+        {
+          "frame": 36000,
+          "status": 248
+        },
+        {
+          "frame": 37000,
+          "status": 248
+        },
+        {
+          "frame": 38000,
+          "status": 248
+        },
+        {
+          "frame": 39000,
+          "status": 248
+        },
+        {
+          "frame": 40000,
+          "status": 248
+        },
+        {
+          "frame": 41000,
+          "status": 248
+        },
+        {
+          "frame": 42000,
+          "status": 248
+        },
+        {
+          "frame": 43000,
+          "status": 248
+        },
+        {
+          "frame": 44000,
+          "status": 248
+        },
+        {
+          "frame": 45000,
+          "status": 248
+        },
+        {
+          "frame": 46000,
+          "status": 248
+        },
+        {
+          "frame": 47000,
+          "status": 248
+        },
+        {
+          "frame": 48000,
+          "status": 248
+        },
+        {
+          "frame": 49000,
+          "status": 248
+        },
+        {
+          "frame": 50000,
+          "status": 248
+        },
+        {
+          "frame": 51000,
+          "status": 248
+        },
+        {
+          "frame": 52000,
+          "status": 248
+        },
+        {
+          "frame": 53000,
+          "status": 248
+        },
+        {
+          "frame": 54000,
+          "status": 248
+        },
+        {
+          "frame": 55000,
+          "status": 248
+        },
+        {
+          "frame": 56000,
+          "status": 248
+        },
+        {
+          "frame": 57000,
+          "status": 248
+        },
+        {
+          "frame": 58000,
+          "status": 248
+        },
+        {
+          "frame": 59000,
+          "status": 248
+        },
+        {
+          "frame": 60000,
+          "status": 248
+        },
+        {
+          "frame": 61000,
+          "status": 248
+        },
+        {
+          "frame": 62000,
+          "status": 248
+        },
+        {
+          "frame": 63000,
+          "status": 248
+        },
+        {
+          "frame": 64000,
+          "status": 248
+        },
+        {
+          "frame": 65000,
+          "status": 248
+        },
+        {
+          "frame": 66000,
+          "status": 248
+        },
+        {
+          "frame": 67000,
+          "status": 248
+        },
+        {
+          "frame": 68000,
+          "status": 248
+        },
+        {
+          "frame": 69000,
+          "status": 248
+        },
+        {
+          "frame": 70000,
+          "status": 248
+        },
+        {
+          "frame": 71000,
+          "status": 248
+        },
+        {
+          "frame": 72000,
+          "status": 248
+        },
+        {
+          "frame": 73000,
+          "status": 248
+        },
+        {
+          "frame": 74000,
+          "status": 248
+        },
+        {
+          "frame": 75000,
+          "status": 248
+        },
+        {
+          "frame": 76000,
+          "status": 248
+        },
+        {
+          "frame": 77000,
+          "status": 248
+        },
+        {
+          "frame": 78000,
+          "status": 248
+        },
+        {
+          "frame": 79000,
+          "status": 248
+        },
+        {
+          "frame": 80000,
+          "status": 248
+        },
+        {
+          "frame": 81000,
+          "status": 248
+        },
+        {
+          "frame": 82000,
+          "status": 248
+        },
+        {
+          "frame": 83000,
+          "status": 248
+        },
+        {
+          "frame": 84000,
+          "status": 248
+        },
+        {
+          "frame": 85000,
+          "status": 248
+        },
+        {
+          "frame": 86000,
+          "status": 248
+        },
+        {
+          "frame": 87000,
+          "status": 248
+        },
+        {
+          "frame": 88000,
+          "status": 248
+        },
+        {
+          "frame": 89000,
+          "status": 248
+        },
+        {
+          "frame": 90000,
+          "status": 248
+        },
+        {
+          "frame": 91000,
+          "status": 248
+        },
+        {
+          "frame": 92000,
+          "status": 248
+        },
+        {
+          "frame": 93000,
+          "status": 248
+        },
+        {
+          "frame": 94000,
+          "status": 248
+        },
+        {
+          "frame": 95000,
+          "status": 248
+        },
+        {
+          "frame": 96000,
+          "status": 248
+        },
+        {
+          "frame": 97000,
+          "status": 248
+        },
+        {
+          "frame": 98000,
+          "status": 248
+        },
+        {
+          "frame": 99000,
+          "status": 248
+        },
+        {
+          "frame": 100000,
+          "status": 248
+        },
+        {
+          "frame": 101000,
+          "status": 248
+        },
+        {
+          "frame": 102000,
+          "status": 248
+        },
+        {
+          "frame": 103000,
+          "status": 248
+        },
+        {
+          "frame": 104000,
+          "status": 248
+        },
+        {
+          "frame": 105000,
+          "status": 248
+        },
+        {
+          "frame": 106000,
+          "status": 248
+        },
+        {
+          "frame": 107000,
+          "status": 248
+        },
+        {
+          "frame": 108000,
+          "status": 248
+        },
+        {
+          "frame": 109000,
+          "status": 248
+        },
+        {
+          "frame": 110000,
+          "status": 248
+        },
+        {
+          "frame": 111000,
+          "status": 248
+        },
+        {
+          "frame": 112000,
+          "status": 248
+        },
+        {
+          "frame": 113000,
+          "status": 248
+        },
+        {
+          "frame": 114000,
+          "status": 248
+        },
+        {
+          "frame": 115000,
+          "status": 248
+        },
+        {
+          "frame": 116000,
+          "status": 248
+        },
+        {
+          "frame": 117000,
+          "status": 248
+        },
+        {
+          "frame": 118000,
+          "status": 248
+        },
+        {
+          "frame": 119000,
+          "status": 248
+        },
+        {
+          "frame": 120000,
+          "status": 248
+        },
+        {
+          "frame": 121000,
+          "status": 248
+        },
+        {
+          "frame": 122000,
+          "status": 248
+        },
+        {
+          "frame": 123000,
+          "status": 248
+        },
+        {
+          "frame": 124000,
+          "status": 248
+        },
+        {
+          "frame": 125000,
+          "status": 248
+        },
+        {
+          "frame": 126000,
+          "status": 248
+        },
+        {
+          "frame": 127000,
+          "status": 248
+        },
+        {
+          "frame": 128000,
+          "status": 248
+        },
+        {
+          "frame": 129000,
+          "status": 248
+        },
+        {
+          "frame": 130000,
+          "status": 248
+        },
+        {
+          "frame": 131000,
+          "status": 248
+        },
+        {
+          "frame": 132000,
+          "status": 248
+        },
+        {
+          "frame": 133000,
+          "status": 248
+        },
+        {
+          "frame": 134000,
+          "status": 248
+        },
+        {
+          "frame": 135000,
+          "status": 248
+        },
+        {
+          "frame": 136000,
+          "status": 248
+        },
+        {
+          "frame": 137000,
+          "status": 248
+        },
+        {
+          "frame": 138000,
+          "status": 248
+        },
+        {
+          "frame": 139000,
+          "status": 248
+        },
+        {
+          "frame": 140000,
+          "status": 248
+        },
+        {
+          "frame": 141000,
+          "status": 248
+        },
+        {
+          "frame": 142000,
+          "status": 248
+        },
+        {
+          "frame": 143000,
+          "status": 248
+        },
+        {
+          "frame": 144000,
+          "status": 248
+        },
+        {
+          "frame": 145000,
+          "status": 248
+        },
+        {
+          "frame": 146000,
+          "status": 248
+        },
+        {
+          "frame": 147000,
+          "status": 248
+        },
+        {
+          "frame": 148000,
+          "status": 248
+        },
+        {
+          "frame": 149000,
+          "status": 248
+        },
+        {
+          "frame": 150000,
+          "status": 248
+        },
+        {
+          "frame": 151000,
+          "status": 248
+        },
+        {
+          "frame": 152000,
+          "status": 248
+        },
+        {
+          "frame": 153000,
+          "status": 248
+        },
+        {
+          "frame": 154000,
+          "status": 248
+        },
+        {
+          "frame": 155000,
+          "status": 248
+        },
+        {
+          "frame": 156000,
+          "status": 248
+        },
+        {
+          "frame": 157000,
+          "status": 248
+        },
+        {
+          "frame": 158000,
+          "status": 248
+        },
+        {
+          "frame": 159000,
+          "status": 248
+        },
+        {
+          "frame": 160000,
+          "status": 248
+        },
+        {
+          "frame": 161000,
+          "status": 248
+        },
+        {
+          "frame": 162000,
+          "status": 248
+        },
+        {
+          "frame": 163000,
+          "status": 248
+        },
+        {
+          "frame": 164000,
+          "status": 248
+        },
+        {
+          "frame": 165000,
+          "status": 248
+        },
+        {
+          "frame": 166000,
+          "status": 248
+        },
+        {
+          "frame": 167000,
+          "status": 248
+        },
+        {
+          "frame": 168000,
+          "status": 248
+        },
+        {
+          "frame": 169000,
+          "status": 248
+        },
+        {
+          "frame": 170000,
+          "status": 248
+        },
+        {
+          "frame": 171000,
+          "status": 248
+        },
+        {
+          "frame": 172000,
+          "status": 248
+        },
+        {
+          "frame": 173000,
+          "status": 248
+        },
+        {
+          "frame": 174000,
+          "status": 248
+        },
+        {
+          "frame": 175000,
+          "status": 248
+        },
+        {
+          "frame": 176000,
+          "status": 248
+        },
+        {
+          "frame": 177000,
+          "status": 248
+        },
+        {
+          "frame": 178000,
+          "status": 248
+        },
+        {
+          "frame": 179000,
+          "status": 248
+        },
+        {
+          "frame": 180000,
+          "status": 248
+        },
+        {
+          "frame": 181000,
+          "status": 248
+        },
+        {
+          "frame": 182000,
+          "status": 248
+        },
+        {
+          "frame": 183000,
+          "status": 248
+        },
+        {
+          "frame": 184000,
+          "status": 248
+        },
+        {
+          "frame": 185000,
+          "status": 248
+        },
+        {
+          "frame": 186000,
+          "status": 248
+        },
+        {
+          "frame": 187000,
+          "status": 248
+        },
+        {
+          "frame": 188000,
+          "status": 248
+        },
+        {
+          "frame": 189000,
+          "status": 248
+        },
+        {
+          "frame": 190000,
+          "status": 248
+        },
+        {
+          "frame": 191000,
+          "status": 248
+        },
+        {
+          "frame": 192000,
+          "status": 248
+        },
+        {
+          "frame": 193000,
+          "status": 248
+        },
+        {
+          "frame": 194000,
+          "status": 248
+        },
+        {
+          "frame": 195000,
+          "status": 248
+        },
+        {
+          "frame": 196000,
+          "status": 248
+        },
+        {
+          "frame": 197000,
+          "status": 248
+        },
+        {
+          "frame": 198000,
+          "status": 248
+        },
+        {
+          "frame": 199000,
+          "status": 248
+        },
+        {
+          "frame": 200000,
+          "status": 248
+        },
+        {
+          "frame": 201000,
+          "status": 248
+        },
+        {
+          "frame": 202000,
+          "status": 248
+        },
+        {
+          "frame": 203000,
+          "status": 248
+        },
+        {
+          "frame": 204000,
+          "status": 248
+        },
+        {
+          "frame": 205000,
+          "status": 248
+        },
+        {
+          "frame": 206000,
+          "status": 248
+        },
+        {
+          "frame": 207000,
+          "status": 248
+        },
+        {
+          "frame": 208000,
+          "status": 248
+        },
+        {
+          "frame": 209000,
+          "status": 248
+        },
+        {
+          "frame": 210000,
+          "status": 248
+        },
+        {
+          "frame": 211000,
+          "status": 248
+        },
+        {
+          "frame": 212000,
+          "status": 248
+        },
+        {
+          "frame": 213000,
+          "status": 248
+        },
+        {
+          "frame": 214000,
+          "status": 248
+        },
+        {
+          "frame": 215000,
+          "status": 248
+        },
+        {
+          "frame": 216000,
+          "status": 248
+        },
+        {
+          "frame": 217000,
+          "status": 248
+        },
+        {
+          "frame": 218000,
+          "status": 248
+        },
+        {
+          "frame": 219000,
+          "status": 248
+        },
+        {
+          "frame": 220000,
+          "status": 248
+        },
+        {
+          "frame": 221000,
+          "status": 248
+        },
+        {
+          "frame": 222000,
+          "status": 248
+        },
+        {
+          "frame": 223000,
+          "status": 248
+        },
+        {
+          "frame": 224000,
+          "status": 248
+        },
+        {
+          "frame": 225000,
+          "status": 248
+        },
+        {
+          "frame": 226000,
+          "status": 248
+        },
+        {
+          "frame": 227000,
+          "status": 248
+        },
+        {
+          "frame": 228000,
+          "status": 248
+        },
+        {
+          "frame": 229000,
+          "status": 248
+        },
+        {
+          "frame": 230000,
+          "status": 248
+        },
+        {
+          "frame": 231000,
+          "status": 248
+        },
+        {
+          "frame": 232000,
+          "status": 248
+        },
+        {
+          "frame": 233000,
+          "status": 248
+        },
+        {
+          "frame": 234000,
+          "status": 248
+        },
+        {
+          "frame": 235000,
+          "status": 248
+        },
+        {
+          "frame": 236000,
+          "status": 248
+        },
+        {
+          "frame": 237000,
+          "status": 248
+        },
+        {
+          "frame": 238000,
+          "status": 248
+        },
+        {
+          "frame": 239000,
+          "status": 248
+        },
+        {
+          "frame": 240000,
+          "status": 248
+        },
+        {
+          "frame": 241000,
+          "status": 248
+        },
+        {
+          "frame": 242000,
+          "status": 248
+        },
+        {
+          "frame": 243000,
+          "status": 248
+        },
+        {
+          "frame": 244000,
+          "status": 248
+        },
+        {
+          "frame": 245000,
+          "status": 248
+        },
+        {
+          "frame": 246000,
+          "status": 248
+        },
+        {
+          "frame": 247000,
+          "status": 248
+        },
+        {
+          "frame": 248000,
+          "status": 248
+        },
+        {
+          "frame": 249000,
+          "status": 248
+        },
+        {
+          "frame": 250000,
+          "status": 248
+        },
+        {
+          "frame": 251000,
+          "status": 248
+        },
+        {
+          "frame": 252000,
+          "status": 248
+        },
+        {
+          "frame": 253000,
+          "status": 248
+        },
+        {
+          "frame": 254000,
+          "status": 248
+        },
+        {
+          "frame": 255000,
+          "status": 248
+        },
+        {
+          "frame": 256000,
+          "status": 248
+        },
+        {
+          "frame": 257000,
+          "status": 248
+        },
+        {
+          "frame": 258000,
+          "status": 248
+        },
+        {
+          "frame": 259000,
+          "status": 248
+        },
+        {
+          "frame": 260000,
+          "status": 248
+        },
+        {
+          "frame": 261000,
+          "status": 248
+        },
+        {
+          "frame": 262000,
+          "status": 248
+        },
+        {
+          "frame": 263000,
+          "status": 248
+        },
+        {
+          "frame": 264000,
+          "status": 248
+        },
+        {
+          "frame": 265000,
+          "status": 248
+        },
+        {
+          "frame": 266000,
+          "status": 248
+        },
+        {
+          "frame": 267000,
+          "status": 248
+        },
+        {
+          "frame": 268000,
+          "status": 248
+        },
+        {
+          "frame": 269000,
+          "status": 248
+        },
+        {
+          "frame": 270000,
+          "status": 248
+        },
+        {
+          "frame": 271000,
+          "status": 248
+        },
+        {
+          "frame": 272000,
+          "status": 248
+        },
+        {
+          "frame": 273000,
+          "status": 248
+        },
+        {
+          "frame": 274000,
+          "status": 248
+        },
+        {
+          "frame": 275000,
+          "status": 248
+        },
+        {
+          "frame": 276000,
+          "status": 248
+        },
+        {
+          "frame": 277000,
+          "status": 248
+        },
+        {
+          "frame": 278000,
+          "status": 248
+        },
+        {
+          "frame": 279000,
+          "status": 248
+        },
+        {
+          "frame": 280000,
+          "status": 248
+        },
+        {
+          "frame": 281000,
+          "status": 248
+        },
+        {
+          "frame": 282000,
+          "status": 248
+        },
+        {
+          "frame": 283000,
+          "status": 248
+        },
+        {
+          "frame": 284000,
+          "status": 248
+        },
+        {
+          "frame": 285000,
+          "status": 248
+        },
+        {
+          "frame": 286000,
+          "status": 248
+        },
+        {
+          "frame": 287000,
+          "status": 248
+        }
+      ],
+      "sample_rate_hz": 48000,
+      "source_material": "clean_guitar",
+      "comparison_variant": "optimized",
+      "comparison_case": 6,
+      "comparison_title": "Reverse with MIDI clock",
+      "human_review_state": "NOT REVIEWED",
+      "stimulus_sha256": "5f95b1b5f4be2702c181e3c4a79a546fb49d4b7c1888d7b45f7a58e5b9d970f0",
+      "dsp_params": {
+        "0": 8.0,
+        "1": 6.0,
+        "3": 25.0,
+        "4": 10.0,
+        "11": 1.0,
+        "12": 500.0,
+        "13": 40.0,
+        "14": 50.0,
+        "15": 50.0,
+        "16": 4.0,
+        "17": 120.0,
+        "18": 0.0,
+        "21": 0.0,
+        "23": 1.0,
+        "30": 0.0,
+        "25": 0.0,
+        "36": 0.0,
+        "37": 0.0
+      },
+      "markers": [
+        {
+          "time": 0.0,
+          "label": "Audio start"
+        },
+        {
+          "time": 6.0,
+          "label": "Audio end"
+        }
+      ],
+      "analysis_metrics": {
+        "before_rms": 0.1423034989056337,
+        "after_rms": 0.1423034989056337,
+        "after_peak": 0.6182745695114136,
+        "max_abs": 0.0,
+        "rmse": 0.0,
+        "envelope_max_abs": 0.0,
+        "bit_exact": true
+      },
+      "original_wav_file": "06_reverse_06_original_wav.wav",
+      "original_wav_sha256": "1871db171f9cba6181cc6fee92b29e873f0d488a557064505fd21a6f5ca6e9fa",
+      "processed_wav_file": "06_reverse_06_processed_wav.wav",
+      "processed_wav_sha256": "1871db171f9cba6181cc6fee92b29e873f0d488a557064505fd21a6f5ca6e9fa",
+      "telemetry_csv_file": "06_reverse_06_telemetry.csv",
+      "telemetry_csv_sha256": "25eaa9d9c60d9064374775169cac386e6515a9344d0770330b95b191065771f4"
+    },
+    "07_reverse_07": {
+      "name": "Multi-Head: Phase 6.2 vs Phase 6.3",
+      "group": "Reverse A/B \u2014 optimization",
+      "description": "A / Original = Phase 6.2 output; B / Processed = Phase 6.3 output. Identical source, gain, BPM, events and seed; no normalization.",
+      "duration_sec": 6.0,
+      "bpm": 120.0,
+      "tempo_source": 0,
+      "reference_commit": "b626f98e83c7770c1f004dc6aa50e2be23269883",
+      "random_seed": 6307,
+      "events": [],
+      "clock_pulses": [],
+      "sample_rate_hz": 48000,
+      "source_material": "drum_machine",
+      "comparison_variant": "optimized",
+      "comparison_case": 7,
+      "comparison_title": "Multi-Head",
+      "human_review_state": "NOT REVIEWED",
+      "stimulus_sha256": "9c7be41380de2e346659075df48a6a93a9836afcd148677a6c628803c6641fb8",
+      "dsp_params": {
+        "0": 8.0,
+        "1": 6.0,
+        "3": 25.0,
+        "4": 10.0,
+        "11": 1.0,
+        "12": 500.0,
+        "13": 45.0,
+        "14": 50.0,
+        "15": 50.0,
+        "16": 7.0,
+        "17": 120.0,
+        "18": 0.0,
+        "21": 1.0,
+        "23": 0.0,
+        "30": 0.0,
+        "25": 0.0,
+        "36": 0.0,
+        "37": 0.0
+      },
+      "markers": [
+        {
+          "time": 0.0,
+          "label": "Audio start"
+        },
+        {
+          "time": 6.0,
+          "label": "Audio end"
+        }
+      ],
+      "analysis_metrics": {
+        "before_rms": 0.08790946784893065,
+        "after_rms": 0.08790946784893065,
+        "after_peak": 0.5193403959274292,
+        "max_abs": 0.0,
+        "rmse": 0.0,
+        "envelope_max_abs": 0.0,
+        "bit_exact": true
+      },
+      "original_wav_file": "07_reverse_07_original_wav.wav",
+      "original_wav_sha256": "eebef88095b03db44b0aafdb5eb2dfc58288cc14cbfd5c4bdbfd8bd73409d4d2",
+      "processed_wav_file": "07_reverse_07_processed_wav.wav",
+      "processed_wav_sha256": "eebef88095b03db44b0aafdb5eb2dfc58288cc14cbfd5c4bdbfd8bd73409d4d2",
+      "telemetry_csv_file": "07_reverse_07_telemetry.csv",
+      "telemetry_csv_sha256": "19efe416cf3e899e3a8f6f0a9add5b5e55d6367c25b0692b6ffc6107dbb9d5fe"
+    },
+    "08_reverse_08": {
+      "name": "Conventional delay: Phase 6.2 vs Phase 6.3",
+      "group": "Reverse A/B \u2014 optimization",
+      "description": "A / Original = Phase 6.2 output; B / Processed = Phase 6.3 output. Identical source, gain, BPM, events and seed; no normalization.",
+      "duration_sec": 6.0,
+      "bpm": 120.0,
+      "tempo_source": 0,
+      "reference_commit": "b626f98e83c7770c1f004dc6aa50e2be23269883",
+      "random_seed": 6308,
+      "events": [],
+      "clock_pulses": [],
+      "sample_rate_hz": 48000,
+      "source_material": "clean_guitar",
+      "comparison_variant": "optimized",
+      "comparison_case": 8,
+      "comparison_title": "Conventional delay",
+      "human_review_state": "NOT REVIEWED",
+      "stimulus_sha256": "5f95b1b5f4be2702c181e3c4a79a546fb49d4b7c1888d7b45f7a58e5b9d970f0",
+      "dsp_params": {
+        "0": 8.0,
+        "1": 6.0,
+        "3": 25.0,
+        "4": 10.0,
+        "11": 1.0,
+        "12": 500.0,
+        "13": 85.0,
+        "14": 50.0,
+        "15": 50.0,
+        "16": 4.0,
+        "17": 120.0,
+        "18": 0.0,
+        "21": 0.0,
+        "23": 0.0,
+        "30": 0.0,
+        "25": 0.0,
+        "36": 0.0,
+        "37": 0.0
+      },
+      "markers": [
+        {
+          "time": 0.0,
+          "label": "Audio start"
+        },
+        {
+          "time": 6.0,
+          "label": "Audio end"
+        }
+      ],
+      "analysis_metrics": {
+        "before_rms": 0.1529955003406674,
+        "after_rms": 0.1529955003406674,
+        "after_peak": 0.6919460296630859,
+        "max_abs": 0.0,
+        "rmse": 0.0,
+        "envelope_max_abs": 0.0,
+        "bit_exact": true
+      },
+      "original_wav_file": "08_reverse_08_original_wav.wav",
+      "original_wav_sha256": "a4f2289588b52b7570aa5a3509536d4eb350b30bd59eb48840b1f9d1d4c3333e",
+      "processed_wav_file": "08_reverse_08_processed_wav.wav",
+      "processed_wav_sha256": "a4f2289588b52b7570aa5a3509536d4eb350b30bd59eb48840b1f9d1d4c3333e",
+      "telemetry_csv_file": "08_reverse_08_telemetry.csv",
+      "telemetry_csv_sha256": "5a679ff2dfa7207f1dd6a11edd27d5c3f275c4af997b01ca2014cb429116f441"
+    },
+    "09_reverse_09": {
+      "name": "Warp: Phase 6.2 vs Phase 6.3",
+      "group": "Reverse A/B \u2014 optimization",
+      "description": "A / Original = Phase 6.2 output; B / Processed = Phase 6.3 output. Identical source, gain, BPM, events and seed; no normalization.",
+      "duration_sec": 6.0,
+      "bpm": 120.0,
+      "tempo_source": 0,
+      "reference_commit": "b626f98e83c7770c1f004dc6aa50e2be23269883",
+      "random_seed": 6309,
+      "events": [],
+      "clock_pulses": [],
+      "sample_rate_hz": 48000,
+      "source_material": "clean_guitar",
+      "comparison_variant": "optimized",
+      "comparison_case": 9,
+      "comparison_title": "Warp",
+      "human_review_state": "NOT REVIEWED",
+      "stimulus_sha256": "5f95b1b5f4be2702c181e3c4a79a546fb49d4b7c1888d7b45f7a58e5b9d970f0",
+      "dsp_params": {
+        "0": 8.0,
+        "1": 6.0,
+        "3": 25.0,
+        "4": 10.0,
+        "11": 1.0,
+        "12": 500.0,
+        "13": 35.0,
+        "14": 50.0,
+        "15": 50.0,
+        "16": 4.0,
+        "17": 120.0,
+        "18": 0.0,
+        "21": 0.0,
+        "23": 0.0,
+        "30": 1.0,
+        "25": 0.0,
+        "36": 0.0,
+        "37": 0.0,
+        "31": 0.5,
+        "32": 80.0,
+        "34": 95.0
+      },
+      "markers": [
+        {
+          "time": 0.0,
+          "label": "Audio start"
+        },
+        {
+          "time": 6.0,
+          "label": "Audio end"
+        }
+      ],
+      "analysis_metrics": {
+        "before_rms": 0.10936713950687088,
+        "after_rms": 0.10936713950687088,
+        "after_peak": 0.5656812191009521,
+        "max_abs": 0.0,
+        "rmse": 0.0,
+        "envelope_max_abs": 0.0,
+        "bit_exact": true
+      },
+      "original_wav_file": "09_reverse_09_original_wav.wav",
+      "original_wav_sha256": "c83e1abe8d2cbddb1e83e01f769c0b34c3df8f9f4f1b5c3b8f2673f67a65604e",
+      "processed_wav_file": "09_reverse_09_processed_wav.wav",
+      "processed_wav_sha256": "c83e1abe8d2cbddb1e83e01f769c0b34c3df8f9f4f1b5c3b8f2673f67a65604e",
+      "telemetry_csv_file": "09_reverse_09_telemetry.csv",
+      "telemetry_csv_sha256": "6f4999db5a17d52e84fd00d73a30058cbb5569cbe0b51b6673204de7585ec003"
+    },
+    "10_reverse_10": {
+      "name": "Stress combined: Phase 6.2 vs Phase 6.3",
+      "group": "Reverse A/B \u2014 optimization",
+      "description": "A / Original = Phase 6.2 output; B / Processed = Phase 6.3 output. Identical source, gain, BPM, events and seed; no normalization.",
+      "duration_sec": 6.0,
+      "bpm": 120.0,
+      "tempo_source": 0,
+      "reference_commit": "b626f98e83c7770c1f004dc6aa50e2be23269883",
+      "random_seed": 6310,
+      "events": [],
+      "clock_pulses": [],
+      "sample_rate_hz": 48000,
+      "source_material": "drum_machine",
+      "comparison_variant": "optimized",
+      "comparison_case": 10,
+      "comparison_title": "Stress combined",
+      "human_review_state": "NOT REVIEWED",
+      "stimulus_sha256": "664cc192588022064c65941917e56c905d1624bf6c8e9dab795e313767a85713",
+      "dsp_params": {
+        "0": 8.0,
+        "1": 6.0,
+        "3": 25.0,
+        "4": 10.0,
+        "11": 1.0,
+        "12": 500.0,
+        "13": 50.0,
+        "14": 50.0,
+        "15": 50.0,
+        "16": 7.0,
+        "17": 120.0,
+        "18": 0.0,
+        "21": 0.0,
+        "23": 1.0,
+        "30": 1.0,
+        "25": 1.0,
+        "36": 0.0,
+        "37": 0.0,
+        "31": 0.5,
+        "32": 80.0,
+        "34": 90.0
+      },
+      "markers": [
+        {
+          "time": 0.0,
+          "label": "Audio start"
+        },
+        {
+          "time": 6.0,
+          "label": "Audio end"
+        }
+      ],
+      "analysis_metrics": {
+        "before_rms": 0.060888421213750585,
+        "after_rms": 0.060888421213750585,
+        "after_peak": 0.35892874002456665,
+        "max_abs": 0.0,
+        "rmse": 0.0,
+        "envelope_max_abs": 0.0,
+        "bit_exact": true
+      },
+      "original_wav_file": "10_reverse_10_original_wav.wav",
+      "original_wav_sha256": "13b7f7134d7d2ec94d99be884fbb8ede64178168c9794f2dc827533ac45f493f",
+      "processed_wav_file": "10_reverse_10_processed_wav.wav",
+      "processed_wav_sha256": "13b7f7134d7d2ec94d99be884fbb8ede64178168c9794f2dc827533ac45f493f",
+      "telemetry_csv_file": "10_reverse_10_telemetry.csv",
+      "telemetry_csv_sha256": "ab32ca59b1c01ad7050966c1246676c9b73c41f4304ad5143ac9e052076c47f5"
+    }
+  }
+}

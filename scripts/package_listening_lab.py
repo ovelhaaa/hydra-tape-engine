@@ -17,7 +17,8 @@ def validate(directory):
     if manifest.get("schema_version") != 1 or manifest.get("human_listening_signoff") != "PENDING_HUMAN_AUDITION":
         raise ValueError("Invalid manifest schema or agent-assigned human signoff")
     scenarios = manifest["scenarios"]
-    expected = 60 if manifest.get("suite") == "Hydra Phase 6.2 Bias A/B" else 20
+    expected = {"Hydra Phase 6.2 Bias A/B": 60,
+                "Hydra Phase 6.3 Reverse A/B": 10}.get(manifest.get("suite"), 20)
     if len(scenarios) != expected or [int(k[:2]) for k in scenarios] != list(range(1, expected + 1)):
         raise ValueError(f"Expected the ordered {expected} scenarios")
     if not re.fullmatch(r"[a-f0-9]{40}", manifest["reference_commit"]) or not manifest["api_version"]:
@@ -71,7 +72,14 @@ def package(directory, archive=None):
     count = len(manifest["scenarios"])
     (reports / "validation-summary.md").write_text(f"# Listening Lab validation\n\nCommit: `{manifest['reference_commit']}`\n\n{count} scenarios; {2 * count} PCM24 stereo WAVs; {count} CSVs; {total} audio/telemetry bytes.\nAll hashes, frame counts and telemetry lengths verified.\nHuman listening: PENDING_HUMAN_AUDITION. Metrics are observations, not human approval.\n", encoding="utf-8")
     guide = "PHASE6_BIAS_AB_LISTENING_GUIDE.md" if manifest.get("suite") == "Hydra Phase 6.2 Bias A/B" else "PHASE6_LISTENING_GUIDE.md"
+    if manifest.get("suite") == "Hydra Phase 6.3 Reverse A/B":
+        guide = "PHASE6_REVERSE_OPTIMIZATION_LISTENING_GUIDE.md"
     shutil.copyfile(ROOT / "docs" / guide, directory / "listening-guide.md")
+    if manifest.get("suite") == "Hydra Phase 6.3 Reverse A/B":
+        report = ROOT / "docs/PHASE6_REVERSE_REALTIME_OPTIMIZATION.md"
+        if report.exists():
+            shutil.copyfile(report, reports / report.name)
+            shutil.copyfile(ROOT / "docs" / guide, reports / guide)
     if manifest.get("suite") == "Hydra Phase 6.2 Bias A/B":
         report = ROOT / "docs/PHASE6_BIAS_ANTIALIASING_REPORT.md"
         if report.exists():

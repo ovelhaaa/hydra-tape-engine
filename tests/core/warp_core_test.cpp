@@ -694,7 +694,7 @@ BiasRender render_bias_test(float rate, uint32_t block, const std::vector<float>
 void test_magnetic_bias_declick() {
   for (const float rate : {44100.0f, 48000.0f}) {
     std::vector<float> input(static_cast<size_t>(rate));
-    // Near-threshold bursts straddle a block edge. Their direct signal is negligible.
+    // Near-threshold probes straddle a block edge. They must not trigger a click.
     for (size_t i = 127; i < 2000; i += 32) input[i] = 6e-7f;
     const auto blocked = render_bias_test(rate, 128, input);
     const auto scalar = render_bias_test(rate, 1, input);
@@ -710,7 +710,36 @@ void test_magnetic_bias_declick() {
       if (i > rate * 0.8f) CHECK(std::fabs(blocked.left[i]) < 1e-7f);
     }
     std::cout << "[Bias gate] " << rate << " Hz peak=" << peak << " step=" << step << '\n';
-    CHECK(peak > 1e-6f && step < 0.005f);
+    // The probe is smaller than 1e-6; a lower output-energy bound previously
+    // measured the removed bias carrier rather than continuity. Continuity is
+    // the property under test, and the output must remain at the probe's scale
+    // instead of regenerating a carrier.
+    CHECK(step < 0.005f);
+    CHECK(peak < 1e-5f);
+
+    // Independently prove that real, low-level audio survives across blocks and
+    // reset. A smooth 220 Hz burst has enough energy without a bias carrier.
+    std::vector<float> audible(input.size());
+    for (size_t i = 127; i < 2000; ++i) {
+      const float phase = static_cast<float>(i - 127) / (2000 - 127);
+      const float envelope = std::sin(3.1415926535f * phase);
+      audible[i] = 0.001f * envelope * envelope *
+          std::sin(2.0f * 3.1415926535f * 220.0f * i / rate);
+    }
+    const auto signal = render_bias_test(rate, 128, audible);
+    const auto signalScalar = render_bias_test(rate, 1, audible);
+    const auto signalReset = render_bias_test(rate, 128, audible, 0, false, true);
+    float signalPeak = 0.0f, signalStep = 0.0f;
+    for (size_t i = 1; i < audible.size(); ++i) {
+      CHECK(std::isfinite(signal.left[i]));
+      signalPeak = std::max(signalPeak, std::fabs(signal.left[i]));
+      signalStep = std::max(signalStep, std::fabs(signal.left[i] - signal.left[i - 1]));
+      CHECK(std::fabs(signal.left[i] - signalScalar.left[i]) < 1e-7f);
+      CHECK(signal.left[i] == signalReset.left[i]);
+      CHECK(std::fabs(signal.right[i]) < 1e-7f);
+      if (i > rate * 0.8f) CHECK(std::fabs(signal.left[i]) < 1e-7f);
+    }
+    CHECK(signalPeak > 1e-6f && signalStep < 0.005f);
 
     std::vector<float> impulse(static_cast<size_t>(rate * 5));
     impulse[0] = 0.4f;

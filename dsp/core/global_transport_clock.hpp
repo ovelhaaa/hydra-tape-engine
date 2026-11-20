@@ -201,10 +201,17 @@ class GlobalTransportClock {
 
   // Returns true if the START of the current sample frame is on a subdivision boundary
   bool isSubdivisionBoundary(MusicalSubdivision subdiv) const {
+    return isSubdivisionBoundaryAt(subdiv, transportSamplePosition_);
+  }
+
+  // Same predicate at an arbitrary transport sample. Block-level reverse
+  // scheduling uses it to reconcile the closed-form boundary solver with the
+  // per-sample definition at floating-point ties.
+  bool isSubdivisionBoundaryAt(MusicalSubdivision subdiv, uint64_t transportSample) const {
     if (state_ != TransportState::Playing) return false;
-    if (transportSamplePosition_ == 0) return true; // Origin is always boundary
-    const uint64_t currentCycle = cycleIndexAt(subdiv, currentMusicalPosition());
-    const uint64_t prevCycle = cycleIndexAt(subdiv, musicalPositionAt(transportSamplePosition_ - 1));
+    if (transportSample == 0) return true; // Origin is always boundary
+    const uint64_t currentCycle = cycleIndexAt(subdiv, musicalPositionAt(transportSample));
+    const uint64_t prevCycle = cycleIndexAt(subdiv, musicalPositionAt(transportSample - 1));
     return currentCycle > prevCycle;
   }
 
@@ -299,7 +306,30 @@ class GlobalTransportClock {
       nextCycle++;
     }
 
-    return eventCount;
+    // The closed-form solver and the per-sample predicate can disagree by one
+    // frame at floating-point ties. The predicate is authoritative: nudge each
+    // solved offset by one frame, drop solver artefacts, and deduplicate.
+    uint32_t kept = 0;
+    for (uint32_t e = 0; e < eventCount; ++e) {
+      int32_t offset = static_cast<int32_t>(outEvents[e].frameOffset);
+      if (!isSubdivisionBoundaryAt(subdiv, startSample + static_cast<uint64_t>(offset))) {
+        if (offset > 0 && isSubdivisionBoundaryAt(subdiv, startSample + static_cast<uint64_t>(offset - 1))) {
+          --offset;
+        } else if (offset + 1 < static_cast<int32_t>(frames) &&
+                   isSubdivisionBoundaryAt(subdiv, startSample + static_cast<uint64_t>(offset + 1))) {
+          ++offset;
+        } else {
+          continue;
+        }
+      }
+      if (kept > 0 && outEvents[kept - 1].frameOffset == static_cast<uint32_t>(offset)) {
+        continue;
+      }
+      outEvents[kept] = outEvents[e];
+      outEvents[kept].frameOffset = static_cast<uint32_t>(offset);
+      ++kept;
+    }
+    return kept;
   }
 
   // Reverse V2 division mapping helper

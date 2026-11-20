@@ -2,7 +2,7 @@
 
 Date: 2026-11-19. Existing PR: [#54](https://github.com/ovelhaaa/hydra-tape-engine/pull/54). Branch: `feature/musical-validation-phase6`; destination: `main`. Audited/fetched baseline: `fa43cdefff22059b55adf3d2202a19f2571cf9d3`; no intervening remote commits at initial fetch. Existing untracked `scripts/create_phase6_pr.py` was preserved and excluded.
 
-**Candidate: phase-averaged magnetic bias. Release classification: BLOCKED — REGRESSION; BLOCKED — PERFORMANCE. Candidate human audition: PASS (12/12, reviewed f0c16cd local package). Physical tests now expose rhythmic Reverse overload in baseline and candidate. No merge, threshold changes or golden updates. Human approval scope is recorded below.** The A/B package is available for investigation even when CI is red. A reduction in whistles does not establish preservation of tape character.
+**Candidate: phase-averaged magnetic bias. Phase 6.3 recovered the three Native regressions and removed the physical Reverse deadline failures without changing this DSP; residual release blockers are the complete-engine tail/transition criteria and issue #48. Candidate human audition: PASS (12/12, reviewed f0c16cd local package). See the [Phase 6.3 report](PHASE6_REVERSE_REALTIME_OPTIMIZATION.md). No merge, threshold changes or golden updates. Human approval scope is recorded below.** The A/B package is available for investigation even when CI is red. A reduction in whistles does not establish preservation of tape character.
 
 ## Human approval — 2026-11-19
 
@@ -10,7 +10,7 @@ The responsible user approved all 12 candidate listening scenarios in the f0c16c
 
 ## Physical and CI follow-up
 
-[Verified board measurements, all six variants, restore evidence and actual CI artifacts](PHASE6_BIAS_HARDWARE_FOLLOWUP.md) supersede the initial unverified-physical-performance statements below. The selected algorithm is unchanged. Physical findings establish a performance block. Subsequent human approval is recorded above; no merge.
+[Verified board measurements, all six variants, restore evidence and actual CI artifacts](PHASE6_BIAS_HARDWARE_FOLLOWUP.md) supersede the initial unverified-physical-performance statements below. The selected algorithm is unchanged. Physical findings established a performance block that Phase 6.3 has since removed for the tested Reverse paths, with zero overruns over 10 000 blocks per scenario and a five-minute sustain; see the [Phase 6.3 report](PHASE6_REVERSE_REALTIME_OPTIMIZATION.md). Subsequent human approval is recorded above; no merge.
 
 ## Audit and reproduced cause
 
@@ -55,6 +55,8 @@ Transfer uses151 DC plateaus[-1.5,1.5], fresh state per plateau,1s each, mean ov
 
 ## Regression findings and unresolved gates
 
+**Phase 6.3 update:** the three Native failures described in this section were assertions that measured the removed triangular carrier. They are recovered without restoring the carrier; the full Native suite is now 15/15. The Reverse deadline failures are also removed (zero overruns, 10 000 blocks × 9 scenarios + 5-minute sustain). The strict Native/WASM numbers and the four complete-engine tail criteria below remain unchanged and are explicit blockers. See the [Phase 6.3 report](PHASE6_REVERSE_REALTIME_OPTIMIZATION.md).
+
 Isolated criteria:49/49 passed at44.1/48/96kHz. Full-engine criteria:22/27 passed. Four strict tail-growth gates failed: feedback95 and Multi-Head at both target rates show small sustained RMS increases, also present in baseline. The largest candidate change over the tested interval is.03772dB. Both engines can sustain nonlinear feedback rather than decay. Peak remains bounded below1 in these tests; this does not convert the failed tail criteria to PASS.
 
 The44.1kHz parameter-event gate failed with maximum step.05122 against.03. Baseline comparisons are included in engine evidence; existing parameter/filter transitions may contribute. No unrelated parameter smoothing or feedback code was changed to hide this. Further investigation is required before declaring click-free operation.
@@ -95,7 +97,7 @@ The complete-engine command intentionally returns nonzero for the recorded faile
 
 The existing Listening Lab now accepts the explicitly named60-pair supplement while retaining the original20-scenario schema.12 priority scenarios compare baselineA against each ofB–F:120 PCM24stereoWAVs,60telemetryCSVs, SHA256 manifest, provenance, guide and existing player. A/Original is **baseline processed output**, B/Processed is **variant processed output**; no independent loudness compensation. Only A/B content changes; there is no new interface. Package sample rate48kHz,6s per pair, same source/BPM/events/seeds/parameters within every pair. Raw stimuli hashes are recorded.
 
-Every human state is **NOT REVIEWED**. Responsible reviewer must listen and export the existing JSON; no human approval is inferred from metrics. See [bias A/B guide](PHASE6_BIAS_AB_LISTENING_GUIDE.md). The standalone `bias-antialiasing.yml` builds all variants, checks spectra/full engine, runs Native/WASM/ESP32build gates, validates and uploads review files even if technical gates fail, then explicitly fails its final gate. Existing Phase6 workflows remain present. Actual artifact links and final source HEAD are recorded in PR#54 after upload; no link is invented in advance.
+Human states started as `NOT REVIEWED`; the responsible reviewer then approved all 12 candidate scenarios and exported the JSON recorded above. No approval is inferred from metrics. See [bias A/B guide](PHASE6_BIAS_AB_LISTENING_GUIDE.md). The standalone `bias-antialiasing.yml` builds all variants, checks spectra/full engine, runs Native/WASM/ESP32build gates, validates and uploads review files even if technical gates fail, then explicitly fails its final gate. Existing Phase6 workflows remain present. Actual artifact links and final source HEAD are recorded in PR#54 after upload; no link is invented in advance.
 
 ## Measured tables and figures
 

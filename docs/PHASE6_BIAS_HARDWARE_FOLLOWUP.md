@@ -2,7 +2,7 @@
 
 2026-11-19. This supplements the [anti-aliasing report](PHASE6_BIAS_ANTIALIASING_REPORT.md). DSP source tested: `5e3d2bfa4ee8c5e6e765f7e11b12c6ffe87063c6`; subsequent evidence/tooling changes do not change the magnetic algorithm.
 
-**BLOCKED — REGRESSION / PERFORMANCE.** The phase-averaged candidate remains the best measured compromise among the six alternatives, but rhythmic Reverse exceeds the physical block deadline in both baseline and candidate. No budget, threshold, original assertion, golden or Reverse algorithm was changed. Subsequent human audition approved the candidate 12/12 in the exact f0c16cd local package; see the [human audition record](PHASE6_BIAS_HUMAN_AUDITION.md). No merge.
+**BLOCKED — REGRESSION / PERFORMANCE (superseded for the tested Reverse paths).** The phase-averaged candidate remains the best measured compromise among the six alternatives. The rhythmic Reverse overrun described here was resolved in Phase 6.3: the per-sample double-precision boundary check moved to a block-collected equivalent, and the delay-activation PSRAM wipe became an O(1) logical epoch. The approved DSP algorithm is unchanged and the before/after audio is bit-exact. See the [Phase 6.3 report](PHASE6_REVERSE_REALTIME_OPTIMIZATION.md). No budget, threshold, original assertion, golden or Reverse algorithm was changed. No merge.
 
 ## Identified board and firmware provenance
 

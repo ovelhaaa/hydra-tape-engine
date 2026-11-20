@@ -11,6 +11,7 @@
 #endif
 
 #include "hydra_mech_noise.hpp"
+#include "realtime_profile.hpp"
 #include "reverse_windows.hpp"
 
 #include <algorithm>
@@ -291,9 +292,9 @@ struct TapeCore::Impl {
     return clampf(mod,-0.25f*modBaseSamples,0.25f*modBaseSamples);
   }
   HYDRA_DSP_IRAM HYDRA_AUDIO_INLINE float readTapeAt(float d,const float* __restrict__ b){ d=clampf(d,2,(float)normalBufferSize-4); return readHistory(d, b); }
-  HYDRA_DSP_IRAM HYDRA_AUDIO_INLINE float readHistory(float d,const float* __restrict__ b){ float rp=(float)writeHead-d; if(rp<0)rp+=bufferSize; int32_t r=(int32_t)rp; float f=rp-r; int32_t prev=(r>0)?r-1:bufferSize-1; return hermite4(b[prev],b[r],b[r+1],b[r+2],f); }
-  HYDRA_DSP_IRAM HYDRA_AUDIO_INLINE float readTapeInt(float d,const float* __restrict__ b){ d=clampf(d,2,(float)normalBufferSize-4); float rp=(float)writeHead-d; while(rp<0)rp+=bufferSize; while(rp>=(float)bufferSize)rp-=bufferSize; int32_t r=(int32_t)rp; return b[r]; }
-  HYDRA_AUDIO_NOINLINE float readTapeReverse(float d,float* b){ if(!b||bufferSize<=0)return 0; d=clampf(d,2,(float)normalBufferSize-4); int32_t di=(int32_t)d; if(std::abs(di-reverseWindowSize)>1000){reverseCounter=0;reverseWindowSize=di;} reverseCounter++; if(reverseCounter>=std::max<int32_t>(1,di))reverseCounter=0; float rp=(float)writeHead-d+(float)reverseCounter; int32_t r=((int32_t)rp%bufferSize+bufferSize)%bufferSize; float f=rp-std::floor(rp); int32_t i1=r,i0=(r>0)?r-1:bufferSize-1,i2=(r<bufferSize-1)?r+1:0,i3=(i2<bufferSize-1)?i2+1:0; float d1=b[i1],d0=b[i0],d2=b[i2],d3=b[i3]; float c0=d1,c1=0.5f*(d0-d2),c2=d2-2.5f*d1+2.f*d0-0.5f*d3,c3=0.5f*(d3-d1)+1.5f*(d1-d0); return ((c3*f+c2)*f+c1)*f+c0; }
+  HYDRA_DSP_IRAM HYDRA_AUDIO_INLINE float readHistory(float d,const float* __restrict__ b){ if(d>static_cast<float>(framesSinceDelayEnable))return 0.0f; float rp=(float)writeHead-d; if(rp<0)rp+=bufferSize; int32_t r=(int32_t)rp; float f=rp-r; int32_t prev=(r>0)?r-1:bufferSize-1; if(d+1.0f>static_cast<float>(framesSinceDelayEnable))prev=r; return hermite4(b[prev],b[r],b[r+1],b[r+2],f); }
+  HYDRA_DSP_IRAM HYDRA_AUDIO_INLINE float readTapeInt(float d,const float* __restrict__ b){ d=clampf(d,2,(float)normalBufferSize-4); if(d>static_cast<float>(framesSinceDelayEnable))return 0.0f; float rp=(float)writeHead-d; while(rp<0)rp+=bufferSize; while(rp>=(float)bufferSize)rp-=bufferSize; int32_t r=(int32_t)rp; return b[r]; }
+  HYDRA_AUDIO_NOINLINE float readTapeReverse(float d,float* b){ if(!b||bufferSize<=0)return 0; d=clampf(d,2,(float)normalBufferSize-4); if(d>static_cast<float>(framesSinceDelayEnable))return 0.0f; int32_t di=(int32_t)d; if(std::abs(di-reverseWindowSize)>1000){reverseCounter=0;reverseWindowSize=di;} reverseCounter++; if(reverseCounter>=std::max<int32_t>(1,di))reverseCounter=0; float rp=(float)writeHead-d+(float)reverseCounter; int32_t r=((int32_t)rp%bufferSize+bufferSize)%bufferSize; float f=rp-std::floor(rp); int32_t i1=r,i0=(r>0)?r-1:bufferSize-1,i2=(r<bufferSize-1)?r+1:0,i3=(i2<bufferSize-1)?i2+1:0; float d1=b[i1],d0=b[i0],d2=b[i2],d3=b[i3]; float c0=d1,c1=0.5f*(d0-d2),c2=d2-2.5f*d1+2.f*d0-0.5f*d3,c3=0.5f*(d3-d1)+1.5f*(d1-d0); return ((c3*f+c2)*f+c1)*f+c0; }
   HYDRA_DSP_IRAM HYDRA_AUDIO_INLINE float readReverseWindow(
       const ReverseWindows::Frame& frame, float mod, const float* buffer) {
     const float limit = reverseWindows.modulationLimit();
@@ -338,6 +339,11 @@ struct TapeCore::Impl {
   float musicalHeadDelay1=0,musicalHeadDelay2=0,musicalHeadDelay3=0,springFeedbackGain=0,springWetGain=0.5f;
   int springStages=3;
   uint8_t activeHeadMask=4;
+  // Frames written since the delay was last enabled. Reads older than this
+  // epoch are logically silent without erasing the 8 s PSRAM history. The
+  // first activation starts from zero-initialized buffers and needs no mask.
+  uint32_t framesSinceDelayEnable=0xFFFFFFFFu;
+  bool delayEverEnabled=false;
   ReverseWindows reverseWindows;
   GlobalTransportClock transportClock;
   TapTempo tapTempo;
@@ -599,9 +605,12 @@ int TapeCore::midiClockReset() {
 
 void TapeCore::reset(){
   if(!isValid()) return;
+  // Explicit destructive reset. Not part of routine parameter automation: the
+  // caller must schedule it outside the audio callback. The hot-path delay
+  // re-activation no longer performs this wipe (see updateParams).
   std::memset(impl_->delayLine,0,sizeof(float)*impl_->bufferCapacity);
   std::memset(impl_->delayLineR,0,sizeof(float)*impl_->bufferCapacity);
-  impl_->writeHead=0; impl_->reverseCounter=0; impl_->reverseWindowSize=0; impl_->resetReverse(); impl_->warpPhase=0.0f; impl_->inEnvL=0; impl_->inEnvR=0;
+  impl_->writeHead=0; impl_->reverseCounter=0; impl_->reverseWindowSize=0; impl_->resetReverse(); impl_->warpPhase=0.0f; impl_->framesSinceDelayEnable=0xFFFFFFFFu; impl_->delayEverEnabled=false; impl_->inEnvL=0; impl_->inEnvR=0;
   impl_->flutterPhase=impl_->wowPhase=impl_->azimuthPhase=0;
   impl_->mechStateL=Impl::MechanicalState{};
   impl_->mechStateR=Impl::MechanicalState{0,0,0,0,0x2468ACE1u,0x56473829u};
@@ -632,8 +641,14 @@ void TapeCore::updateParams(const TapeParams& newParams){
     impl_->feedbackHeadBump.reset(); impl_->feedbackHeadBumpR.reset(); impl_->feedbackHPF.reset(); impl_->feedbackHPFR.reset();
     impl_->feedbackPhase.reset(); impl_->feedbackPhaseR.reset();
     impl_->warpHPF_L.reset(); impl_->warpHPF_R.reset(); impl_->warpLPF_L.reset(); impl_->warpLPF_R.reset();
-    std::memset(impl_->delayLine,0,sizeof(float)*impl_->bufferCapacity); std::memset(impl_->delayLineR,0,sizeof(float)*impl_->bufferCapacity);
-    impl_->writeHead=0; impl_->reverseCounter=0; impl_->reverseWindowSize=0; impl_->resetReverse(); impl_->warpPhase=0.0f;
+    // The delay buffers are zero-initialized at allocation and are written on
+    // every frame even while delay is inactive. Clearing ~3 MB of PSRAM here
+    // blocked the audio callback for ~82 ms. Instead of erasing history, mark
+    // an epoch: reads older than the activation instant stay logically silent
+    // until they are naturally overwritten.
+    impl_->framesSinceDelayEnable = impl_->delayEverEnabled ? 0u : 0xFFFFFFFFu;
+    impl_->delayEverEnabled = true;
+    impl_->reverseCounter=0; impl_->reverseWindowSize=0; impl_->resetReverse(); impl_->warpPhase=0.0f;
     impl_->smoothedDelaySamples = newParams.delayTimeMs * impl_->sampleRate * 0.001f;
   }
   if(!impl_->currentParams.warpActive && newParams.warpActive){
@@ -707,12 +722,30 @@ HYDRA_DSP_IRAM void TapeCore::processStereoBlock(const float* inLBlock,const flo
     return;
   }
   TapeParams* p=&impl_->currentParams;
+  // Reverse V2 boundary detection used to evaluate double-precision musical
+  // positions twice per sample. The Xtensa LX7 has no double FPU, so that path
+  // dominated Reverse cost. Boundaries are block-invariant: collect them once
+  // per block with the existing zero-allocation API and consume the offsets.
+  // 8 events cannot overflow at the supported block sizes and subdivisions.
+  constexpr uint32_t kMaxBlockBoundaries = 8;
+  BoundaryEvent blockBoundaries[kMaxBlockBoundaries];
+  uint32_t blockBoundaryCount = 0;
+  const bool reverseClockSync = (p->reverseMode == 0) &&
+      impl_->transportClock.isPlaying() && impl_->delayActive &&
+      !impl_->warpActive && impl_->reverse;
+  if (reverseClockSync) {
+    const auto boundarySubdiv = GlobalTransportClock::fromReverseDivision(p->reverseDivision);
+    blockBoundaryCount = impl_->transportClock.getSubdivisionBoundariesInBlock(
+        boundarySubdiv, frames, blockBoundaries, kMaxBlockBoundaries);
+  }
+  uint32_t boundaryCursor = 0;
   for(uint32_t frameIdx=0;frameIdx<frames;++frameIdx){
     const float inL=inLBlock[frameIdx];
     const float inR=inRBlock[frameIdx];
     float sampleOutL=0.0f, sampleOutR=0.0f;
     float* const outL=&sampleOutL;
     float* const outR=&sampleOutR;
+  HYDRA_PROFILE_START(tMod);
   impl_->flutterPhase += impl_->flutterInc; if(impl_->flutterPhase>TWO_PI) impl_->flutterPhase-=TWO_PI;
   impl_->wowPhase += impl_->wowInc; if(impl_->wowPhase>TWO_PI) impl_->wowPhase-=TWO_PI;
 
@@ -759,7 +792,9 @@ HYDRA_DSP_IRAM void TapeCore::processStereoBlock(const float* inLBlock,const flo
     hissR=impl_->noiseGenR.next()*hissGainR*duckR;
   }
   if(impl_->delayActive){impl_->delayEnableRamp+=impl_->delayRampInc;if(impl_->delayEnableRamp>1)impl_->delayEnableRamp=1;} else impl_->delayEnableRamp=0;
+  HYDRA_PROFILE_END(ModulationNoise, tMod);
 
+  HYDRA_PROFILE_START(tWarp);
   float warpSigL=0.0f, warpSigR=0.0f;
   float warpFbL=0.0f, warpFbR=0.0f;
   if(impl_->delayActive && impl_->warpActive){
@@ -852,6 +887,8 @@ HYDRA_DSP_IRAM void TapeCore::processStereoBlock(const float* inLBlock,const flo
     warpFbR = fastSatRational(procR * 1.6f) * (1.0f / 1.6f);
   }
 
+  HYDRA_PROFILE_END(Warp, tWarp);
+  HYDRA_PROFILE_START(tRevCtrl);
   const bool legacyReverse = impl_->reverse && p->reverseMode == 2;
   const bool wantsReverse = impl_->delayActive && !impl_->warpActive &&
                             impl_->reverse && !legacyReverse;
@@ -872,11 +909,19 @@ HYDRA_DSP_IRAM void TapeCore::processStereoBlock(const float* inLBlock,const flo
   float dryGain = impl_->dryGain;
   float feedbackGain = impl_->safeFeedback;
   if (reverseBlend > 0.f) {
-    const bool syncToClock = (p->reverseMode == 0 && impl_->transportClock.isPlaying());
+    const bool syncToClock = reverseClockSync;
     bool isBoundary = false;
     if (syncToClock) {
-      const auto subdiv = GlobalTransportClock::fromReverseDivision(p->reverseDivision);
-      isBoundary = impl_->transportClock.isSubdivisionBoundary(subdiv);
+      if (blockBoundaryCount >= kMaxBlockBoundaries) {
+        // Defensive fallback: never miss a boundary if the fixed event buffer
+        // could have been truncated (not expected at supported block sizes).
+        const auto subdiv = GlobalTransportClock::fromReverseDivision(p->reverseDivision);
+        isBoundary = impl_->transportClock.isSubdivisionBoundary(subdiv);
+      } else if (boundaryCursor < blockBoundaryCount &&
+                 blockBoundaries[boundaryCursor].frameOffset == frameIdx) {
+        isBoundary = true;
+        ++boundaryCursor;
+      }
     }
     reverseFrame = impl_->reverseWindows.next(isBoundary, syncToClock);
     const float a = impl_->reverseControlAlpha;
@@ -893,6 +938,7 @@ HYDRA_DSP_IRAM void TapeCore::processStereoBlock(const float* inLBlock,const flo
     impl_->smoothWet = delayGain;
     impl_->smoothFeedback = feedbackGain;
   }
+  HYDRA_PROFILE_END(ReverseControl, tRevCtrl);
 
   struct ChannelFrame {
     float conditionedInput;
@@ -903,8 +949,11 @@ HYDRA_DSP_IRAM void TapeCore::processStereoBlock(const float* inLBlock,const flo
   auto readCh=[&](float input,float noiseInjected,float* buffer,BiquadFilter& reproHeadBumpFilter,BiquadFilter& tr,BiquadFilter& outputGapLossFilter,AllpassFilter& az,BiquadFilter&iHP,BiquadFilter&iLP,OnePoleLP&dropoutFilter,DropoutFrame drop,float mod,float warpSig,float warpFb) HYDRA_LAMBDA_INLINE HYDRA_DSP_IRAM {
     ChannelFrame frame{};
     // --- input conditioning ---
+    HYDRA_PROFILE_START(tRecF);
     frame.conditionedInput=iLP.process(iHP.process(input));
+    HYDRA_PROFILE_END(RecordFilters, tRecF);
     // --- delay read ---
+    HYDRA_PROFILE_START(tConvR);
     float textureSig=(textureGain>0.0f && !impl_->warpActive)?impl_->readTapeAt(200.f+mod,buffer):0.0f;
     float delaySig=0;
     float reverseSig=0;
@@ -932,10 +981,14 @@ HYDRA_DSP_IRAM void TapeCore::processStereoBlock(const float* inLBlock,const flo
         delaySig *= impl_->invHeadGainSum;
       }
     }
+    HYDRA_PROFILE_END(ConventionalReads, tConvR);
+    HYDRA_PROFILE_START(tRevR);
     if (reverseBlend > 0.f && !impl_->warpActive && impl_->delayActive) {
       reverseSig = impl_->readReverseWindow(reverseFrame, mod, buffer);
       delaySig += reverseBlend * (reverseSig - delaySig);
     }
+    HYDRA_PROFILE_END(ReverseReads, tRevR);
+    HYDRA_PROFILE_START(tPlayF);
     float tapeSig = (textureSig * textureGain) + (delaySig * delayGain);
     // --- dropout/gap loss ---
     if(drop.hfLoss<0.9995f||drop.ampGain<0.9995f){
@@ -954,10 +1007,12 @@ HYDRA_DSP_IRAM void TapeCore::processStereoBlock(const float* inLBlock,const flo
       frame.feedbackSource = tapeSig + reverseBlend * (reverseSig - tapeSig);
     }
     frame.tapeOutput=outputGapLossFilter.process(reproHeadBumpFilter.process(tr.process(tapeSig)));
+    HYDRA_PROFILE_END(PlaybackFilters, tPlayF);
     return frame;
   };
 
   auto feedbackFrom=[&](float feedbackInput,BiquadFilter&fbHPF,BiquadFilter&feedbackHeadBumpFilter,OnePoleLP&feedbackGapLossFilter,AllpassFilter&feedbackPhaseFilter,float inputEnv) HYDRA_LAMBDA_INLINE HYDRA_DSP_IRAM {
+    HYDRA_PROFILE_START(tFb);
     float feedSig=0; if(impl_->delayActive){
       if(impl_->warpActive){
         const float fbGain = impl_->warpFbGain;
@@ -988,19 +1043,27 @@ HYDRA_DSP_IRAM void TapeCore::processStereoBlock(const float* inLBlock,const flo
         feedSig *= impl_->delayEnableRamp;
       }
     }
+    HYDRA_PROFILE_END(Feedback, tFb);
     return feedSig;
   };
 
   auto writeCh=[&](float input,float dryTapeOutput,const ChannelFrame& frame,float feedbackInput,float* buffer,DCBlocker& dc,TapeMagnetics& mag) HYDRA_LAMBDA_INLINE HYDRA_DSP_IRAM {
     // --- record amplifier ---
+    HYDRA_PROFILE_START(tAmp);
     const float freshInput = frame.conditionedInput * impl_->driveGain;
     float recSig=dc.process(freshInput + feedbackInput); recSig=clampf(recSig,-4,4);
+    HYDRA_PROFILE_END(RecordAmplifier, tAmp);
     // A Warp repeat must decay without repeatedly opening the record bias gate.
     const bool allowBias = (!impl_->warpActive && reverseBlend == 0.f) ||
                            std::fabs(freshInput) > 1e-7f;
     // --- magnetic saturation/write ---
+    HYDRA_PROFILE_START(tMagWrite);
     if(!impl_->freeze) buffer[impl_->writeHead]=mag.process(recSig, allowBias);
-    return impl_->outputLimiter((input*dryGain)+dryTapeOutput);
+    HYDRA_PROFILE_END(MagneticWrite, tMagWrite);
+    HYDRA_PROFILE_START(tLim);
+    const float limited = impl_->outputLimiter((input*dryGain)+dryTapeOutput);
+    HYDRA_PROFILE_END(Limiter, tLim);
+    return limited;
   };
 
   ChannelFrame frameL=readCh(inL,hissL,impl_->delayLine,impl_->reproHeadBump,impl_->tapeRolloff,impl_->gapLossLPF,impl_->azimuthFilter,impl_->inputHPF,impl_->inputLPF,impl_->dropoutLPF,dropoutL,modL,warpSigL,warpFbL);
@@ -1011,6 +1074,7 @@ HYDRA_DSP_IRAM void TapeCore::processStereoBlock(const float* inLBlock,const flo
   const float feedbackR=feedbackFrom(fbSourceR,impl_->feedbackHPFR,impl_->feedbackHeadBumpR,impl_->feedbackGapLossR,impl_->feedbackPhaseR,impl_->inEnvR);
   *outL=writeCh(inL,frameL.tapeOutput,frameL,feedbackL,impl_->delayLine,impl_->dcBlocker,impl_->magneticsL);
   *outR=writeCh(inR,frameR.tapeOutput,frameR,feedbackR,impl_->delayLineR,impl_->dcBlockerR,impl_->magneticsR);
+  HYDRA_PROFILE_START(tAux);
   if (impl_->reverseSmear && legacyReverse) {
     for (int i=0;i<4;i++) {
       *outL=impl_->reverseAP_L[i].process(*outL);
@@ -1040,11 +1104,15 @@ HYDRA_DSP_IRAM void TapeCore::processStereoBlock(const float* inLBlock,const flo
     *outL=impl_->outputLimiter(dryL*(1-wetMix)+wetL*wetMix); *outR=impl_->outputLimiter(dryR*(1-wetMix)+wetR*wetMix);
   }
   if(impl_->freeze){if(impl_->freezeFade<1.0f){impl_->freezeFade+=0.0002f; if(impl_->freezeFade>1.0f)impl_->freezeFade=1.0f;}} else {if(impl_->freezeFade>0.0f){impl_->freezeFade-=0.0008f; if(impl_->freezeFade<0.0f)impl_->freezeFade=0.0f;}}
+  HYDRA_PROFILE_END(Auxiliary, tAux);
+  HYDRA_PROFILE_START(tTr);
   if(impl_->writeHead<TAPE_BUFFER_GUARD){ impl_->mirrorDelayGuard(impl_->delayLine); impl_->mirrorDelayGuard(impl_->delayLineR); }
   impl_->writeHead++; if(impl_->writeHead>=impl_->bufferSize) impl_->writeHead=0;
   outLBlock[frameIdx]=sampleOutL;
   outRBlock[frameIdx]=sampleOutR;
   impl_->transportClock.tick();
+  if(impl_->framesSinceDelayEnable!=0xFFFFFFFFu) ++impl_->framesSinceDelayEnable;
+  HYDRA_PROFILE_END(Transport, tTr);
   }
   impl_->tapTempo.update(impl_->transportClock.absoluteSamplePosition());
   impl_->midiClockSync.update(impl_->transportClock.absoluteSamplePosition());

@@ -1,0 +1,228 @@
+{
+  "physical": true,
+  "port": "COM15",
+  "hwid": "USB VID:PID=303A:1001 SER=B8:F8:62:E3:E4:A4",
+  "head": "c7c807a5bc182fdadd8b7d0067f8b4e9b5af10bf",
+  "hashes": {
+    "dsp/core/tape_core.cpp": "fd190ec171ee3c80a3349fdae2a0e5ddad4447dba9b1b1be3ddafb525090f0d9",
+    "dsp/core/reverse_windows.hpp": "0bc78c1067fdc09875efb29ee82778b3efb21348d341eb60b82150462df0a640",
+    "src/main.cpp": "3b687c8a545287f7f242d06edc121532181a429ec8032718c6628b25b07df5ae",
+    ".pio/build/esp32-s3-devkitc-1/firmware.bin": "422c66e2adb6b4cca74528483ff0a9dad8d825d5e0fb1c76edb0c4a78e7b4560"
+  },
+  "commands": [
+    {
+      "command": "perf",
+      "response": "\n=== HYDRA DSP PERFORMANCE TELEMETRY ===\r\nBlock Size          : 128 frames\nSample Rate         : 44100 Hz\nCPU Clock           : 240 MHz\nBlock Time Budget   : 2902.5 us\nBlocks Processed    : 1962405\nAvg DSP Block Time  : 1397 us\nLast DSP Block Time : 1379 us\nPeak DSP Block Time : 1841 us\nDSP Budget Use (EMA): 47.6 %\nDSP Budget Overruns : 0\nI2S TX Write Failures: 0\nInternal Free Heap  : 122928 bytes\nSPIRAM (PSRAM) Free : 1663048 bytes\nWarp Active         : NO\n========================================\n\r\n"
+    },
+    {
+      "command": "byp 0",
+      "response": "Bypass: OFF\n"
+    },
+    {
+      "command": "gen 1",
+      "response": "Generator: ON\n"
+    },
+    {
+      "command": "src 1",
+      "response": "Source: 1 (0=MP3, 1=SYNTH, 2=I2S)\n"
+    },
+    {
+      "command": "mod 1",
+      "response": "Engine Mode: TAPE DELAY\n> mod updated\n"
+    },
+    {
+      "command": "dly 500",
+      "response": "Delay: 500 ms\n"
+    },
+    {
+      "command": "fbk 40",
+      "response": "Feedback     [#######-------------] 39%\n"
+    },
+    {
+      "command": "hds 4",
+      "response": "> hds updated\n"
+    },
+    {
+      "command": "mix 50",
+      "response": "Mix          [##########----------] 50%\n"
+    },
+    {
+      "command": "drv 75",
+      "response": "Drive        [###############-----] 75%\n"
+    },
+    {
+      "command": "nlv 10",
+      "response": "Noise        [#-------------------] 9%\n"
+    },
+    {
+      "command": "ftd 8",
+      "response": "Flutter      [#-------------------] 8%\n"
+    },
+    {
+      "command": "wwd 6",
+      "response": "Wow          [#-------------------] 6%\n"
+    },
+    {
+      "command": "dps 0",
+      "response": "Dropouts     [--------------------] 0%\n"
+    },
+    {
+      "command": "tps 50",
+      "response": "Speed        [##########----------] 50%\n"
+    },
+    {
+      "command": "tpa 50",
+      "response": "Age          [##########----------] 50%\n"
+    },
+    {
+      "command": "ppg 0",
+      "response": "Ping-Pong: OFF\n> ppg updated\n"
+    },
+    {
+      "command": "frz 0",
+      "response": "Freeze: OFF\n> frz updated\n"
+    },
+    {
+      "command": "frv 0",
+      "response": "Freeverb: OFF\n> frv updated\n"
+    },
+    {
+      "command": "wrp 0",
+      "response": "Accidental Warp: OFF\n> wrp updated\n"
+    },
+    {
+      "command": "rev 0",
+      "response": "Reverse: OFF\n> rev updated\n"
+    },
+    {
+      "command": "spr 0",
+      "response": "Spring Reverb: OFF\n> spr updated\n"
+    },
+    {
+      "command": "transport play",
+      "response": "Transport: PLAY\r\n> transport updated\n"
+    },
+    {
+      "command": "rev 0",
+      "response": "Reverse: OFF\n> rev updated\n"
+    },
+    {
+      "command": "stageprof 1000 256",
+      "response": "\n=== STAGE PROFILE (1000 blocks, warmup 256 @ 240MHz) ===\nA1 Source/Gen/In :   103.73 us/blk (  5.7% tot |   3.6% budget) [24895 cyc/blk]\nA2 TapeCore/DSP  :  1669.84 us/blk ( 91.8% tot |  57.5% budget) [400761 cyc/blk]\nA3a Ext tanhf()  :     0.03 us/blk (  0.0% tot |   0.0% budget) [8 cyc/blk]\nA3b NoiseGate    :    24.31 us/blk (  1.3% tot |   0.8% budget) [5834 cyc/blk]\nA3c Freeverb     :     0.15 us/blk (  0.0% tot |   0.0% budget) [34 cyc/blk]\nA3d PCM Out      :    21.10 us/blk (  1.2% tot |   0.7% budget) [5063 cyc/blk]\nLoop/Timer Ovh   :     0.01 us/blk (  0.0% tot |   0.0% budget)\nTOTAL BLOCK      :  1819.17 us/blk (100.0% tot |  62.7% budget) [436599 cyc/blk]\n=====================================================\r\n"
+    },
+    {
+      "command": "rev 1",
+      "response": "Reverse: ON\n> rev updated\n"
+    },
+    {
+      "command": "revmode 0",
+      "response": "Reverse mode: 0\n> revmode updated\n"
+    },
+    {
+      "command": "revdiv 0",
+      "response": "Reverse division: 0\n> revdiv updated\n"
+    },
+    {
+      "command": "stageprof 1000 256",
+      "response": "\n=== STAGE PROFILE (1000 blocks, warmup 256 @ 240MHz) ===\nA1 Source/Gen/In :   100.44 us/blk (  3.5% tot |   3.5% budget) [24105 cyc/blk]\nA2 TapeCore/DSP  :  2686.59 us/blk ( 94.8% tot |  92.6% budget) [644781 cyc/blk]\nA3a Ext tanhf()  :     0.03 us/blk (  0.0% tot |   0.0% budget) [8 cyc/blk]\nA3b NoiseGate    :    24.32 us/blk (  0.9% tot |   0.8% budget) [5835 cyc/blk]\nA3c Freeverb     :     0.15 us/blk (  0.0% tot |   0.0% budget) [36 cyc/blk]\nA3d PCM Out      :    21.09 us/blk (  0.7% tot |   0.7% budget) [5062 cyc/blk]\nLoop/Timer Ovh   :     0.01 us/blk (  0.0% tot |   0.0% budget)\nTOTAL BLOCK      :  2832.63 us/blk (100.0% tot |  97.6% budget) [679831 cyc/blk]\n=====================================================\r\n"
+    },
+    {
+      "command": "revdiv 1",
+      "response": "Reverse division: 1\n> revdiv updated\n"
+    },
+    {
+      "command": "stageprof 1000 256",
+      "response": "\n=== STAGE PROFILE (1000 blocks, warmup 256 @ 240MHz) ===\nA1 Source/Gen/In :   110.22 us/blk (  3.9% tot |   3.8% budget) [26453 cyc/blk]\nA2 TapeCore/DSP  :  2690.57 us/blk ( 94.5% tot |  92.7% budget) [645736 cyc/blk]\nA3a Ext tanhf()  :     0.03 us/blk (  0.0% tot |   0.0% budget) [8 cyc/blk]\nA3b NoiseGate    :    24.31 us/blk (  0.9% tot |   0.8% budget) [5833 cyc/blk]\nA3c Freeverb     :     0.15 us/blk (  0.0% tot |   0.0% budget) [36 cyc/blk]\nA3d PCM Out      :    21.13 us/blk (  0.7% tot |   0.7% budget) [5072 cyc/blk]\nLoop/Timer Ovh   :     0.01 us/blk (  0.0% tot |   0.0% budget)\nTOTAL BLOCK      :  2846.43 us/blk (100.0% tot |  98.1% budget) [683143 cyc/blk]\n=====================================================\r\n"
+    },
+    {
+      "command": "revdiv 2",
+      "response": "Reverse division: 2\n> revdiv updated\n"
+    },
+    {
+      "command": "stageprof 1000 256",
+      "response": "\n=== STAGE PROFILE (1000 blocks, warmup 256 @ 240MHz) ===\nA1 Source/Gen/In :    98.98 us/blk (  3.5% tot |   3.4% budget) [23754 cyc/blk]\nA2 TapeCore/DSP  :  2685.73 us/blk ( 94.9% tot |  92.5% budget) [644574 cyc/blk]\nA3a Ext tanhf()  :     0.03 us/blk (  0.0% tot |   0.0% budget) [8 cyc/blk]\nA3b NoiseGate    :    24.33 us/blk (  0.9% tot |   0.8% budget) [5838 cyc/blk]\nA3c Freeverb     :     0.15 us/blk (  0.0% tot |   0.0% budget) [36 cyc/blk]\nA3d PCM Out      :    21.10 us/blk (  0.7% tot |   0.7% budget) [5063 cyc/blk]\nLoop/Timer Ovh   :     0.01 us/blk (  0.0% tot |   0.0% budget)\nTOTAL BLOCK      :  2830.32 us/blk (100.0% tot |  97.5% budget) [679277 cyc/blk]\n=====================================================\r\n"
+    },
+    {
+      "command": "revdiv 0",
+      "response": "Reverse division: 0\n> revdiv updated\n"
+    },
+    {
+      "command": "fbk 95",
+      "response": "Feedback     [###################-] 95%\n"
+    },
+    {
+      "command": "stageprof 1000 256",
+      "response": "\n=== STAGE PROFILE (1000 blocks, warmup 256 @ 240MHz) ===\nA1 Source/Gen/In :   103.79 us/blk (  3.7% tot |   3.6% budget) [24910 cyc/blk]\nA2 TapeCore/DSP  :  2686.36 us/blk ( 94.7% tot |  92.6% budget) [644726 cyc/blk]\nA3a Ext tanhf()  :     0.03 us/blk (  0.0% tot |   0.0% budget) [8 cyc/blk]\nA3b NoiseGate    :    24.33 us/blk (  0.9% tot |   0.8% budget) [5838 cyc/blk]\nA3c Freeverb     :     0.15 us/blk (  0.0% tot |   0.0% budget) [35 cyc/blk]\nA3d PCM Out      :    21.10 us/blk (  0.7% tot |   0.7% budget) [5063 cyc/blk]\nLoop/Timer Ovh   :     0.01 us/blk (  0.0% tot |   0.0% budget)\nTOTAL BLOCK      :  2835.77 us/blk (100.0% tot |  97.7% budget) [680584 cyc/blk]\n=====================================================\r\n"
+    },
+    {
+      "command": "rev 0",
+      "response": "Reverse: OFF\n> rev updated\n"
+    },
+    {
+      "command": "hds 7",
+      "response": "> hds updated\n"
+    },
+    {
+      "command": "stageprof 1000 256",
+      "response": "\n=== STAGE PROFILE (1000 blocks, warmup 256 @ 240MHz) ===\nA1 Source/Gen/In :   110.72 us/blk (  5.4% tot |   3.8% budget) [26571 cyc/blk]\nA2 TapeCore/DSP  :  1907.10 us/blk ( 92.4% tot |  65.7% budget) [457704 cyc/blk]\nA3a Ext tanhf()  :     0.03 us/blk (  0.0% tot |   0.0% budget) [8 cyc/blk]\nA3b NoiseGate    :    24.31 us/blk (  1.2% tot |   0.8% budget) [5834 cyc/blk]\nA3c Freeverb     :     0.15 us/blk (  0.0% tot |   0.0% budget) [35 cyc/blk]\nA3d PCM Out      :    21.13 us/blk (  1.0% tot |   0.7% budget) [5070 cyc/blk]\nLoop/Timer Ovh   :     0.01 us/blk (  0.0% tot |   0.0% budget)\nTOTAL BLOCK      :  2063.45 us/blk (100.0% tot |  71.1% budget) [495226 cyc/blk]\n=====================================================\r\n"
+    },
+    {
+      "command": "rev 1",
+      "response": "Reverse: ON\n> rev updated\n"
+    },
+    {
+      "command": "fbk 40",
+      "response": "Feedback     [#######-------------] 39%\n"
+    },
+    {
+      "command": "bpm 137",
+      "response": "Tempo: 137.0 BPM\n> bpm updated\n"
+    },
+    {
+      "command": "stageprof 1000 256",
+      "response": "\n=== STAGE PROFILE (1000 blocks, warmup 256 @ 240MHz) ===\nA1 Source/Gen/In :   108.12 us/blk (  3.8% tot |   3.7% budget) [25949 cyc/blk]\nA2 TapeCore/DSP  :  2693.56 us/blk ( 94.6% tot |  92.8% budget) [646454 cyc/blk]\nA3a Ext tanhf()  :     0.03 us/blk (  0.0% tot |   0.0% budget) [8 cyc/blk]\nA3b NoiseGate    :    24.29 us/blk (  0.9% tot |   0.8% budget) [5830 cyc/blk]\nA3c Freeverb     :     0.15 us/blk (  0.0% tot |   0.0% budget) [36 cyc/blk]\nA3d PCM Out      :    21.11 us/blk (  0.7% tot |   0.7% budget) [5066 cyc/blk]\nLoop/Timer Ovh   :     0.01 us/blk (  0.0% tot |   0.0% budget)\nTOTAL BLOCK      :  2847.29 us/blk (100.0% tot |  98.1% budget) [683348 cyc/blk]\n=====================================================\r\n"
+    },
+    {
+      "command": "wrp 1",
+      "response": "Accidental Warp: ON\n> wrp updated\n"
+    },
+    {
+      "command": "spr 1",
+      "response": "Spring Reverb: ON\n> spr updated\n"
+    },
+    {
+      "command": "rev 1",
+      "response": "Reverse: ON\n> rev updated\n"
+    },
+    {
+      "command": "fbk 50",
+      "response": "Feedback     [##########----------] 50%\n"
+    },
+    {
+      "command": "stageprof 1000 256",
+      "response": "\n=== STAGE PROFILE (1000 blocks, warmup 256 @ 240MHz) ===\nA1 Source/Gen/In :   105.78 us/blk (  5.4% tot |   3.6% budget) [25387 cyc/blk]\nA2 TapeCore/DSP  :  1801.12 us/blk ( 92.3% tot |  62.1% budget) [432268 cyc/blk]\nA3a Ext tanhf()  :     0.04 us/blk (  0.0% tot |   0.0% budget) [9 cyc/blk]\nA3b NoiseGate    :    24.10 us/blk (  1.2% tot |   0.8% budget) [5783 cyc/blk]\nA3c Freeverb     :     0.15 us/blk (  0.0% tot |   0.0% budget) [35 cyc/blk]\nA3d PCM Out      :    21.14 us/blk (  1.1% tot |   0.7% budget) [5074 cyc/blk]\nLoop/Timer Ovh   :     0.01 us/blk (  0.0% tot |   0.0% budget)\nTOTAL BLOCK      :  1952.34 us/blk (100.0% tot |  67.3% budget) [468561 cyc/blk]\n=====================================================\r\n"
+    },
+    {
+      "command": "gen 0",
+      "response": "Generator: OFF\n"
+    },
+    {
+      "command": "rev 0",
+      "response": "Reverse: OFF\n> rev updated\n"
+    },
+    {
+      "command": "wrp 0",
+      "response": "Accidental Warp: OFF\n> wrp updated\n"
+    },
+    {
+      "command": "spr 0",
+      "response": "Spring Reverb: OFF\n> spr updated\n"
+    },
+    {
+      "command": "fbk 40",
+      "response": "Feedback     [#######-------------] 39%\n"
+    }
+  ],
+  "sustain_seconds": 0,
+  "scenario": "stress_routed"
+}

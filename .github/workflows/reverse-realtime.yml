@@ -73,6 +73,20 @@ jobs:
           print('WASM functional tests pass; issue #48 equivalence remains:', failed)
           PY
 
+      - name: Compare Native and WASM with unchanged thresholds (issue #48)
+        id: equivalence
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          python tests/core/compare_native_wasm.py \
+            --native build-native/hydra_render_trace_native \
+            --wasm-js build-wasm/wasm-tests/hydra_render_trace.js \
+            --test-name phase63_native_vs_wasm \
+            --max-abs-threshold 1e-5 --rmse-threshold 1e-6 \
+            --report-json ci-reports/reverse/equivalence.json \
+            --report-txt ci-reports/reverse/equivalence.txt \
+            --diff-csv ci-reports/reverse/equivalence-diff.csv
+
       - name: Build ESP32-S3 production and diagnostic firmware
         run: |
           set -o pipefail
@@ -110,7 +124,7 @@ jobs:
         run: |
           echo "Native 15/15 and A/B package are expected. Issue #48 strict Native/WASM equivalence is unchanged and remains an explicit blocker."
           echo "No merge is authorized; the Phase 6.3 A/B package is NOT REVIEWED."
-          if [ "${{ steps.wasm.outcome }}" != "success" ]; then
-            echo "::error::Issue #48 equivalence still fails with unchanged thresholds; this is documented, not new."
+          if [ "${{ steps.equivalence.outcome }}" != "success" ]; then
+            echo "::error::Issue #48 strict Native/WASM equivalence still fails with unchanged thresholds; this is documented, not new and blocks merge readiness."
             exit 1
           fi

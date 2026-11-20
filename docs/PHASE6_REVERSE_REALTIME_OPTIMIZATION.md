@@ -133,6 +133,12 @@ preserved unchanged.
 | Bias | phase-averaged implementation untouched (same source hash) |
 | Goldens | all Native and WASM goldens pass unchanged |
 
+CI (`.github/workflows/reverse-realtime.yml`) runs Native 15/15, the functional WASM suite,
+both firmware builds, and the ten-pair A/B render, and uploads the artifact. It is
+**intentionally red** at the explicit issue #48 comparison gate (`max_abs 1e-5`,
+`RMSE 1e-6`, unchanged): the artifact is published before that gate. A green functional
+run must not be read as issue #48 being fixed.
+
 ## Residual limitations and explicit blockers
 
 1. Issue #48 strict Native/WASM numerical equivalence is unchanged and remains open.

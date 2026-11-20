@@ -54,7 +54,9 @@ try{
  await page.reload();await page.locator('#package').setInputFiles(packageDir);await page.waitForFunction(()=>!document.getElementById('play').disabled);await page.locator('#library button').nth(1).click();await page.waitForFunction(()=>!document.getElementById('play').disabled);assert.equal(await page.locator('#state').inputValue(),'NEEDS ATTENTION');
  // Decode/verify every scenario and exercise real event rendering.
  for(let i=0;i<scenarioCount;i++){await page.locator('#library button').nth(i).click();await page.waitForFunction(()=>!document.getElementById('play').disabled);assert.equal(await page.locator('#message.error').count(),0);}
- await page.locator('#library button').nth(13).click();await page.waitForFunction(()=>!document.getElementById('play').disabled);assert.ok(await page.locator('#events button').count()>0);
+ const eventIndex=Object.values(inputManifest.scenarios).findIndex(s=>s.events?.length);
+ assert.ok(eventIndex>=0,'Package must contain an automation scenario');
+ await page.locator('#library button').nth(eventIndex).click();await page.waitForFunction(()=>!document.getElementById('play').disabled);assert.ok(await page.locator('#events button').count()>0);
  await page.screenshot({path:join(reportDir,'desktop.png'),fullPage:true});await page.setViewportSize({width:390,height:844});await page.screenshot({path:join(reportDir,'mobile.png'),fullPage:true});assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
  // Fault-inject an actually absent File from the real, browser-selected package.
  // Initial/reload directory selection is covered above. Avoid Chrome/CDP's timeout

@@ -149,3 +149,29 @@ python scripts/phase64_validate_engine.py        # 27 complete-engine gates
 
 Artifacts: `artifacts/phase64/feedback/feedback-stability.json`,
 `artifacts/phase64/engine/engine-gates.json`.
+
+## Phase 6.4.1 reproducible gate integration (2026-11-20)
+
+The Reverse Real-Time workflow now runs the unchanged 27 full-engine gates,
+all six 60-second feedback cases and `phase64_feedback_stability.py --stages`
+on clean Ubuntu. Diagnostic instrumentation is generated from the checked-out
+source by `scripts/instrument_feedback.py`; it does not modify the production
+DSP. The build command, compiler version, commit, source/library/executable
+SHA-256 and the raw hexadecimal stage samples accompany the JSON report.
+
+The stage runner samples feedback, record and magnetic write before the output
+limiter, in 8192-frame windows at 5 and 55 seconds. Nonfinite state or RMS growth
+above the existing 0.05 dB stability allowance fails the diagnostic. This is
+additional evidence; it does not replace the original peak/ceiling/output gates.
+
+Local Windows/UCRT replay: full-engine **27/27**, internal state **6/6**,
+maximum positive internal RMS change **0.0125211 dB** (48 kHz feedback95,
+magnetic write), zero limiter-ceiling samples and no NaN/Inf. The six output
+spectra and per-second RMS/peak series were regenerated in
+`artifacts/phase641/feedback/feedback-stability.json`. These local observations
+are not a claim about the final Linux workflow; its run result is recorded in
+the Release Decision Record.
+
+The historical FFT tables above use unnormalized FFT power in dB, not calibrated
+dBFS amplitudes. They identify frequency distribution and relative changes;
+the RMS envelope and peak fields carry normalized audio amplitude measurements.

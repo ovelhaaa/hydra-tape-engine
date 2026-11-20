@@ -1,193 +1,96 @@
-# Phase 6.4 — Release Decision Record
+# Phase 6.4.1 — Release Decision Record
 
-Date: 2026-11-20. Repository `ovelhaaa/hydra-tape-engine`. PR
-[#54](https://github.com/ovelhaaa/hydra-tape-engine/pull/54), branch
-`feature/musical-validation-phase6`, destination `main`. **No merge performed or authorised.**
-
-* Audited HEAD at the start of the phase: `4bfe60a70f7d7dae28b6eff0d4b3d748eeeff722`
-* Approved DSP baseline: `5e3d2bfa4ee8c5e6e765f7e11b12c6ffe87063c6`
-* Last human-approved A/B package: `7431a6db05abfde97838721cd089f94c7fed5047`
-* Phase 6.4 head: the commit that contains this record (recorded in the PR and in
-  `artifacts/listening-lab/phase6-final-review/manifest.json` as `reference_commit`).
+Date: 2026-11-20. Repository `ovelhaaa/hydra-tape-engine`, existing
+[PR #54](https://github.com/ovelhaaa/hydra-tape-engine/pull/54),
+`feature/musical-validation-phase6` → `main`. No merge performed.
 
 ## Classification
 
-**READY FOR FINAL HUMAN LISTENING**
+**BLOCKED — OFFICIAL NUMERICAL GATE UNDER INVESTIGATION.** Human listening and
+physical runtime remain pending. The earlier Phase 6.4 statement that all automatic
+gates passed was incorrect: it extrapolated Windows observations to Linux CI.
 
-Every automated technical gate passes except one: the physical ESP32-S3 runtime was not
-re-measured, because the board's USB console stopped responding after flashing (§6.1). That
-is an access/measurement gap, not an observed regression, and it is an explicit merge
-blocker. The other remaining gate is human audition of the audio produced after two
-deliberate DSP changes. No result in this document is inferred: each row cites the command or
-artifact that produced it.
+Baseline HEAD `eaa233ff32e169a2ff720d4bdace3d636c10eb7a`, with no remote commits
+after it at session start. [Baseline evidence](evidence/phase641-baseline.json)
+records critical-source hashes and all initial failed workflows.
 
 ## Gate matrix
 
-| Gate | Result | Evidence | Pending |
-|---|---|---|---|
-| Native | PASS | `ctest --test-dir build-native` → 15/15 | — |
-| WASM funcional | PASS | `ctest --test-dir build-wasm` → 15/15 | — |
-| Native/WASM Strict | PASS | `max_abs = 0`, `RMSE = 0` (`tests/core/compare_native_wasm.py`) | — |
-| Bias spectral | PASS | isolated 49/49 preserved from Phase 6.2; mapping untouched | not re-run in 6.4 (no baseline libraries rebuilt) |
-| Reverse performance | **NOT RE-MEASURED** | firmware built and flashed, hash verified; the board's USB console did not respond, and a previously validated image behaved identically | re-measure after a physical power cycle |
-| Feedback stability | PASS | 27/27 complete-engine gates (`scripts/phase64_validate_engine.py`) | — |
-| Parameter transitions | PASS | 44.1 kHz 0.01441, 48 kHz 0.01286 vs limit 0.03 | — |
-| Web Demo | PASS | `hydra_dsp_web` build; web host tests 40/40 | — |
-| Listening Lab | PASS | `Hydra Phase 6.4 Final A/B`, 10 pairs validated, 35 050 624 bytes | archive upload on CI |
-| ABI | PASS | `core_abi_symbols`, `core_abi_legacy_consumer`; API 1.7 unchanged | — |
-| Human listening | **PENDING** | package published, `PENDING_HUMAN_AUDITION` | reviewer decision |
+| Gate | Result | Evidence |
+|---|---|---|
+| Native | PASS locally; final Linux pending | clean GCC 14.2, CTest 16/16 including LUT integrity, ABI and unchanged goldens |
+| WASM | PASS locally; final Linux pending | clean Emscripten, CTest 16/16, unchanged goldens |
+| Native/WASM Strict | FAIL on Ubuntu 26.04; PASS on 24.04 | clean [official reproduction](https://github.com/ovelhaaa/hydra-tape-engine/actions/runs/44839840770), inputs/LUT bit-identical; 26.04 max_abs 4.4615e-5, RMSE 1.613509259565e-5 |
+| Bias Anti-Aliasing | PASS locally; final Linux pending | six rebuilt variants, spectral/transfer 49/49; recovered whine diagnostic and plots |
+| Reverse | PASS locally; final Linux pending | frozen Phase 6.3 optimization comparison 10/10 bit-exact; complete current reverse CTests |
+| Feedback | PASS locally; final Linux pending | full-engine 27/27; six 60 s cases; pre-limiter internal windows stable, max growth +0.0125211 dB |
+| Transitions | PASS locally; final Linux pending | five parameters, 44.1/48 kHz max 0.01797/0.01420 <= 0.03 |
+| Web Demo | PASS locally; final Linux pending | clean web build, host 40/40; browser installation CI incompatibility being corrected |
+| AudioWorklet Reset | PASS locally; final Linux pending | real browser + clean WASM A–E, artifacts/phase641/reset-clean/result.json |
+| Listening Lab | PASS locally; final publication pending | 10 pairs, 20 stereo PCM24 WAVs, 10 CSVs; real Chrome player test PASS |
+| ESP32-S3 Build | PASS locally | production RAM 26304 B, flash 627743 B, firmware SHA-256 ed68bc89e0f9bf508c2a181680aca80fec99602e6605e588b023d3e2872ddabd |
+| ESP32-S3 Runtime | PENDING | PHYSICAL_RUNTIME_PENDING; console unresponsive after RTS reset |
+| Human Listening | PENDING | PENDING_HUMAN_AUDITION; prior signoff does not transfer |
 
-## 1. What changed
+## Corrections and preserved behavior
 
-Three DSP/test changes and two host changes, all contained:
+No production DSP algorithm, phase-averaged bias, Reverse V2, GTC, Tap Tempo,
+MIDI Clock or C ABI 1.7 was changed. Thresholds and goldens remain unchanged.
+The official comparator now verifies input/LUT bit equality independently of
+DSP tolerances and runs all five scenarios. Native build-directory caches were
+removed; checkout/compiler/libc/source/binary/WASM/flags are recorded.
 
-1. `dsp/core/fast_tanh_table.inc` (new) + `dsp/core/tape_core.cpp`: the magnetic `tanh`
-   lookup table is 1025 committed canonical float constants instead of 1025 `std::tanh`
-   calls at construction. Same mapping, same interpolation, same clamp; the only change is
-   that the constants no longer depend on the host libm.
-2. `tests/core/render_trace.cpp`: the comparator stimulus is evaluated in `double` and
-   quantised once to `float`, so Native and WASM receive identical input bits.
-3. `dsp/core/tape_core.cpp`: playback-filter coefficients (head bump, rolloff shelf,
-   gap-loss lowpass) are ramped per block over 20 ms when tape speed, tape age, tone or head
-   bump changes after audio has started. The initial configuration snaps, so offline renders
-   and goldens are unchanged.
-4. `host/web/main.js`: the reset button suspends the `AudioContext` before posting reset and
-   resumes after the worklet acknowledgement, so the 6.18 MB wipe never runs against a live
-   render deadline.
-5. `scripts/`: `generate_fast_tanh_table.py`, `phase64_audio_delta.py`,
-   `phase64_feedback_stability.py`, `phase64_transition_analysis.py`,
-   `phase64_validate_engine.py`, `package_phase6_final_ab.py`; the Listening Lab accepts the
-   new 10-pair suite.
+Historical bias models explicitly restore their historical LUT and initialization.
+Modern averaged diagnostics compile exact production source. The old six-second
+engine report retains its four decay observations (23/27); only these named
+observations are superseded by the separately required 60-second stability
+measurement. Other original gates must pass. Reports never label those old
+observations as passed.
 
-Nothing else in the DSP changed. Reverse V2, the delay epoch, the GTC, tap tempo, MIDI
-clock, the bias mappings, the C ABI version and the goldens are untouched.
+Reset requests are serialized and acknowledgements correlated. Exceptions/timeouts
+show errors and retain suspension; stopped audio stays stopped. Real browser tests
+confirm reset/ack delivery while suspended; no graph reconstruction was needed.
 
-## 2. Numerical equivalence (issue #48)
+## Listening delivery
 
-The divergence had two independent causes, both located by module instrumentation, both
-platform libm values rounded to `float`: the comparator stimulus (3 of 2048 samples, the
-first at exactly sample 18, which is where the output first diverged) and the magnetic
-`tanh` table (84 of 1025 entries, 1 ULP, first divergence in the magnetic write at sample 1).
-After both fixes Native and WASM are bit-exact at every stage of every scenario.
+The final package is generated reproducibly by `scripts/package_phase6_final.py`
+under `artifacts/listening-lab/phase6-final-review/`, with SHA-256, manifest,
+reference/build commits, parameters, seeds, events, telemetry, player and guide.
+The feedback pair lasts 60 seconds. The local ZIP digest is
+`325328e2b9a6d38006328bfdd2be2f5d499244e93bd309b60df20b347ea44ffb`;
+this is not the final CI artifact digest. CI validates files and exercises all ten
+pairs in real Chrome before publishing. No final artifact URL is claimed yet.
 
-Full analysis: [PHASE6_NUMERICAL_EQUIVALENCE.md](PHASE6_NUMERICAL_EQUIVALENCE.md).
+PCM24 units: one signed normalized LSB is 2^-23 = 1.1920929e-7.
+A difference of 3e-5 is approximately 252 LSB, or -90.46 dBFS peak error.
+The prior description as a fraction of one LSB was wrong. Small normalized
+amplitude differences are not evidence of sub-LSB identity or human approval.
 
-## 3. Feedback and tails
+## Physical follow-up
 
-The four Phase 6.2 failures were 0.001–0.038 dB. Over 60 s all four cases reach a bounded,
-spectrally stable limit cycle (slope ≤ 5e-5 dB/s, peaks constant, spectrum identical at 30 s
-and 59 s, zero samples at the limiter ceiling, internal pre-limiter state stable to
-±0.0125 dB over 50 s). `reverse` decays to the noise floor. The decay-only rule was replaced
-by explicit stability gates; all seven scenarios are retained and the complete-engine suite
-passes 27/27.
+COM15, VID 303A:1001, serial/MAC B8:F8:62:E3:E4:A4 was identified using esptool:
+ESP32-S3 rev0.2, 8 MB PSRAM, USB Serial/JTAG. RTS hard reset succeeded at the
+programmer level; firmware help/banner still produced zero serial bytes.
+No current audio loop, deadline, overrun, I2S, heap, PSRAM, stack or benchmark
+measurement is claimed. Prior Phase 6.3 measurements are historical only.
 
-Full analysis: [PHASE6_FEEDBACK_STABILITY.md](PHASE6_FEEDBACK_STABILITY.md).
+Manual next step: disconnect/reconnect USB power with BOOT released for normal
+boot, pulse EN if accessible, identify the reenumerated port and verify firmware
+banner/help before running benchmarks. Repeat delay, Reverse 1/4, 1/8, 1/16,
+95% feedback, Multi-Head and combined stress. Require zero overruns/I2S faults,
+stable heap/PSRAM, adequate stack and no deadline regression. Physical access
+is not blocking CI repair. External MIDI hardware remains unavailable.
 
-## 4. Parameter transitions
+## Reproduction
 
-The 44.1 kHz failure was a one-sample impulse at the block where tape speed changed: the
-playback biquads received new coefficients while retaining their state. Freezing the
-tape-speed dependence removed the impulse (0.04952 → 0.00004), which proved the mechanism.
-A 20 ms per-block ramp of the four driving values reduced 0.05122 → 0.01441 at 44.1 kHz and
-0.02540 → 0.01286 at 48 kHz, against the unchanged 0.03 limit. Goldens pass unchanged.
+Use the checked-in Core, Bias, Reverse, Listening and Web workflows; their
+artifacts retain reports, hashes and build metadata. Local CTest on this Windows
+host requires TMP/TEMP pointing at an accessible workspace directory; using the
+host temporary directory caused file-open failures, resolved by selecting
+`artifacts/phase641/tmp`. Tests were rerun, not disabled.
 
-Full analysis: [PHASE6_TRANSITION_ANALYSIS.md](PHASE6_TRANSITION_ANALYSIS.md).
-
-## 5. Reset contract
-
-`hydra_dsp_reset()` is destructive and synchronous (768 KB to 6.18 MB depending on
-configuration). It is not reachable from the native or ESP32 audio callback. It was reachable
-from the web AudioWorklet message handler, i.e. the rendering thread, which is a contract
-violation; the host now suspends the context around it. The ABI and the destructive
-semantics are unchanged.
-
-Contract: [PHASE6_RESET_CONTRACT.md](PHASE6_RESET_CONTRACT.md).
-
-## 6. Physical ESP32-S3
-
-Firmware rebuilt and re-flashed after the DSP change:
-
-| Item | Value |
-|---|---|
-| Environment | `esp32-s3-devkitc-1`, ESP32-S3 rev v0.2, 240 MHz, 16 MB flash |
-| RAM | 26 304 B / 327 680 B (8.0 %) |
-| Flash | 627 743 B / 16 777 216 B (3.7 %) |
-| Upload | `platformio run -t upload --upload-port COM15` — SUCCESS, hash verified per segment |
-| Board | ESP32-S3 on COM15, MAC `b8:f8:62:e3:e4:a4` |
-
-### 6.1 Runtime re-measurement: not obtained
-
-The board was re-flashed with the Phase 6.4 image (all four segments written and hash
-verified; the app segment was written twice and verified). The serial CLI on the native USB
-CDC (`Serial`, 115200, `ARDUINO_USB_CDC_ON_BOOT=1`) then produced **no output at all**: no
-banner, no prompt, no response to `help` or `\n`, with DTR/RTS asserted and released, and
-after `esptool` hard resets.
-
-To separate a bad image from a board/console condition, the previously validated app image
-at `artifacts/release-gate/pio-final/firmware.bin` was flashed to the same offset and probed
-identically. It was **equally silent**. The Phase 6.4 firmware was then restored and
-verified. The most likely explanation is that the board remained in download mode because
-the RTS reset is not effective over this USB-Serial/JTAG setup; recovering it needs a
-physical power cycle or reset button, which this session cannot perform.
-
-**No physical runtime number is claimed for the Phase 6.4 firmware.** The Phase 6.3 baseline
-(zero overruns on nine 10 000-block scenarios, zero overruns over five minutes, P99 Reverse
-2.095–2.113 ms, P99 Multi-Head ≈ 2.193 ms, stable heap/PSRAM/stack) remains the last valid
-physical measurement and applies to a firmware that differs in the tanh table and in the
-transition ramp only. It must not be presented as a Phase 6.4 measurement.
-
-## 7. Regression summary
-
-| Suite | Result |
-|---|---|
-| Native CTest | 15/15 |
-| WASM CTest | 15/15 |
-| Native/WASM strict | PASS, bit-exact |
-| Web host tests (`node --test host/web/tests/*.test.mjs`) | 40/40 |
-| Web demo build (`hydra_dsp_web`) | SUCCESS, `hydra_dsp.wasm` 77 193 B |
-| ESP32-S3 firmware build | SUCCESS |
-| Complete-engine gates | 27/27 |
-| Goldens | 3/3 pass, not regenerated |
-| ABI C 1.7 | symbols and legacy consumer pass |
-
-## 8. Audio change and human listening
-
-The candidate audio differs from the approved `7431a6d` package. The tanh-table
-canonicalisation is ≈ −84 dBFS (about a quarter of one 24-bit LSB) on static material; the
-playback-filter ramp is an audible, intended change that only occurs while tape speed, tape
-age, tone or head bump is automated during playback (max 0.045 during the transition
-seconds, back to ~1e-5 afterwards).
-
-Consequently the Phase 6.2 12/12 and Phase 6.3 10/10 approvals do **not** carry over. A new
-package is published:
-
-* `artifacts/listening-lab/phase6-final-review/`
-* suite `Hydra Phase 6.4 Final A/B`, 10 ordered pairs, 20 PCM24 WAVs, 10 telemetry CSVs
-* 35 050 624 bytes of audio/telemetry, all SHA-256 and frame counts verified
-* archive `artifacts/hydra-phase6-final-ab.zip`
-* `human_listening_signoff: PENDING_HUMAN_AUDITION`
-
-The ten scenarios are clean guitar, driven guitar, conventional delay, Reverse 1/4,
-Reverse 1/8, Reverse with high feedback, Multi-Head, tape-speed transition, BPM change and
-long feedback. Same source, gain, seed, sample rate and events on both sides; A/B uses the
-existing Listening Lab player with its 8 ms complementary gain crossfade.
-
-## 9. Pending items before merge
-
-1. **Human listening** of the Phase 6.4 package. No approval is inferred here.
-2. **Physical runtime numbers** (§6.1) must be recorded and compared with the Phase 6.3
-   baseline (zero overruns, P99 Reverse ≈ 2.095–2.113 ms, P99 Multi-Head ≈ 2.193 ms).
-3. **External MIDI clock hardware** was not available; 90/120/140 BPM, Stop/Continue and
-   clock loss/recovery were validated in simulation only
-   (`scripts/render_midi_clock_review.py`, Native tests), not against a physical MIDI source.
-   Not claimed as a physical pass.
-4. **Browser verification of the suspend-reset-resume flow** is pending; the change is
-   host-only and does not alter audio.
-5. **CI** must run the updated `core-equivalence.yml` on the final commit; the Linux CI
-   numbers in this phase were reproduced on Windows, not on Linux.
-
-## 10. Explicit non-actions
-
-No new effect. No change to the bias mappings, Reverse V2, the GTC, tap tempo or MIDI clock.
-No dynamic allocation, lock or synchronous large-buffer clear added to any callback. No
-threshold relaxed, no golden regenerated, no test disabled, no scenario removed. No merge.
+See [numerical report](PHASE6_NUMERICAL_EQUIVALENCE.md),
+[bias report](PHASE6_BIAS_ANTIALIASING_REPORT.md),
+[feedback report](PHASE6_FEEDBACK_STABILITY.md),
+[transition report](PHASE6_TRANSITION_ANALYSIS.md), and
+[reset contract](PHASE6_RESET_CONTRACT.md).

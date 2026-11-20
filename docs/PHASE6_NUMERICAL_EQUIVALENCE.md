@@ -1,3 +1,40 @@
+# Phase 6.4.1 numerical verification — current evidence
+
+The historical Phase 6.4 account below describes Windows-local observations only;
+its PASS statements do not establish current official Linux acceptance.
+
+Initial local/remote HEAD was `eaa233ff32e169a2ff720d4bdace3d636c10eb7a`, with no
+later commits. [Baseline hashes and CI failures](evidence/phase641-baseline.json).
+Clean [official reproduction](https://github.com/ovelhaaa/hydra-tape-engine/actions/runs/44839840770)
+passed Ubuntu 24.04 and failed Ubuntu 26.04 with exactly `max_abs=4.4615e-5`,
+`RMSE=1.613509259565e-5`. Source, input bits and compiled LUT match.
+A second clean run found identical GCC 14 and 15 failures on Ubuntu 26.04/glibc 2.43;
+filter coefficients and arithmetic state differ although their libm return probes match.
+The next control disables floating-point contraction to test the Ubuntu CPU target hypothesis.
+Cache and test-input differences are not the cause of this failure.
+
+| float32 LE data | SHA-256 in Native and WASM | Different values / max ULP |
+|---|---|---|
+| Stereo input, 4096 values | `e629e0248b9833c0f280f3771a07b95047e89d9efb3e9afddc06d3209ea559dc` | 0 / 0 |
+| LUT, 1025 values | `d1724b91fed053e18aa3674b7862e8322b9ec9efbddab337fbddc030192238e5` | 0 / 0 |
+
+The official comparator rejects bit differences before applying unchanged DSP
+thresholds (1e-5 / 1e-6) and now runs all five scenarios. LUT CTest independently
+verifies the hash, 1025 entries, endpoints, known points, symmetry, monotonicity,
+80-digit Decimal regeneration and existing interpolation. No LUT format changed.
+Diagnostic copies report states without modifying production DSP; instrumented and
+Release outputs have identical hashes per backend. Source/binary/WASM/checkout hashes,
+compiler/libc/Emscripten versions, CMake caches and compile commands are artifacts.
+
+Local clean GCC 14.2 UCRT Native and WASM suites pass 16/16, strict five scenarios
+max_abs=0 / RMSE=0. Double-sin is bit-identical on measured platforms, not a general
+libm guarantee; any future input difference fails and requires a canonical fixture.
+
+PCM24 correction: 3e-5 normalized amplitude equals approximately 252 LSB, not a
+fraction of an LSB. One LSB is 2^-23. Final human audition remains pending.
+
+## Historical Phase 6.4 measurements (not current Linux acceptance)
+
 # Phase 6.4 — Native/WASM numerical equivalence (issue #48)
 
 Date: 2026-11-20. Branch `feature/musical-validation-phase6`, PR [#54](https://github.com/ovelhaaa/hydra-tape-engine/pull/54).
@@ -9,8 +46,8 @@ Gate under investigation (unchanged): `max_abs <= 1e-5` and `RMSE <= 1e-6` on th
 `tests/core/render_trace.cpp` stimulus at 48 kHz, 32-frame blocks, 2048 frames,
 five scenarios, stereo.
 
-**Result: PASS, `max_abs = 0.0`, `RMSE = 0.0`. The two builds are bit-exact at every
-sample of every scenario after two contained fixes. No threshold was changed.**
+**Historical Windows-local result only:** `max_abs=0`, `RMSE=0`. This did not establish
+Linux CI acceptance, as demonstrated by the Phase 6.4.1 reproduction above.
 
 ## 1. Reported observations
 
@@ -162,8 +199,7 @@ the approved Phase 6.3 build (`7431a6d`) and the Phase 6.4 candidate gives:
 | BPM change | 2.61e-05 | 4.08e-06 | 219 | 563 992 / 576 000 |
 | Long feedback | 2.71e-05 | 4.67e-06 | 228 | 564 710 / 576 000 |
 
-The four pairs with a max around 2.6–6.3e-05 (peak −84 dBFS, about ¼ of one 24-bit LSB at
-full scale) are the LUT canonicalisation. The large "Tape speed transition" delta is the
+The four pairs with a max around 2.6–6.3e-05 (peak −84 dBFS, approximately 218–528 PCM24 LSB; 1 LSB = 2^-23 normalized amplitude) are the LUT canonicalisation. The large "Tape speed transition" delta is the
 separate transition fix ([transition analysis](PHASE6_TRANSITION_ANALYSIS.md)) and is
 confined to the two automation seconds: the steady-state delta returns to ~1e-5.
 
@@ -180,5 +216,5 @@ ordered pairs, hashes and telemetry, `PENDING_HUMAN_AUDITION`).
   generator and this document are the reference.
 * The comparator now depends on a stimulus whose bits are platform-independent. Any new
   equivalence stimulus must use the same discipline (evaluate in `double`, quantise once),
-  otherwise issue #48 can reappear in a different scenario.
+  a bitwise input gate must verify the result; double precision alone is not a portable guarantee.
 * No tolerance was relaxed, no scenario was removed and no golden was rewritten.

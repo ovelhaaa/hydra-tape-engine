@@ -187,3 +187,13 @@ flowchart LR
 | **Instabilidade / Runaway em Feedback Elevado** | Alta | Média | Incorporar filtro passa-altas de corte de offset subsônico (120 Hz/300 Hz), saturador racional soft-knee e limitador assintótico no laço de retorno. |
 | **Divergência Numérica entre Nativo e WASM** | Média | Baixa | Utilizar tabela estática `FastTanhLUT` compartilhada, evitar funções matemáticas dependentes de implementação de libc (`tan`, `sin` não padronizados) e validar com tolerâncias RMSE $< 10^{-6}$. |
 | **Cliques Transitórios no Reajuste de Tap Tempo** | Média | Alta | Implementar desacoplamento entre tempo alvo e tempo suavizado via filtro de 1 polo de 200 ms ou crossfade de buffers duplos. |
+
+
+### FASE 6.4.1 — Recuperação CI e evidência de release (2026-11-20)
+- **Estado atual: BLOCKED — investigação numérica Linux; sem merge.**
+- Builds limpos reproduziram PASS Ubuntu 24.04 e FAIL Ubuntu 26.04/GCC 15.2; entrada e LUT idênticas bit a bit. Não atribuir a cache.
+- Diagnósticos de bias recuperados (49/49 local), LUT histórica explícita, full-engine 27/27 e feedback interno de 60 s em workflow obrigatório.
+- Transições incluem drive, velocidade, idade, tone e head bump (0.01797/0.01420 local, limite 0.03).
+- Reset real A–E validado com WASM limpo; concorrência, erro e timeout tratados. Pacote final 10 pares/20 PCM24/10 CSVs com publicação e player real na CI.
+- ESP32-S3 build PASS; console identificado mas sem resposta: `PHYSICAL_RUNTIME_PENDING`. Escuta final `PENDING_HUMAN_AUDITION`.
+- Matriz e links atuais: [Release Decision Record](PHASE6_RELEASE_DECISION.md). Resultados Windows não substituem aprovação da CI oficial.

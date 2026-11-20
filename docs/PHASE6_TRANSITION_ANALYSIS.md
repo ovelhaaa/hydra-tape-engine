@@ -178,3 +178,22 @@ python scripts/phase64_transition_analysis.py
 
 Artifacts: `artifacts/phase64/transitions/transitions.json`. The instrumented builds and
 controlled experiment live under `artifacts/phase64/probe/` and are not part of the engine.
+
+## Phase 6.4.1 five-parameter CI gate (2026-11-20)
+
+The earlier reproduction covered drive, tape speed and tape age. The same script
+now also automates tone (100 to 0 at 5 s) and head bump (0 to 100 at 6 s), with
+an 8-second signal, both sequentially and in isolation at 44.1/48 kHz. It writes
+the report before failing on a nonfinite step or any step above **0.03**. Parameter
+IDs, values and production DSP are unchanged.
+
+Local Windows replay yielded maxima **0.01797** at 44.1 kHz and **0.01420** at
+48 kHz, both at the sequential tone event. Isolated tone steps were
+0.00371/0.00308 and isolated head-bump steps 0.00098/0.00088. The previous
+three-event 0.01441/0.01286 measurements remain historical results of their
+original event schedule, not the maxima of this expanded schedule.
+
+`Phase 6.3 Reverse Real-Time` runs this check once alongside the full-engine and
+60-second feedback diagnostics; reports are published under
+`ci-reports/reverse/transitions/`. Final Linux status belongs to the Release
+Decision Record, not to the local numbers above.

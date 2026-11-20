@@ -80,7 +80,7 @@ first activation keeps the old semantics (no mask; zeroed buffers). Re-activatio
 pre-epoch samples and substitute the oldest valid sample for the interpolator's left
 neighbour, so no old content leaks and no interpolation crosses the epoch.
 
-Result: `MaxParamUpdUs` **82237 → 400 µs** (−99.5%). `core_regression` still proves that
+Result: `MaxParamUpdUs` **82237 → 549 µs** (−99.3%). `core_regression` still proves that
 re-enabling the delay with silence produces silence. An explicit `hydra_dsp_reset()` still
 performs a destructive 3 MB wipe by design; it is not part of routine parameter automation
 and must be scheduled outside the audio callback (residual limitation).
@@ -92,21 +92,22 @@ Production firmware (`env:esp32-s3-devkitc-1`, profiling disabled), 44.1 kHz, 12
 
 | Scenario | Mean µs | P95 | P99 | Peak | Overruns |
 |---|---:|---:|---:|---:|---:|
-| Conventional delay | 1883.2 | 1918 | 1967 | 2157 | 0/10000 |
-| Reverse 1/4 | 1948.7 | 1994 | 2114 | 2277 | 0/10000 |
-| Reverse 1/8 | 1949.1 | 1994 | 2051 | 2246 | 0/10000 |
-| Reverse 1/16 | 1955.1 | 1996 | 2075 | 2251 | 0/10000 |
-| Reverse feedback 95% | 1954.1 | 1998 | 2125 | 2270 | 0/10000 |
-| Multi-Head | 2157.5 | 2195 | 2219 | 2460 | 0/10000 |
-| Reverse, BPM 137 | 1954.5 | 1998 | 2126 | 2256 | 0/10000 |
-| Reverse, BPM 90 | 1951.6 | 1996 | 2095 | 2258 | 0/10000 |
-| Warp + spring stress | 1988.6 | 2037 | 2051 | 2290 | 0/10000 |
+| Conventional delay | 1866.7 | 1903 | 1913 | 2166 | 0/10000 |
+| Reverse 1/4 | 1932.8 | 1977 | 2095 | 2246 | 0/10000 |
+| Reverse 1/8 | 1932.8 | 1978 | 2031 | 2224 | 0/10000 |
+| Reverse 1/16 | 1941.6 | 1979 | 2111 | 2263 | 0/10000 |
+| Reverse feedback 95% | 1939.7 | 1978 | 2113 | 2250 | 0/10000 |
+| Multi-Head | 2147.4 | 2181 | 2193 | 2441 | 0/10000 |
+| Reverse, BPM 137 | 1933.9 | 1977 | 2085 | 2211 | 0/10000 |
+| Reverse, BPM 90 | 1935.2 | 1977 | 2057 | 2236 | 0/10000 |
+| Warp + spring stress | 1991.3 | 2037 | 2049 | 2263 | 0/10000 |
 
-Five-minute sustain, Reverse 1/4: 96 771 blocks, **0 overruns**, 0 I2S write failures,
-heap 121 272 bytes stable, PSRAM 1 663 048 bytes stable, audio-task stack high-water
-mark 27 284 bytes. The preferred P99<70% target (2032 µs) is **not** met by Reverse
-(2114–2126 µs, 72.8–73.3%) or Multi-Head (2219 µs, 76.4%); the mandatory gate is met with
-zero overruns and 625–642 µs peak headroom. This is recorded, not hidden.
+Five-minute sustain, Reverse 1/4: 97 241 blocks, **0 overruns**, 0 I2S write failures,
+heap 121 528 bytes stable, PSRAM 1 663 048 bytes stable, audio-task stack high-water
+mark 27 284 bytes, peak 2808 µs. The preferred P99<70% target (2032 µs) is **not** met by
+Reverse 1/4, 1/16 and feedback 95% (2095–2113 µs, 72.2–72.8%) or Multi-Head (2193 µs,
+75.6%); Reverse 1/8 reaches 2031 µs. The mandatory gate is met with zero overruns and
+639–691 µs peak headroom (461 µs for Multi-Head). This is recorded, not hidden.
 
 ## Audio preservation
 

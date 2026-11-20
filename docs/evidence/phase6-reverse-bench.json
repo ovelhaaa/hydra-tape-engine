@@ -11,24 +11,24 @@
         "fbk 40"
       ],
       "bench": {
-        "mean_us": 1883.21,
-        "min_us": 1842,
-        "p50_us": 1866,
-        "p95_us": 1918,
-        "p99_us": 1967,
-        "peak_us": 2157,
+        "mean_us": 1866.69,
+        "min_us": 1830,
+        "p50_us": 1849,
+        "p95_us": 1903,
+        "p99_us": 1913,
+        "peak_us": 2166,
         "overruns": 0,
         "i2s_fail_delta": 0,
-        "heap_start": 121176,
-        "heap_end": 121176,
+        "heap_start": 121432,
+        "heap_end": 121432,
         "psram_start": 1663048,
         "psram_end": 1663048,
-        "max_param_update_us": 334,
+        "max_param_update_us": 360,
         "blocks": 10000,
-        "budget_p99_pct": 67.77,
+        "budget_p99_pct": 65.91,
         "stack_min_words": 27284
       },
-      "raw": "\n=== BENCH RESULT (FW Nov 19 2026 21:21:40) ===\nCfg: src=1 gen=1 byp=0 mod=1 dly=500 fbk=40 hds=4 tps=50 tpa=50 drv=75 nlv=10 ftd=4 wwd=2 dps=0 wrp=0 wmd=0 wsp=1.00 wgr=80 wst=0.50 wfb=0 fv=0 ngt=0.0010 ppg=0 frz=0 rev=0 spr=0\nBlocks=10000 Warmup=256 WallMs=30392.7 BudgetUs=2902.49\nMeanUs=1883.21 MinUs=1842 P50Us=1866 P95Us=1918 P99Us=1967 PeakUs=2157\nBudgetMeanPct=64.88% BudgetP99Pct=67.77% Overruns=0 (0.00%) SatBins=0\nI2SFailDelta=0 HeapStart=121176 HeapEnd=121176 HeapMin=121176 PsramStart=1663048 PsramEnd=1663048 MaxParamUpdUs=334\nStackMinWords=27284\n=========================================\r\n"
+      "raw": "\n=== BENCH RESULT (FW Nov 19 2026 21:21:40) ===\nCfg: src=1 gen=1 byp=0 mod=1 dly=500 fbk=40 hds=4 tps=50 tpa=50 drv=75 nlv=10 ftd=4 wwd=2 dps=0 wrp=0 wmd=0 wsp=1.00 wgr=80 wst=0.50 wfb=0 fv=0 ngt=0.0010 ppg=0 frz=0 rev=0 spr=0\nBlocks=10000 Warmup=256 WallMs=30225.8 BudgetUs=2902.49\nMeanUs=1866.69 MinUs=1830 P50Us=1849 P95Us=1903 P99Us=1913 PeakUs=2166\nBudgetMeanPct=64.31% BudgetP99Pct=65.91% Overruns=0 (0.00%) SatBins=0\nI2SFailDelta=0 HeapStart=121432 HeapEnd=121432 HeapMin=121432 PsramStart=1663048 PsramEnd=1663048 MaxParamUpdUs=360\nStackMinWords=27284\n=========================================\r\n"
     },
     "reverse_quarter": {
       "commands": [
@@ -38,72 +38,72 @@
         "fbk 40"
       ],
       "bench": {
-        "mean_us": 1948.66,
-        "min_us": 1902,
-        "p50_us": 1930,
-        "p95_us": 1994,
-        "p99_us": 2114,
-        "peak_us": 2277,
+        "mean_us": 1932.85,
+        "min_us": 1889,
+        "p50_us": 1916,
+        "p95_us": 1977,
+        "p99_us": 2095,
+        "peak_us": 2246,
         "overruns": 0,
         "i2s_fail_delta": 0,
-        "heap_start": 121176,
-        "heap_end": 121176,
+        "heap_start": 121432,
+        "heap_end": 121432,
         "psram_start": 1663048,
         "psram_end": 1663048,
-        "max_param_update_us": 367,
+        "max_param_update_us": 376,
         "blocks": 10000,
-        "budget_p99_pct": 72.83,
+        "budget_p99_pct": 72.18,
         "stack_min_words": 27284
       },
-      "raw": "\n=== BENCH RESULT (FW Nov 19 2026 21:21:40) ===\nCfg: src=1 gen=1 byp=0 mod=1 dly=500 fbk=40 hds=4 tps=50 tpa=50 drv=75 nlv=10 ftd=4 wwd=2 dps=0 wrp=0 wmd=0 wsp=1.00 wgr=80 wst=0.50 wfb=0 fv=0 ngt=0.0010 ppg=0 frz=0 rev=1 spr=0\nBlocks=10000 Warmup=256 WallMs=31049.8 BudgetUs=2902.49\nMeanUs=1948.66 MinUs=1902 P50Us=1930 P95Us=1994 P99Us=2114 PeakUs=2277\nBudgetMeanPct=67.14% BudgetP99Pct=72.83% Overruns=0 (0.00%) SatBins=0\nI2SFailDelta=0 HeapStart=121176 HeapEnd=121176 HeapMin=121176 PsramStart=1663048 PsramEnd=1663048 MaxParamUpdUs=367\nStackMinWords=27284\n=========================================\r\n"
+      "raw": "\n=== BENCH RESULT (FW Nov 19 2026 21:21:40) ===\nCfg: src=1 gen=1 byp=0 mod=1 dly=500 fbk=40 hds=4 tps=50 tpa=50 drv=75 nlv=10 ftd=4 wwd=2 dps=0 wrp=0 wmd=0 wsp=1.00 wgr=80 wst=0.50 wfb=0 fv=0 ngt=0.0010 ppg=0 frz=0 rev=1 spr=0\nBlocks=10000 Warmup=256 WallMs=30894.6 BudgetUs=2902.49\nMeanUs=1932.85 MinUs=1889 P50Us=1916 P95Us=1977 P99Us=2095 PeakUs=2246\nBudgetMeanPct=66.59% BudgetP99Pct=72.18% Overruns=0 (0.00%) SatBins=0\nI2SFailDelta=0 HeapStart=121432 HeapEnd=121432 HeapMin=121432 PsramStart=1663048 PsramEnd=1663048 MaxParamUpdUs=376\nStackMinWords=27284\n=========================================\r\n"
     },
     "reverse_eighth": {
       "commands": [
         "revdiv 1"
       ],
       "bench": {
-        "mean_us": 1949.08,
-        "min_us": 1902,
-        "p50_us": 1933,
-        "p95_us": 1994,
-        "p99_us": 2051,
-        "peak_us": 2246,
+        "mean_us": 1932.85,
+        "min_us": 1885,
+        "p50_us": 1916,
+        "p95_us": 1978,
+        "p99_us": 2031,
+        "peak_us": 2224,
         "overruns": 0,
         "i2s_fail_delta": 0,
-        "heap_start": 121176,
-        "heap_end": 121176,
+        "heap_start": 121432,
+        "heap_end": 121432,
         "psram_start": 1663048,
         "psram_end": 1663048,
-        "max_param_update_us": 373,
+        "max_param_update_us": 376,
         "blocks": 10000,
-        "budget_p99_pct": 70.66,
+        "budget_p99_pct": 69.97,
         "stack_min_words": 27284
       },
-      "raw": "\n=== BENCH RESULT (FW Nov 19 2026 21:21:40) ===\nCfg: src=1 gen=1 byp=0 mod=1 dly=500 fbk=40 hds=4 tps=50 tpa=50 drv=75 nlv=10 ftd=4 wwd=2 dps=0 wrp=0 wmd=0 wsp=1.00 wgr=80 wst=0.50 wfb=0 fv=0 ngt=0.0010 ppg=0 frz=0 rev=1 spr=0\nBlocks=10000 Warmup=256 WallMs=31054.2 BudgetUs=2902.49\nMeanUs=1949.08 MinUs=1902 P50Us=1933 P95Us=1994 P99Us=2051 PeakUs=2246\nBudgetMeanPct=67.15% BudgetP99Pct=70.66% Overruns=0 (0.00%) SatBins=0\nI2SFailDelta=0 HeapStart=121176 HeapEnd=121176 HeapMin=121176 PsramStart=1663048 PsramEnd=1663048 MaxParamUpdUs=373\nStackMinWords=27284\n=========================================\r\n"
+      "raw": "\n=== BENCH RESULT (FW Nov 19 2026 21:21:40) ===\nCfg: src=1 gen=1 byp=0 mod=1 dly=500 fbk=40 hds=4 tps=50 tpa=50 drv=75 nlv=10 ftd=4 wwd=2 dps=0 wrp=0 wmd=0 wsp=1.00 wgr=80 wst=0.50 wfb=0 fv=0 ngt=0.0010 ppg=0 frz=0 rev=1 spr=0\nBlocks=10000 Warmup=256 WallMs=30894.6 BudgetUs=2902.49\nMeanUs=1932.85 MinUs=1885 P50Us=1916 P95Us=1978 P99Us=2031 PeakUs=2224\nBudgetMeanPct=66.59% BudgetP99Pct=69.97% Overruns=0 (0.00%) SatBins=0\nI2SFailDelta=0 HeapStart=121432 HeapEnd=121432 HeapMin=121432 PsramStart=1663048 PsramEnd=1663048 MaxParamUpdUs=376\nStackMinWords=27284\n=========================================\r\n"
     },
     "reverse_sixteenth": {
       "commands": [
         "revdiv 2"
       ],
       "bench": {
-        "mean_us": 1955.13,
-        "min_us": 1901,
-        "p50_us": 1936,
-        "p95_us": 1996,
-        "p99_us": 2075,
-        "peak_us": 2251,
+        "mean_us": 1941.57,
+        "min_us": 1889,
+        "p50_us": 1926,
+        "p95_us": 1979,
+        "p99_us": 2111,
+        "peak_us": 2263,
         "overruns": 0,
         "i2s_fail_delta": 0,
-        "heap_start": 121176,
-        "heap_end": 121176,
+        "heap_start": 121432,
+        "heap_end": 121432,
         "psram_start": 1663048,
         "psram_end": 1663048,
-        "max_param_update_us": 382,
+        "max_param_update_us": 404,
         "blocks": 10000,
-        "budget_p99_pct": 71.49,
+        "budget_p99_pct": 72.73,
         "stack_min_words": 27284
       },
-      "raw": "\n=== BENCH RESULT (FW Nov 19 2026 21:21:40) ===\nCfg: src=1 gen=1 byp=0 mod=1 dly=500 fbk=40 hds=4 tps=50 tpa=50 drv=75 nlv=10 ftd=4 wwd=2 dps=0 wrp=0 wmd=0 wsp=1.00 wgr=80 wst=0.50 wfb=0 fv=0 ngt=0.0010 ppg=0 frz=0 rev=1 spr=0\nBlocks=10000 Warmup=256 WallMs=31114.8 BudgetUs=2902.49\nMeanUs=1955.13 MinUs=1901 P50Us=1936 P95Us=1996 P99Us=2075 PeakUs=2251\nBudgetMeanPct=67.36% BudgetP99Pct=71.49% Overruns=0 (0.00%) SatBins=0\nI2SFailDelta=0 HeapStart=121176 HeapEnd=121176 HeapMin=121176 PsramStart=1663048 PsramEnd=1663048 MaxParamUpdUs=382\nStackMinWords=27284\n=========================================\r\n"
+      "raw": "\n=== BENCH RESULT (FW Nov 19 2026 21:21:40) ===\nCfg: src=1 gen=1 byp=0 mod=1 dly=500 fbk=40 hds=4 tps=50 tpa=50 drv=75 nlv=10 ftd=4 wwd=2 dps=0 wrp=0 wmd=0 wsp=1.00 wgr=80 wst=0.50 wfb=0 fv=0 ngt=0.0010 ppg=0 frz=0 rev=1 spr=0\nBlocks=10000 Warmup=256 WallMs=30982.2 BudgetUs=2902.49\nMeanUs=1941.57 MinUs=1889 P50Us=1926 P95Us=1979 P99Us=2111 PeakUs=2263\nBudgetMeanPct=66.89% BudgetP99Pct=72.73% Overruns=0 (0.00%) SatBins=0\nI2SFailDelta=0 HeapStart=121432 HeapEnd=121432 HeapMin=121432 PsramStart=1663048 PsramEnd=1663048 MaxParamUpdUs=404\nStackMinWords=27284\n=========================================\r\n"
     },
     "reverse_feedback95": {
       "commands": [
@@ -111,24 +111,24 @@
         "fbk 95"
       ],
       "bench": {
-        "mean_us": 1954.08,
-        "min_us": 1901,
-        "p50_us": 1934,
-        "p95_us": 1998,
-        "p99_us": 2125,
-        "peak_us": 2270,
+        "mean_us": 1939.72,
+        "min_us": 1885,
+        "p50_us": 1921,
+        "p95_us": 1978,
+        "p99_us": 2113,
+        "peak_us": 2250,
         "overruns": 0,
         "i2s_fail_delta": 0,
-        "heap_start": 121176,
-        "heap_end": 121176,
+        "heap_start": 121432,
+        "heap_end": 121432,
         "psram_start": 1663048,
         "psram_end": 1663048,
-        "max_param_update_us": 382,
+        "max_param_update_us": 404,
         "blocks": 10000,
-        "budget_p99_pct": 73.21,
+        "budget_p99_pct": 72.8,
         "stack_min_words": 27284
       },
-      "raw": "\n=== BENCH RESULT (FW Nov 19 2026 21:21:40) ===\nCfg: src=1 gen=1 byp=0 mod=1 dly=500 fbk=95 hds=4 tps=50 tpa=50 drv=75 nlv=10 ftd=4 wwd=2 dps=0 wrp=0 wmd=0 wsp=1.00 wgr=80 wst=0.50 wfb=0 fv=0 ngt=0.0010 ppg=0 frz=0 rev=1 spr=0\nBlocks=10000 Warmup=256 WallMs=31104.5 BudgetUs=2902.49\nMeanUs=1954.08 MinUs=1901 P50Us=1934 P95Us=1998 P99Us=2125 PeakUs=2270\nBudgetMeanPct=67.32% BudgetP99Pct=73.21% Overruns=0 (0.00%) SatBins=0\nI2SFailDelta=0 HeapStart=121176 HeapEnd=121176 HeapMin=121176 PsramStart=1663048 PsramEnd=1663048 MaxParamUpdUs=382\nStackMinWords=27284\n=========================================\r\n"
+      "raw": "\n=== BENCH RESULT (FW Nov 19 2026 21:21:40) ===\nCfg: src=1 gen=1 byp=0 mod=1 dly=500 fbk=95 hds=4 tps=50 tpa=50 drv=75 nlv=10 ftd=4 wwd=2 dps=0 wrp=0 wmd=0 wsp=1.00 wgr=80 wst=0.50 wfb=0 fv=0 ngt=0.0010 ppg=0 frz=0 rev=1 spr=0\nBlocks=10000 Warmup=256 WallMs=30963.5 BudgetUs=2902.49\nMeanUs=1939.72 MinUs=1885 P50Us=1921 P95Us=1978 P99Us=2113 PeakUs=2250\nBudgetMeanPct=66.83% BudgetP99Pct=72.80% Overruns=0 (0.00%) SatBins=0\nI2SFailDelta=0 HeapStart=121432 HeapEnd=121432 HeapMin=121432 PsramStart=1663048 PsramEnd=1663048 MaxParamUpdUs=404\nStackMinWords=27284\n=========================================\r\n"
     },
     "multihead": {
       "commands": [
@@ -136,24 +136,24 @@
         "hds 7"
       ],
       "bench": {
-        "mean_us": 2157.5,
-        "min_us": 2122,
-        "p50_us": 2140,
-        "p95_us": 2195,
-        "p99_us": 2219,
-        "peak_us": 2460,
+        "mean_us": 2147.4,
+        "min_us": 2108,
+        "p50_us": 2136,
+        "p95_us": 2181,
+        "p99_us": 2193,
+        "peak_us": 2441,
         "overruns": 0,
         "i2s_fail_delta": 0,
-        "heap_start": 121176,
-        "heap_end": 121176,
+        "heap_start": 121432,
+        "heap_end": 121432,
         "psram_start": 1663048,
         "psram_end": 1663048,
-        "max_param_update_us": 382,
+        "max_param_update_us": 404,
         "blocks": 10000,
-        "budget_p99_pct": 76.45,
+        "budget_p99_pct": 75.56,
         "stack_min_words": 27284
       },
-      "raw": "\n=== BENCH RESULT (FW Nov 19 2026 21:21:40) ===\nCfg: src=1 gen=1 byp=0 mod=1 dly=500 fbk=95 hds=7 tps=50 tpa=50 drv=75 nlv=10 ftd=4 wwd=2 dps=0 wrp=0 wmd=0 wsp=1.00 wgr=80 wst=0.50 wfb=0 fv=0 ngt=0.0010 ppg=0 frz=0 rev=0 spr=0\nBlocks=10000 Warmup=256 WallMs=33135.8 BudgetUs=2902.49\nMeanUs=2157.50 MinUs=2122 P50Us=2140 P95Us=2195 P99Us=2219 PeakUs=2460\nBudgetMeanPct=74.33% BudgetP99Pct=76.45% Overruns=0 (0.00%) SatBins=0\nI2SFailDelta=0 HeapStart=121176 HeapEnd=121176 HeapMin=121176 PsramStart=1663048 PsramEnd=1663048 MaxParamUpdUs=382\nStackMinWords=27284\n=========================================\r\n"
+      "raw": "\n=== BENCH RESULT (FW Nov 19 2026 21:21:40) ===\nCfg: src=1 gen=1 byp=0 mod=1 dly=500 fbk=95 hds=7 tps=50 tpa=50 drv=75 nlv=10 ftd=4 wwd=2 dps=0 wrp=0 wmd=0 wsp=1.00 wgr=80 wst=0.50 wfb=0 fv=0 ngt=0.0010 ppg=0 frz=0 rev=0 spr=0\nBlocks=10000 Warmup=256 WallMs=33032.8 BudgetUs=2902.49\nMeanUs=2147.40 MinUs=2108 P50Us=2136 P95Us=2181 P99Us=2193 PeakUs=2441\nBudgetMeanPct=73.98% BudgetP99Pct=75.56% Overruns=0 (0.00%) SatBins=0\nI2SFailDelta=0 HeapStart=121432 HeapEnd=121432 HeapMin=121432 PsramStart=1663048 PsramEnd=1663048 MaxParamUpdUs=404\nStackMinWords=27284\n=========================================\r\n"
     },
     "reverse_bpm137": {
       "commands": [
@@ -163,48 +163,48 @@
         "bpm 137"
       ],
       "bench": {
-        "mean_us": 1954.49,
-        "min_us": 1895,
-        "p50_us": 1934,
-        "p95_us": 1998,
-        "p99_us": 2126,
-        "peak_us": 2256,
+        "mean_us": 1933.87,
+        "min_us": 1884,
+        "p50_us": 1916,
+        "p95_us": 1977,
+        "p99_us": 2085,
+        "peak_us": 2211,
         "overruns": 0,
         "i2s_fail_delta": 0,
-        "heap_start": 121176,
-        "heap_end": 121176,
+        "heap_start": 121432,
+        "heap_end": 121432,
         "psram_start": 1663048,
         "psram_end": 1663048,
-        "max_param_update_us": 400,
+        "max_param_update_us": 404,
         "blocks": 10000,
-        "budget_p99_pct": 73.25,
+        "budget_p99_pct": 71.83,
         "stack_min_words": 27284
       },
-      "raw": "\n=== BENCH RESULT (FW Nov 19 2026 21:21:40) ===\nCfg: src=1 gen=1 byp=0 mod=1 dly=500 fbk=40 hds=7 tps=50 tpa=50 drv=75 nlv=10 ftd=4 wwd=2 dps=0 wrp=0 wmd=0 wsp=1.00 wgr=80 wst=0.50 wfb=0 fv=0 ngt=0.0010 ppg=0 frz=0 rev=1 spr=0\nBlocks=10000 Warmup=256 WallMs=31108.7 BudgetUs=2902.49\nMeanUs=1954.49 MinUs=1895 P50Us=1934 P95Us=1998 P99Us=2126 PeakUs=2256\nBudgetMeanPct=67.34% BudgetP99Pct=73.25% Overruns=0 (0.00%) SatBins=0\nI2SFailDelta=0 HeapStart=121176 HeapEnd=121176 HeapMin=121176 PsramStart=1663048 PsramEnd=1663048 MaxParamUpdUs=400\nStackMinWords=27284\n=========================================\r\n"
+      "raw": "\n=== BENCH RESULT (FW Nov 19 2026 21:21:40) ===\nCfg: src=1 gen=1 byp=0 mod=1 dly=500 fbk=40 hds=7 tps=50 tpa=50 drv=75 nlv=10 ftd=4 wwd=2 dps=0 wrp=0 wmd=0 wsp=1.00 wgr=80 wst=0.50 wfb=0 fv=0 ngt=0.0010 ppg=0 frz=0 rev=1 spr=0\nBlocks=10000 Warmup=256 WallMs=30904.9 BudgetUs=2902.49\nMeanUs=1933.87 MinUs=1884 P50Us=1916 P95Us=1977 P99Us=2085 PeakUs=2211\nBudgetMeanPct=66.63% BudgetP99Pct=71.83% Overruns=0 (0.00%) SatBins=0\nI2SFailDelta=0 HeapStart=121432 HeapEnd=121432 HeapMin=121432 PsramStart=1663048 PsramEnd=1663048 MaxParamUpdUs=404\nStackMinWords=27284\n=========================================\r\n"
     },
     "reverse_bpm90": {
       "commands": [
         "bpm 90"
       ],
       "bench": {
-        "mean_us": 1951.57,
-        "min_us": 1901,
-        "p50_us": 1931,
-        "p95_us": 1996,
-        "p99_us": 2095,
-        "peak_us": 2258,
+        "mean_us": 1935.15,
+        "min_us": 1884,
+        "p50_us": 1916,
+        "p95_us": 1977,
+        "p99_us": 2057,
+        "peak_us": 2236,
         "overruns": 0,
         "i2s_fail_delta": 0,
-        "heap_start": 121176,
-        "heap_end": 121176,
+        "heap_start": 121432,
+        "heap_end": 121432,
         "psram_start": 1663048,
         "psram_end": 1663048,
-        "max_param_update_us": 400,
+        "max_param_update_us": 404,
         "blocks": 10000,
-        "budget_p99_pct": 72.18,
+        "budget_p99_pct": 70.87,
         "stack_min_words": 27284
       },
-      "raw": "\n=== BENCH RESULT (FW Nov 19 2026 21:21:40) ===\nCfg: src=1 gen=1 byp=0 mod=1 dly=500 fbk=40 hds=7 tps=50 tpa=50 drv=75 nlv=10 ftd=4 wwd=2 dps=0 wrp=0 wmd=0 wsp=1.00 wgr=80 wst=0.50 wfb=0 fv=0 ngt=0.0010 ppg=0 frz=0 rev=1 spr=0\nBlocks=10000 Warmup=256 WallMs=31078.9 BudgetUs=2902.49\nMeanUs=1951.57 MinUs=1901 P50Us=1931 P95Us=1996 P99Us=2095 PeakUs=2258\nBudgetMeanPct=67.24% BudgetP99Pct=72.18% Overruns=0 (0.00%) SatBins=0\nI2SFailDelta=0 HeapStart=121176 HeapEnd=121176 HeapMin=121176 PsramStart=1663048 PsramEnd=1663048 MaxParamUpdUs=400\nStackMinWords=27284\n=========================================\r\n"
+      "raw": "\n=== BENCH RESULT (FW Nov 19 2026 21:21:40) ===\nCfg: src=1 gen=1 byp=0 mod=1 dly=500 fbk=40 hds=7 tps=50 tpa=50 drv=75 nlv=10 ftd=4 wwd=2 dps=0 wrp=0 wmd=0 wsp=1.00 wgr=80 wst=0.50 wfb=0 fv=0 ngt=0.0010 ppg=0 frz=0 rev=1 spr=0\nBlocks=10000 Warmup=256 WallMs=30918.0 BudgetUs=2902.49\nMeanUs=1935.15 MinUs=1884 P50Us=1916 P95Us=1977 P99Us=2057 PeakUs=2236\nBudgetMeanPct=66.67% BudgetP99Pct=70.87% Overruns=0 (0.00%) SatBins=0\nI2SFailDelta=0 HeapStart=121432 HeapEnd=121432 HeapMin=121432 PsramStart=1663048 PsramEnd=1663048 MaxParamUpdUs=404\nStackMinWords=27284\n=========================================\r\n"
     },
     "stress_warp_spring": {
       "commands": [
@@ -214,24 +214,24 @@
         "spr 1"
       ],
       "bench": {
-        "mean_us": 1988.56,
-        "min_us": 1923,
-        "p50_us": 1977,
+        "mean_us": 1991.33,
+        "min_us": 1934,
+        "p50_us": 1980,
         "p95_us": 2037,
-        "p99_us": 2051,
-        "peak_us": 2290,
+        "p99_us": 2049,
+        "peak_us": 2263,
         "overruns": 0,
         "i2s_fail_delta": 0,
-        "heap_start": 121176,
-        "heap_end": 121176,
+        "heap_start": 121432,
+        "heap_end": 121432,
         "psram_start": 1663048,
         "psram_end": 1663048,
-        "max_param_update_us": 400,
+        "max_param_update_us": 404,
         "blocks": 10000,
-        "budget_p99_pct": 70.66,
+        "budget_p99_pct": 70.59,
         "stack_min_words": 27284
       },
-      "raw": "\n=== BENCH RESULT (FW Nov 19 2026 21:21:40) ===\nCfg: src=1 gen=1 byp=0 mod=1 dly=500 fbk=50 hds=7 tps=50 tpa=50 drv=75 nlv=10 ftd=4 wwd=2 dps=0 wrp=1 wmd=0 wsp=1.00 wgr=80 wst=0.50 wfb=0 fv=0 ngt=0.0010 ppg=0 frz=0 rev=1 spr=1\nBlocks=10000 Warmup=256 WallMs=31447.6 BudgetUs=2902.49\nMeanUs=1988.56 MinUs=1923 P50Us=1977 P95Us=2037 P99Us=2051 PeakUs=2290\nBudgetMeanPct=68.51% BudgetP99Pct=70.66% Overruns=0 (0.00%) SatBins=0\nI2SFailDelta=0 HeapStart=121176 HeapEnd=121176 HeapMin=121176 PsramStart=1663048 PsramEnd=1663048 MaxParamUpdUs=400\nStackMinWords=27284\n=========================================\r\n"
+      "raw": "\n=== BENCH RESULT (FW Nov 19 2026 21:21:40) ===\nCfg: src=1 gen=1 byp=0 mod=1 dly=500 fbk=50 hds=7 tps=50 tpa=50 drv=75 nlv=10 ftd=4 wwd=2 dps=0 wrp=1 wmd=0 wsp=1.00 wgr=80 wst=0.50 wfb=0 fv=0 ngt=0.0010 ppg=0 frz=0 rev=1 spr=1\nBlocks=10000 Warmup=256 WallMs=31474.2 BudgetUs=2902.49\nMeanUs=1991.33 MinUs=1934 P50Us=1980 P95Us=2037 P99Us=2049 PeakUs=2263\nBudgetMeanPct=68.61% BudgetP99Pct=70.59% Overruns=0 (0.00%) SatBins=0\nI2SFailDelta=0 HeapStart=121432 HeapEnd=121432 HeapMin=121432 PsramStart=1663048 PsramEnd=1663048 MaxParamUpdUs=404\nStackMinWords=27284\n=========================================\r\n"
     }
   },
   "sustain": {
@@ -239,41 +239,41 @@
     "start": {
       "overruns": 0,
       "i2s_failures": 0,
-      "blocks": 1230,
-      "avg_us": 1989,
-      "peak_us": 2765,
-      "heap": 121272,
+      "blocks": 1228,
+      "avg_us": 1986,
+      "peak_us": 2808,
+      "heap": 121528,
       "psram": 1663048
     },
     "end": {
       "overruns": 0,
       "i2s_failures": 0,
-      "blocks": 98001,
-      "avg_us": 1953,
-      "peak_us": 2765,
-      "heap": 121272,
+      "blocks": 98469,
+      "avg_us": 1938,
+      "peak_us": 2808,
+      "heap": 121528,
       "psram": 1663048
     }
   },
   "parameter_update_probe": {
     "bench": {
-      "mean_us": 1992.74,
-      "min_us": 1939,
-      "p50_us": 1980,
-      "p95_us": 2042,
-      "p99_us": 2099,
-      "peak_us": 2291,
+      "mean_us": 2020.73,
+      "min_us": 1936,
+      "p50_us": 2024,
+      "p95_us": 2047,
+      "p99_us": 2102,
+      "peak_us": 2243,
       "overruns": 0,
       "i2s_fail_delta": 0,
-      "heap_start": 121272,
-      "heap_end": 121272,
+      "heap_start": 121528,
+      "heap_end": 121528,
       "psram_start": 1663048,
       "psram_end": 1663048,
-      "max_param_update_us": 400,
+      "max_param_update_us": 549,
       "blocks": 256,
-      "budget_p99_pct": 72.32,
+      "budget_p99_pct": 72.42,
       "stack_min_words": 27284
     },
-    "raw": "\n=== BENCH RESULT (FW Nov 19 2026 21:21:40) ===\nCfg: src=1 gen=1 byp=0 mod=1 dly=500 fbk=50 hds=7 tps=50 tpa=50 drv=75 nlv=10 ftd=4 wwd=2 dps=0 wrp=1 wmd=0 wsp=1.00 wgr=80 wst=0.50 wfb=0 fv=0 ngt=0.0010 ppg=0 frz=0 rev=1 spr=1\nBlocks=256 Warmup=16 WallMs=806.2 BudgetUs=2902.49\nMeanUs=1992.74 MinUs=1939 P50Us=1980 P95Us=2042 P99Us=2099 PeakUs=2291\nBudgetMeanPct=68.66% BudgetP99Pct=72.32% Overruns=0 (0.00%) SatBins=0\nI2SFailDelta=0 HeapStart=121272 HeapEnd=121272 HeapMin=121272 PsramStart=1663048 PsramEnd=1663048 MaxParamUpdUs=400\nStackMinWords=27284\n=========================================\r\n"
+    "raw": "\n=== BENCH RESULT (FW Nov 19 2026 21:21:40) ===\nCfg: src=1 gen=1 byp=0 mod=1 dly=500 fbk=50 hds=7 tps=50 tpa=50 drv=75 nlv=10 ftd=4 wwd=2 dps=0 wrp=1 wmd=0 wsp=1.00 wgr=80 wst=0.50 wfb=0 fv=0 ngt=0.0010 ppg=0 frz=0 rev=1 spr=1\nBlocks=256 Warmup=16 WallMs=813.3 BudgetUs=2902.49\nMeanUs=2020.73 MinUs=1936 P50Us=2024 P95Us=2047 P99Us=2102 PeakUs=2243\nBudgetMeanPct=69.62% BudgetP99Pct=72.42% Overruns=0 (0.00%) SatBins=0\nI2SFailDelta=0 HeapStart=121528 HeapEnd=121528 HeapMin=121528 PsramStart=1663048 PsramEnd=1663048 MaxParamUpdUs=549\nStackMinWords=27284\n=========================================\r\n"
   }
 }

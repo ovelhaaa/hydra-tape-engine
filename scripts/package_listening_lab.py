@@ -75,6 +75,8 @@ def package(directory, archive=None):
     guide = "PHASE6_BIAS_AB_LISTENING_GUIDE.md" if manifest.get("suite") == "Hydra Phase 6.2 Bias A/B" else "PHASE6_LISTENING_GUIDE.md"
     if manifest.get("suite") == "Hydra Phase 6.3 Reverse A/B":
         guide = "PHASE6_REVERSE_OPTIMIZATION_LISTENING_GUIDE.md"
+    if manifest.get("suite") == "Hydra Phase 6.4 Final A/B":
+        guide = "PHASE6_FINAL_LISTENING_GUIDE.md"
     shutil.copyfile(ROOT / "docs" / guide, directory / "listening-guide.md")
     if manifest.get("suite") == "Hydra Phase 6.3 Reverse A/B":
         report = ROOT / "docs/PHASE6_REVERSE_REALTIME_OPTIMIZATION.md"

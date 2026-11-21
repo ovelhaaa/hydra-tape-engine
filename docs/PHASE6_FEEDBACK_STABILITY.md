@@ -175,3 +175,18 @@ the Release Decision Record.
 The historical FFT tables above use unnormalized FFT power in dB, not calibrated
 dBFS amplitudes. They identify frequency distribution and relative changes;
 the RMS envelope and peak fields carry normalized audio amplitude measurements.
+
+The Phase 6.4.1 review also aligned the internal probe with the full-engine
+runner's **128-frame blocks** and feeds the probe the exact NumPy-generated
+mono float32 little-endian input fixture. Its SHA-256 is in every case; the C++
+reader rejects missing/truncated/extra samples. Captured output windows must be
+bit-exact with the corresponding full-engine output windows, so instrumentation
+cannot silently validate a different signal or configuration. Diagnostic and A/B
+manual builds explicitly use `-ffp-contract=off`, matching the CMake policy;
+both historical A/B sides use the same compiler flags.
+
+Spectral JSON fields are named `fft_power_db`, with explicit unnormalized FFT
+units. The mid/late spectra are inspection evidence and **not a separate
+spectral acceptance gate**. PASS here concerns finite state, bounded RMS growth,
+output peak/ceiling criteria and matching diagnostic windows; it does not assert
+a new numerical spectral tolerance or human approval.

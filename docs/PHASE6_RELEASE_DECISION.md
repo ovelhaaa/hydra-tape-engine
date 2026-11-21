@@ -6,7 +6,7 @@ Date: 2026-11-20. Repository `ovelhaaa/hydra-tape-engine`, existing
 
 ## Classification
 
-**BLOCKED — OFFICIAL NUMERICAL GATE UNDER INVESTIGATION.** Human listening and
+**BLOCKED — FINAL BIAS/QA CI REVALIDATION PENDING.** Human listening and
 physical runtime remain pending. The earlier Phase 6.4 statement that all automatic
 gates passed was incorrect: it extrapolated Windows observations to Linux CI.
 
@@ -20,12 +20,12 @@ records critical-source hashes and all initial failed workflows.
 |---|---|---|
 | Native | PASS locally; final Linux pending | clean GCC 14.2, CTest 16/16 including LUT integrity, ABI and unchanged goldens |
 | WASM | PASS locally; final Linux pending | clean Emscripten, CTest 16/16, unchanged goldens |
-| Native/WASM Strict | FAIL on Ubuntu 26.04; PASS on 24.04 | clean [official reproduction](https://github.com/ovelhaaa/hydra-tape-engine/actions/runs/44839840770), inputs/LUT bit-identical; 26.04 max_abs 4.4615e-5, RMSE 1.613509259565e-5 |
+| Native/WASM Strict | PASS official, both Ubuntu versions | [Core 44841311343](https://github.com/ovelhaaa/hydra-tape-engine/actions/runs/44841311343), five scenarios max_abs=RMSE=0; FMA contraction cause demonstrated |
 | Bias Anti-Aliasing | PASS locally; final Linux pending | six rebuilt variants, spectral/transfer 49/49; recovered whine diagnostic and plots |
 | Reverse | PASS locally; final Linux pending | frozen Phase 6.3 optimization comparison 10/10 bit-exact; complete current reverse CTests |
 | Feedback | PASS locally; final Linux pending | full-engine 27/27; six 60 s cases; pre-limiter internal windows stable, max growth +0.0125211 dB |
 | Transitions | PASS locally; final Linux pending | five parameters, 44.1/48 kHz max 0.01797/0.01420 <= 0.03 |
-| Web Demo | PASS locally; final Linux pending | clean web build, host 40/40; browser installation CI incompatibility being corrected |
+| Web Demo | PASS locally; final Linux pending | clean web build, host 40/40; [Web 44841311426](https://github.com/ovelhaaa/hydra-tape-engine/actions/runs/44841311426) passed with real Chrome |
 | AudioWorklet Reset | PASS locally; final Linux pending | real browser + clean WASM A–E, artifacts/phase641/reset-clean/result.json |
 | Listening Lab | PASS locally; final publication pending | 10 pairs, 20 stereo PCM24 WAVs, 10 CSVs; real Chrome player test PASS |
 | ESP32-S3 Build | PASS locally | production RAM 26304 B, flash 627743 B, firmware SHA-256 ed68bc89e0f9bf508c2a181680aca80fec99602e6605e588b023d3e2872ddabd |
@@ -59,7 +59,7 @@ reference/build commits, parameters, seeds, events, telemetry, player and guide.
 The feedback pair lasts 60 seconds. The local ZIP digest is
 `325328e2b9a6d38006328bfdd2be2f5d499244e93bd309b60df20b347ea44ffb`;
 this is not the final CI artifact digest. CI validates files and exercises all ten
-pairs in real Chrome before publishing. No final artifact URL is claimed yet.
+pairs in real Chrome before publishing. A verified intermediate-code [artifact](https://github.com/ovelhaaa/hydra-tape-engine/actions/runs/44841311259/artifacts/14681560845) exists. Final QA adds the ten-pair guide; the latest release-head artifact will be linked after successful validation.
 
 PCM24 units: one signed normalized LSB is 2^-23 = 1.1920929e-7.
 A difference of 3e-5 is approximately 252 LSB, or -90.46 dBFS peak error.
@@ -94,3 +94,14 @@ See [numerical report](PHASE6_NUMERICAL_EQUIVALENCE.md),
 [feedback report](PHASE6_FEEDBACK_STABILITY.md),
 [transition report](PHASE6_TRANSITION_ANALYSIS.md), and
 [reset contract](PHASE6_RESET_CONTRACT.md).
+
+## Final QA corrections awaiting release-head CI
+
+Core, Reverse, Web and Listening workflows passed on corrected code `60a9da6`.
+Bias run `44841311254` failed only at its browser gate: the expanded player test
+incorrectly demanded automation in the static bias-ablation package. It now
+validates real timeline markers for static packages and actual automation where
+present; the complete sixty-scenario Chrome test passed locally. No audio scenario
+or test was removed. Whine is now a required standalone CI diagnostic; internal
+feedback probes share the full-engine input and must match output bits. The final
+package now has its own ten-pair guide. These changes require the new CI run.

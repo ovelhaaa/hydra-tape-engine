@@ -19,7 +19,6 @@ the pre-limiter record/feedback/magnetic-write state.
 import argparse
 import json
 import math
-import hashlib
 import subprocess
 from pathlib import Path
 import sys
@@ -82,9 +81,9 @@ def spectrum_of(y, rate, start_sec, stop_sec):
     peaks = []
     for idx in np.argsort(power)[-6:][::-1]:
         peaks.append({"hz": round(float(freqs[idx]), 2),
-                      "dbfs": round(float(10 * np.log10(max(power[idx], 1e-30))), 2),
+                      "fft_power_db": round(float(10 * np.log10(max(power[idx], 1e-30))), 2),
                       "share": round(float(power[idx] / total), 4)})
-    return {"peaks": peaks, "n": len(seg)}
+    return {"peaks": peaks, "n": len(seg), "units": "10*log10(unnormalized Hann-window FFT power); not dBFS", "acceptance_gate": False}
 
 
 def classify(seconds_db, peak_per_second):
@@ -129,7 +128,7 @@ def main():
         subprocess.run([sys.executable, str(ROOT / 'scripts/instrument_feedback.py'),
                         str(ROOT / 'dsp/core/tape_core.cpp'), str(source)], check=True)
         executable = args.output / ('feedback_probe.exe' if sys.platform == 'win32' else 'feedback_probe')
-        command = [compiler, '-O3', '-DNDEBUG', '-std=c++17', '-I' + str(ROOT / 'include'),
+        command = [compiler, '-O3', '-DNDEBUG', '-std=c++17', '-ffp-contract=off', '-I' + str(ROOT / 'include'),
                    '-I' + str(ROOT / 'dsp/core'), str(source), str(ROOT / 'dsp/core/hydra_dsp_c_api.cpp'),
                    str(ROOT / 'tests/core/feedback_probe.cpp'), '-o', str(executable)]
         subprocess.run(command, check=True)
@@ -166,15 +165,24 @@ def main():
                 "spectrum_mid": spectrum_of(y, rate, args.seconds / 2, args.seconds / 2 + 1),
             }
             if args.stages:
+                fixture = args.output / f'{rate}-input.f32le'
+                stimulus(rate, args.seconds)[:, 0].astype('<f4').tofile(fixture)
+                entry['stage_input_sha256'] = render.sha256_file(fixture)
+                entry['stage_block_frames'] = render.BLOCK
                 windows = []
+                matches = []
                 for start in (5, 55):
                     command = [str(executable.resolve()), '--rate', str(rate), '--seconds', '60',
                                '--window-start', str(start), '--feedback', str(CASES[case][13]),
-                               '--heads', str(CASES[case].get(16, 1)), '--reverse', str(CASES[case].get(23, 0))]
+                               '--heads', str(CASES[case].get(16, 1)), '--reverse', str(CASES[case].get(23, 0)),
+                               '--input-f32', str(fixture.resolve())]
                     raw = subprocess.check_output(command, text=True)
                     (args.output / f'{rate}-{case}-{start}s.txt').write_text(raw, encoding='utf-8')
                     windows.append(np.array([[float.fromhex(x) for x in row.split()[1:]]
                                               for row in raw.splitlines()[1:]], dtype=np.float64))
+                    first = ((int(start * rate) + render.BLOCK - 1) // render.BLOCK) * render.BLOCK
+                    matches.append(bool(np.array_equal(windows[-1][:, 7], y[first:first + 8192, 0])))
+                entry['stage_output_matches_full_engine'] = all(matches)
                 stage_metrics = {}
                 for name, column in (('feedback', 4), ('record', 5), ('magnetic_write', 6)):
                     a, b = (window[:, column] for window in windows)
@@ -194,7 +202,7 @@ def main():
         json.dumps(report, indent=2, allow_nan=False), encoding="utf-8")
     print("wrote", args.output / "feedback-stability.json")
     if any(not e['finite'] or e['classification'] == 'unstable growth'
-           or (args.stages and not e['internal_stable']) for e in report['cases'].values()):
+           or (args.stages and (not e['internal_stable'] or not e['stage_output_matches_full_engine'])) for e in report['cases'].values()):
         raise SystemExit('Feedback diagnostic detected instability; see report')
 
 

@@ -49,6 +49,10 @@ jobs:
         id: diagnostics
         continue-on-error: true
         run: python scripts/bias_antialiasing.py --compiler g++
+      - name: Diagnose historical bias whine with explicit stimuli and provenance
+        id: whine
+        continue-on-error: true
+        run: python scripts/diagnose_bias_whine.py --compiler g++
       # The Phase 6.4 60-second stability gate runs once in reverse-realtime.yml.
       # Preserve the old six-second decay measurements for comparison and plots.
       - name: Check complete engine and retain superseded decay observations
@@ -159,6 +163,7 @@ jobs:
           path: |
             ci-reports/bias
             artifacts/bias-antialiasing
+            artifacts/bias-isolation
           if-no-files-found: error
           retention-days: 30
       - name: Publish actual artifact link and preserve required failures
@@ -171,7 +176,7 @@ jobs:
           import json, os
           from pathlib import Path
           steps = json.loads(os.environ['STEPS_JSON'])
-          required = ['native_build', 'native_tests', 'diagnostics', 'engine', 'plots',
+          required = ['native_build', 'native_tests', 'diagnostics', 'whine', 'engine', 'plots',
                       'emsdk', 'wasm_build', 'wasm_tests', 'equivalence', 'regression_diagnostics', 'firmware',
                       'delivery_tests', 'package', 'artifact', 'bias_browser']
           failed = [name for name in required if steps.get(name, {}).get('outcome') != 'success']

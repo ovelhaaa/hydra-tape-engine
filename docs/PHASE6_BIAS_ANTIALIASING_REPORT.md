@@ -38,6 +38,42 @@ Fresh local Windows/UCRT validation of the recovered scripts:
   stereo WAVs, 60 telemetry CSVs**, 210,286,841 bytes of audio/telemetry; ZIP
   194,822,444 bytes. These are local checks, not a publication link or human signoff.
 
+The whine diagnostic is now a **required official CI step**, independent of any
+previously rendered Listening Lab package. It fixes the historical scenario-01
+parameters, seed 6101, clean-guitar source, 48 kHz and four-second duration in the
+script, exports all three shared inputs as float32 little-endian with SHA-256,
+and checks every ablation for finite, deterministic output and 192,000-frame
+stereo PCM24 WAV encoding. Source, LUT, compiler flags, library and WAV hashes
+are uploaded with the technical evidence. `--reference-wav` optionally verifies
+the preserved Windows Phase 6.1 reference SHA and demands a byte-identical
+control; it is never applied implicitly to newly rendered production audio.
+The frozen runtime LUT still depends on the historical platform libm, so this
+optional exact reference check is scoped to the matching platform/toolchain.
+
+All manual Native diagnostic builds and both sides of the historical Native/WASM
+comparator now explicitly use `-ffp-contract=off`, matching the current CMake
+floating-point policy. This applies equally to the historical control and its
+ablations/candidate; no numerical thresholds or historical WAVs were changed.
+A fresh local run with that policy again passed **49/49** isolated gates and
+all four standalone whine ablations; the optional preserved reference matched
+exactly. The historical comparator now dumps the actual historical LUT instead
+of the canonical table from the current trace harness: **84/1025 entries differ
+by 1 ULP** (Native SHA `c8b84c5b7776b30e263822a2dae1cfc1ff02265f635d3df2cc52a0d8eff5f537`,
+WASM SHA `4eb3186ae5df57ead0229f6ffd3c9d9a6f86ac6763be16fb8f192e839d079547`).
+That historical comparison stops explicitly at the LUT gate. The current candidate
+has identical input/LUT bits and **max_abs=0, RMSE=0**, with all candidate regression
+observations passing. Historical carrier-dependent test failures remain recorded;
+only current candidate failures determine this diagnostic's acceptance. These
+measurements are Windows/UCRT versus Emscripten, not Linux CI results.
+The earlier Windows values in this section describe the measured local run,
+not an inferred Linux result. To reproduce the standalone whine diagnostic:
+
+```sh
+python scripts/diagnose_bias_whine.py --compiler g++
+# Optional exact preserved control, matching the original platform/toolchain:
+python scripts/diagnose_bias_whine.py --compiler g++ --reference-wav /path/to/phase61-scenario01.wav
+```
+
 The bias workflow retains all 27 measurements. Only those four named historical
 monotonic-decay observations are separated from current acceptance, explicitly
 reported in the job summary; any other failure or incomplete measurement fails the

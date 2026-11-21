@@ -1,8 +1,10 @@
 # HYDRA TAPE ENGINE 2.0 — DEVELOPMENT ROADMAP
 
-## Fase 6.4 — encerramento dos bloqueios residuais da Fase 6 (2026-11-20)
+## Fase 6.4 / 6.4.1 — recuperação CI e decisão de release (2026-11-20)
 
-**Issue #48 encerrada com equivalência bit-exata; caudas reformuladas 27/27; transição de 44,1 kHz corrigida; sem merge automático.** A divergência Native/WASM foi localizada em dois valores de libm da plataforma arredondados para `float`: o estímulo do comparador (`std::sin`, 3 de 2048 amostras diferindo 1 ULP) e a tabela `tanh` do estágio magnético (84 de 1025 entradas diferindo 1 ULP, primeira divergência no sample 1). O estímulo passou a ser avaliado em `double` e quantizado uma vez; a tabela tornou-se 1025 constantes canônicas geradas em precisão decimal de 60 dígitos. Resultado: `max_abs = 0`, `RMSE = 0`, Native 15/15, WASM 15/15. Os quatro critérios de cauda foram classificados como sustentação limitada (slope ≤ 0,00005 dB/s em 60 s, estado interno pré-limiter estável em ±0,0125 dB, zero amostras no teto) e substituídos por gates explícitos de estabilidade: 27/27. A transição a 44,1 kHz era um impulso de uma amostra causado pela troca instantânea dos coeficientes dos filtros de reprodução com estado retido; um ramp de 20 ms por bloco reduziu 0,05122 → 0,01441 (44,1 kHz) e 0,02540 → 0,01286 (48 kHz), abaixo do limite 0,03. O contrato de reset foi formalizado e o host web passou a suspender o `AudioContext` antes do wipe de 6,18 MB. A mudança de áudio (LUT ≤ −84 dBFS; rampa de transição audível por desenho) exige novo pacote A/B e nova escuta humana, ainda **PENDENTE**: `artifacts/listening-lab/phase6-final-review/`. Ver [equivalência](PHASE6_NUMERICAL_EQUIVALENCE.md), [caudas](PHASE6_FEEDBACK_STABILITY.md), [transições](PHASE6_TRANSITION_ANALYSIS.md), [reset](PHASE6_RESET_CONTRACT.md) e [decisão de release](PHASE6_RELEASE_DECISION.md). Não realizar merge.
+A Fase 6.4 introduziu LUT tanh canônica, smoothing de filtros e suspensão antes de reset. A aprovação Windows foi generalizada incorretamente para Linux. A Fase 6.4.1 reproduziu a falha sem cache, demonstrou entrada/LUT idênticas e isolou a causa atual: FMA habilitado pelo target x86-64-v3 padrão do Ubuntu 26.04. Com `-ffp-contract=off`, o Core Equivalence oficial passa em Ubuntu 24.04 e 26.04 com cinco cenários e max_abs=RMSE=0. O código DSP e os flags ESP32 não foram alterados.
+
+Bias recuperado, testes de feedback interno de 60 s, transições de cinco parâmetros e reset real A–E possuem workflows obrigatórios. Pacote final: 10 pares PCM24, incluindo feedback de 60 s, manifesto/hashes/player. Escuta humana `PENDING_HUMAN_AUDITION`; runtime físico `PHYSICAL_RUNTIME_PENDING`. O estado completo da CI e links reais constam no [Release Decision Record](PHASE6_RELEASE_DECISION.md). **Sem merge.** Os números e aprovações das fases anteriores abaixo são históricos.
 
 ## Fase 6.3 — otimização de tempo real do Reverse (2026-11-19)
 
@@ -190,8 +192,8 @@ flowchart LR
 
 
 ### FASE 6.4.1 — Recuperação CI e evidência de release (2026-11-20)
-- **Estado atual: BLOCKED — investigação numérica Linux; sem merge.**
-- Builds limpos reproduziram PASS Ubuntu 24.04 e FAIL Ubuntu 26.04/GCC 15.2; entrada e LUT idênticas bit a bit. Não atribuir a cache.
+- **Equivalência oficial recuperada; CI completa em validação, escuta e runtime pendentes; sem merge.**
+- Builds limpos reproduziram a falha Ubuntu 26.04 por FMA; o controle e a correção CMake passam em ambos os Ubuntus. Entrada e LUT idênticas bit a bit.
 - Diagnósticos de bias recuperados (49/49 local), LUT histórica explícita, full-engine 27/27 e feedback interno de 60 s em workflow obrigatório.
 - Transições incluem drive, velocidade, idade, tone e head bump (0.01797/0.01420 local, limite 0.03).
 - Reset real A–E validado com WASM limpo; concorrência, erro e timeout tratados. Pacote final 10 pares/20 PCM24/10 CSVs com publicação e player real na CI.

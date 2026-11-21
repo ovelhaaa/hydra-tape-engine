@@ -16,6 +16,7 @@
 #include <string>
 #include <vector>
 #include <array>
+#include <algorithm>
 
 extern "C" {
 void phase64_diag_enable(int on);
@@ -32,6 +33,7 @@ int main(int argc, char** argv) {
   double heads = 1.0;
   double reverse = 0.0;
   double freq = 440.0, amp = 0.1, input_seconds = 1.0;
+  std::string input_path;
   std::vector<std::array<double,3>> events;
   for (int i = 1; i < argc; ++i) {
     const std::string a = argv[i];
@@ -45,6 +47,7 @@ int main(int argc, char** argv) {
     else if (a == "--freq") freq = next();
     else if (a == "--amp") amp = next();
     else if (a == "--input-seconds") input_seconds = next();
+    else if (a == "--input-f32") input_path = argv[++i];
     else if (a == "--ev") { const std::string spec = argv[++i];
       const size_t c1 = spec.find(':');
       const size_t c2 = spec.find(':', c1 + 1);
@@ -56,6 +59,16 @@ int main(int argc, char** argv) {
   const uint32_t block = 128;
   const uint32_t total = static_cast<uint32_t>(rate * seconds);
   const uint32_t window_frame = static_cast<uint32_t>(rate * window_start);
+  std::vector<float> input_fixture;
+  if (!input_path.empty()) {
+    input_fixture.resize(total);
+    FILE* file = std::fopen(input_path.c_str(), "rb");
+    if (!file) return 4;
+    const size_t count = std::fread(input_fixture.data(), sizeof(float), total, file);
+    const bool extra = std::fgetc(file) != EOF;
+    std::fclose(file);
+    if (count != total || extra) return 4;
+  }
 
   hydra_dsp_handle* h = nullptr;
   if (hydra_dsp_create_v1_4(static_cast<float>(rate), 2000.0f, 8000.0f, &h) != 0) return 2;
@@ -80,7 +93,9 @@ int main(int argc, char** argv) {
     for (uint32_t i = 0; i < block; ++i) {
       const uint32_t f = start + i;
       float v = 0.0f;
-      if (f < static_cast<uint32_t>(rate * input_seconds)) {
+      if (!input_fixture.empty()) {
+        if (f < total) v = input_fixture[f];
+      } else if (f < static_cast<uint32_t>(rate * input_seconds)) {
         const double t = static_cast<double>(f) / rate;
         v = static_cast<float>(amp * std::sin(2.0 * 3.14159265358979323846 * freq * t));
       }
@@ -98,7 +113,7 @@ int main(int argc, char** argv) {
       phase64_diag_enable(1);
       armed = true;
     }
-    hydra_dsp_process(h, inL.data(), inR.data(), outL.data(), outR.data(), block);
+    hydra_dsp_process(h, inL.data(), inR.data(), outL.data(), outR.data(), std::min(block, total-start));
     if (phase64_diag_count() >= 8192) {
       phase64_diag_enable(0);
       captured = 1;

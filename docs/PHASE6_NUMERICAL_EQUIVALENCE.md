@@ -1,7 +1,7 @@
 # Phase 6.4.1 numerical verification — current evidence
 
-The historical Phase 6.4 account below describes Windows-local observations only;
-its PASS statements do not establish current official Linux acceptance.
+Phase 6.4 Windows-local PASS observations did not establish Linux CI acceptance.
+This report replaces that overbroad claim with controlled cross-platform evidence.
 
 Initial local/remote HEAD was `eaa233ff32e169a2ff720d4bdace3d636c10eb7a`, with no
 later commits. [Baseline hashes and CI failures](evidence/phase641-baseline.json).
@@ -33,9 +33,6 @@ libm guarantee; any future input difference fails and requires a canonical fixtu
 
 PCM24 correction: 3e-5 normalized amplitude equals approximately 252 LSB, not a
 fraction of an LSB. One LSB is 2^-23. Final human audition remains pending.
-
-## Historical Phase 6.4 measurements (not current Linux acceptance)
-
 
 ## Confirmed root cause and contained build correction
 
@@ -92,3 +89,39 @@ commit `7431a6db05abfde97838721cd089f94c7fed5047` against the current commit.
 Typical static differences around 2.6–6.3e-5 equal roughly 218–528 PCM24 LSB;
 3e-5 is about 252 LSB (-90.46 dBFS peak error), never a fraction of one LSB.
 The automated test/package result does not establish human listening approval.
+
+## Official acceptance on corrected code
+
+[Core Equivalence run 44841311343](https://github.com/ovelhaaa/hydra-tape-engine/actions/runs/44841311343)
+passed every job at `60a9da637b56ee4794cdae2cde97b6b345f327c7`, including both
+clean strict matrix jobs: five scenarios / 10240 stereo frames, max_abs=0 / RMSE=0.
+All controlled internal-state probes match. Native 16/16, WASM golden tests, ABI,
+Warp and ESP32-S3 build also passed; complete WASM CTest is enforced separately
+by the Reverse and Bias workflows.
+
+| Native environment | Compiler | libc | Emscripten | Strict result |
+|---|---|---|---|---|
+| Ubuntu 24.04 | GCC 13.3.0 | glibc 2.39 | 3.1.62 | 0 / 0 PASS |
+| Ubuntu 26.04 | GCC 15.2.0 | glibc 2.43 | 3.1.62 | 0 / 0 PASS |
+| Windows local | MinGW UCRT GCC 14.2.0 | UCRT | installed Emscripten | 0 / 0 PASS |
+
+The recorded Ubuntu 26.04 `g++ -Q --help=target` confirms default
+`-march=x86-64-v3`, FMA enabled. A separate Windows clean build with `g++ -mfma`
+reproduced the Ubuntu 26.04 uncontrolled errors exactly, independently excluding
+libc differences as their cause. That experiment is retained locally at
+`artifacts/phase641/local-forced-fma.json`.
+
+Corrected Ubuntu26 runner SHA-256:
+`daa505adc7642a1ca7e4924de688c33df26aaa64fe634fecbe04820b996ec52a`.
+WASM module SHA-256:
+`de981eabe6271c741ce2c9c1faad0bfbff9205835c91d97804009736af2e6c90`.
+These identify the cited run, not future rebuilds with different debug/path metadata.
+Final release-head workflow links belong to the Release Decision Record and PR.
+
+Negative gate checks were also exercised locally: a runner with forged input bits
+returns exit 2 before DSP comparison; a runner with correct input but forged LUT
+bits likewise returns exit 2. Neither mismatch can consume the DSP error budget.
+
+The unchanged limits are enforced for each scenario as well as the aggregate.
+A negative test with 2e-6 RMSE in only one scenario fails even though aggregate
+RMSE is 8.94427e-7; averaging cannot conceal a scenario-specific regression.

@@ -50,7 +50,7 @@ def extract_commit(commit, destination):
 
 def build_library(root, output):
     compiler = compiler_path()
-    command = [compiler, "-O3", "-DNDEBUG", "-std=c++17", "-shared", "-fPIC"]
+    command = [compiler, "-O3", "-DNDEBUG", "-std=c++17", "-ffp-contract=off", "-shared", "-fPIC"]
     if sys.platform == "win32":
         command.append("-Wl,--export-all-symbols")
     command += [f"-I{root / 'include'}", f"-I{root / 'dsp/core'}",

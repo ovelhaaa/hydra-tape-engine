@@ -85,6 +85,9 @@ def main():
         errors = [a-b for nf, wf in zip(ns, ws) for a, b in zip(nf, wf)]
         scenario_reports[scenario] = dict(max_abs=max(map(abs, errors)),
                                          rmse=math.sqrt(sum(e*e for e in errors)/len(errors)))
+        row = scenario_reports[scenario]
+        row['status'] = 'PASS' if (row['max_abs'] <= args.max_abs_threshold
+                                    and row['rmse'] <= args.rmse_threshold) else 'FAIL'
         native.extend(ns)
         wasm.extend(ws)
 
@@ -108,7 +111,8 @@ def main():
             diffs.append((index, dl, dr, abs_l, abs_r))
 
     rmse = math.sqrt(err_sq_sum / n) if n else 0.0
-    passed = max_abs <= args.max_abs_threshold and rmse <= args.rmse_threshold
+    passed = (max_abs <= args.max_abs_threshold and rmse <= args.rmse_threshold
+              and all(row['status'] == 'PASS' for row in scenario_reports.values()))
     status = 'PASS' if passed else 'FAIL'
 
     report = {

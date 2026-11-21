@@ -164,7 +164,7 @@ def build(out, compiler):
         cpp.write_text(text)
         (directory/'wrapper.cpp').write_text(WRAPPER.replace('LUT_INIT', '' if name == 'averaged' else 'lut.init();'))
         lib = directory / ('bias.dll' if windows else 'libbias.so')
-        cmd = [compiler, '-O3', '-DNDEBUG', '-std=c++17', '-shared', '-Wno-subobject-linkage']
+        cmd = [compiler, '-O3', '-DNDEBUG', '-std=c++17', '-ffp-contract=off', '-shared', '-Wno-subobject-linkage']
         cmd += ['-Wl,--export-all-symbols'] if windows else ['-fPIC']
         cmd += ['-I'+str(ROOT/'include'), '-I'+str(ROOT/'dsp/core'), str(directory/'wrapper.cpp'), str(ROOT/'dsp/core/hydra_dsp_c_api.cpp'), '-o', str(lib)]
         print('Building', name, flush=True)

@@ -199,3 +199,12 @@ flowchart LR
 - Reset real A–E validado com WASM limpo; concorrência, erro e timeout tratados. Pacote final 10 pares/20 PCM24/10 CSVs com publicação e player real na CI.
 - ESP32-S3 build PASS; console identificado mas sem resposta: `PHYSICAL_RUNTIME_PENDING`. Escuta final `PENDING_HUMAN_AUDITION`.
 - Matriz e links atuais: [Release Decision Record](PHASE6_RELEASE_DECISION.md). Resultados Windows não substituem aprovação da CI oficial.
+
+### FASE 6.5 — Recuperação física e aceitação de tempo real (2026-11-21)
+- **PHYSICAL_RUNTIME_PASS — escuta humana final pendente; sem merge.** Escopo: gerador interno e I2S no nível do driver, sem escuta/captura analógica ou teste de RX externo.
+- Console e boot recuperados por reset watchdog do esptool após silêncio reproduzido no caminho RTS; identidade de commit/fontes/ELF confirmada na placa.
+- Defeito físico medido no host: varredura de stack a cada bloco custava 1143–1144us fora do antigo cronômetro. A consulta foi movida para a CLI, preservando DSP, parâmetros, prioridades e afinidade.
+- Sete cenários com 10000 blocos/256 warmup; sustentado de 300.2168s/103399 blocos. Zero overruns DSP/trabalho completo e zero falhas TX I2S observadas; heap/PSRAM estáveis e stack mínima de 27268 bytes.
+- P99 máximo2215us (76.31% do orçamento), trabalho completo máximo2820us; a meta preferencial70% não foi obtida fora de Delay. Divisões históricas 1/8 e 1/16 estavam rotuladas incorretamente e não são comparações diretas.
+- `PHYSICAL_MIDI_CLOCK_NOT_TESTED`; LittleFS/OLED apresentam limitações documentadas; aprovação humana do pacote final continua `PENDING_HUMAN_AUDITION`.
+- Evidências, reprodução e limites: [Aceitação física](PHASE65_PHYSICAL_HARDWARE_ACCEPTANCE.md). CI do HEAD atual: checks e links da PR#54, sem transferir resultados antigos.

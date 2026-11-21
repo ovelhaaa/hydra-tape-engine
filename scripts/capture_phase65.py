@@ -47,6 +47,8 @@ def main():
     p.add_argument('--verified-upload-log', type=Path, required=True)
     p.add_argument('--expected-commit', required=True)
     p.add_argument('--expected-source-sha256', required=True)
+    p.add_argument('--resume-sustain-from', type=Path,
+                   help='Keep independently complete benchmarks; restart the entire five-minute capture')
     p.add_argument('--output', type=Path, required=True)
     p.add_argument('--blocks', type=int, default=10000)
     p.add_argument('--sustain-seconds', type=int, default=300)
@@ -80,14 +82,40 @@ def main():
                               'StackMinWords firmware label actually contains ESP-IDF bytes',
                               'Historical eighth/sixteenth used enum 1/2 (whole/half), current uses 3/4',
                               'Single PCM snapshots do not prove every block finite or nonsilent']}
+    if a.resume_sustain_from:
+        previous_bytes = a.resume_sustain_from.read_bytes()
+        previous = json.loads(previous_bytes)
+        if previous['firmware_sha256'] != a.firmware_sha256 or set(previous['scenarios']) != set(SCENARIOS):
+            raise RuntimeError('Resume firmware/scenario mismatch')
+        for name, measured in previous['scenarios'].items():
+            if not measured['pass'] or measured['blocks'] < 10000 or measured['warmup'] != 256:
+                raise RuntimeError('Cannot resume incomplete benchmark: ' + name)
+            raw = (a.output / 'benchmarks' / (name + '.txt')).read_text(encoding='utf-8')
+            if not re.search(rf"Blocks={measured['blocks']} Warmup=256\b", raw):
+                raise RuntimeError('Resume raw capture mismatch: ' + name)
+            for key, value in parse_bench(raw).items():
+                if key in measured and measured[key] != value:
+                    raise RuntimeError('Resume raw/JSON metric mismatch: ' + name + '/' + key)
+        report = previous
+        report.setdefault('previous_capture_attempts', []).append({
+            'file': str(a.resume_sustain_from), 'sha256': hashlib.sha256(previous_bytes).hexdigest(),
+            'status': previous['status'], 'error': previous.get('error'),
+            'discarded_sustain_samples': len(previous['sustain'])})
+        report['status'] = 'INCOMPLETE'
+        report['sustain'] = []
+        report.pop('error', None)
+        report.pop('finished_utc', None)
     s = serial.Serial(port=None, baudrate=115200, timeout=.1)
     s.port = devices[0].device
     s.dtr = False
     s.rts = False
-    previous_blocks = None
+    previous_blocks = (max(report[k]['blocks'] for k in ('initial_perf', 'stress_perf'))
+                       if a.resume_sustain_from else None)
 
     def save():
-        (a.output / 'results.json').write_text(json.dumps(report, indent=2), encoding='utf-8')
+        temporary = a.output / 'results.json.tmp'
+        temporary.write_text(json.dumps(report, indent=2), encoding='utf-8')
+        temporary.replace(a.output / 'results.json')
 
     def command(cmd, seconds=.22, until=None):
         s.write((cmd + '\n').encode())
@@ -111,7 +139,7 @@ def main():
 
     def perf():
         nonlocal previous_blocks
-        raw = command('perf', 1, '========================================')
+        raw = command('perf', 5, '========================================')
         v = parse_perf(raw)
         for key in ('blocks', 'overruns', 'i2s_failures', 'heap_free', 'psram_free', 'peak_us'):
             if key not in v:
@@ -140,25 +168,34 @@ def main():
 
     try:
         s.open()
-        command('?', 1, 'load <preset>')
+        command('?', 3, 'Show Dashboard')
         identity = command('identity', 2, '=== IDENTITY END ===')
         require(r'FirmwareCommit=' + re.escape(a.expected_commit) + r'\n', identity)
         require(r'SourceSHA256=' + re.escape(a.expected_source_sha256) + r'\n', identity)
         require(r'ELFSHA256=' + expected_elf + r'\n', identity)
         require(r'CPU=240 SampleRate=44100 BlockFrames=128 PSRAMBytes=8388608 FlashBytes=16777216 I2SInitialized=1', identity)
+        identity = identity[identity.index('FirmwareCommit='):]
+        old_identity = report.get('identity', '')
+        if 'FirmwareCommit=' in old_identity:
+            old_identity = old_identity[old_identity.index('FirmwareCommit='):]
+        if a.resume_sustain_from and identity != old_identity:
+            raise RuntimeError('Running identity changed between captures')
         report['identity'] = identity
-        report['initial_perf'] = perf()
-        for c in ('vol 10', 'byp 1', 'src 1', 'gen 0'):
-            command(c)
-        off = audio_health(active=False)
-        if off['NonZeroWords'] != 0:
-            raise RuntimeError('Bypassed disabled generator is not silent')
-        command('gen 1')
-        on = [audio_health(active=False) for _ in range(10)]
-        if not any(v['NonZeroWords'] > 0 for v in on):
-            raise RuntimeError('Enabled generator never produced nonzero PCM')
-        report['generator_control'] = {'off': off, 'on': on}
-        for name, overrides in SCENARIOS.items():
+        if a.resume_sustain_from:
+            report['resume_initial_perf'] = perf()
+        else:
+            report['initial_perf'] = perf()
+            for c in ('vol 10', 'byp 1', 'src 1', 'gen 0'):
+                command(c)
+            off = audio_health(active=False)
+            if off['NonZeroWords'] != 0:
+                raise RuntimeError('Bypassed disabled generator is not silent')
+            command('gen 1')
+            on = [audio_health(active=False) for _ in range(10)]
+            if not any(v['NonZeroWords'] > 0 for v in on):
+                raise RuntimeError('Enabled generator never produced nonzero PCM')
+            report['generator_control'] = {'off': off, 'on': on}
+        for name, overrides in ([] if a.resume_sustain_from else SCENARIOS.items()):
             for c in BASE + overrides:
                 reply = command(c)
                 if c.startswith('revdiv '):
@@ -208,12 +245,14 @@ def main():
                            'wrp 0', 'rev 1', 'rev 0', 'rev 1',
                            'transport pause', 'transport play', 'transport stop',
                            'transport play', 'transport reset', 'transport status']
-        for c in stress_commands:
+        for c in ([] if a.resume_sustain_from else stress_commands):
             command(c)
-        report['stress_perf'] = perf()
-        report['stress_audio_health'] = audio_health()
-        for c in BASE + ['rev 1', 'fbk 95']:
+        if not a.resume_sustain_from:
+            report['stress_perf'] = perf()
+            report['stress_audio_health'] = audio_health()
+        for c in BASE + ['ton 90', 'hbp 90', 'rev 1', 'fbk 95']:
             command(c)
+        report['sustain_configuration_commands'] = BASE + ['ton 90', 'hbp 90', 'rev 1', 'fbk 95']
         started = time.monotonic()
         while True:
             sample = perf()

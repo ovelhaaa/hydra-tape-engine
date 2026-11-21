@@ -1,0 +1,86 @@
+[
+  {
+    "command": "identity",
+    "response": "FirmwareCommit=df8b462eb70685640efdf4219eeba9ef35f3a263-dirty\nSourceSHA256=9cc3d8ce9219439c3a19ac4f0528860db5ba97077cdf95004c2e841df46169b8\nELFSHA256=ce4fc3255b26c22c1b9c59ea2637dead4e1caa301f929b30644f5ab63fffe6f5\nResetReason=11 CPU=240 SampleRate=44100 BlockFrames=128 PSRAMBytes=8388608 FlashBytes=16777216 I2SInitialized=1\n=== IDENTITY END ===\r\n"
+  },
+  {
+    "command": "vol 10",
+    "response": "Volume       [#-------------------] 9%\n"
+  },
+  {
+    "command": "src 1",
+    "response": ""
+  },
+  {
+    "command": "gen 1",
+    "response": "Source: 1 (0=MP3, 1=SYNTH, 2=I2S)\nGenerator: ON\n"
+  },
+  {
+    "command": "byp 0",
+    "response": "Bypass: OFF\n"
+  },
+  {
+    "command": "mod 1",
+    "response": "Engine Mode: TAPE DELAY\n> mod updated\n"
+  },
+  {
+    "command": "hds 7",
+    "response": "> hds updated\n"
+  },
+  {
+    "command": "fbk 95",
+    "response": "Feedback     [###################-] 95%\n"
+  },
+  {
+    "command": "audiohealth",
+    "response": "AudioHealth NonZeroWords=256 PeakAbsPcm32=69021712 SaturatedWords=0 TxBytes=1024 TxError=0 CompletedUs=16661678 StackScanUs=1143 FullWorkUs=3332\n=== AUDIOHEALTH END ===\r\n"
+  },
+  {
+    "command": "audiohealth",
+    "response": "AudioHealth NonZeroWords=256 PeakAbsPcm32=65536248 SaturatedWords=0 TxBytes=1024 TxError=0 CompletedUs=17163595 StackScanUs=1144 FullWorkUs=3293\n=== AUDIOHEALTH END ===\r\n"
+  },
+  {
+    "command": "audiohealth",
+    "response": "AudioHealth NonZeroWords=256 PeakAbsPcm32=14106844 SaturatedWords=0 TxBytes=1024 TxError=0 CompletedUs=17663853 StackScanUs=1144 FullWorkUs=3335\n=== AUDIOHEALTH END ===\r\n"
+  },
+  {
+    "command": "audiohealth",
+    "response": "AudioHealth NonZeroWords=256 PeakAbsPcm32=888354 SaturatedWords=0 TxBytes=1024 TxError=0 CompletedUs=18166070 StackScanUs=1143 FullWorkUs=3337\n=== AUDIOHEALTH END ===\r\n"
+  },
+  {
+    "command": "audiohealth",
+    "response": "AudioHealth NonZeroWords=256 PeakAbsPcm32=42394120 SaturatedWords=0 TxBytes=1024 TxError=0 CompletedUs=18669746 StackScanUs=1144 FullWorkUs=3330\n=== AUDIOHEALTH END ===\r\n"
+  },
+  {
+    "command": "audiohealth",
+    "response": "AudioHealth NonZeroWords=256 PeakAbsPcm32=26386396 SaturatedWords=0 TxBytes=1024 TxError=0 CompletedUs=19171514 StackScanUs=1144 FullWorkUs=3350\n=== AUDIOHEALTH END ===\r\n"
+  },
+  {
+    "command": "audiohealth",
+    "response": "AudioHealth NonZeroWords=256 PeakAbsPcm32=15615018 SaturatedWords=0 TxBytes=1024 TxError=0 CompletedUs=19672693 StackScanUs=1143 FullWorkUs=3402\n=== AUDIOHEALTH END ===\r\n"
+  },
+  {
+    "command": "audiohealth",
+    "response": "AudioHealth NonZeroWords=256 PeakAbsPcm32=47298524 SaturatedWords=0 TxBytes=1024 TxError=0 CompletedUs=20174815 StackScanUs=1144 FullWorkUs=3401\n=== AUDIOHEALTH END ===\r\n"
+  },
+  {
+    "command": "audiohealth",
+    "response": "AudioHealth NonZeroWords=256 PeakAbsPcm32=4815016 SaturatedWords=0 TxBytes=1024 TxError=0 CompletedUs=20678175 StackScanUs=1143 FullWorkUs=3285\n=== AUDIOHEALTH END ===\r\n"
+  },
+  {
+    "command": "audiohealth",
+    "response": "AudioHealth NonZeroWords=256 PeakAbsPcm32=54375892 SaturatedWords=0 TxBytes=1024 TxError=0 CompletedUs=21280553 StackScanUs=1143 FullWorkUs=3415\n=== AUDIOHEALTH END ===\r\n"
+  },
+  {
+    "command": "perf",
+    "response": "\n=== HYDRA DSP PERFORMANCE TELEMETRY ===\r\nBlock Size          : 128 frames\nSample Rate         : 44100 Hz\nCPU Clock           : 240 MHz\nBlock Time Budget   : 2902.5 us\nBlocks Processed    : 5799\nAvg DSP Block Time  : 1701 us\nLast DSP Block Time : 2194 us\nPeak DSP Block Time : 2566 us\nDSP Budget Use (EMA): 74.8 %\nDSP Budget Overruns : 0\nI2S TX Write Failures: 0\nFull Work Peak      : 3723 us\nFull Work Overruns  : 1835\nInternal Free Heap  : 125296 bytes\nSPIRAM (PSRAM) Free : 1663048 bytes\nAudio Stack Min Free: 27268 bytes\nWarp Active         : NO\n========================================\n\r\n"
+  },
+  {
+    "command": "gen 0",
+    "response": "Generator: OFF\n"
+  },
+  {
+    "command": "vol 10",
+    "response": "Volume       [#-------------------] 9%\n"
+  }
+]

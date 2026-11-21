@@ -357,3 +357,12 @@ jobs:
         run: pip install platformio
       - name: Build ESP32-S3 Firmware
         run: pio run -e esp32-s3-devkitc-1
+      - name: Validate archived Phase 6.5 physical evidence (not a hardware rerun)
+        run: python scripts/validate_phase65_evidence.py docs/evidence/phase65-physical
+      - name: Publish verified physical acquisition evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: hydra-phase65-physical-evidence
+          path: docs/evidence/phase65-physical/
+          if-no-files-found: error
+          retention-days: 90

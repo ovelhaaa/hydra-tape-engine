@@ -1,0 +1,160 @@
+
+
+=== BOOT START ===
+SERIAL CLI MODE ACTIVE
+PSRAM Size: 8388608 bytes
+E (6166) esp_littlefs: ./managed_components/joltwallet__littlefs/src/littlefs/lfs.c:1382:error: Corrupted dir pair at {0x0, 0x1}
+
+E (6172) esp_littlefs: mount failed,  (-84)
+E (6176) esp_littlefs: Failed to initialize LittleFS
+[  3027][E][LittleFS.cpp:80] begin(): Mounting LittleFS failed! Error: -1
+FS Fail - continuing without filesystem
+I2S Configured. Starting Tasks...
+Audio task created successfully
+LED task created successfully
+Parameter pointers initialized
+[  3046][I][esp32-hal-i2c-ng.c:112] i2cInit(): Initializing I2C Master: num=0 sda=1 scl=2 freq=100000
+[  3058][W][Wire.cpp:300] begin(): Bus already started in Master Mode.
+[  3065][E][esp32-hal-i2c-ng.c:275] i2cWrite(): i2c_master_transmit failed: [259] ESP_ERR_INVALID_STATE
+[  3074][E][esp32-hal-i2c-ng.c:275] i2cWrite(): i2c_master_transmit failed: [259] ESP_ERR_INVALID_STATE
+[  3084][E][esp32-hal-i2c-ng.c:275] i2cWrite(): i2c_master_transmit failed: [259] ESP_ERR_INVALID_STATE
+[  3093][E][esp32-hal-i2c-ng.c:275] i2cWrite(): i2c_master_transmit failed: [259] ESP_ERR_INVALID_STATE
+[  3102][E][esp32-hal-i2c-ng.c:275] i2cWrite(): i2c_master_transmit failed: [259] ESP_ERR_INVALID_STATE
+[  3112][E][esp32-hal-i2c-ng.c:275] i2cWrite(): i2c_master_transmit failed: [259] ESP_ERR_INVALID_STATE
+[  3121][E][esp32-hal-i2c-ng.c:275] i2cWrite(): i2c_master_transmit failed: [259] ESP_ERR_INVALID_STATE
+[  3130][E][esp32-hal-i2c-ng.c:275] i2cWrite(): i2c_master_transmit failed: [259] ESP_ERR_INVALID_STATE
+[  3140][E][esp32-hal-i2c-ng.c:275] i2cWrite(): i2c_master_transmit failed: [259] ESP_ERR_INVALID_STATE
+[  3149][E][esp32-hal-i2c-ng.c:275] i2cWrite(): i2c_master_transmit failed: [259] ESP_ERR_INVALID_STATE
+[  3158][E][esp32-hal-i2c-ng.c:275] i2cWrite(): i2c_master_transmit failed: [259] ESP_ERR_INVALID_STATE
+[  3167][E][esp32-hal-i2c-ng.c:275] i2cWrite(): i2c_master_transmit failed: [259] ESP_ERR_INVALID_STATE
+SSD1306 init OK
+[  3177][E][esp32-hal-i2c-ng.c:275] i2cWrite(): i2c_master_transmit failed: [259] ESP_ERR_INVALID_STATE
+[  3187][E][esp32-hal-i2c-ng.c:275] i2cWrite(): i2c_master_transmit failed: [259] ESP_ERR_INVALID_STATE
+[  3196][E][esp32-hal-i2c-ng.c:275] i2cWrite(): i2c_master_transmit failed: [259] ESP_ERR_INVALID_STATE
+[  3205][E][esp32-hal-i2c-ng.c:275] i2cWrite(): i2c_master_transmit failed: [259] ESP_ERR_INVALID_STATE
+[  3215][E][esp32-hal-i2c-ng.c:275] i2cWrite(): i2c_master_transmit failed: [259] ESP_ERR_INVALID_STATE
+[  3224][E][esp32-hal-i2c-ng.c:275] i2cWrite(): i2c_master_transmit failed: [259] ESP_ERR_INVALID_STATE
+[  3233][E][esp32-hal-i2c-ng.c:275] i2cWrite(): i2c_master_transmit failed: [259] ESP_ERR_INVALID_STATE
+[  3242][E][esp32-hal-i2c-ng.c:275] i2cWrite(): i2c_master_transmit failed: [259] ESP_ERR_INVALID_STATE
+[  3252][E][esp32-hal-i2c-ng.c:275] i2cWrite(): i2c_master_transmit failed: [259] ESP_ERR_INVALID_STATE
+[  3261][E][esp32-hal-i2c-ng.c:275] i2cWrite(): i2c_master_transmit failed: [259] ESP_ERR_INVALID_STATE
+[  3270][E][esp32-hal-i2c-ng.c:275] i2cWrite(): i2c_master_transmit failed: [259] ESP_ERR_INVALID_STATE
+[  3280][E][esp32-hal-i2c-ng.c:275] i2cWrite(): i2c_master_transmit failed: [259] ESP_ERR_INVALID_STATE
+Display initialized OK
+UI Task started on Core 0
+[  3291][E][esp32-hal-i2c-ng.c:275] i2cWrite(): i2c_master_transmit failed: [259] ESP_ERR_INVALID_STATE
+[  3300][E][esp32-hal-i2c-ng.c:275] i2cWrite(): i2c_master_transmit failed: [259] ESP_ERR_INVALID_STATE
+[  3309][E][esp32-hal-i2c-ng.c:275] i2cWrite(): i2c_master_transmit failed: [259] ESP_ERR_INVALID_STATE
+UI task created on Core 0[  3319][E][esp32-hal-i2c-ng.c:275] i2cWrite(): i2c_master_transmit failed: [259] ESP_ERR_INVALID_STATE
+[  3328][E][esp32-hal-i2c-ng.c:275] i2cWrite(): i2c_master_transmit failed: [259] ESP_ERR_INVALID_STATE
+[  3337][E][esp32-hal-i2c-ng.c:275] i2cWrite(): i2c_master_transmit failed: [259] ESP_ERR_INVALID_STATE
+[  3347][E][esp32-hal-i2c-ng.c:275] i2cWrite(): i2c_master_transmit failed: [259] ESP_ERR_INVALID_STATE
+
+[  3356][E][esp32-hal-i2c-ng.c:275] i2cWrite(): i2c_master_transmit failed: [259] ESP_ERR_INVALID_STATE
+[  3365][E][esp32-hal-i2c-ng.c:275] i2cWrite(): i2c_master_transmit failed: [259] ESP_ERR_INVALID_STATE
+[  3375][E][esp32-hal-i2c-ng.c:275] i2cWrite(): i2c_master_transmit failed: [259] ESP_ERR_INVALID_STATE
+[  3384][E][esp32-hal-i2c-ng.c:275] i2cWrite(): i2c_master_transmit failed: [259] ESP_ERR_INVALID_STATE
+[  3393][E][esp32-hal-i2c-ng.c:275] i2cWrite(): i2c_master_transmit failed: [259] ESP_ERR_INVALID_STATE
+
+--- CLI COMMANDS (3-Letter Codes) ---
+ [MIXER]
+  vol <0-100> : Master Volume
+  mix <0-100> : Dry/Wet Mix
+  byp <0/1>   : Bypass
+  src <0-2>   : Source (0=MP3, 1=Synth, 2=I2S)
+ [TAPE ENGINE]
+  dly <ms>    : Delay Time (10-2000)
+  fbk <0-100> : Feedback
+  hds <1-7>   : Active Heads
+  mus <0/1>   : Head Mode (0=Free, 1=Musical)
+  mod <0/1>   : Engine Mode (0=Saturator, 1=Delay)
+  tps <0-100> : Tape Speed (Varispeed)
+  tpa <0-100> : Tape Age (Filter)
+  drv <0-100> : Drive / Saturation
+  nlv <0-100> : Noise Level
+  ngt <0-100> : Gate Threshold
+  red <0-100> : Gate Reduction % (0=None, 100=Mute)
+  hbp <0-100> : Head Bump
+  azm <0-100> : Azimuth (50=Center)
+ [COLOR]
+  gfc <0/1>   : Guitar Focus (BPF)
+  ton <0-100> : Tone Control
+ [MODULATION]
+  dps <0-100> : Dropouts
+  ftd <0-100> : Flutter Depth % (maps to 0-45 core range)
+  ftr <0.1-20>: Flutter Rate in Hz
+  wwd <0-100> : Wow Depth % (maps to 0-35 core range)
+  wwr <0.1-5> : Wow Rate in Hz
+ [MELODY GEN]
+  wvf <0-3>   : Waveform (Sine, Saw, Tri, Sqr)
+  scl <0-4>   : Scale
+  ptc <midi>  : Root Key
+  moo <0-100> : Mood
+  rtm <0-100> : Rhythm Density
+ [EFFECT MODES]
+  frz <0/1>   : Freeze/Hold
+  rev <0/1>   : Reverse Delay
+  revmode <0..2> : Rhythmic, Free, Legacy
+  revdiv <0..8>  : 1/4, 1/1, 1/2, 1/8, 1/16, 1/4D, 1/8D, 1/4T, 1/8T
+  rvb <0/1>   : Reverse Reverb
+  spr <0/1>   : Spring Reverb
+  spm <0-100> : Spring Mix
+  spd <0-100> : Spring Decay
+  spf <0-100> : Spring Damping
+ [ACCIDENTAL WARP V1.3]
+  wrp <0/1>   : Warp Enable/Bypass
+  wsp <0-2.0> : Warp Speed Multiplier (1.0 = +1 Octave)
+  wgr <10-400>: Warp Grain Window in ms
+  wst <0-1.0> : Warp Stereo Phase Offset
+  wfb <0-95>  : Warp Feedback %
+  wmd <0-3>   : Warp Mode (0=2T-Herm, 1=1T-Herm, 2=1T-Raw, 3=2T-Raw)
+  perf        : DSP Performance & Telemetry Stats
+  identity    : Firmware commit/source/ELF identity and boot configuration
+  audiohealth : One real PCM block and I2S write result (outside benchmark)
+ [GLOBAL TRANSPORT CLOCK]
+  tempo <bpm> : Set global BPM
+  transport <play|pause|stop|reset|status> : Transport controls
+  tap [status|reset] : Tap tempo input, query status, or reset estimator
+  clock <source [internal|tap|midi]|status|reset> : MIDI Clock & Tempo Source controls
+
+  load <preset> : clean, lofi, dub, broken, warp_octave, warp_cascade
+  list          : Show Dashboard
+=== SYSTEM READY ===
+FrippEngine: Allocating 1.2 MB for Delay A (7s)
+FrippEngine: Allocating 1.9 MB for Delay B (11s)
+FrippEngine: PSRAM allocation SUCCESS
+Audio Task: FrippEngine allocated (7s + 11s delays)
+BubblesEngine: Allocating 0.3 MB per channel
+BubblesEngine: PSRAM allocation SUCCESS
+Audio Task: BubblesEngine allocated (~1.5s buffer)
+Audio Task: FreeverbEngine allocated (~100KB)
+Audio Task: MelodyGen allocated
+Audio Task: Output allocated
+Audio Task: Starting audio processing...
+Audio Task: ptrs tape=0x3c0919c0 freeverb=0x3fcbb208 melody=0x3fcd476c gate=0x3fca6e68 hist=0x3c6f1bf8
+FirmwareCommit=990e5e9bc0cb22e469705555c26ef1ef9c94ae06
+SourceSHA256=54c302c03f9d8ea43a22ea072d8d0e13c5318d4d8780814a09990618932f05f4
+ELFSHA256=5069e445d11390370f33bd4e650830a389ee6619db48c70c6c72ce9373999f6e
+ResetReason=1 CPU=240 SampleRate=44100 BlockFrames=128 PSRAMBytes=8388608 FlashBytes=16777216 I2SInitialized=1
+=== IDENTITY END ===
+
+=== HYDRA DSP PERFORMANCE TELEMETRY ===
+Block Size          : 128 frames
+Sample Rate         : 44100 Hz
+CPU Clock           : 240 MHz
+Block Time Budget   : 2902.5 us
+Blocks Processed    : 1470
+Avg DSP Block Time  : 1499 us
+Last DSP Block Time : 1447 us
+Peak DSP Block Time : 1826 us
+DSP Budget Use (EMA): 50.4 %
+DSP Budget Overruns : 0
+I2S TX Write Failures: 0
+Full Work Peak      : 1835 us
+Full Work Overruns  : 0
+Internal Free Heap  : 125296 bytes
+SPIRAM (PSRAM) Free : 1663048 bytes
+Audio Stack Min Free: 27268 bytes
+Warp Active         : NO
+========================================
+

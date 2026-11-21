@@ -1,14 +1,41 @@
-# Phase 6.4.1 — Release Decision Record
+# Phase 6.5 — Release Decision Record (Phase 6.4.1 evidence retained)
 
-Date: 2026-11-20. Repository `ovelhaaa/hydra-tape-engine`, existing
+Updated: 2026-11-21. Repository `ovelhaaa/hydra-tape-engine`, existing
 [PR #54](https://github.com/ovelhaaa/hydra-tape-engine/pull/54), branch
 `feature/musical-validation-phase6` to `main`. No merge performed.
 
 ## Classification
 
-**AUTOMATED_CI_PASS — PENDING_HUMAN_AUDITION / PHYSICAL_RUNTIME_PENDING.**
+**PHYSICAL_RUNTIME_PASS — PENDING_HUMAN_AUDITION.**
 
-All five required workflows passed on code HEAD
+Phase6.5 production source `990e5e9bc0cb22e469705555c26ef1ef9c94ae06`
+is identified by its running ELF/source hashes. Seven 10000-block/256-warmup
+scenarios and a new 300.2168-second, 103399-block sustained run completed with
+zero DSP/full-work overruns and zero observed I2S TX write failures. Heap/PSRAM
+were stable, stack minimum 27268 bytes. Maximum whole work was 2820us against
+2902.49us; worst P99 was 2215us (76.31%, above the preferred 70% target).
+The full [physical record](PHASE65_PHYSICAL_HARDWARE_ACCEPTANCE.md) and
+[hash-validated raw evidence](evidence/phase65-physical/manifest.json) preserve
+both failed host-capture attempts instead of treating them as five-minute passes.
+
+The measured correction is host scheduling: a per-block stack-watermark scan
+cost 1143–1144us outside the former DSP timer. Querying that retained watermark
+from the CLI removes the hidden deadline stall. DSP, ABI, flags and goldens are
+unchanged. USB silence was reproduced after ordinary RTS reset; esptool's
+watchdog reset recovered application boot without another flash.
+
+This is internal-generator/driver-level I2S acceptance, not analog or external RX
+acceptance. No monitoring or MIDI source was available. LittleFS mount and OLED/I2C
+errors remain documented peripheral limitations. Human audition of the final
+listening package remains pending. **No READY FOR FINAL RELEASE REVIEW or merge.**
+
+Current Phase6.5 software CI must be read from the exact-head checks and run links
+in [PR #54](https://github.com/ovelhaaa/hydra-tape-engine/pull/54/checks); it is not
+inherited from Phase6.4.1. Fresh local Native/WASM suites each pass 16/16, strict
+max_abs/RMSE=0, with [local logs](evidence/phase65-physical/software/).
+The software run URLs retained below are explicitly the Phase6.4.1 baseline.
+
+In the Phase6.4.1 baseline, all five required workflows passed on code HEAD
 `e2c94972cc295f2c8ac81ea0b0ecc410868b8961`. Final record changes are followed by
 another complete CI execution; the PR contains its latest-head links. Human
 listening and physical runtime are independent pending release gates. No full
@@ -35,7 +62,8 @@ extrapolated to Linux. Initial local/remote HEAD was
 | AudioWorklet Reset | PASS | Web real Chrome 157.0.8103.78, actual AudioContext/AudioWorklet/WASM, A–E all pass |
 | Listening Lab | PASS | [Listening](https://github.com/ovelhaaa/hydra-tape-engine/actions/runs/44842365950), final 10 pairs / 20 PCM24 WAVs / 10 CSVs, hashes, real Chrome player |
 | ESP32-S3 Build | PASS | Core production and Reverse production/stage-profile builds; local production RAM 26304 B / flash 627743 B |
-| ESP32-S3 Runtime | PENDING | PHYSICAL_RUNTIME_PENDING; USB programmer responds, firmware console remains silent |
+| ESP32-S3 Runtime | PASS | Phase6.5 identified production, seven complete cases, 103399-block/300.2168s sustain; [raw evidence](evidence/phase65-physical/final-results.json) |
+| Whole-task work / memory | PASS | Full-work peak 2820us, zero excesses; heap125296/PSRAM1663048 stable, stack27268 bytes |
 | Human Listening | PENDING | PENDING_HUMAN_AUDITION; no previous signoff transferred |
 | ABI C 1.7 / goldens | PASS | Native/WASM symbol, legacy-consumer and golden checks; fixtures not regenerated |
 
@@ -124,7 +152,7 @@ A 3e-5 difference is approximately 252 LSB (-90.46 dBFS peak error), not a fract
 of an LSB. Small amplitude error and automated playback do not establish human
 approval. Prior Phase6.2/6.3 listening decisions remain historical only.
 
-## Physical follow-up
+## Physical follow-up — historical Phase6.4.1, superseded by Phase6.5 above
 
 COM15, VID303A:1001, serial/MAC B8:F8:62:E3:E4:A4 identified by esptool:
 ESP32-S3 rev0.2, 8 MB PSRAM, USB Serial/JTAG. RTS reset succeeded at the programmer

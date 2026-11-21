@@ -1,5 +1,10 @@
 # Phase 6.3 — Reverse real-time optimization, regression recovery and deadline hardening
 
+Current physical acceptance is tracked in [Phase 6.5](PHASE65_PHYSICAL_HARDWARE_ACCEPTANCE.md).
+The Phase6.3 measurements below are historical, not current firmware measurements.
+In particular, the old eighth/sixteenth capture labels used whole/half enum values;
+the Phase6.5 report explicitly corrects that comparison boundary.
+
 Date: 2026-11-19. PR: [#54](https://github.com/ovelhaaa/hydra-tape-engine/pull/54). Branch:
 `feature/musical-validation-phase6`; destination: `main`. Audited HEAD:
 `c7c807a5bc182fdadd8b7d0067f8b4e9b5af10bf`. Approved DSP baseline: `5e3d2bf`.
@@ -181,10 +186,12 @@ production firmware. Raw serial captures accompany every physical number in
 
 The two blockers recorded above are resolved and the physical baseline is preserved.
 
-* **Issue #48: PASS.** Native/WASM are bit-exact (`max_abs = 0`, `RMSE = 0`). The divergence
-  came from two platform libm values rounded to float: the comparator stimulus (`std::sin`,
-  3/2048 samples) and the magnetic `tanh` table (84/1025 entries). The Reverse path itself
-  was never implicated. See [PHASE6_NUMERICAL_EQUIVALENCE.md](PHASE6_NUMERICAL_EQUIVALENCE.md).
+* **Issue #48: PASS in Phase6.4.1 official CI.** Native/WASM are bit-exact
+  (`max_abs = 0`, `RMSE = 0`). The earlier Phase6.4 libm explanation was superseded
+  by clean Linux controls: the official discrepancy was native FMA contraction;
+  input and compiled canonical LUT bits were already equal. Explicit contraction
+  policy fixes it without rewriting Reverse. See
+  [PHASE6_NUMERICAL_EQUIVALENCE.md](PHASE6_NUMERICAL_EQUIVALENCE.md).
 * **Complete-engine criteria: 27/27.** The four tail gates were reclassified as bounded
   sustain and replaced by explicit stability gates; the 44.1 kHz transition was a
   one-sample filter-coefficient discontinuity and is fixed by a 20 ms per-block ramp.
@@ -196,6 +203,7 @@ The two blockers recorded above are resolved and the physical baseline is preser
 * **Audio itself changes**, so the 10/10 Phase 6.3 approval does not carry over. A new
   10-pair package is published at `artifacts/listening-lab/phase6-final-review/` with
   human listening **PENDING**.
-* The physical firmware was rebuilt after the change. Physical runtime numbers are recorded
-  in [PHASE6_RELEASE_DECISION.md](PHASE6_RELEASE_DECISION.md).
+* The physical firmware was rebuilt after the change, but Phase6.4.1 runtime remained
+  pending. Current measurements and the newly measured host stack-scan defect are
+  recorded in [Phase6.5 physical acceptance](PHASE65_PHYSICAL_HARDWARE_ACCEPTANCE.md).
 

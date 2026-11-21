@@ -1,0 +1,23 @@
+{
+  "classification": "PHYSICAL_RUNTIME_PASS",
+  "scope": "Production internal-source DSP and driver-level stereo I2S; no analog/wire capture",
+  "sustain_seconds": 300.21683579997625,
+  "sustain_blocks": 103399,
+  "zero_dsp_overruns": true,
+  "zero_full_work_overruns": true,
+  "zero_i2s_failures": true,
+  "full_work_peak_us": 2820,
+  "heap_observed_range": [
+    125296,
+    125296
+  ],
+  "psram_observed_range": [
+    1663048,
+    1663048
+  ],
+  "stack_min_bytes": 27268,
+  "physical_listening": "NOT_TESTED",
+  "human_final_package": "PENDING_HUMAN_AUDITION",
+  "midi": "PHYSICAL_MIDI_CLOCK_NOT_TESTED",
+  "peripherals": "LittleFS and OLED/I2C errors preserved; no MP3/filesystem or external I2S RX acceptance"
+}

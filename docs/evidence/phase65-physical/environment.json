@@ -1,0 +1,81 @@
+{
+  "utc": "2026-11-21T01:34:22.730688+00:00",
+  "head": "df8b462eb70685640efdf4219eeba9ef35f3a263",
+  "before": [
+    {
+      "port": "COM6",
+      "vid": null,
+      "pid": null,
+      "serial": null,
+      "description": "Serial Padr\u00e3o por link Bluetooth (COM6)",
+      "hwid": "BTHENUM\\{00001101-0000-1000-8000-00805F9B34FB}_LOCALMFG&0000\\8&3A9899E2&0&000000000000_00000000"
+    },
+    {
+      "port": "COM7",
+      "vid": null,
+      "pid": null,
+      "serial": null,
+      "description": "Serial Padr\u00e3o por link Bluetooth (COM7)",
+      "hwid": "BTHENUM\\{00001101-0000-1000-8000-00805F9B34FB}_VID&000105D6_PID&000A\\8&3A9899E2&0&9330885DA3F2_C00000000"
+    },
+    {
+      "port": "COM15",
+      "vid": 12346,
+      "pid": 4097,
+      "serial": "B8:F8:62:E3:E4:A4",
+      "description": "Dispositivo Serial USB (COM15)",
+      "hwid": "USB VID:PID=303A:1001 SER=B8:F8:62:E3:E4:A4"
+    }
+  ],
+  "flash_written": false,
+  "observations": [
+    {
+      "step": "initial_dtr_false",
+      "dtr": false,
+      "rts": false,
+      "bytes": 552,
+      "text": "> help updated\n\n=== HYDRA DSP PERFORMANCE TELEMETRY ===\r\nBlock Size          : 128 frames\nSample Rate         : 44100 Hz\nCPU Clock           : 240 MHz\nBlock Time Budget   : 2902.5 us\nBlocks Processed    : 33217\nAvg DSP Block Time  : 1501 us\nLast DSP Block Time : 1468 us\nPeak DSP Block Time : 1810 us\nDSP Budget Use (EMA): 50.6 %\nDSP Budget Overruns : 0\nI2S TX Write Failures: 0\nInternal Free Heap  : 125360 bytes\nSPIRAM (PSRAM) Free : 1663048 bytes\nAudio Stack Min Free: 27284 bytes\nWarp Active         : NO\n========================================\n\r\n"
+    },
+    {
+      "step": "console_dtr_true",
+      "dtr": true,
+      "rts": false,
+      "bytes": 552,
+      "text": "> help updated\n\n=== HYDRA DSP PERFORMANCE TELEMETRY ===\r\nBlock Size          : 128 frames\nSample Rate         : 44100 Hz\nCPU Clock           : 240 MHz\nBlock Time Budget   : 2902.5 us\nBlocks Processed    : 34600\nAvg DSP Block Time  : 1501 us\nLast DSP Block Time : 1464 us\nPeak DSP Block Time : 1810 us\nDSP Budget Use (EMA): 50.4 %\nDSP Budget Overruns : 0\nI2S TX Write Failures: 0\nInternal Free Heap  : 125360 bytes\nSPIRAM (PSRAM) Free : 1663048 bytes\nAudio Stack Min Free: 27284 bytes\nWarp Active         : NO\n========================================\n\r\n"
+    },
+    {
+      "step": "rts_reset_100ms",
+      "dtr": false,
+      "rts": false,
+      "bytes": 552,
+      "text": "> help updated\n\n=== HYDRA DSP PERFORMANCE TELEMETRY ===\r\nBlock Size          : 128 frames\nSample Rate         : 44100 Hz\nCPU Clock           : 240 MHz\nBlock Time Budget   : 2902.5 us\nBlocks Processed    : 39138\nAvg DSP Block Time  : 1501 us\nLast DSP Block Time : 1515 us\nPeak DSP Block Time : 1867 us\nDSP Budget Use (EMA): 51.6 %\nDSP Budget Overruns : 0\nI2S TX Write Failures: 0\nInternal Free Heap  : 125360 bytes\nSPIRAM (PSRAM) Free : 1663048 bytes\nAudio Stack Min Free: 27284 bytes\nWarp Active         : NO\n========================================\n\r\n"
+    }
+  ],
+  "exclusive_open": "SUCCESS (port available)",
+  "after": [
+    {
+      "port": "COM6",
+      "vid": null,
+      "pid": null,
+      "serial": null,
+      "description": "Serial Padr\u00e3o por link Bluetooth (COM6)",
+      "hwid": "BTHENUM\\{00001101-0000-1000-8000-00805F9B34FB}_LOCALMFG&0000\\8&3A9899E2&0&000000000000_00000000"
+    },
+    {
+      "port": "COM7",
+      "vid": null,
+      "pid": null,
+      "serial": null,
+      "description": "Serial Padr\u00e3o por link Bluetooth (COM7)",
+      "hwid": "BTHENUM\\{00001101-0000-1000-8000-00805F9B34FB}_VID&000105D6_PID&000A\\8&3A9899E2&0&9330885DA3F2_C00000000"
+    },
+    {
+      "port": "COM15",
+      "vid": 12346,
+      "pid": 4097,
+      "serial": "B8:F8:62:E3:E4:A4",
+      "description": "Dispositivo Serial USB (COM15)",
+      "hwid": "USB VID:PID=303A:1001 SER=B8:F8:62:E3:E4:A4"
+    }
+  ]
+}

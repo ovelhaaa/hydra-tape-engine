@@ -1,0 +1,24 @@
+{
+  "commit": "990e5e9bc0cb22e469705555c26ef1ef9c94ae06",
+  "source_sha256": "54c302c03f9d8ea43a22ea072d8d0e13c5318d4d8780814a09990618932f05f4",
+  "binary_sha256": "0a2c42cef5921a397b95576cdcb87f589bb707195c6f73e6faeeac4f2ebf13e5",
+  "binary_bytes": 630208,
+  "elf_sha256": "5069e445d11390370f33bd4e650830a389ee6619db48c70c6c72ce9373999f6e",
+  "toolchain": "Xtensa GCC 14.2.0 esp-14.2.0_20251107",
+  "framework": "Arduino 3.3.6 / ESP-IDF 5.5.2.260116",
+  "platform": "pioarduino espressif32 55.03.36",
+  "cpu_mhz": 240,
+  "sample_rate": 44100,
+  "block_frames": 128,
+  "flash_bytes": 16777216,
+  "psram_bytes": 8388608,
+  "local_restore_images": "artifacts/phase65-physical/boot/ and final-production/firmware.bin",
+  "binary_distribution": "Physical binaries remain locally preserved; CI artifact contains logs/metadata, not a differently compiled binary",
+  "source_hashes": {
+    "src/main.cpp": "bbc25c5b5e150e7617cd1c72990653791fc9ec9ba966b261640fc135b31c882f",
+    "scripts/build_esp32_dsp.py": "27500d908d46f5ffafd863f2cdd8b84474e9c2bf4f8610a0463eff93d2817bbf",
+    "platformio.ini": "1df1350b9556671ffc33cf19fa1d0d99d9c83ac943fffa4bc84226d379001269",
+    "dsp/core/tape_core.cpp": "f94cf01779302e7df318243c9abb437e338fbb70daa69ff291c258cf42d8e43a",
+    "dsp/core/fast_tanh_table.inc": "fcc7a4d288f3207a2f09a2cca3c708a713fabbe0289f9a49a5e5bcbc7ff8a7ad"
+  }
+}

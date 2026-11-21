@@ -1,0 +1,91 @@
+{
+  "baseline": "Phase6.3 historical; raw division labels and inherited stress settings differ",
+  "rows": [
+    {
+      "scenario": "delay",
+      "baseline_phase63_p99_us": 1913,
+      "current_p99_us": 1921,
+      "delta_us": 8,
+      "delta_percent": 0.4181913225300482,
+      "directly_comparable": true,
+      "current_p99_budget_percent": 66.184453125,
+      "old_production_wall_ms": 30077.0,
+      "current_wall_ms": 29019.6,
+      "old_production_effective_frames_per_second": 42557.43591448615
+    },
+    {
+      "scenario": "reverse-quarter",
+      "baseline_phase63_p99_us": 2095,
+      "current_p99_us": 2082,
+      "delta_us": -13,
+      "delta_percent": -0.6205250596658662,
+      "directly_comparable": true,
+      "current_p99_budget_percent": 71.73140625,
+      "old_production_wall_ms": 30629.5,
+      "current_wall_ms": 29019.5,
+      "old_production_effective_frames_per_second": 41789.777828563965
+    },
+    {
+      "scenario": "reverse-eighth",
+      "baseline_phase63_p99_us": 2031,
+      "current_p99_us": 2101,
+      "delta_us": 70,
+      "delta_percent": 3.446578040374204,
+      "directly_comparable": false,
+      "current_p99_budget_percent": 72.386015625,
+      "old_production_wall_ms": 30733.3,
+      "current_wall_ms": 29025.4,
+      "old_production_effective_frames_per_second": 41648.6351937475
+    },
+    {
+      "scenario": "reverse-sixteenth",
+      "baseline_phase63_p99_us": 2111,
+      "current_p99_us": 2102,
+      "delta_us": -9,
+      "delta_percent": -0.426338228327805,
+      "directly_comparable": false,
+      "current_p99_budget_percent": 72.42046875,
+      "old_production_wall_ms": 30769.1,
+      "current_wall_ms": 29025.1,
+      "old_production_effective_frames_per_second": 41600.176800751404
+    },
+    {
+      "scenario": "reverse-feedback95",
+      "baseline_phase63_p99_us": 2113,
+      "current_p99_us": 2080,
+      "delta_us": -33,
+      "delta_percent": -1.5617605300520587,
+      "directly_comparable": true,
+      "current_p99_budget_percent": 71.66250000000001,
+      "old_production_wall_ms": 30657.8,
+      "current_wall_ms": 29019.5,
+      "old_production_effective_frames_per_second": 41751.201977963196
+    },
+    {
+      "scenario": "multihead",
+      "baseline_phase63_p99_us": 2193,
+      "current_p99_us": 2215,
+      "delta_us": 22,
+      "delta_percent": 1.0031919744642126,
+      "directly_comparable": true,
+      "current_p99_budget_percent": 76.313671875,
+      "old_production_wall_ms": 32790.1,
+      "current_wall_ms": 29020.5,
+      "old_production_effective_frames_per_second": 39036.172503286056
+    },
+    {
+      "scenario": "stress",
+      "baseline_phase63_p99_us": 2049,
+      "current_p99_us": 2076,
+      "delta_us": 27,
+      "delta_percent": 1.317715959004384,
+      "directly_comparable": false,
+      "current_p99_budget_percent": 71.5246875,
+      "old_production_wall_ms": 31377.0,
+      "current_wall_ms": 29023.4,
+      "old_production_effective_frames_per_second": 40794.21232112694
+    }
+  ],
+  "stress_difference": "Current 4 heads/120BPM versus historical 7 heads/90BPM; Warp masks Reverse",
+  "division_difference": "Current eighth=3/sixteenth=4; historical labels used 1/2 (whole/half)"
+}

@@ -93,6 +93,9 @@ def classify(seconds_db, peak_per_second):
     finite = bool(np.all(np.isfinite(seconds_db)))
     if not finite:
         return "unstable growth", slope
+    # A flat numerical floor after complete decay is not sustained feedback.
+    if all(value == 0.0 for value in peak_per_second[-len(tail):]):
+        return "decayed to silence", slope
     if slope < -0.5:
         return "decay", slope
     if abs(slope) <= 0.05:

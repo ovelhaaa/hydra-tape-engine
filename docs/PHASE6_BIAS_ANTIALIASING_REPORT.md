@@ -251,7 +251,19 @@ Two items above are superseded as *status*, not as evidence:
   coefficients with retained biquad state, not a bias artefact. Fixed by a 20 ms per-block
   ramp: 0.05122 → 0.01441, below the unchanged 0.03 limit. See
   [PHASE6_TRANSITION_ANALYSIS.md](PHASE6_TRANSITION_ANALYSIS.md).
-* **Numerical equivalence** (`max_abs = 0`, `RMSE = 0`) removed the last open gate. The
+* **Historical Windows numerical equivalence** (`max_abs = 0`, `RMSE = 0`) did not establish Linux acceptance; Phase 6.4.1 isolated and corrected FMA contraction. The
   magnetic mapping is untouched; the `tanh` lookup table is now a committed canonical table
   with identical values to within 1 ULP. See
   [PHASE6_NUMERICAL_EQUIVALENCE.md](PHASE6_NUMERICAL_EQUIVALENCE.md).
+
+## Phase 6.4.1 official Linux acceptance
+
+[Bias run 44842366000](https://github.com/ovelhaaa/hydra-tape-engine/actions/runs/44842366000)
+passed every required step at `e2c94972cc295f2c8ac81ea0b0ecc410868b8961`:
+49/49 spectral/transfer gates, standalone whine, complete current regressions,
+plots, production firmware build, verified 60-pair artifact and real Chrome player.
+At 48 kHz the 6 kHz residual reduction was 122.492178364 dB; sine440 spurious
+level -138.873150755 dBFS, high-drive spurious -130.161492530 dBFS.
+The technical artifact retains the old six-second 23/27 observations, historical
+LUT mismatch and any historical assertion failures. Current acceptance is separately
+required; no historical result is silently presented as a current PASS.

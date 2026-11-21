@@ -151,3 +151,8 @@ stopped 1.8 ms, controlled exception 24.3 ms, concurrent repeated 5.3 ms,
 ack timeout 2000.8 ms. The context resumed only for running-success cases.
 The evidence artifact records actual hashes/events. These are observed host
 end-to-end durations, not DSP reset CPU-time benchmarks.
+
+Release-code [Web run 44842365973](https://github.com/ovelhaaa/hydra-tape-engine/actions/runs/44842365973)
+also passed all five scenarios at `e2c94972cc295f2c8ac81ea0b0ecc410868b8961`.
+Chrome 157.0.8103.78 observed running/stopped/error/repeated/timeout end-to-end
+3.2/1.5/3.5/3.1/2000.7 ms, respectively. Web host tests passed 40/40.

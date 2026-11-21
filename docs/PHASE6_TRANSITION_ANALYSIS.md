@@ -197,3 +197,7 @@ original event schedule, not the maxima of this expanded schedule.
 60-second feedback diagnostics; reports are published under
 `ci-reports/reverse/transitions/`. Final Linux status belongs to the Release
 Decision Record, not to the local numbers above.
+
+Clean Linux [Reverse run 44842365989](https://github.com/ovelhaaa/hydra-tape-engine/actions/runs/44842365989)
+confirmed the five-parameter maxima at 0.017967507243 (44.1 kHz) and
+0.014195829630 (48 kHz), with the unchanged 0.03 limit and all scenarios retained.

@@ -4,7 +4,7 @@
 
 A Fase 6.4 introduziu LUT tanh canônica, smoothing de filtros e suspensão antes de reset. A aprovação Windows foi generalizada incorretamente para Linux. A Fase 6.4.1 reproduziu a falha sem cache, demonstrou entrada/LUT idênticas e isolou a causa atual: FMA habilitado pelo target x86-64-v3 padrão do Ubuntu 26.04. Com `-ffp-contract=off`, o Core Equivalence oficial passa em Ubuntu 24.04 e 26.04 com cinco cenários e max_abs=RMSE=0. O código DSP e os flags ESP32 não foram alterados.
 
-Bias recuperado, testes de feedback interno de 60 s, transições de cinco parâmetros e reset real A–E possuem workflows obrigatórios. Pacote final: 10 pares PCM24, incluindo feedback de 60 s, manifesto/hashes/player. Escuta humana `PENDING_HUMAN_AUDITION`; runtime físico `PHYSICAL_RUNTIME_PENDING`. O estado completo da CI e links reais constam no [Release Decision Record](PHASE6_RELEASE_DECISION.md). **Sem merge.** Os números e aprovações das fases anteriores abaixo são históricos.
+Bias recuperado, testes de feedback interno de 60 s, transições de cinco parâmetros e reset real A–E possuem workflows obrigatórios. Pacote final: 10 pares PCM24, incluindo feedback de 60 s, manifesto/hashes/player. Escuta humana `PENDING_HUMAN_AUDITION`; runtime físico `PHYSICAL_RUNTIME_PENDING`. Os cinco workflows obrigatórios passaram no HEAD `e2c9497`. O estado completo da CI e links reais constam no [Release Decision Record](PHASE6_RELEASE_DECISION.md). **Sem merge.** Os números e aprovações das fases anteriores abaixo são históricos.
 
 ## Fase 6.3 — otimização de tempo real do Reverse (2026-11-19)
 
@@ -192,7 +192,7 @@ flowchart LR
 
 
 ### FASE 6.4.1 — Recuperação CI e evidência de release (2026-11-20)
-- **Equivalência oficial recuperada; CI completa em validação, escuta e runtime pendentes; sem merge.**
+- **AUTOMATED_CI_PASS — escuta humana e runtime físico pendentes; sem merge.**
 - Builds limpos reproduziram a falha Ubuntu 26.04 por FMA; o controle e a correção CMake passam em ambos os Ubuntus. Entrada e LUT idênticas bit a bit.
 - Diagnósticos de bias recuperados (49/49 local), LUT histórica explícita, full-engine 27/27 e feedback interno de 60 s em workflow obrigatório.
 - Transições incluem drive, velocidade, idade, tone e head bump (0.01797/0.01420 local, limite 0.03).

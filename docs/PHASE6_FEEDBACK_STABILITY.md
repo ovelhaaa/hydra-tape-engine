@@ -190,3 +190,19 @@ units. The mid/late spectra are inspection evidence and **not a separate
 spectral acceptance gate**. PASS here concerns finite state, bounded RMS growth,
 output peak/ceiling criteria and matching diagnostic windows; it does not assert
 a new numerical spectral tolerance or human approval.
+
+## Clean Linux measurement
+
+[Reverse run 44842365989](https://github.com/ovelhaaa/hydra-tape-engine/actions/runs/44842365989)
+passed on `e2c94972cc295f2c8ac81ea0b0ecc410868b8961`: full-engine 27/27,
+six 60-second cases, all six internal windows stable and bit-identical to the
+full-engine output windows. Maximum positive internal RMS change was
+0.012521058212 dB; maximum output peak was 0.90766525; zero limiter-ceiling
+samples and no NaN/Inf. The four feedback95/multihead tails remain bounded
+with late slopes 0.00001–0.00005 dB/s. Both Reverse tails decay to exactly zero
+(-240 dB numerical measurement floor).
+
+A flat floor was previously labelled limited sustain by the late-slope classifier.
+The label now reports `decayed to silence` when every late peak is exactly zero.
+This changes no amplitude threshold or acceptance decision; the raw series,
+finite-state, peak, growth and probe-matching gates remain unchanged.

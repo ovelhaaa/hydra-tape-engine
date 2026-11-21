@@ -15,7 +15,12 @@
 
 #include "esp_cpu.h"
 #include "esp_heap_caps.h"
+#include <esp_idf_version.h>
+#if ESP_IDF_VERSION_MAJOR >= 5
 #include <esp_app_desc.h>
+#else
+#include <esp_ota_ops.h>
+#endif
 #include <esp_system.h>
 #include <Arduino.h>
 #include <driver/i2s.h>
@@ -1357,7 +1362,11 @@ void executeCommand(String line) {
     return;
 
   if (line == "identity") {
+#if ESP_IDF_VERSION_MAJOR >= 5
     const esp_app_desc_t* app = esp_app_get_description();
+#else
+    const esp_app_desc_t* app = esp_ota_get_app_description();
+#endif
     dualPrintf("FirmwareCommit=%s\nSourceSHA256=%s\nELFSHA256=", HYDRA_FIRMWARE_COMMIT,
                HYDRA_FIRMWARE_SOURCE_SHA256);
     for (uint8_t byte : app->app_elf_sha256) dualPrintf("%02x", byte);

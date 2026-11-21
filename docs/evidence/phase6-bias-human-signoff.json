@@ -1,0 +1,38 @@
+{
+  "received_date": "2026-11-19",
+  "reviewer": "User / responsible human reviewer",
+  "reviewer_statement": "o candidato foi aprovado em todos os testes",
+  "review_source_commit": "f0c16cddb891ba9079fa4dbbf98f29132ed5c9f0",
+  "review_json_sha256": "16ed04f9d3e8c6b73c3f272e3d728bbfba65009e91a4e2576783ad41b6f1038d",
+  "reviewed_manifest_sha256": "623f166c806b05a1284bf79e6102ab22c6b97110eedcafb6d2770905632bd366",
+  "content_hashes_verified": true,
+  "package_environment": {
+    "os": "Windows-10-10.0.19045-SP0",
+    "python": "3.14.0",
+    "numpy": "2.4.1"
+  },
+  "candidate_audition_status": "PASS",
+  "candidate_scenarios_passed": [
+    "05_01_averaged",
+    "10_02_averaged",
+    "15_03_averaged",
+    "20_04_averaged",
+    "25_05_averaged",
+    "30_06_averaged",
+    "35_07_averaged",
+    "40_08_averaged",
+    "45_09_averaged",
+    "50_10_averaged",
+    "55_11_averaged",
+    "60_12_averaged"
+  ],
+  "candidate_count": 12,
+  "all_package_states": {
+    "PASS": 24,
+    "FAIL": 4,
+    "NOT REVIEWED": 32
+  },
+  "criteria_detail": "Per-criterion dictionaries are empty; no individual criterion PASS values were inferred. Scenario-level approval plus explicit user statement recorded.",
+  "scope": "Exact f0c16cd local Windows WAV/CSV hashes; not a claim that the published Linux artifact or other commits have identical content.",
+  "technical_status": "BLOCKED — REGRESSION / PERFORMANCE; no merge authorization"
+}

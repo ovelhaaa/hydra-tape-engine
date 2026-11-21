@@ -8,6 +8,7 @@
 #include "TapeDelay.h"
 #include "hydra_dsp_esp32_adapter.h"
 #include "hydra_pcm.hpp"
+#include "realtime_profile.hpp"
 #include "DisplayUI.h"
 #include "ParamDefs.h"
 
@@ -128,6 +129,8 @@ struct BlockBenchState {
   uint32_t* hist = nullptr;
 };
 BlockBenchState g_bench;
+// Stack high-water mark observed on the audio task (FreeRTOS words -> bytes).
+volatile uint32_t g_audio_stack_min = 0xFFFFFFFFu;
 
 enum StageProfState : uint8_t { STAGE_IDLE = 0, STAGE_WARMUP = 1, STAGE_RUNNING = 2, STAGE_DONE = 3 };
 struct StageProfileState {
@@ -144,6 +147,16 @@ struct StageProfileState {
   uint64_t cycTotal = 0;
 };
 StageProfileState g_stage_prof;
+
+// Fine-grained TapeCore stage profile (diagnostic firmware only).
+struct FineProfileState {
+  volatile StageProfState state = STAGE_IDLE;
+  volatile uint32_t warmupRemain = 0;
+  volatile uint32_t targetBlocks = 0;
+  volatile uint32_t collected = 0;
+  volatile uint64_t cycles[hydra::dsp::profile::Count]{};
+};
+FineProfileState g_fine_prof;
 volatile bool g_membench_req = false;
 volatile bool g_membench_done = false;
 volatile bool p_genActive = true;
@@ -791,7 +804,27 @@ void audioTask(void *parameter) {
             fripp->processStereo(blockL[i], blockR[i], &blockL[i], &blockR[i]);
           }
         } else if (tape) {
+          const bool fineWarmup = (g_fine_prof.state == STAGE_WARMUP);
+          const bool fineRun = (g_fine_prof.state == STAGE_RUNNING);
+          if (fineWarmup) hydra::dsp::profile::beginBlock(false);
+          else if (fineRun) hydra::dsp::profile::beginBlock(true);
           tape->processStereoBlock(blockL, blockR, blockL, blockR, AUDIO_CHUNK_SIZE);
+          if (fineWarmup) {
+            hydra::dsp::profile::endBlock();
+            if (--g_fine_prof.warmupRemain == 0) {
+              for (size_t s = 0; s < hydra::dsp::profile::Count; ++s) g_fine_prof.cycles[s] = 0;
+              g_fine_prof.collected = 0;
+              g_fine_prof.state = STAGE_RUNNING;
+            }
+          } else if (fineRun) {
+            hydra::dsp::profile::endBlock();
+            for (size_t s = 0; s < hydra::dsp::profile::Count; ++s)
+              g_fine_prof.cycles[s] += hydra::dsp::profile::block.cycles[s];
+            if (++g_fine_prof.collected >= g_fine_prof.targetBlocks) {
+              __sync_synchronize();
+              g_fine_prof.state = STAGE_DONE;
+            }
+          }
           appliedTapeCore = true;
         }
       }
@@ -871,6 +904,8 @@ void audioTask(void *parameter) {
 
     // Includes generation/DSP and PCM packing, with I2S calls outside the timer.
     const int64_t durationUs = esp_timer_get_time() - block_start_us;
+    const uint32_t stackWords = uxTaskGetStackHighWaterMark(nullptr);
+    if (stackWords < g_audio_stack_min) g_audio_stack_min = stackWords;
     const float budgetLoad = 100.0f * durationUs / kDspBlockBudgetUs;
     portENTER_CRITICAL(&g_dsp_perf_mux);
     g_dsp_perf.lastUs = durationUs;
@@ -1185,6 +1220,7 @@ void printDspPerformanceStats() {
   dualPrintf("I2S TX Write Failures: %u\n", perf.i2sWriteFailures);
   dualPrintf("Internal Free Heap  : %u bytes\n", heap_caps_get_free_size(MALLOC_CAP_INTERNAL));
   dualPrintf("SPIRAM (PSRAM) Free : %u bytes\n", heap_caps_get_free_size(MALLOC_CAP_SPIRAM));
+  dualPrintf("Audio Stack Min Free: %u bytes\n", (unsigned)g_audio_stack_min);
   dualPrintf("Warp Active         : %s\n", p_warpActive ? "YES" : "NO");
   if (p_warpActive) {
     dualPrintf("  Mode              : %d\n", p_warpMode);
@@ -1340,6 +1376,7 @@ void executeCommand(String line) {
                (unsigned long)g_bench.startHeap, (unsigned long)g_bench.endHeap,
                (unsigned long)g_bench.minFreeHeap, (unsigned long)g_bench.startPsram,
                (unsigned long)g_bench.endPsram, (long long)g_bench.maxParamUpdateUs);
+    dualPrintf("StackMinWords=%u\n", (unsigned)g_audio_stack_min);
     dualPrintln("=========================================");
     g_bench.state = BENCH_IDLE;
     return;
@@ -1406,6 +1443,57 @@ void executeCommand(String line) {
                usTot, pctBud(usTot), (unsigned long)(g_stage_prof.cycTotal / g_stage_prof.collected));
     dualPrintln("=====================================================");
     g_stage_prof.state = STAGE_IDLE;
+    return;
+  }
+
+  if (cmd == "prof2") {
+    uint32_t blocks = 1000;
+    uint32_t warmup = 256;
+    if (valStr.length() > 0) {
+      int sp2 = valStr.indexOf(' ');
+      if (sp2 > 0) {
+        long b = valStr.substring(0, sp2).toInt();
+        long w = valStr.substring(sp2 + 1).toInt();
+        if (b > 0) blocks = (uint32_t)b;
+        if (w > 0) warmup = (uint32_t)w;
+      } else {
+        long b = valStr.toInt();
+        if (b > 0) blocks = (uint32_t)b;
+      }
+    }
+    for (size_t s = 0; s < hydra::dsp::profile::Count; ++s) g_fine_prof.cycles[s] = 0;
+    g_fine_prof.targetBlocks = blocks;
+    g_fine_prof.warmupRemain = warmup;
+    g_fine_prof.collected = 0;
+    g_fine_prof.state = STAGE_WARMUP;
+    const int64_t deadlineUs = esp_timer_get_time() + ((int64_t)(blocks + warmup) * 20000LL) + 5000000LL;
+    while (g_fine_prof.state != STAGE_DONE && esp_timer_get_time() < deadlineUs) {
+      vTaskDelay(pdMS_TO_TICKS(10));
+    }
+    if (g_fine_prof.state != STAGE_DONE) {
+      dualPrintf("PROF2 TIMEOUT (state=%u collected=%lu/%lu)\n",
+                 (unsigned)g_fine_prof.state, (unsigned long)g_fine_prof.collected,
+                 (unsigned long)blocks);
+      g_fine_prof.state = STAGE_IDLE;
+      return;
+    }
+    const double n = (double)g_fine_prof.collected;
+    const double toUs = 1.0 / (240.0 * n);
+    uint64_t totalCycles = 0;
+    for (size_t s = 0; s < hydra::dsp::profile::Count; ++s) totalCycles += g_fine_prof.cycles[s];
+    dualPrintf("\n=== TAPECORE STAGE PROFILE (%lu blocks, warmup %lu) ===\n",
+               (unsigned long)g_fine_prof.collected, (unsigned long)warmup);
+    dualPrintf("%-20s %10s %8s %8s\n", "stage", "us/blk", "%core", "%budget");
+    for (size_t s = 0; s < hydra::dsp::profile::Count; ++s) {
+      const double us = (double)g_fine_prof.cycles[s] * toUs;
+      const double pctCore = (totalCycles > 0) ? 100.0 * (double)g_fine_prof.cycles[s] / (double)totalCycles : 0.0;
+      dualPrintf("%-20s %10.2f %7.1f%% %7.1f%%\n", hydra::dsp::profile::names[s], us, pctCore,
+                 100.0 * us / kDspBlockBudgetUs);
+    }
+    double usSum = (double)totalCycles * toUs;
+    dualPrintf("%-20s %10.2f %7.1f%% %7.1f%%\n", "TOTAL STAGES", usSum, 100.0, 100.0 * usSum / kDspBlockBudgetUs);
+    dualPrintln("=====================================================");
+    g_fine_prof.state = STAGE_IDLE;
     return;
   }
 

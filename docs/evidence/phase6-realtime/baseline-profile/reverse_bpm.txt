@@ -1,0 +1,11 @@
+
+=== STAGE PROFILE (1000 blocks, warmup 256 @ 240MHz) ===
+A1 Source/Gen/In :   108.12 us/blk (  3.8% tot |   3.7% budget) [25949 cyc/blk]
+A2 TapeCore/DSP  :  2693.56 us/blk ( 94.6% tot |  92.8% budget) [646454 cyc/blk]
+A3a Ext tanhf()  :     0.03 us/blk (  0.0% tot |   0.0% budget) [8 cyc/blk]
+A3b NoiseGate    :    24.29 us/blk (  0.9% tot |   0.8% budget) [5830 cyc/blk]
+A3c Freeverb     :     0.15 us/blk (  0.0% tot |   0.0% budget) [36 cyc/blk]
+A3d PCM Out      :    21.11 us/blk (  0.7% tot |   0.7% budget) [5066 cyc/blk]
+Loop/Timer Ovh   :     0.01 us/blk (  0.0% tot |   0.0% budget)
+TOTAL BLOCK      :  2847.29 us/blk (100.0% tot |  98.1% budget) [683348 cyc/blk]
+=====================================================

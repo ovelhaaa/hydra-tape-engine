@@ -1,0 +1,2633 @@
+{
+  "default_fma": {
+    "checkout_sha": "866ab965a05aa0195d0d00e4226f556fab708eaf",
+    "platform": "Linux-7.0.0-1020-azure-x86_64-with-glibc2.43",
+    "libc": [
+      "glibc",
+      "2.43"
+    ],
+    "compilers": [
+      "c++ (Ubuntu 15.2.0-16ubuntu1) 15.2.0\nCopyright (C) 2025 Free Software Foundation, Inc.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.\n\n",
+      "emcc (Emscripten gcc/clang-like replacement + linker emulating GNU ld) 3.1.62 (34c1aa36052b1882058f22aa1916437ba0872690)\nCopyright (C) 2014 the Emscripten authors (see AUTHORS.txt)\nThis is free and open source software under the MIT license.\nThere is NO warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.\n\n"
+    ],
+    "flags": [
+      "-std=c++17",
+      "-O3",
+      "-DNDEBUG",
+      "-I."
+    ],
+    "source_sha256": {
+      "include/hydra_mech_noise.hpp": "0fa4d5abdfbb54d2b8af12853f42b1fe84062110a3102f8733d69d96b080dc6b",
+      "include/hydra_pcm.hpp": "a14a95ad22a76d7bdb52f3a1c70a8e0d3b665ee14131f12add48088491c36ad1",
+      "include/hydra_dsp.h": "ef8f4108c2a0136d08b5299db43095a7350e628eb3294eb8e8c667e39c54857c",
+      "dsp/core/spsc_queue.hpp": "367d5b3eb714dc9f982185ac383c14d5e5e3a250486b56117de9ac0c64b7f3eb",
+      "dsp/core/midi_clock_sync.hpp": "4fca4cb2b216c28565ce03c7612071571a24a0cda551f6ec94cfbfd38a16c02f",
+      "dsp/core/global_transport_clock.hpp": "e27163232718f72744df8bde98902be99bb016a42922f74b5e2b46a4e81d92e0",
+      "dsp/core/realtime_profile.hpp": "a413af6641946b5ba3528bdd66270bd0507666df0f84022659aecb0114f7aeed",
+      "dsp/core/reverse_windows.hpp": "7ed2c351bbf7fc3c8c824186d007b56fc40f6b0348c70a7285ffc351cdde35fd",
+      "dsp/core/tape_core.cpp": "2ef4e6e4786276c8b8ee6681ea3ad77ff897900ebe7b17fdf68f7e3dbc7eb749",
+      "dsp/core/fast_tanh_table.inc": "0c455e0c43b1803aedfebbf1fd82668ab8c44bfc8259186e0be8388209be0676",
+      "dsp/core/tap_tempo.hpp": "9aabb52d7054b86582fdb59aa1ea7ee0ec3b05772a74643c6a9c9c0ba01c1686",
+      "dsp/core/hydra_dsp_c_api.cpp": "63df514975cfd9ffea3edf1c04e9c9667a8b033c4602652b7d4774d648212758",
+      "dsp/core/tape_core.hpp": "6679e218d4e1e8b02f0b517291399ae93a3fe778b978f9e00f50dff57daf045c",
+      "tests/core/render_trace.cpp": "a763f0c9376add4465ad14ad8e66bd87fd7911f5161121b8c04965fd5069cba3",
+      "tests/core/check.h": "51cfbea870d1b3146ffea7973f0342ba6f6e5f0621e1fc9501377ed7a5ed06bf"
+    },
+    "binary_sha256": {
+      "release-native.exe": "9a5bab0ee656da74d064e2b3de3d9d91b059a6a2b854c03e2d12fbcb9042b513",
+      "release-wasm.js": "8d3528c2dd1eabadeee899a984df8bd4e14bdc4358bd11011a67fa197315748d",
+      "release-wasm.wasm": "4d45adce61315de438ac204139fae82f75e9841acf464c5b3ad0183e21dfd6f9",
+      "instrumented-native.exe": "3a3c77f27654d2e2aac9d094b29edf43e5cccdf4ef617cfaec74d64a17ec9f8e",
+      "instrumented-wasm.js": "5f717115e2e6316a942bab6f9149347543f25ae8be50d64b3e264fed21dec5a8",
+      "instrumented-wasm.wasm": "161990f7b2e6217fae2da9ed4d4656c0bd712b504b8032b2d1b8271292d75023"
+    },
+    "scenarios": {
+      "baseline_glue": {
+        "max_abs": 4.461499999999785e-05,
+        "rmse": 1.6135092595653666e-05,
+        "output_sha256": [
+          "14a497432b11a265aff776afde08d52a40b362a75a579e4f4a54723167e7a30b",
+          "5b8b368f79168c7eb0f8578fcd84f195bfd115a7fd06d768045677b23737e31c"
+        ],
+        "instrumentation_preserves_output": true,
+        "stage_differences": {
+          "HighShelf.b2.-1": {
+            "first": {
+              "frame": -1,
+              "occurrence": 2,
+              "native": "0x1.98577ap-5",
+              "wasm": "0x1.98577ep-5",
+              "abs_error": 7.450580596923828e-09
+            },
+            "count": 4,
+            "peak": {
+              "frame": -1,
+              "occurrence": 4,
+              "native": "0x1.cc6728p-4",
+              "wasm": "0x1.cc6722p-4",
+              "abs_error": 2.2351741790771484e-08
+            }
+          },
+          "HighShelf.a2.-1": {
+            "first": {
+              "frame": -1,
+              "occurrence": 0,
+              "native": "0x1.2e0562p-1",
+              "wasm": "0x1.2e056p-1",
+              "abs_error": 5.960464477539063e-08
+            },
+            "count": 6,
+            "peak": {
+              "frame": -1,
+              "occurrence": 0,
+              "native": "0x1.2e0562p-1",
+              "wasm": "0x1.2e056p-1",
+              "abs_error": 5.960464477539063e-08
+            }
+          },
+          "inputHPF.0": {
+            "first": {
+              "frame": 5,
+              "occurrence": 5,
+              "native": "0x1.b3fa18p-4",
+              "wasm": "0x1.b3fa16p-4",
+              "abs_error": 7.450580596923828e-09
+            },
+            "count": 2039,
+            "peak": {
+              "frame": 2017,
+              "occurrence": 2017,
+              "native": "0x1.40b3eap-2",
+              "wasm": "0x1.405318p-2",
+              "abs_error": 0.000369340181350708
+            }
+          },
+          "conditionedInput.0": {
+            "first": {
+              "frame": 3,
+              "occurrence": 3,
+              "native": "0x1.e97ba6p-5",
+              "wasm": "0x1.e97ba4p-5",
+              "abs_error": 3.725290298461914e-09
+            },
+            "count": 2039,
+            "peak": {
+              "frame": 2018,
+              "occurrence": 2018,
+              "native": "0x1.44e1fep-2",
+              "wasm": "0x1.44812ap-2",
+              "abs_error": 0.0003693699836730957
+            }
+          },
+          "prePlayback.0": {
+            "first": {
+              "frame": 200,
+              "occurrence": 200,
+              "native": "0x1.71733cp-22",
+              "wasm": "0x1.7173p-22",
+              "abs_error": 8.526512829121202e-13
+            },
+            "count": 1838,
+            "peak": {
+              "frame": 1703,
+              "occurrence": 1703,
+              "native": "-0x1.998b94p-6",
+              "wasm": "-0x1.9a1feep-6",
+              "abs_error": 3.536976873874664e-05
+            }
+          },
+          "readModulation.0": {
+            "first": {
+              "frame": 0,
+              "occurrence": 0,
+              "native": "0x1.8fe58ap-9",
+              "wasm": "0x1.8fe588p-9",
+              "abs_error": 2.3283064365386963e-10
+            },
+            "count": 1995,
+            "peak": {
+              "frame": 2047,
+              "occurrence": 2047,
+              "native": "0x1.b26782p-6",
+              "wasm": "0x1.b27f84p-6",
+              "abs_error": 5.723908543586731e-06
+            }
+          },
+          "tapeOutput.0": {
+            "first": {
+              "frame": 200,
+              "occurrence": 200,
+              "native": "0x1.1b3a9ep-25",
+              "wasm": "0x1.1b3a7p-25",
+              "abs_error": 8.171241461241152e-14
+            },
+            "count": 1839,
+            "peak": {
+              "frame": 1614,
+              "occurrence": 1614,
+              "native": "-0x1.6d4e26p-5",
+              "wasm": "-0x1.6dabbap-5",
+              "abs_error": 4.462152719497681e-05
+            }
+          },
+          "inputHPF.1": {
+            "first": {
+              "frame": 3,
+              "occurrence": 3,
+              "native": "0x1.da2fd4p-5",
+              "wasm": "0x1.da2fd8p-5",
+              "abs_error": 7.450580596923828e-09
+            },
+            "count": 2044,
+            "peak": {
+              "frame": 1155,
+              "occurrence": 1155,
+              "native": "0x1.4d70c4p-2",
+              "wasm": "0x1.4d45a6p-2",
+              "abs_error": 0.00016447901725769043
+            }
+          },
+          "conditionedInput.1": {
+            "first": {
+              "frame": 2,
+              "occurrence": 2,
+              "native": "0x1.2970f6p-5",
+              "wasm": "0x1.2970f4p-5",
+              "abs_error": 3.725290298461914e-09
+            },
+            "count": 2045,
+            "peak": {
+              "frame": 1155,
+              "occurrence": 1155,
+              "native": "0x1.4ce0bp-2",
+              "wasm": "0x1.4cb59p-2",
+              "abs_error": 0.00016450881958007812
+            }
+          },
+          "prePlayback.1": {
+            "first": {
+              "frame": 200,
+              "occurrence": 200,
+              "native": "0x1.51cd94p-23",
+              "wasm": "0x1.51cdfap-23",
+              "abs_error": 7.247535904753022e-13
+            },
+            "count": 1834,
+            "peak": {
+              "frame": 1173,
+              "occurrence": 1173,
+              "native": "-0x1.10f764p-5",
+              "wasm": "-0x1.1122bep-5",
+              "abs_error": 2.067163586616516e-05
+            }
+          },
+          "readModulation.1": {
+            "first": {
+              "frame": 0,
+              "occurrence": 0,
+              "native": "0x1.8fe31cp-9",
+              "wasm": "0x1.8fe31ap-9",
+              "abs_error": 2.3283064365386963e-10
+            },
+            "count": 2021,
+            "peak": {
+              "frame": 2032,
+              "occurrence": 2032,
+              "native": "-0x1.1fd56ap-7",
+              "wasm": "-0x1.1f7332p-7",
+              "abs_error": 1.1708587408065796e-05
+            }
+          },
+          "tapeOutput.1": {
+            "first": {
+              "frame": 200,
+              "occurrence": 200,
+              "native": "0x1.02f7b4p-26",
+              "wasm": "0x1.02f802p-26",
+              "abs_error": 6.927791673660977e-14
+            },
+            "count": 1843,
+            "peak": {
+              "frame": 1162,
+              "occurrence": 1162,
+              "native": "0x1.669b98p-5",
+              "wasm": "0x1.66667cp-5",
+              "abs_error": 2.5324523448944092e-05
+            }
+          },
+          "recordInput.0": {
+            "first": {
+              "frame": 3,
+              "occurrence": 3,
+              "native": "0x1.6d6b36p-5",
+              "wasm": "0x1.6d6b34p-5",
+              "abs_error": 3.725290298461914e-09
+            },
+            "count": 2042,
+            "peak": {
+              "frame": 1439,
+              "occurrence": 1439,
+              "native": "-0x1.51bfdap-2",
+              "wasm": "-0x1.51d1dap-2",
+              "abs_error": 6.866455078125e-05
+            }
+          },
+          "feedbackInput.0": {
+            "first": {
+              "frame": 200,
+              "occurrence": 200,
+              "native": "0x1.6f6e7cp-31",
+              "wasm": "0x1.6f6e42p-31",
+              "abs_error": 1.609823385706477e-15
+            },
+            "count": 1843,
+            "peak": {
+              "frame": 1926,
+              "occurrence": 1926,
+              "native": "0x1.50f75p-8",
+              "wasm": "0x1.50f356p-8",
+              "abs_error": 2.3702159523963928e-07
+            }
+          },
+          "magLutInput.0": {
+            "first": {
+              "frame": 4,
+              "occurrence": 4,
+              "native": "0x1.db10b2p-5",
+              "wasm": "0x1.db10bp-5",
+              "abs_error": 3.725290298461914e-09
+            },
+            "count": 2042,
+            "peak": {
+              "frame": 1443,
+              "occurrence": 1443,
+              "native": "-0x1.474ea2p-2",
+              "wasm": "-0x1.476168p-2",
+              "abs_error": 7.161498069763184e-05
+            }
+          },
+          "magPriorState.0": {
+            "first": {
+              "frame": 4,
+              "occurrence": 4,
+              "native": "0x1.c9e946p-10",
+              "wasm": "0x1.c9e944p-10",
+              "abs_error": 1.1641532182693481e-10
+            },
+            "count": 2043,
+            "peak": {
+              "frame": 1534,
+              "occurrence": 1534,
+              "native": "-0x1.98516ep-5",
+              "wasm": "-0x1.98df72p-5",
+              "abs_error": 6.771832704544067e-05
+            }
+          },
+          "magLutOutput.0": {
+            "first": {
+              "frame": 20,
+              "occurrence": 20,
+              "native": "0x1.071228p-2",
+              "wasm": "0x1.071238p-2",
+              "abs_error": 2.384185791015625e-07
+            },
+            "count": 2026,
+            "peak": {
+              "frame": 1500,
+              "occurrence": 1500,
+              "native": "-0x1.4c4c4p-5",
+              "wasm": "-0x1.4ce0d6p-5",
+              "abs_error": 7.085129618644714e-05
+            }
+          },
+          "magState.0": {
+            "first": {
+              "frame": 3,
+              "occurrence": 3,
+              "native": "0x1.c9e946p-10",
+              "wasm": "0x1.c9e944p-10",
+              "abs_error": 1.1641532182693481e-10
+            },
+            "count": 2044,
+            "peak": {
+              "frame": 1533,
+              "occurrence": 1533,
+              "native": "-0x1.98516ep-5",
+              "wasm": "-0x1.98df72p-5",
+              "abs_error": 6.771832704544067e-05
+            }
+          },
+          "recordedSample.0": {
+            "first": {
+              "frame": 3,
+              "occurrence": 3,
+              "native": "0x1.2187b4p-5",
+              "wasm": "0x1.2187b2p-5",
+              "abs_error": 3.725290298461914e-09
+            },
+            "count": 2033,
+            "peak": {
+              "frame": 1505,
+              "occurrence": 1505,
+              "native": "-0x1.2e6708p-5",
+              "wasm": "-0x1.2efa7ap-5",
+              "abs_error": 7.03074038028717e-05
+            }
+          },
+          "limitedOutput.0": {
+            "first": {
+              "frame": 204,
+              "occurrence": 204,
+              "native": "-0x1.fef1bp-6",
+              "wasm": "-0x1.fef1b2p-6",
+              "abs_error": 1.862645149230957e-09
+            },
+            "count": 1839,
+            "peak": {
+              "frame": 1612,
+              "occurrence": 1612,
+              "native": "0x1.4932b4p-3",
+              "wasm": "0x1.491b5p-3",
+              "abs_error": 4.461407661437988e-05
+            }
+          },
+          "recordInput.1": {
+            "first": {
+              "frame": 3,
+              "occurrence": 3,
+              "native": "0x1.48e07cp-5",
+              "wasm": "0x1.48e08p-5",
+              "abs_error": 7.450580596923828e-09
+            },
+            "count": 2039,
+            "peak": {
+              "frame": 990,
+              "occurrence": 990,
+              "native": "-0x1.0e978ep-2",
+              "wasm": "-0x1.0ea284p-2",
+              "abs_error": 4.1812658309936523e-05
+            }
+          },
+          "feedbackInput.1": {
+            "first": {
+              "frame": 200,
+              "occurrence": 200,
+              "native": "0x1.4e7204p-32",
+              "wasm": "0x1.4e726cp-32",
+              "abs_error": 1.4432899320127035e-15
+            },
+            "count": 1840,
+            "peak": {
+              "frame": 1149,
+              "occurrence": 1149,
+              "native": "-0x1.940762p-9",
+              "wasm": "-0x1.940fccp-9",
+              "abs_error": 2.507586032152176e-07
+            }
+          },
+          "magLutInput.1": {
+            "first": {
+              "frame": 3,
+              "occurrence": 3,
+              "native": "0x1.39e9p-5",
+              "wasm": "0x1.39e904p-5",
+              "abs_error": 7.450580596923828e-09
+            },
+            "count": 2041,
+            "peak": {
+              "frame": 990,
+              "occurrence": 990,
+              "native": "-0x1.fca0eap-3",
+              "wasm": "-0x1.fcb7dep-3",
+              "abs_error": 4.3779611587524414e-05
+            }
+          },
+          "magPriorState.1": {
+            "first": {
+              "frame": 4,
+              "occurrence": 4,
+              "native": "0x1.9c263ep-10",
+              "wasm": "0x1.9c264p-10",
+              "abs_error": 1.1641532182693481e-10
+            },
+            "count": 2037,
+            "peak": {
+              "frame": 1065,
+              "occurrence": 1065,
+              "native": "-0x1.eb1d82p-4",
+              "wasm": "-0x1.eb4716p-4",
+              "abs_error": 3.965198993682861e-05
+            }
+          },
+          "magLutOutput.1": {
+            "first": {
+              "frame": 10,
+              "occurrence": 10,
+              "native": "0x1.077b46p-3",
+              "wasm": "0x1.077b48p-3",
+              "abs_error": 1.4901161193847656e-08
+            },
+            "count": 2012,
+            "peak": {
+              "frame": 968,
+              "occurrence": 968,
+              "native": "-0x1.1bd538p-4",
+              "wasm": "-0x1.1c01bp-4",
+              "abs_error": 4.240870475769043e-05
+            }
+          },
+          "magState.1": {
+            "first": {
+              "frame": 3,
+              "occurrence": 3,
+              "native": "0x1.9c263ep-10",
+              "wasm": "0x1.9c264p-10",
+              "abs_error": 1.1641532182693481e-10
+            },
+            "count": 2038,
+            "peak": {
+              "frame": 1064,
+              "occurrence": 1064,
+              "native": "-0x1.eb1d82p-4",
+              "wasm": "-0x1.eb4716p-4",
+              "abs_error": 3.965198993682861e-05
+            }
+          },
+          "recordedSample.1": {
+            "first": {
+              "frame": 2,
+              "occurrence": 2,
+              "native": "0x1.5fa6cp-6",
+              "wasm": "0x1.5fa6bep-6",
+              "abs_error": 1.862645149230957e-09
+            },
+            "count": 2020,
+            "peak": {
+              "frame": 978,
+              "occurrence": 978,
+              "native": "-0x1.e6c79p-4",
+              "wasm": "-0x1.e6f2e8p-4",
+              "abs_error": 4.13358211517334e-05
+            }
+          },
+          "limitedOutput.1": {
+            "first": {
+              "frame": 202,
+              "occurrence": 202,
+              "native": "-0x1.37f6fap-5",
+              "wasm": "-0x1.37f6f8p-5",
+              "abs_error": 3.725290298461914e-09
+            },
+            "count": 1839,
+            "peak": {
+              "frame": 1162,
+              "occurrence": 1162,
+              "native": "0x1.bd294cp-3",
+              "wasm": "0x1.bd1c04p-3",
+              "abs_error": 2.5331974029541016e-05
+            }
+          }
+        }
+      },
+      "short_slap_bright": {
+        "max_abs": 1.3590000000007763e-05,
+        "rmse": 6.058348905110685e-06,
+        "output_sha256": [
+          "0778b124ce4c39687fd18ceed1b0c38cc9a1c3b28cfd079ff3b625a2b7dc957a",
+          "6b2aa1b7eca784c08596e902c8099ab98b5d42440c3e185691f952d5348a246e"
+        ],
+        "instrumentation_preserves_output": true,
+        "stage_differences": {
+          "HighShelf.b0.-1": {
+            "first": {
+              "frame": -1,
+              "occurrence": 4,
+              "native": "0x1.7b4d92p-1",
+              "wasm": "0x1.7b4d9p-1",
+              "abs_error": 5.960464477539063e-08
+            },
+            "count": 2,
+            "peak": {
+              "frame": -1,
+              "occurrence": 4,
+              "native": "0x1.7b4d92p-1",
+              "wasm": "0x1.7b4d9p-1",
+              "abs_error": 5.960464477539063e-08
+            }
+          },
+          "HighShelf.b2.-1": {
+            "first": {
+              "frame": -1,
+              "occurrence": 2,
+              "native": "0x1.98577ap-5",
+              "wasm": "0x1.98577ep-5",
+              "abs_error": 7.450580596923828e-09
+            },
+            "count": 2,
+            "peak": {
+              "frame": -1,
+              "occurrence": 2,
+              "native": "0x1.98577ap-5",
+              "wasm": "0x1.98577ep-5",
+              "abs_error": 7.450580596923828e-09
+            }
+          },
+          "HighShelf.a2.-1": {
+            "first": {
+              "frame": -1,
+              "occurrence": 0,
+              "native": "0x1.2e0562p-1",
+              "wasm": "0x1.2e056p-1",
+              "abs_error": 5.960464477539063e-08
+            },
+            "count": 4,
+            "peak": {
+              "frame": -1,
+              "occurrence": 0,
+              "native": "0x1.2e0562p-1",
+              "wasm": "0x1.2e056p-1",
+              "abs_error": 5.960464477539063e-08
+            }
+          },
+          "inputHPF.0": {
+            "first": {
+              "frame": 5,
+              "occurrence": 5,
+              "native": "0x1.b3fa18p-4",
+              "wasm": "0x1.b3fa16p-4",
+              "abs_error": 7.450580596923828e-09
+            },
+            "count": 2039,
+            "peak": {
+              "frame": 2017,
+              "occurrence": 2017,
+              "native": "0x1.40b3eap-2",
+              "wasm": "0x1.405318p-2",
+              "abs_error": 0.000369340181350708
+            }
+          },
+          "conditionedInput.0": {
+            "first": {
+              "frame": 3,
+              "occurrence": 3,
+              "native": "0x1.e97ba6p-5",
+              "wasm": "0x1.e97ba4p-5",
+              "abs_error": 3.725290298461914e-09
+            },
+            "count": 2039,
+            "peak": {
+              "frame": 2018,
+              "occurrence": 2018,
+              "native": "0x1.44e1fep-2",
+              "wasm": "0x1.44812ap-2",
+              "abs_error": 0.0003693699836730957
+            }
+          },
+          "prePlayback.0": {
+            "first": {
+              "frame": 200,
+              "occurrence": 200,
+              "native": "0x1.16a0fep-24",
+              "wasm": "0x1.16a0ap-24",
+              "abs_error": 3.339550858072471e-13
+            },
+            "count": 1835,
+            "peak": {
+              "frame": 1694,
+              "occurrence": 1694,
+              "native": "-0x1.2f8e78p-6",
+              "wasm": "-0x1.2fc94cp-6",
+              "abs_error": 1.4025717973709106e-05
+            }
+          },
+          "readModulation.0": {
+            "first": {
+              "frame": 2,
+              "occurrence": 2,
+              "native": "0x1.938dbcp-9",
+              "wasm": "0x1.938dbap-9",
+              "abs_error": 2.3283064365386963e-10
+            },
+            "count": 994,
+            "peak": {
+              "frame": 1711,
+              "occurrence": 1711,
+              "native": "0x1.0da086p-6",
+              "wasm": "0x1.0da08p-6",
+              "abs_error": 5.587935447692871e-09
+            }
+          },
+          "tapeOutput.0": {
+            "first": {
+              "frame": 200,
+              "occurrence": 200,
+              "native": "0x1.6980d8p-27",
+              "wasm": "0x1.69805cp-27",
+              "abs_error": 5.5067062021407764e-14
+            },
+            "count": 1843,
+            "peak": {
+              "frame": 1695,
+              "occurrence": 1695,
+              "native": "-0x1.823e48p-6",
+              "wasm": "-0x1.82775cp-6",
+              "abs_error": 1.3608485460281372e-05
+            }
+          },
+          "inputHPF.1": {
+            "first": {
+              "frame": 3,
+              "occurrence": 3,
+              "native": "0x1.da2fd4p-5",
+              "wasm": "0x1.da2fd8p-5",
+              "abs_error": 7.450580596923828e-09
+            },
+            "count": 2044,
+            "peak": {
+              "frame": 1155,
+              "occurrence": 1155,
+              "native": "0x1.4d70c4p-2",
+              "wasm": "0x1.4d45a6p-2",
+              "abs_error": 0.00016447901725769043
+            }
+          },
+          "conditionedInput.1": {
+            "first": {
+              "frame": 2,
+              "occurrence": 2,
+              "native": "0x1.2970f6p-5",
+              "wasm": "0x1.2970f4p-5",
+              "abs_error": 3.725290298461914e-09
+            },
+            "count": 2045,
+            "peak": {
+              "frame": 1155,
+              "occurrence": 1155,
+              "native": "0x1.4ce0bp-2",
+              "wasm": "0x1.4cb59p-2",
+              "abs_error": 0.00016450881958007812
+            }
+          },
+          "prePlayback.1": {
+            "first": {
+              "frame": 200,
+              "occurrence": 200,
+              "native": "0x1.f588cap-25",
+              "wasm": "0x1.f58876p-25",
+              "abs_error": 1.4921397450962104e-13
+            },
+            "count": 1836,
+            "peak": {
+              "frame": 1191,
+              "occurrence": 1191,
+              "native": "-0x1.3dbf3ap-5",
+              "wasm": "-0x1.3dd0fp-5",
+              "abs_error": 8.44523310661316e-06
+            }
+          },
+          "readModulation.1": {
+            "first": {
+              "frame": 2,
+              "occurrence": 2,
+              "native": "0x1.938308p-9",
+              "wasm": "0x1.938306p-9",
+              "abs_error": 2.3283064365386963e-10
+            },
+            "count": 1062,
+            "peak": {
+              "frame": 1654,
+              "occurrence": 1654,
+              "native": "0x1.047582p-6",
+              "wasm": "0x1.04757cp-6",
+              "abs_error": 5.587935447692871e-09
+            }
+          },
+          "tapeOutput.1": {
+            "first": {
+              "frame": 200,
+              "occurrence": 200,
+              "native": "0x1.455abep-27",
+              "wasm": "0x1.455a86p-27",
+              "abs_error": 2.4868995751603507e-14
+            },
+            "count": 1846,
+            "peak": {
+              "frame": 1960,
+              "occurrence": 1960,
+              "native": "0x1.1eb9e8p-5",
+              "wasm": "0x1.1ecef4p-5",
+              "abs_error": 1.0035932064056396e-05
+            }
+          },
+          "recordInput.0": {
+            "first": {
+              "frame": 2,
+              "occurrence": 2,
+              "native": "0x1.07e7c6p-6",
+              "wasm": "0x1.07e7c8p-6",
+              "abs_error": 1.862645149230957e-09
+            },
+            "count": 2039,
+            "peak": {
+              "frame": 1441,
+              "occurrence": 1441,
+              "native": "-0x1.6726dap-3",
+              "wasm": "-0x1.673a0ap-3",
+              "abs_error": 3.6597251892089844e-05
+            }
+          },
+          "feedbackInput.0": {
+            "first": {
+              "frame": 200,
+              "occurrence": 200,
+              "native": "0x1.22d78ep-34",
+              "wasm": "0x1.22d72cp-34",
+              "abs_error": 3.400058012914542e-16
+            },
+            "count": 1840,
+            "peak": {
+              "frame": 1931,
+              "occurrence": 1931,
+              "native": "0x1.769bcp-10",
+              "wasm": "0x1.769918p-10",
+              "abs_error": 3.958120942115784e-08
+            }
+          },
+          "magLutInput.0": {
+            "first": {
+              "frame": 2,
+              "occurrence": 2,
+              "native": "0x1.ea37dcp-7",
+              "wasm": "0x1.ea37ep-7",
+              "abs_error": 1.862645149230957e-09
+            },
+            "count": 2040,
+            "peak": {
+              "frame": 1441,
+              "occurrence": 1441,
+              "native": "-0x1.53cbeap-3",
+              "wasm": "-0x1.53df8p-3",
+              "abs_error": 3.7357211112976074e-05
+            }
+          },
+          "magPriorState.0": {
+            "first": {
+              "frame": 3,
+              "occurrence": 3,
+              "native": "0x1.cd034ap-12",
+              "wasm": "0x1.cd034cp-12",
+              "abs_error": 2.9103830456733704e-11
+            },
+            "count": 2035,
+            "peak": {
+              "frame": 1523,
+              "occurrence": 1523,
+              "native": "-0x1.613bb6p-5",
+              "wasm": "-0x1.6186d2p-5",
+              "abs_error": 3.581494092941284e-05
+            }
+          },
+          "magLutOutput.0": {
+            "first": {
+              "frame": 2,
+              "occurrence": 2,
+              "native": "0x1.ea2c14p-7",
+              "wasm": "0x1.ea2c18p-7",
+              "abs_error": 1.862645149230957e-09
+            },
+            "count": 2018,
+            "peak": {
+              "frame": 1493,
+              "occurrence": 1493,
+              "native": "-0x1.52f674p-5",
+              "wasm": "-0x1.53443cp-5",
+              "abs_error": 3.7088990211486816e-05
+            }
+          },
+          "magState.0": {
+            "first": {
+              "frame": 2,
+              "occurrence": 2,
+              "native": "0x1.cd034ap-12",
+              "wasm": "0x1.cd034cp-12",
+              "abs_error": 2.9103830456733704e-11
+            },
+            "count": 2036,
+            "peak": {
+              "frame": 1522,
+              "occurrence": 1522,
+              "native": "-0x1.613bb6p-5",
+              "wasm": "-0x1.6186d2p-5",
+              "abs_error": 3.581494092941284e-05
+            }
+          },
+          "recordedSample.0": {
+            "first": {
+              "frame": 2,
+              "occurrence": 2,
+              "native": "0x1.961d04p-7",
+              "wasm": "0x1.961d06p-7",
+              "abs_error": 9.313225746154785e-10
+            },
+            "count": 2030,
+            "peak": {
+              "frame": 1493,
+              "occurrence": 1493,
+              "native": "-0x1.8c9fep-5",
+              "wasm": "-0x1.8ced4p-5",
+              "abs_error": 3.68952751159668e-05
+            }
+          },
+          "limitedOutput.0": {
+            "first": {
+              "frame": 200,
+              "occurrence": 200,
+              "native": "-0x1.df45fap-5",
+              "wasm": "-0x1.df45f8p-5",
+              "abs_error": 3.725290298461914e-09
+            },
+            "count": 1842,
+            "peak": {
+              "frame": 1694,
+              "occurrence": 1694,
+              "native": "-0x1.9aab08p-2",
+              "wasm": "-0x1.9aae98p-2",
+              "abs_error": 1.3589859008789062e-05
+            }
+          },
+          "recordInput.1": {
+            "first": {
+              "frame": 2,
+              "occurrence": 2,
+              "native": "0x1.db079cp-7",
+              "wasm": "0x1.db0798p-7",
+              "abs_error": 1.862645149230957e-09
+            },
+            "count": 2043,
+            "peak": {
+              "frame": 990,
+              "occurrence": 990,
+              "native": "-0x1.1fb24cp-3",
+              "wasm": "-0x1.1fbep-3",
+              "abs_error": 2.232193946838379e-05
+            }
+          },
+          "feedbackInput.1": {
+            "first": {
+              "frame": 200,
+              "occurrence": 200,
+              "native": "0x1.0488d6p-34",
+              "wasm": "0x1.0488acp-34",
+              "abs_error": 1.457167719820518e-16
+            },
+            "count": 1843,
+            "peak": {
+              "frame": 1944,
+              "occurrence": 1944,
+              "native": "0x1.6ee89ep-10",
+              "wasm": "0x1.6eeb04p-10",
+              "abs_error": 3.573950380086899e-08
+            }
+          },
+          "magLutInput.1": {
+            "first": {
+              "frame": 2,
+              "occurrence": 2,
+              "native": "0x1.b9324ap-7",
+              "wasm": "0x1.b93246p-7",
+              "abs_error": 1.862645149230957e-09
+            },
+            "count": 2041,
+            "peak": {
+              "frame": 990,
+              "occurrence": 990,
+              "native": "-0x1.071874p-3",
+              "wasm": "-0x1.07247p-3",
+              "abs_error": 2.2858381271362305e-05
+            }
+          },
+          "magPriorState.1": {
+            "first": {
+              "frame": 9,
+              "occurrence": 9,
+              "native": "0x1.4677eap-8",
+              "wasm": "0x1.4677ecp-8",
+              "abs_error": 4.656612873077393e-10
+            },
+            "count": 2030,
+            "peak": {
+              "frame": 1054,
+              "occurrence": 1054,
+              "native": "-0x1.27ec6ap-4",
+              "wasm": "-0x1.2802d6p-4",
+              "abs_error": 2.1383166313171387e-05
+            }
+          },
+          "magLutOutput.1": {
+            "first": {
+              "frame": 11,
+              "occurrence": 11,
+              "native": "0x1.2cac82p-4",
+              "wasm": "0x1.2cac84p-4",
+              "abs_error": 7.450580596923828e-09
+            },
+            "count": 2005,
+            "peak": {
+              "frame": 988,
+              "occurrence": 988,
+              "native": "-0x1.f519f8p-4",
+              "wasm": "-0x1.f5319ap-4",
+              "abs_error": 2.253800630569458e-05
+            }
+          },
+          "magState.1": {
+            "first": {
+              "frame": 8,
+              "occurrence": 8,
+              "native": "0x1.4677eap-8",
+              "wasm": "0x1.4677ecp-8",
+              "abs_error": 4.656612873077393e-10
+            },
+            "count": 2031,
+            "peak": {
+              "frame": 1053,
+              "occurrence": 1053,
+              "native": "-0x1.27ec6ap-4",
+              "wasm": "-0x1.2802d6p-4",
+              "abs_error": 2.1383166313171387e-05
+            }
+          },
+          "recordedSample.1": {
+            "first": {
+              "frame": 2,
+              "occurrence": 2,
+              "native": "0x1.6d81f4p-7",
+              "wasm": "0x1.6d81f2p-7",
+              "abs_error": 9.313225746154785e-10
+            },
+            "count": 2021,
+            "peak": {
+              "frame": 988,
+              "occurrence": 988,
+              "native": "-0x1.8cca2ep-4",
+              "wasm": "-0x1.8ce17ep-4",
+              "abs_error": 2.2232532501220703e-05
+            }
+          },
+          "limitedOutput.1": {
+            "first": {
+              "frame": 204,
+              "occurrence": 204,
+              "native": "-0x1.324a5ap-5",
+              "wasm": "-0x1.324a5cp-5",
+              "abs_error": 3.725290298461914e-09
+            },
+            "count": 1839,
+            "peak": {
+              "frame": 1960,
+              "occurrence": 1960,
+              "native": "0x1.ad7408p-6",
+              "wasm": "0x1.ad9e2p-6",
+              "abs_error": 1.0035932064056396e-05
+            }
+          }
+        }
+      },
+      "feedback_edge": {
+        "max_abs": 7.166799999999999e-05,
+        "rmse": 2.7847506472721316e-05,
+        "output_sha256": [
+          "13999e42f6110c760a6190f94f03fe5dd7d8dbf62fa56d75e25de55b54131aeb",
+          "9a30f2481f962c1c64b37f2876b14a720b3259d196e0e9ae5898be127cfe09bf"
+        ],
+        "instrumentation_preserves_output": true,
+        "stage_differences": {
+          "HighShelf.b1.-1": {
+            "first": {
+              "frame": -1,
+              "occurrence": 4,
+              "native": "0x1.8f9c6ap-2",
+              "wasm": "0x1.8f9c68p-2",
+              "abs_error": 2.9802322387695312e-08
+            },
+            "count": 2,
+            "peak": {
+              "frame": -1,
+              "occurrence": 4,
+              "native": "0x1.8f9c6ap-2",
+              "wasm": "0x1.8f9c68p-2",
+              "abs_error": 2.9802322387695312e-08
+            }
+          },
+          "HighShelf.b2.-1": {
+            "first": {
+              "frame": -1,
+              "occurrence": 2,
+              "native": "0x1.98577ap-5",
+              "wasm": "0x1.98577ep-5",
+              "abs_error": 7.450580596923828e-09
+            },
+            "count": 4,
+            "peak": {
+              "frame": -1,
+              "occurrence": 2,
+              "native": "0x1.98577ap-5",
+              "wasm": "0x1.98577ep-5",
+              "abs_error": 7.450580596923828e-09
+            }
+          },
+          "HighShelf.a1.-1": {
+            "first": {
+              "frame": -1,
+              "occurrence": 4,
+              "native": "0x1.9d444p-6",
+              "wasm": "0x1.9d4428p-6",
+              "abs_error": 2.2351741790771484e-08
+            },
+            "count": 2,
+            "peak": {
+              "frame": -1,
+              "occurrence": 4,
+              "native": "0x1.9d444p-6",
+              "wasm": "0x1.9d4428p-6",
+              "abs_error": 2.2351741790771484e-08
+            }
+          },
+          "HighShelf.a2.-1": {
+            "first": {
+              "frame": -1,
+              "occurrence": 0,
+              "native": "0x1.2e0562p-1",
+              "wasm": "0x1.2e056p-1",
+              "abs_error": 5.960464477539063e-08
+            },
+            "count": 6,
+            "peak": {
+              "frame": -1,
+              "occurrence": 0,
+              "native": "0x1.2e0562p-1",
+              "wasm": "0x1.2e056p-1",
+              "abs_error": 5.960464477539063e-08
+            }
+          },
+          "inputHPF.0": {
+            "first": {
+              "frame": 5,
+              "occurrence": 5,
+              "native": "0x1.b3fa18p-4",
+              "wasm": "0x1.b3fa16p-4",
+              "abs_error": 7.450580596923828e-09
+            },
+            "count": 2039,
+            "peak": {
+              "frame": 2017,
+              "occurrence": 2017,
+              "native": "0x1.40b3eap-2",
+              "wasm": "0x1.405318p-2",
+              "abs_error": 0.000369340181350708
+            }
+          },
+          "conditionedInput.0": {
+            "first": {
+              "frame": 3,
+              "occurrence": 3,
+              "native": "0x1.e97ba6p-5",
+              "wasm": "0x1.e97ba4p-5",
+              "abs_error": 3.725290298461914e-09
+            },
+            "count": 2039,
+            "peak": {
+              "frame": 2018,
+              "occurrence": 2018,
+              "native": "0x1.44e1fep-2",
+              "wasm": "0x1.44812ap-2",
+              "abs_error": 0.0003693699836730957
+            }
+          },
+          "prePlayback.0": {
+            "first": {
+              "frame": 200,
+              "occurrence": 200,
+              "native": "0x1.1b42cap-20",
+              "wasm": "0x1.1b42d2p-20",
+              "abs_error": 4.547473508864641e-13
+            },
+            "count": 1840,
+            "peak": {
+              "frame": 1706,
+              "occurrence": 1706,
+              "native": "-0x1.de9e1ap-6",
+              "wasm": "-0x1.dfbe84p-6",
+              "abs_error": 6.876327097415924e-05
+            }
+          },
+          "readModulation.0": {
+            "first": {
+              "frame": 0,
+              "occurrence": 0,
+              "native": "0x1.8fc4eep-9",
+              "wasm": "0x1.8fc4ecp-9",
+              "abs_error": 2.3283064365386963e-10
+            },
+            "count": 1507,
+            "peak": {
+              "frame": 1885,
+              "occurrence": 1885,
+              "native": "0x1.ddfb28p-7",
+              "wasm": "0x1.de0f2cp-7",
+              "abs_error": 2.386048436164856e-06
+            }
+          },
+          "tapeOutput.0": {
+            "first": {
+              "frame": 200,
+              "occurrence": 200,
+              "native": "0x1.5fee22p-24",
+              "wasm": "0x1.5fee2cp-24",
+              "abs_error": 3.552713678800501e-14
+            },
+            "count": 1847,
+            "peak": {
+              "frame": 1738,
+              "occurrence": 1738,
+              "native": "0x1.d41eccp-5",
+              "wasm": "0x1.d3888p-5",
+              "abs_error": 7.16671347618103e-05
+            }
+          },
+          "inputHPF.1": {
+            "first": {
+              "frame": 3,
+              "occurrence": 3,
+              "native": "0x1.da2fd4p-5",
+              "wasm": "0x1.da2fd8p-5",
+              "abs_error": 7.450580596923828e-09
+            },
+            "count": 2044,
+            "peak": {
+              "frame": 1155,
+              "occurrence": 1155,
+              "native": "0x1.4d70c4p-2",
+              "wasm": "0x1.4d45a6p-2",
+              "abs_error": 0.00016447901725769043
+            }
+          },
+          "conditionedInput.1": {
+            "first": {
+              "frame": 2,
+              "occurrence": 2,
+              "native": "0x1.2970f6p-5",
+              "wasm": "0x1.2970f4p-5",
+              "abs_error": 3.725290298461914e-09
+            },
+            "count": 2045,
+            "peak": {
+              "frame": 1155,
+              "occurrence": 1155,
+              "native": "0x1.4ce0bp-2",
+              "wasm": "0x1.4cb59p-2",
+              "abs_error": 0.00016450881958007812
+            }
+          },
+          "prePlayback.1": {
+            "first": {
+              "frame": 200,
+              "occurrence": 200,
+              "native": "0x1.5ee374p-22",
+              "wasm": "0x1.5ee3c6p-22",
+              "abs_error": 1.1652900866465643e-12
+            },
+            "count": 1835,
+            "peak": {
+              "frame": 1167,
+              "occurrence": 1167,
+              "native": "-0x1.a8a156p-7",
+              "wasm": "-0x1.a9f52p-7",
+              "abs_error": 4.050601273775101e-05
+            }
+          },
+          "readModulation.1": {
+            "first": {
+              "frame": 0,
+              "occurrence": 0,
+              "native": "0x1.8fc1cep-9",
+              "wasm": "0x1.8fc1ccp-9",
+              "abs_error": 2.3283064365386963e-10
+            },
+            "count": 2023,
+            "peak": {
+              "frame": 1404,
+              "occurrence": 1404,
+              "native": "-0x1.43aaap-6",
+              "wasm": "-0x1.43fe38p-6",
+              "abs_error": 1.993030309677124e-05
+            }
+          },
+          "tapeOutput.1": {
+            "first": {
+              "frame": 200,
+              "occurrence": 200,
+              "native": "0x1.b3f3cep-26",
+              "wasm": "0x1.b3f434p-26",
+              "abs_error": 9.059419880941277e-14
+            },
+            "count": 1843,
+            "peak": {
+              "frame": 973,
+              "occurrence": 973,
+              "native": "0x1.595718p-5",
+              "wasm": "0x1.59059ap-5",
+              "abs_error": 3.8858503103256226e-05
+            }
+          },
+          "recordInput.0": {
+            "first": {
+              "frame": 3,
+              "occurrence": 3,
+              "native": "0x1.0bf94cp-4",
+              "wasm": "0x1.0bf948p-4",
+              "abs_error": 1.4901161193847656e-08
+            },
+            "count": 2043,
+            "peak": {
+              "frame": 1439,
+              "occurrence": 1439,
+              "native": "-0x1.f31fe2p-2",
+              "wasm": "-0x1.f33a4cp-2",
+              "abs_error": 0.00010076165199279785
+            }
+          },
+          "feedbackInput.0": {
+            "first": {
+              "frame": 200,
+              "occurrence": 200,
+              "native": "0x1.519abep-28",
+              "wasm": "0x1.519ac8p-28",
+              "abs_error": 2.220446049250313e-15
+            },
+            "count": 1844,
+            "peak": {
+              "frame": 2024,
+              "occurrence": 2024,
+              "native": "-0x1.8ca6dcp-6",
+              "wasm": "-0x1.8caccap-6",
+              "abs_error": 1.4137476682662964e-06
+            }
+          },
+          "magLutInput.0": {
+            "first": {
+              "frame": 3,
+              "occurrence": 3,
+              "native": "0x1.065b8ep-4",
+              "wasm": "0x1.065b8ap-4",
+              "abs_error": 1.4901161193847656e-08
+            },
+            "count": 2043,
+            "peak": {
+              "frame": 1439,
+              "occurrence": 1439,
+              "native": "-0x1.f00c32p-2",
+              "wasm": "-0x1.f0283cp-2",
+              "abs_error": 0.00010696053504943848
+            }
+          },
+          "magPriorState.0": {
+            "first": {
+              "frame": 3,
+              "occurrence": 3,
+              "native": "0x1.4d8a22p-10",
+              "wasm": "0x1.4d8a2p-10",
+              "abs_error": 1.1641532182693481e-10
+            },
+            "count": 2041,
+            "peak": {
+              "frame": 1538,
+              "occurrence": 1538,
+              "native": "-0x1.974bd4p-5",
+              "wasm": "-0x1.981accp-5",
+              "abs_error": 9.869039058685303e-05
+            }
+          },
+          "magLutOutput.0": {
+            "first": {
+              "frame": 6,
+              "occurrence": 6,
+              "native": "0x1.0b48dcp-3",
+              "wasm": "0x1.0b48bcp-3",
+              "abs_error": 2.384185791015625e-07
+            },
+            "count": 2031,
+            "peak": {
+              "frame": 1501,
+              "occurrence": 1501,
+              "native": "-0x1.51be4p-5",
+              "wasm": "-0x1.529c24p-5",
+              "abs_error": 0.00010580569505691528
+            }
+          },
+          "magState.0": {
+            "first": {
+              "frame": 2,
+              "occurrence": 2,
+              "native": "0x1.4d8a22p-10",
+              "wasm": "0x1.4d8a2p-10",
+              "abs_error": 1.1641532182693481e-10
+            },
+            "count": 2042,
+            "peak": {
+              "frame": 1537,
+              "occurrence": 1537,
+              "native": "-0x1.974bd4p-5",
+              "wasm": "-0x1.981accp-5",
+              "abs_error": 9.869039058685303e-05
+            }
+          },
+          "recordedSample.0": {
+            "first": {
+              "frame": 1,
+              "occurrence": 1,
+              "native": "0x1.b0b04ap-7",
+              "wasm": "0x1.b0b04cp-7",
+              "abs_error": 9.313225746154785e-10
+            },
+            "count": 2036,
+            "peak": {
+              "frame": 1505,
+              "occurrence": 1505,
+              "native": "-0x1.646126p-5",
+              "wasm": "-0x1.653ba4p-5",
+              "abs_error": 0.00010418519377708435
+            }
+          },
+          "limitedOutput.0": {
+            "first": {
+              "frame": 205,
+              "occurrence": 205,
+              "native": "-0x1.27a802p-8",
+              "wasm": "-0x1.27a808p-8",
+              "abs_error": 1.3969838619232178e-09
+            },
+            "count": 1843,
+            "peak": {
+              "frame": 1738,
+              "occurrence": 1738,
+              "native": "0x1.8d154ap-9",
+              "wasm": "0x1.83b08p-9",
+              "abs_error": 7.166829891502857e-05
+            }
+          },
+          "recordInput.1": {
+            "first": {
+              "frame": 2,
+              "occurrence": 2,
+              "native": "0x1.46953cp-5",
+              "wasm": "0x1.46953ap-5",
+              "abs_error": 3.725290298461914e-09
+            },
+            "count": 2042,
+            "peak": {
+              "frame": 990,
+              "occurrence": 990,
+              "native": "-0x1.9129e4p-2",
+              "wasm": "-0x1.9139dcp-2",
+              "abs_error": 6.091594696044922e-05
+            }
+          },
+          "feedbackInput.1": {
+            "first": {
+              "frame": 200,
+              "occurrence": 200,
+              "native": "0x1.a07e3cp-30",
+              "wasm": "0x1.a07e9cp-30",
+              "abs_error": 5.329070518200751e-15
+            },
+            "count": 1842,
+            "peak": {
+              "frame": 2026,
+              "occurrence": 2026,
+              "native": "-0x1.7593a4p-6",
+              "wasm": "-0x1.758dfep-6",
+              "abs_error": 1.346692442893982e-06
+            }
+          },
+          "magLutInput.1": {
+            "first": {
+              "frame": 2,
+              "occurrence": 2,
+              "native": "0x1.3f56a8p-5",
+              "wasm": "0x1.3f56a6p-5",
+              "abs_error": 3.725290298461914e-09
+            },
+            "count": 2043,
+            "peak": {
+              "frame": 990,
+              "occurrence": 990,
+              "native": "-0x1.83a4fp-2",
+              "wasm": "-0x1.83b6p-2",
+              "abs_error": 6.508827209472656e-05
+            }
+          },
+          "magPriorState.1": {
+            "first": {
+              "frame": 4,
+              "occurrence": 4,
+              "native": "0x1.35e31ep-9",
+              "wasm": "0x1.35e32p-9",
+              "abs_error": 2.3283064365386963e-10
+            },
+            "count": 2032,
+            "peak": {
+              "frame": 1076,
+              "occurrence": 1076,
+              "native": "-0x1.1bbf54p-3",
+              "wasm": "-0x1.1bdd4ep-3",
+              "abs_error": 5.717575550079346e-05
+            }
+          },
+          "magLutOutput.1": {
+            "first": {
+              "frame": 9,
+              "occurrence": 9,
+              "native": "0x1.654e6ap-3",
+              "wasm": "0x1.654e88p-3",
+              "abs_error": 2.2351741790771484e-07
+            },
+            "count": 2013,
+            "peak": {
+              "frame": 964,
+              "occurrence": 964,
+              "native": "-0x1.58a65ep-5",
+              "wasm": "-0x1.592a42p-5",
+              "abs_error": 6.289035081863403e-05
+            }
+          },
+          "magState.1": {
+            "first": {
+              "frame": 3,
+              "occurrence": 3,
+              "native": "0x1.35e31ep-9",
+              "wasm": "0x1.35e32p-9",
+              "abs_error": 2.3283064365386963e-10
+            },
+            "count": 2033,
+            "peak": {
+              "frame": 1075,
+              "occurrence": 1075,
+              "native": "-0x1.1bbf54p-3",
+              "wasm": "-0x1.1bdd4ep-3",
+              "abs_error": 5.717575550079346e-05
+            }
+          },
+          "recordedSample.1": {
+            "first": {
+              "frame": 3,
+              "occurrence": 3,
+              "native": "0x1.87cfd4p-5",
+              "wasm": "0x1.87cfd6p-5",
+              "abs_error": 3.725290298461914e-09
+            },
+            "count": 2026,
+            "peak": {
+              "frame": 967,
+              "occurrence": 967,
+              "native": "-0x1.278456p-5",
+              "wasm": "-0x1.28035ap-5",
+              "abs_error": 6.05657696723938e-05
+            }
+          },
+          "limitedOutput.1": {
+            "first": {
+              "frame": 200,
+              "occurrence": 200,
+              "native": "-0x1.02ceb4p-5",
+              "wasm": "-0x1.02ceb2p-5",
+              "abs_error": 3.725290298461914e-09
+            },
+            "count": 1845,
+            "peak": {
+              "frame": 973,
+              "occurrence": 973,
+              "native": "0x1.46a1c2p-6",
+              "wasm": "0x1.45fec6p-6",
+              "abs_error": 3.8858503103256226e-05
+            }
+          }
+        }
+      },
+      "saturated_dark": {
+        "max_abs": 0.00020009299999998453,
+        "rmse": 6.0544365925509656e-05,
+        "output_sha256": [
+          "453b424ce11594c7f987b5d606e89a46c5860cc422cff8c35673b9f699d16569",
+          "c353cc35770acb0f01462895074115fbed7d01ce92cdbd1526b6a09d6456508e"
+        ],
+        "instrumentation_preserves_output": true,
+        "stage_differences": {
+          "HighShelf.b2.-1": {
+            "first": {
+              "frame": -1,
+              "occurrence": 2,
+              "native": "0x1.98577ap-5",
+              "wasm": "0x1.98577ep-5",
+              "abs_error": 7.450580596923828e-09
+            },
+            "count": 4,
+            "peak": {
+              "frame": -1,
+              "occurrence": 2,
+              "native": "0x1.98577ap-5",
+              "wasm": "0x1.98577ep-5",
+              "abs_error": 7.450580596923828e-09
+            }
+          },
+          "HighShelf.a2.-1": {
+            "first": {
+              "frame": -1,
+              "occurrence": 0,
+              "native": "0x1.2e0562p-1",
+              "wasm": "0x1.2e056p-1",
+              "abs_error": 5.960464477539063e-08
+            },
+            "count": 6,
+            "peak": {
+              "frame": -1,
+              "occurrence": 0,
+              "native": "0x1.2e0562p-1",
+              "wasm": "0x1.2e056p-1",
+              "abs_error": 5.960464477539063e-08
+            }
+          },
+          "inputHPF.0": {
+            "first": {
+              "frame": 5,
+              "occurrence": 5,
+              "native": "0x1.b3fa18p-4",
+              "wasm": "0x1.b3fa16p-4",
+              "abs_error": 7.450580596923828e-09
+            },
+            "count": 2039,
+            "peak": {
+              "frame": 2017,
+              "occurrence": 2017,
+              "native": "0x1.40b3eap-2",
+              "wasm": "0x1.405318p-2",
+              "abs_error": 0.000369340181350708
+            }
+          },
+          "conditionedInput.0": {
+            "first": {
+              "frame": 3,
+              "occurrence": 3,
+              "native": "0x1.e97ba6p-5",
+              "wasm": "0x1.e97ba4p-5",
+              "abs_error": 3.725290298461914e-09
+            },
+            "count": 2039,
+            "peak": {
+              "frame": 2018,
+              "occurrence": 2018,
+              "native": "0x1.44e1fep-2",
+              "wasm": "0x1.44812ap-2",
+              "abs_error": 0.0003693699836730957
+            }
+          },
+          "prePlayback.0": {
+            "first": {
+              "frame": 200,
+              "occurrence": 200,
+              "native": "0x1.5a3f74p-20",
+              "wasm": "0x1.5a3f14p-20",
+              "abs_error": 5.4569682106375694e-12
+            },
+            "count": 1842,
+            "peak": {
+              "frame": 1710,
+              "occurrence": 1710,
+              "native": "-0x1.570d14p-5",
+              "wasm": "-0x1.58d86ep-5",
+              "abs_error": 0.00021903589367866516
+            }
+          },
+          "readModulation.0": {
+            "first": {
+              "frame": 0,
+              "occurrence": 0,
+              "native": "0x1.8f758ap-9",
+              "wasm": "0x1.8f758cp-9",
+              "abs_error": 2.3283064365386963e-10
+            },
+            "count": 934,
+            "peak": {
+              "frame": 723,
+              "occurrence": 723,
+              "native": "0x1.42cf9cp-6",
+              "wasm": "0x1.42cfap-6",
+              "abs_error": 3.725290298461914e-09
+            }
+          },
+          "tapeOutput.0": {
+            "first": {
+              "frame": 200,
+              "occurrence": 200,
+              "native": "0x1.03869ap-24",
+              "wasm": "0x1.038652p-24",
+              "abs_error": 2.5579538487363607e-13
+            },
+            "count": 1846,
+            "peak": {
+              "frame": 1714,
+              "occurrence": 1714,
+              "native": "-0x1.ffcb0ap-5",
+              "wasm": "-0x1.00b754p-4",
+              "abs_error": 0.00020008906722068787
+            }
+          },
+          "inputHPF.1": {
+            "first": {
+              "frame": 3,
+              "occurrence": 3,
+              "native": "0x1.da2fd4p-5",
+              "wasm": "0x1.da2fd8p-5",
+              "abs_error": 7.450580596923828e-09
+            },
+            "count": 2044,
+            "peak": {
+              "frame": 1155,
+              "occurrence": 1155,
+              "native": "0x1.4d70c4p-2",
+              "wasm": "0x1.4d45a6p-2",
+              "abs_error": 0.00016447901725769043
+            }
+          },
+          "conditionedInput.1": {
+            "first": {
+              "frame": 2,
+              "occurrence": 2,
+              "native": "0x1.2970f6p-5",
+              "wasm": "0x1.2970f4p-5",
+              "abs_error": 3.725290298461914e-09
+            },
+            "count": 2045,
+            "peak": {
+              "frame": 1155,
+              "occurrence": 1155,
+              "native": "0x1.4ce0bp-2",
+              "wasm": "0x1.4cb59p-2",
+              "abs_error": 0.00016450881958007812
+            }
+          },
+          "prePlayback.1": {
+            "first": {
+              "frame": 200,
+              "occurrence": 200,
+              "native": "0x1.37ad12p-20",
+              "wasm": "0x1.37ad62p-20",
+              "abs_error": 4.547473508864641e-12
+            },
+            "count": 1836,
+            "peak": {
+              "frame": 1163,
+              "occurrence": 1163,
+              "native": "0x1.7ba11ap-5",
+              "wasm": "0x1.7a984ep-5",
+              "abs_error": 0.00012626498937606812
+            }
+          },
+          "readModulation.1": {
+            "first": {
+              "frame": 0,
+              "occurrence": 0,
+              "native": "0x1.8f72cap-9",
+              "wasm": "0x1.8f72ccp-9",
+              "abs_error": 2.3283064365386963e-10
+            },
+            "count": 1175,
+            "peak": {
+              "frame": 1881,
+              "occurrence": 1881,
+              "native": "0x1.6069f8p-9",
+              "wasm": "0x1.6069d8p-9",
+              "abs_error": 3.725290298461914e-09
+            }
+          },
+          "tapeOutput.1": {
+            "first": {
+              "frame": 200,
+              "occurrence": 200,
+              "native": "0x1.d339cep-25",
+              "wasm": "0x1.d33a46p-25",
+              "abs_error": 2.1316282072803006e-13
+            },
+            "count": 1840,
+            "peak": {
+              "frame": 1273,
+              "occurrence": 1273,
+              "native": "-0x1.d7e51ep-4",
+              "wasm": "-0x1.d86abp-4",
+              "abs_error": 0.0001273825764656067
+            }
+          },
+          "recordInput.0": {
+            "first": {
+              "frame": 5,
+              "occurrence": 5,
+              "native": "0x1.42f28ap-2",
+              "wasm": "0x1.42f288p-2",
+              "abs_error": 2.9802322387695312e-08
+            },
+            "count": 2042,
+            "peak": {
+              "frame": 1439,
+              "occurrence": 1439,
+              "native": "-0x1.5bfb34p+0",
+              "wasm": "-0x1.5c0dbep+0",
+              "abs_error": 0.0002828836441040039
+            }
+          },
+          "feedbackInput.0": {
+            "first": {
+              "frame": 200,
+              "occurrence": 200,
+              "native": "0x1.03ee82p-28",
+              "wasm": "0x1.03ee3ep-28",
+              "abs_error": 1.509903313490213e-14
+            },
+            "count": 1843,
+            "peak": {
+              "frame": 1625,
+              "occurrence": 1625,
+              "native": "-0x1.a797d2p-7",
+              "wasm": "-0x1.a769d6p-7",
+              "abs_error": 5.4817646741867065e-06
+            }
+          },
+          "magLutInput.0": {
+            "first": {
+              "frame": 5,
+              "occurrence": 5,
+              "native": "0x1.6a4034p-2",
+              "wasm": "0x1.6a4032p-2",
+              "abs_error": 2.9802322387695312e-08
+            },
+            "count": 2040,
+            "peak": {
+              "frame": 1501,
+              "occurrence": 1501,
+              "native": "-0x1.31b292p-3",
+              "wasm": "-0x1.325ee2p-3",
+              "abs_error": 0.0003286600112915039
+            }
+          },
+          "magPriorState.0": {
+            "first": {
+              "frame": 5,
+              "occurrence": 5,
+              "native": "0x1.ceca16p-7",
+              "wasm": "0x1.ceca18p-7",
+              "abs_error": 9.313225746154785e-10
+            },
+            "count": 2030,
+            "peak": {
+              "frame": 1544,
+              "occurrence": 1544,
+              "native": "-0x1.5b588ap-5",
+              "wasm": "-0x1.5d57a4p-5",
+              "abs_error": 0.00024371221661567688
+            }
+          },
+          "magLutOutput.0": {
+            "first": {
+              "frame": 9,
+              "occurrence": 9,
+              "native": "0x1.1dfac8p-1",
+              "wasm": "0x1.1dfac4p-1",
+              "abs_error": 1.1920928955078125e-07
+            },
+            "count": 2032,
+            "peak": {
+              "frame": 1507,
+              "occurrence": 1507,
+              "native": "-0x1.f5008cp-7",
+              "wasm": "-0x1.ffb8ccp-7",
+              "abs_error": 0.00032714009284973145
+            }
+          },
+          "magState.0": {
+            "first": {
+              "frame": 4,
+              "occurrence": 4,
+              "native": "0x1.ceca16p-7",
+              "wasm": "0x1.ceca18p-7",
+              "abs_error": 9.313225746154785e-10
+            },
+            "count": 2031,
+            "peak": {
+              "frame": 1543,
+              "occurrence": 1543,
+              "native": "-0x1.5b588ap-5",
+              "wasm": "-0x1.5d57a4p-5",
+              "abs_error": 0.00024371221661567688
+            }
+          },
+          "recordedSample.0": {
+            "first": {
+              "frame": 2,
+              "occurrence": 2,
+              "native": "0x1.d6889ap-4",
+              "wasm": "0x1.d68898p-4",
+              "abs_error": 7.450580596923828e-09
+            },
+            "count": 2038,
+            "peak": {
+              "frame": 1509,
+              "occurrence": 1509,
+              "native": "-0x1.c95c3ap-5",
+              "wasm": "-0x1.cbda32p-5",
+              "abs_error": 0.0003042072057723999
+            }
+          },
+          "limitedOutput.0": {
+            "first": {
+              "frame": 201,
+              "occurrence": 201,
+              "native": "-0x1.cf5caep-6",
+              "wasm": "-0x1.cf5cacp-6",
+              "abs_error": 1.862645149230957e-09
+            },
+            "count": 1842,
+            "peak": {
+              "frame": 1714,
+              "occurrence": 1714,
+              "native": "-0x1.bb2262p-3",
+              "wasm": "-0x1.bb8b4ap-3",
+              "abs_error": 0.00020009279251098633
+            }
+          },
+          "recordInput.1": {
+            "first": {
+              "frame": 2,
+              "occurrence": 2,
+              "native": "0x1.cc2f62p-4",
+              "wasm": "0x1.cc2f5cp-4",
+              "abs_error": 2.2351741790771484e-08
+            },
+            "count": 2042,
+            "peak": {
+              "frame": 990,
+              "occurrence": 990,
+              "native": "-0x1.18b508p+0",
+              "wasm": "-0x1.18c052p+0",
+              "abs_error": 0.0001722574234008789
+            }
+          },
+          "feedbackInput.1": {
+            "first": {
+              "frame": 200,
+              "occurrence": 200,
+              "native": "0x1.d1ed5cp-29",
+              "wasm": "0x1.d1ede2p-29",
+              "abs_error": 1.4876988529977098e-14
+            },
+            "count": 1847,
+            "peak": {
+              "frame": 1625,
+              "occurrence": 1625,
+              "native": "-0x1.a238b2p-7",
+              "wasm": "-0x1.a25458p-7",
+              "abs_error": 3.2959505915641785e-06
+            }
+          },
+          "magLutInput.1": {
+            "first": {
+              "frame": 2,
+              "occurrence": 2,
+              "native": "0x1.013a7p-3",
+              "wasm": "0x1.013a6cp-3",
+              "abs_error": 2.9802322387695312e-08
+            },
+            "count": 2041,
+            "peak": {
+              "frame": 979,
+              "occurrence": 979,
+              "native": "-0x1.c4d0e2p-1",
+              "wasm": "-0x1.c4eb72p-1",
+              "abs_error": 0.00020265579223632812
+            }
+          },
+          "magPriorState.1": {
+            "first": {
+              "frame": 6,
+              "occurrence": 6,
+              "native": "0x1.39657ap-6",
+              "wasm": "0x1.39658p-6",
+              "abs_error": 5.587935447692871e-09
+            },
+            "count": 2034,
+            "peak": {
+              "frame": 1101,
+              "occurrence": 1101,
+              "native": "-0x1.b143c4p-4",
+              "wasm": "-0x1.b1d6b8p-4",
+              "abs_error": 0.0001401454210281372
+            }
+          },
+          "magLutOutput.1": {
+            "first": {
+              "frame": 5,
+              "occurrence": 5,
+              "native": "0x1.3b6aa8p-2",
+              "wasm": "0x1.3b6ab8p-2",
+              "abs_error": 2.384185791015625e-07
+            },
+            "count": 2028,
+            "peak": {
+              "frame": 962,
+              "occurrence": 962,
+              "native": "-0x1.74f096p-5",
+              "wasm": "-0x1.768b6ep-5",
+              "abs_error": 0.00019590556621551514
+            }
+          },
+          "magState.1": {
+            "first": {
+              "frame": 5,
+              "occurrence": 5,
+              "native": "0x1.39657ap-6",
+              "wasm": "0x1.39658p-6",
+              "abs_error": 5.587935447692871e-09
+            },
+            "count": 2035,
+            "peak": {
+              "frame": 1100,
+              "occurrence": 1100,
+              "native": "-0x1.b143c4p-4",
+              "wasm": "-0x1.b1d6b8p-4",
+              "abs_error": 0.0001401454210281372
+            }
+          },
+          "recordedSample.1": {
+            "first": {
+              "frame": 1,
+              "occurrence": 1,
+              "native": "0x1.397bbp-5",
+              "wasm": "0x1.397bb2p-5",
+              "abs_error": 3.725290298461914e-09
+            },
+            "count": 2031,
+            "peak": {
+              "frame": 962,
+              "occurrence": 962,
+              "native": "0x1.e46e64p-5",
+              "wasm": "0x1.e2fe9ep-5",
+              "abs_error": 0.0001753680408000946
+            }
+          },
+          "limitedOutput.1": {
+            "first": {
+              "frame": 201,
+              "occurrence": 201,
+              "native": "-0x1.a106cep-6",
+              "wasm": "-0x1.a106ccp-6",
+              "abs_error": 1.862645149230957e-09
+            },
+            "count": 1841,
+            "peak": {
+              "frame": 1273,
+              "occurrence": 1273,
+              "native": "-0x1.0daf58p-2",
+              "wasm": "-0x1.0dd0bcp-2",
+              "abs_error": 0.00012737512588500977
+            }
+          }
+        }
+      },
+      "modulated_space": {
+        "max_abs": 4.988900000002516e-05,
+        "rmse": 2.188500184984074e-05,
+        "output_sha256": [
+          "745b84145dbd71610b92e8d3a400d3b9bd9af83c5786252fa94bbd2b664d2de8",
+          "e8757e6d1ab974af9111301c3fc0ee98442bf004776541ef9cc1b912126a3e26"
+        ],
+        "instrumentation_preserves_output": true,
+        "stage_differences": {
+          "HighShelf.b2.-1": {
+            "first": {
+              "frame": -1,
+              "occurrence": 2,
+              "native": "0x1.98577ap-5",
+              "wasm": "0x1.98577ep-5",
+              "abs_error": 7.450580596923828e-09
+            },
+            "count": 4,
+            "peak": {
+              "frame": -1,
+              "occurrence": 4,
+              "native": "0x1.5e3e3ep-3",
+              "wasm": "0x1.5e3e3cp-3",
+              "abs_error": 1.4901161193847656e-08
+            }
+          },
+          "HighShelf.a2.-1": {
+            "first": {
+              "frame": -1,
+              "occurrence": 0,
+              "native": "0x1.2e0562p-1",
+              "wasm": "0x1.2e056p-1",
+              "abs_error": 5.960464477539063e-08
+            },
+            "count": 6,
+            "peak": {
+              "frame": -1,
+              "occurrence": 0,
+              "native": "0x1.2e0562p-1",
+              "wasm": "0x1.2e056p-1",
+              "abs_error": 5.960464477539063e-08
+            }
+          },
+          "inputHPF.0": {
+            "first": {
+              "frame": 5,
+              "occurrence": 5,
+              "native": "0x1.b3fa18p-4",
+              "wasm": "0x1.b3fa16p-4",
+              "abs_error": 7.450580596923828e-09
+            },
+            "count": 2039,
+            "peak": {
+              "frame": 2017,
+              "occurrence": 2017,
+              "native": "0x1.40b3eap-2",
+              "wasm": "0x1.405318p-2",
+              "abs_error": 0.000369340181350708
+            }
+          },
+          "conditionedInput.0": {
+            "first": {
+              "frame": 3,
+              "occurrence": 3,
+              "native": "0x1.e97ba6p-5",
+              "wasm": "0x1.e97ba4p-5",
+              "abs_error": 3.725290298461914e-09
+            },
+            "count": 2039,
+            "peak": {
+              "frame": 2018,
+              "occurrence": 2018,
+              "native": "0x1.44e1fep-2",
+              "wasm": "0x1.44812ap-2",
+              "abs_error": 0.0003693699836730957
+            }
+          },
+          "prePlayback.0": {
+            "first": {
+              "frame": 200,
+              "occurrence": 200,
+              "native": "0x1.69272ep-19",
+              "wasm": "0x1.692732p-19",
+              "abs_error": 4.547473508864641e-13
+            },
+            "count": 1839,
+            "peak": {
+              "frame": 1692,
+              "occurrence": 1692,
+              "native": "-0x1.19f22p-4",
+              "wasm": "-0x1.1a2596p-4",
+              "abs_error": 4.9076974391937256e-05
+            }
+          },
+          "readModulation.0": {
+            "first": {
+              "frame": 1,
+              "occurrence": 1,
+              "native": "0x1.94924ep-9",
+              "wasm": "0x1.94924ap-9",
+              "abs_error": 4.656612873077393e-10
+            },
+            "count": 1314,
+            "peak": {
+              "frame": 1288,
+              "occurrence": 1288,
+              "native": "-0x1.b71e88p-5",
+              "wasm": "-0x1.b70984p-5",
+              "abs_error": 1.0021030902862549e-05
+            }
+          },
+          "tapeOutput.0": {
+            "first": {
+              "frame": 200,
+              "occurrence": 200,
+              "native": "0x1.4ea132p-22",
+              "wasm": "0x1.4ea136p-22",
+              "abs_error": 5.684341886080802e-14
+            },
+            "count": 1842,
+            "peak": {
+              "frame": 1704,
+              "occurrence": 1704,
+              "native": "-0x1.91261ap-5",
+              "wasm": "-0x1.918eb2p-5",
+              "abs_error": 4.9874186515808105e-05
+            }
+          },
+          "inputHPF.1": {
+            "first": {
+              "frame": 3,
+              "occurrence": 3,
+              "native": "0x1.da2fd4p-5",
+              "wasm": "0x1.da2fd8p-5",
+              "abs_error": 7.450580596923828e-09
+            },
+            "count": 2044,
+            "peak": {
+              "frame": 1155,
+              "occurrence": 1155,
+              "native": "0x1.4d70c4p-2",
+              "wasm": "0x1.4d45a6p-2",
+              "abs_error": 0.00016447901725769043
+            }
+          },
+          "conditionedInput.1": {
+            "first": {
+              "frame": 2,
+              "occurrence": 2,
+              "native": "0x1.2970f6p-5",
+              "wasm": "0x1.2970f4p-5",
+              "abs_error": 3.725290298461914e-09
+            },
+            "count": 2045,
+            "peak": {
+              "frame": 1155,
+              "occurrence": 1155,
+              "native": "0x1.4ce0bp-2",
+              "wasm": "0x1.4cb59p-2",
+              "abs_error": 0.00016450881958007812
+            }
+          },
+          "prePlayback.1": {
+            "first": {
+              "frame": 200,
+              "occurrence": 200,
+              "native": "0x1.51ae1ep-20",
+              "wasm": "0x1.51ae0cp-20",
+              "abs_error": 1.0231815394945443e-12
+            },
+            "count": 1831,
+            "peak": {
+              "frame": 1168,
+              "occurrence": 1168,
+              "native": "-0x1.eda5fcp-7",
+              "wasm": "-0x1.ee988p-7",
+              "abs_error": 2.8910115361213684e-05
+            }
+          },
+          "readModulation.1": {
+            "first": {
+              "frame": 1,
+              "occurrence": 1,
+              "native": "0x1.945b2ep-9",
+              "wasm": "0x1.945b2ap-9",
+              "abs_error": 4.656612873077393e-10
+            },
+            "count": 1149,
+            "peak": {
+              "frame": 2025,
+              "occurrence": 2025,
+              "native": "-0x1.155adcp-5",
+              "wasm": "-0x1.155ac4p-5",
+              "abs_error": 4.470348358154297e-08
+            }
+          },
+          "tapeOutput.1": {
+            "first": {
+              "frame": 200,
+              "occurrence": 200,
+              "native": "0x1.38e17p-23",
+              "wasm": "0x1.38e16p-23",
+              "abs_error": 1.1368683772161603e-13
+            },
+            "count": 1847,
+            "peak": {
+              "frame": 848,
+              "occurrence": 848,
+              "native": "0x1.dd336cp-11",
+              "wasm": "0x1.cb1aeep-11",
+              "abs_error": 3.451475640758872e-05
+            }
+          },
+          "recordInput.0": {
+            "first": {
+              "frame": 3,
+              "occurrence": 3,
+              "native": "0x1.b680aap-5",
+              "wasm": "0x1.b680a8p-5",
+              "abs_error": 3.725290298461914e-09
+            },
+            "count": 2041,
+            "peak": {
+              "frame": 1439,
+              "occurrence": 1439,
+              "native": "-0x1.96aedap-2",
+              "wasm": "-0x1.96c47p-2",
+              "abs_error": 8.234381675720215e-05
+            }
+          },
+          "feedbackInput.0": {
+            "first": {
+              "frame": 200,
+              "occurrence": 200,
+              "native": "0x1.289308p-27",
+              "wasm": "0x1.28931p-27",
+              "abs_error": 3.552713678800501e-15
+            },
+            "count": 1842,
+            "peak": {
+              "frame": 2021,
+              "occurrence": 2021,
+              "native": "-0x1.97911cp-7",
+              "wasm": "-0x1.979986p-7",
+              "abs_error": 1.0030344128608704e-06
+            }
+          },
+          "magLutInput.0": {
+            "first": {
+              "frame": 1,
+              "occurrence": 1,
+              "native": "0x1.a5ee8ap-7",
+              "wasm": "0x1.a5ee88p-7",
+              "abs_error": 9.313225746154785e-10
+            },
+            "count": 2044,
+            "peak": {
+              "frame": 1439,
+              "occurrence": 1439,
+              "native": "-0x1.8e2804p-2",
+              "wasm": "-0x1.8e3ebp-2",
+              "abs_error": 8.64863395690918e-05
+            }
+          },
+          "magPriorState.0": {
+            "first": {
+              "frame": 10,
+              "occurrence": 10,
+              "native": "0x1.05ec64p-6",
+              "wasm": "0x1.05ec66p-6",
+              "abs_error": 1.862645149230957e-09
+            },
+            "count": 2038,
+            "peak": {
+              "frame": 1536,
+              "occurrence": 1536,
+              "native": "-0x1.9f51a8p-5",
+              "wasm": "-0x1.9ffb98p-5",
+              "abs_error": 8.103251457214355e-05
+            }
+          },
+          "magLutOutput.0": {
+            "first": {
+              "frame": 13,
+              "occurrence": 13,
+              "native": "0x1.bfb76cp-3",
+              "wasm": "0x1.bfb788p-3",
+              "abs_error": 2.086162567138672e-07
+            },
+            "count": 2029,
+            "peak": {
+              "frame": 1501,
+              "occurrence": 1501,
+              "native": "-0x1.3e8d3cp-5",
+              "wasm": "-0x1.3f40bep-5",
+              "abs_error": 8.55959951877594e-05
+            }
+          },
+          "magState.0": {
+            "first": {
+              "frame": 9,
+              "occurrence": 9,
+              "native": "0x1.05ec64p-6",
+              "wasm": "0x1.05ec66p-6",
+              "abs_error": 1.862645149230957e-09
+            },
+            "count": 2039,
+            "peak": {
+              "frame": 1535,
+              "occurrence": 1535,
+              "native": "-0x1.9f51a8p-5",
+              "wasm": "-0x1.9ffb98p-5",
+              "abs_error": 8.103251457214355e-05
+            }
+          },
+          "recordedSample.0": {
+            "first": {
+              "frame": 8,
+              "occurrence": 8,
+              "native": "0x1.e0d7e4p-4",
+              "wasm": "0x1.e0d7e6p-4",
+              "abs_error": 7.450580596923828e-09
+            },
+            "count": 2033,
+            "peak": {
+              "frame": 1501,
+              "occurrence": 1501,
+              "native": "-0x1.f4ae46p-5",
+              "wasm": "-0x1.f55fcp-5",
+              "abs_error": 8.46274197101593e-05
+            }
+          },
+          "limitedOutput.0": {
+            "first": {
+              "frame": 207,
+              "occurrence": 207,
+              "native": "0x1.0a4c6cp-7",
+              "wasm": "0x1.0a4c64p-7",
+              "abs_error": 3.725290298461914e-09
+            },
+            "count": 1839,
+            "peak": {
+              "frame": 1704,
+              "occurrence": 1704,
+              "native": "-0x1.3a0886p-2",
+              "wasm": "-0x1.3a159ap-2",
+              "abs_error": 4.988908767700195e-05
+            }
+          },
+          "recordInput.1": {
+            "first": {
+              "frame": 2,
+              "occurrence": 2,
+              "native": "0x1.0b3448p-5",
+              "wasm": "0x1.0b3446p-5",
+              "abs_error": 3.725290298461914e-09
+            },
+            "count": 2043,
+            "peak": {
+              "frame": 990,
+              "occurrence": 990,
+              "native": "-0x1.46388ap-2",
+              "wasm": "-0x1.4645b4p-2",
+              "abs_error": 5.02169132232666e-05
+            }
+          },
+          "feedbackInput.1": {
+            "first": {
+              "frame": 200,
+              "occurrence": 200,
+              "native": "0x1.141bap-28",
+              "wasm": "0x1.141b8ep-28",
+              "abs_error": 3.9968028886505635e-15
+            },
+            "count": 1841,
+            "peak": {
+              "frame": 1986,
+              "occurrence": 1986,
+              "native": "-0x1.d20414p-12",
+              "wasm": "-0x1.d30e96p-12",
+              "abs_error": 9.928189683705568e-07
+            }
+          },
+          "magLutInput.1": {
+            "first": {
+              "frame": 1,
+              "occurrence": 1,
+              "native": "0x1.7bbd14p-7",
+              "wasm": "0x1.7bbd12p-7",
+              "abs_error": 9.313225746154785e-10
+            },
+            "count": 2044,
+            "peak": {
+              "frame": 990,
+              "occurrence": 990,
+              "native": "-0x1.36477p-2",
+              "wasm": "-0x1.36555ap-2",
+              "abs_error": 5.307793617248535e-05
+            }
+          },
+          "magPriorState.1": {
+            "first": {
+              "frame": 4,
+              "occurrence": 4,
+              "native": "0x1.f3f41ep-10",
+              "wasm": "0x1.f3f41cp-10",
+              "abs_error": 1.1641532182693481e-10
+            },
+            "count": 2039,
+            "peak": {
+              "frame": 1069,
+              "occurrence": 1069,
+              "native": "-0x1.11eec8p-3",
+              "wasm": "-0x1.12079ap-3",
+              "abs_error": 4.7340989112854004e-05
+            }
+          },
+          "magLutOutput.1": {
+            "first": {
+              "frame": 3,
+              "occurrence": 3,
+              "native": "0x1.7c8f1cp-5",
+              "wasm": "0x1.7c8f1ap-5",
+              "abs_error": 3.725290298461914e-09
+            },
+            "count": 2009,
+            "peak": {
+              "frame": 967,
+              "occurrence": 967,
+              "native": "-0x1.295794p-4",
+              "wasm": "-0x1.298d7ep-4",
+              "abs_error": 5.141645669937134e-05
+            }
+          },
+          "magState.1": {
+            "first": {
+              "frame": 3,
+              "occurrence": 3,
+              "native": "0x1.f3f41ep-10",
+              "wasm": "0x1.f3f41cp-10",
+              "abs_error": 1.1641532182693481e-10
+            },
+            "count": 2040,
+            "peak": {
+              "frame": 1068,
+              "occurrence": 1068,
+              "native": "-0x1.11eec8p-3",
+              "wasm": "-0x1.12079ap-3",
+              "abs_error": 4.7340989112854004e-05
+            }
+          },
+          "recordedSample.1": {
+            "first": {
+              "frame": 3,
+              "occurrence": 3,
+              "native": "0x1.3c198p-5",
+              "wasm": "0x1.3c197ep-5",
+              "abs_error": 3.725290298461914e-09
+            },
+            "count": 2023,
+            "peak": {
+              "frame": 967,
+              "occurrence": 967,
+              "native": "-0x1.aacbf2p-6",
+              "wasm": "-0x1.ab9d08p-6",
+              "abs_error": 4.98499721288681e-05
+            }
+          },
+          "limitedOutput.1": {
+            "first": {
+              "frame": 205,
+              "occurrence": 205,
+              "native": "-0x1.67583cp-7",
+              "wasm": "-0x1.67584p-7",
+              "abs_error": 1.862645149230957e-09
+            },
+            "count": 1843,
+            "peak": {
+              "frame": 848,
+              "occurrence": 848,
+              "native": "-0x1.697132p-3",
+              "wasm": "-0x1.69834cp-3",
+              "abs_error": 3.452599048614502e-05
+            }
+          }
+        }
+      }
+    }
+  },
+  "contraction_off": {
+    "checkout_sha": "866ab965a05aa0195d0d00e4226f556fab708eaf",
+    "platform": "Linux-7.0.0-1020-azure-x86_64-with-glibc2.43",
+    "libc": [
+      "glibc",
+      "2.43"
+    ],
+    "compilers": [
+      "c++ (Ubuntu 15.2.0-16ubuntu1) 15.2.0\nCopyright (C) 2025 Free Software Foundation, Inc.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.\n\n",
+      "emcc (Emscripten gcc/clang-like replacement + linker emulating GNU ld) 3.1.62 (34c1aa36052b1882058f22aa1916437ba0872690)\nCopyright (C) 2014 the Emscripten authors (see AUTHORS.txt)\nThis is free and open source software under the MIT license.\nThere is NO warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.\n\n"
+    ],
+    "flags": [
+      "-std=c++17",
+      "-O3",
+      "-DNDEBUG",
+      "-I.",
+      "-ffp-contract=off"
+    ],
+    "source_sha256": {
+      "include/hydra_mech_noise.hpp": "0fa4d5abdfbb54d2b8af12853f42b1fe84062110a3102f8733d69d96b080dc6b",
+      "include/hydra_pcm.hpp": "a14a95ad22a76d7bdb52f3a1c70a8e0d3b665ee14131f12add48088491c36ad1",
+      "include/hydra_dsp.h": "ef8f4108c2a0136d08b5299db43095a7350e628eb3294eb8e8c667e39c54857c",
+      "dsp/core/spsc_queue.hpp": "367d5b3eb714dc9f982185ac383c14d5e5e3a250486b56117de9ac0c64b7f3eb",
+      "dsp/core/midi_clock_sync.hpp": "4fca4cb2b216c28565ce03c7612071571a24a0cda551f6ec94cfbfd38a16c02f",
+      "dsp/core/global_transport_clock.hpp": "e27163232718f72744df8bde98902be99bb016a42922f74b5e2b46a4e81d92e0",
+      "dsp/core/realtime_profile.hpp": "a413af6641946b5ba3528bdd66270bd0507666df0f84022659aecb0114f7aeed",
+      "dsp/core/reverse_windows.hpp": "7ed2c351bbf7fc3c8c824186d007b56fc40f6b0348c70a7285ffc351cdde35fd",
+      "dsp/core/tape_core.cpp": "2ef4e6e4786276c8b8ee6681ea3ad77ff897900ebe7b17fdf68f7e3dbc7eb749",
+      "dsp/core/fast_tanh_table.inc": "0c455e0c43b1803aedfebbf1fd82668ab8c44bfc8259186e0be8388209be0676",
+      "dsp/core/tap_tempo.hpp": "9aabb52d7054b86582fdb59aa1ea7ee0ec3b05772a74643c6a9c9c0ba01c1686",
+      "dsp/core/hydra_dsp_c_api.cpp": "63df514975cfd9ffea3edf1c04e9c9667a8b033c4602652b7d4774d648212758",
+      "dsp/core/tape_core.hpp": "6679e218d4e1e8b02f0b517291399ae93a3fe778b978f9e00f50dff57daf045c",
+      "tests/core/render_trace.cpp": "a763f0c9376add4465ad14ad8e66bd87fd7911f5161121b8c04965fd5069cba3",
+      "tests/core/check.h": "51cfbea870d1b3146ffea7973f0342ba6f6e5f0621e1fc9501377ed7a5ed06bf"
+    },
+    "binary_sha256": {
+      "release-native.exe": "be29af738a6222ccc423da362f54548e1fe706d2d147af2bb075ada10ab20061",
+      "release-wasm.js": "8d3528c2dd1eabadeee899a984df8bd4e14bdc4358bd11011a67fa197315748d",
+      "release-wasm.wasm": "6d4fced1016581b3c00662e5da7cbe118731ae39d8b869378a330a68a96d3ef1",
+      "instrumented-native.exe": "cfb74da55c6c96878a904950a01c56cd0d9a22154814aab942d483eee38defa5",
+      "instrumented-wasm.js": "5f717115e2e6316a942bab6f9149347543f25ae8be50d64b3e264fed21dec5a8",
+      "instrumented-wasm.wasm": "d1b6392d41f656c08552b927b2c95b87056ebeca46f09657379cb3626fe73a8d"
+    },
+    "scenarios": {
+      "baseline_glue": {
+        "max_abs": 0.0,
+        "rmse": 0.0,
+        "output_sha256": [
+          "5b8b368f79168c7eb0f8578fcd84f195bfd115a7fd06d768045677b23737e31c",
+          "5b8b368f79168c7eb0f8578fcd84f195bfd115a7fd06d768045677b23737e31c"
+        ],
+        "instrumentation_preserves_output": true,
+        "stage_differences": {}
+      },
+      "short_slap_bright": {
+        "max_abs": 0.0,
+        "rmse": 0.0,
+        "output_sha256": [
+          "6b2aa1b7eca784c08596e902c8099ab98b5d42440c3e185691f952d5348a246e",
+          "6b2aa1b7eca784c08596e902c8099ab98b5d42440c3e185691f952d5348a246e"
+        ],
+        "instrumentation_preserves_output": true,
+        "stage_differences": {}
+      },
+      "feedback_edge": {
+        "max_abs": 0.0,
+        "rmse": 0.0,
+        "output_sha256": [
+          "9a30f2481f962c1c64b37f2876b14a720b3259d196e0e9ae5898be127cfe09bf",
+          "9a30f2481f962c1c64b37f2876b14a720b3259d196e0e9ae5898be127cfe09bf"
+        ],
+        "instrumentation_preserves_output": true,
+        "stage_differences": {}
+      },
+      "saturated_dark": {
+        "max_abs": 0.0,
+        "rmse": 0.0,
+        "output_sha256": [
+          "c353cc35770acb0f01462895074115fbed7d01ce92cdbd1526b6a09d6456508e",
+          "c353cc35770acb0f01462895074115fbed7d01ce92cdbd1526b6a09d6456508e"
+        ],
+        "instrumentation_preserves_output": true,
+        "stage_differences": {}
+      },
+      "modulated_space": {
+        "max_abs": 0.0,
+        "rmse": 0.0,
+        "output_sha256": [
+          "e8757e6d1ab974af9111301c3fc0ee98442bf004776541ef9cc1b912126a3e26",
+          "e8757e6d1ab974af9111301c3fc0ee98442bf004776541ef9cc1b912126a3e26"
+        ],
+        "instrumentation_preserves_output": true,
+        "stage_differences": {}
+      }
+    }
+  },
+  "official_control_run": "https://github.com/ovelhaaa/hydra-tape-engine/actions/runs/44840803894",
+  "native_default_fma_macro": true,
+  "native_default_avx2_macro": true,
+  "disassembled_original_fma_instruction_count": 544
+}

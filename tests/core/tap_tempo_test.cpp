@@ -962,11 +962,13 @@ int main() {
   ok = testLegacyCompatibility() && ok;
   ok = testSpscQueue() && ok;
   ok = testNoParamUpdateOnTap1OrOutlier() && ok;
+#ifndef __EMSCRIPTEN__
   ok = testConcurrentTapTempoHandoff() && ok;
   ok = testConcurrentTransportAndManualBpm() && ok;
   ok = testStatePublisherStressAndHighFreq() && ok;
   ok = testStatePublisherSnapshotConsistency() && ok;
   ok = testStatePublisherSlowReader() && ok;
+#endif
   ok = testSpscQueueOverflowAndOrder() && ok;
 
   if (ok) {

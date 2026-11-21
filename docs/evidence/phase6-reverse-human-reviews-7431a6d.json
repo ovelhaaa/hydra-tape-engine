@@ -1,0 +1,118 @@
+{
+  "schema_version": 1,
+  "reference_commit": "7431a6db05abfde97838721cd089f94c7fed5047",
+  "package_hashes": {
+    "01_reverse_01": [
+      "b7d480e75939fff0f88bab5aebb60a33ad19e09752b5e73f93ab060181cd7c06",
+      "b7d480e75939fff0f88bab5aebb60a33ad19e09752b5e73f93ab060181cd7c06",
+      "183a413a1fd5345ac7e14e6ee0c7bfe45f0f262ea29d431bfe6386cede485c98"
+    ],
+    "02_reverse_02": [
+      "6de40f974117972f46f63a5c460be393f7fbe5f71265b735d47d2edc7b6c0bd5",
+      "6de40f974117972f46f63a5c460be393f7fbe5f71265b735d47d2edc7b6c0bd5",
+      "c0b3a9b9e923bc67e78560aa6c7352906e4df476bc6576aa43232021b0607501"
+    ],
+    "03_reverse_03": [
+      "4dfaaac72dda14d3370cdab013c22dcd519643f93e531c61d422ad8f111a3eb6",
+      "4dfaaac72dda14d3370cdab013c22dcd519643f93e531c61d422ad8f111a3eb6",
+      "64cf490026950a5e8544f7c785f61541d7138f76d81b376e24aef640e39bad51"
+    ],
+    "04_reverse_04": [
+      "404eebade087877d643f9428b64abb3936dd69c49a4a7bd36640be061ae0eac4",
+      "404eebade087877d643f9428b64abb3936dd69c49a4a7bd36640be061ae0eac4",
+      "8d51e8dabb9870654e7bec569e829a68f372f997b129424ffd20ba13d7cc4e19"
+    ],
+    "05_reverse_05": [
+      "52972a715d4fa7b1b26da73cd132918ed4f1ab4ce4171bbd6f754e57f24438fd",
+      "52972a715d4fa7b1b26da73cd132918ed4f1ab4ce4171bbd6f754e57f24438fd",
+      "ea8ef4fa4a9c08c10c165adb364b39c2919edb65e1ff5827cb42eb9b029fb0bc"
+    ],
+    "06_reverse_06": [
+      "1871db171f9cba6181cc6fee92b29e873f0d488a557064505fd21a6f5ca6e9fa",
+      "1871db171f9cba6181cc6fee92b29e873f0d488a557064505fd21a6f5ca6e9fa",
+      "25eaa9d9c60d9064374775169cac386e6515a9344d0770330b95b191065771f4"
+    ],
+    "07_reverse_07": [
+      "eebef88095b03db44b0aafdb5eb2dfc58288cc14cbfd5c4bdbfd8bd73409d4d2",
+      "eebef88095b03db44b0aafdb5eb2dfc58288cc14cbfd5c4bdbfd8bd73409d4d2",
+      "19efe416cf3e899e3a8f6f0a9add5b5e55d6367c25b0692b6ffc6107dbb9d5fe"
+    ],
+    "08_reverse_08": [
+      "a4f2289588b52b7570aa5a3509536d4eb350b30bd59eb48840b1f9d1d4c3333e",
+      "a4f2289588b52b7570aa5a3509536d4eb350b30bd59eb48840b1f9d1d4c3333e",
+      "5a679ff2dfa7207f1dd6a11edd27d5c3f275c4af997b01ca2014cb429116f441"
+    ],
+    "09_reverse_09": [
+      "c83e1abe8d2cbddb1e83e01f769c0b34c3df8f9f4f1b5c3b8f2673f67a65604e",
+      "c83e1abe8d2cbddb1e83e01f769c0b34c3df8f9f4f1b5c3b8f2673f67a65604e",
+      "6f4999db5a17d52e84fd00d73a30058cbb5569cbe0b51b6673204de7585ec003"
+    ],
+    "10_reverse_10": [
+      "13b7f7134d7d2ec94d99be884fbb8ede64178168c9794f2dc827533ac45f493f",
+      "13b7f7134d7d2ec94d99be884fbb8ede64178168c9794f2dc827533ac45f493f",
+      "ab32ca59b1c01ad7050966c1246676c9b73c41f4304ad5143ac9e052076c47f5"
+    ]
+  },
+  "reviews": {
+    "01_reverse_01": {
+      "state": "PASS",
+      "criteria": {},
+      "comments": "",
+      "notes": []
+    },
+    "02_reverse_02": {
+      "state": "PASS",
+      "criteria": {},
+      "comments": "",
+      "notes": []
+    },
+    "03_reverse_03": {
+      "state": "PASS",
+      "criteria": {},
+      "comments": "",
+      "notes": []
+    },
+    "04_reverse_04": {
+      "state": "PASS",
+      "criteria": {},
+      "comments": "",
+      "notes": []
+    },
+    "05_reverse_05": {
+      "state": "PASS",
+      "criteria": {},
+      "comments": "",
+      "notes": []
+    },
+    "06_reverse_06": {
+      "state": "PASS",
+      "criteria": {},
+      "comments": "",
+      "notes": []
+    },
+    "07_reverse_07": {
+      "state": "PASS",
+      "criteria": {},
+      "comments": "",
+      "notes": []
+    },
+    "08_reverse_08": {
+      "state": "PASS",
+      "criteria": {},
+      "comments": "",
+      "notes": []
+    },
+    "09_reverse_09": {
+      "state": "PASS",
+      "criteria": {},
+      "comments": "",
+      "notes": []
+    },
+    "10_reverse_10": {
+      "state": "PASS",
+      "criteria": {},
+      "comments": "",
+      "notes": []
+    }
+  }
+}

@@ -184,19 +184,55 @@ def characterize(scene, values, command, input_path, work):
         texture_only = Scene(scene.name, scene.stimulus, scene.settings | {WET: 0},
                              seconds=scene.seconds)
         delayed = delta(values, run_scene(command, texture_only, input_path, work, len(values)))
+        # The scene uses the runner defaults: 120 BPM and quarter-note Reverse
+        # (division 0), so the reverse window hop is 0.5 s. Reverse V2 reads a
+        # captured segment backwards: a marker written at t0 reappears at
+        # 2*T - t0, where T is the next window boundary after t0. Searching at
+        # the stimulus times only finds the pre-reverse dry signal.
+        hop = 60.0 / 120.0
+        markers = (1.25, 1.75, 2.4, 3.1)
         offsets = {}
-        for start in (1.25, 1.75, 2.4, 3.1):
-            window = range(int(start * RATE), int((start + 0.45) * RATE))
-            l = max(window, key=lambda i: abs(delayed[2 * i]))
-            r = max(window, key=lambda i: abs(delayed[2 * i + 1]))
+        for marker in markers:
+            boundary = math.ceil(marker / hop) * hop
+            expected = 2 * boundary - marker
+            first = int((expected - 0.02) * RATE)
+            last = int((expected + 0.03) * RATE)
+            l = max(range(first, last), key=lambda i: abs(delayed[2 * i]))
+            r = max(range(first, last), key=lambda i: abs(delayed[2 * i + 1]))
             if min(abs(delayed[2 * l]), abs(delayed[2 * r + 1])) < 1e-4:
-                raise ValueError("reverse marker missing")
-            onset_l = next(i for i in window if abs(delayed[2 * i]) >= 1e-4)
-            onset_r = next(i for i in window if abs(delayed[2 * i + 1]) >= 1e-4)
-            offsets[str(start)] = {"left_peak_frame": l, "right_peak_frame": r,
-                                   "peak_offset_frames": r - l,
-                                   "left_onset_frame": onset_l, "right_onset_frame": onset_r,
-                                   "onset_offset_frames": onset_r - onset_l}
+                raise ValueError(f"{scene.name}: reverse marker missing at {expected:.6f}s")
+            if abs(l / RATE - expected) > 0.005 or abs(r / RATE - expected) > 0.005:
+                raise ValueError(f"{scene.name}: reverse marker timing error at {expected:.6f}s")
+            if abs(r - l) > 2:
+                raise ValueError(f"{scene.name}: reverse marker stereo misalignment at {expected:.6f}s")
+            onset_l = next(i for i in range(first, last) if abs(delayed[2 * i]) >= 1e-4)
+            onset_r = next(i for i in range(first, last) if abs(delayed[2 * i + 1]) >= 1e-4)
+            offsets[str(marker)] = {"left_peak_frame": l, "right_peak_frame": r,
+                                    "peak_offset_frames": r - l,
+                                    "left_onset_frame": onset_l, "right_onset_frame": onset_r,
+                                    "onset_offset_frames": onset_r - onset_l,
+                                    "expected_frame": int(round(expected * RATE))}
+
+        # Negative control: without Reverse the same markers must not appear at
+        # the reverse-predicted times. This keeps the detector from accepting
+        # ordinary delay taps or a residual carrier as reversed markers.
+        control = run_scene(command, Scene(scene.name, scene.stimulus,
+                                           scene.settings | {REVERSE: 0}, seconds=scene.seconds),
+                            input_path, work, len(values))
+        control_texture = run_scene(command, Scene(scene.name, scene.stimulus,
+                                                   scene.settings | {REVERSE: 0, WET: 0},
+                                                   seconds=scene.seconds),
+                                    input_path, work, len(values))
+        control_delayed = delta(control, control_texture)
+        for marker in markers:
+            boundary = math.ceil(marker / hop) * hop
+            expected = 2 * boundary - marker
+            first = int((expected - 0.02) * RATE)
+            last = int((expected + 0.03) * RATE)
+            peak = max(max(map(abs, control_delayed[2 * first:2 * last:2])),
+                       max(map(abs, control_delayed[2 * first + 1:2 * last:2])))
+            if peak >= 1e-4:
+                raise ValueError(f"{scene.name}: reverse marker detected without Reverse")
 
         isolation = {}
         for stimulus, silent_channel in (("reverse_left_only", 1), ("reverse_right_only", 0)):

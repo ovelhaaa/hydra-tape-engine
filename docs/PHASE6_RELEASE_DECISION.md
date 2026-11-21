@@ -1,0 +1,157 @@
+# Phase 6.4.1 — Release Decision Record
+
+Date: 2026-11-20. Repository `ovelhaaa/hydra-tape-engine`, existing
+[PR #54](https://github.com/ovelhaaa/hydra-tape-engine/pull/54), branch
+`feature/musical-validation-phase6` to `main`. No merge performed.
+
+## Classification
+
+**AUTOMATED_CI_PASS — PENDING_HUMAN_AUDITION / PHYSICAL_RUNTIME_PENDING.**
+
+All five required workflows passed on code HEAD
+`e2c94972cc295f2c8ac81ea0b0ecc410868b8961`. Final record changes are followed by
+another complete CI execution; the PR contains its latest-head links. Human
+listening and physical runtime are independent pending release gates. No full
+release or musical approval is inferred.
+
+The earlier Phase 6.4 all-green claim was incorrect: Windows observations were
+extrapolated to Linux. Initial local/remote HEAD was
+`eaa233ff32e169a2ff720d4bdace3d636c10eb7a`, with no later commits.
+[Baseline hashes/failures](evidence/phase641-baseline.json) and
+[initial artifacts](evidence/phase641-initial-artifacts.json) preserve the audit.
+
+## Gate matrix
+
+| Gate | Result | Evidence |
+|---|---|---|
+| Native | PASS | [Core](https://github.com/ovelhaaa/hydra-tape-engine/actions/runs/44842365956), CTest 16/16, ABI and unchanged goldens |
+| WASM | PASS | [Reverse](https://github.com/ovelhaaa/hydra-tape-engine/actions/runs/44842365989), complete CTest 16/16; Bias functional suite 14/14 plus separate strict comparator |
+| Native/WASM Strict | PASS | Core clean Ubuntu 24.04 and 26.04, all five scenarios / 10240 stereo frames, max_abs=0, RMSE=0; input/LUT/state verification |
+| Bias Anti-Aliasing | PASS | [Bias](https://github.com/ovelhaaa/hydra-tape-engine/actions/runs/44842366000), six variants, spectral/transfer 49/49, standalone whine, plots and 60-pair delivery |
+| Reverse | PASS | Reverse current functional tests and frozen Phase 6.3 optimization comparison 10/10 bit-exact |
+| Feedback | PASS | Reverse full-engine 27/27; six 60 s cases; internal windows match full-engine bits, maximum RMS growth +0.012521058212 dB |
+| Transitions | PASS | Reverse, five parameters at 44.1/48 kHz: max 0.017967507243 / 0.014195829630 <= 0.03 |
+| Web Demo | PASS | [Web](https://github.com/ovelhaaa/hydra-tape-engine/actions/runs/44842365973), clean WASM build and host 40/40 |
+| AudioWorklet Reset | PASS | Web real Chrome 157.0.8103.78, actual AudioContext/AudioWorklet/WASM, A–E all pass |
+| Listening Lab | PASS | [Listening](https://github.com/ovelhaaa/hydra-tape-engine/actions/runs/44842365950), final 10 pairs / 20 PCM24 WAVs / 10 CSVs, hashes, real Chrome player |
+| ESP32-S3 Build | PASS | Core production and Reverse production/stage-profile builds; local production RAM 26304 B / flash 627743 B |
+| ESP32-S3 Runtime | PENDING | PHYSICAL_RUNTIME_PENDING; USB programmer responds, firmware console remains silent |
+| Human Listening | PENDING | PENDING_HUMAN_AUDITION; no previous signoff transferred |
+| ABI C 1.7 / goldens | PASS | Native/WASM symbol, legacy-consumer and golden checks; fixtures not regenerated |
+
+## Numerical finding
+
+The official discrepancy was reproduced without cache. Ubuntu 26.04 defaults to
+`-march=x86-64-v3` with FMA enabled; Ubuntu 24.04 did not contract these operations.
+Default GCC14 and GCC15 on Ubuntu26 produced the same failures, and Windows with
+`-mfma` reproduced them exactly. Input and canonical LUT bits were already equal.
+The downloaded uncontrolled executable contains 544 FMA-family instructions.
+
+With only `-ffp-contract=off`, all five outputs and every probed filter/per-channel
+state matched, without instrumented-output perturbation. CMake now applies this
+policy to C++ targets; manual diagnostic/A-B builds use it too. PlatformIO ESP32
+flags and production DSP source are unchanged. Thresholds remain 1e-5 / 1e-6,
+individually enforced per scenario as well as in aggregate. Negative input/LUT
+corruption tests fail before DSP comparison; an individual RMSE regression cannot
+hide behind a passing aggregate.
+
+Input float32 LE SHA-256:
+`e629e0248b9833c0f280f3771a07b95047e89d9efb3e9afddc06d3209ea559dc`.
+LUT float32 LE SHA-256:
+`d1724b91fed053e18aa3674b7862e8322b9ec9efbddab337fbddc030192238e5`.
+Each has zero divergent values, zero ULP and no first mismatch. Independent LUT
+CTest validates all 1025 entries and 80-digit Decimal regeneration. Toolchains:
+Ubuntu24 GCC13.3/glibc2.39; Ubuntu26 GCC15.2/glibc2.43; Emscripten3.1.62 in both.
+CMake caches, compile commands, checkout/source/runner/WASM hashes are artifacts.
+[Controlled evidence](evidence/phase641-contraction-control.json).
+
+## Bias, feedback and transitions
+
+Removed obsolete `lut.init()` use from modern wrappers. Historical variants
+explicitly restore the frozen fa43cde LUT and initialization; their provenance
+identifies the current engine plus frozen magnetic model, not an original full
+engine binary. The averaged variant uses exact production source. Reports record
+model/LUT source hashes, compiler, flags, commit and binary hashes.
+
+Linux spectral/transfer gates are 49/49. At 48 kHz, 6 kHz residual reduction is
+122.492178 dB; sine440 spurious level is -138.873151 dBFS and high-drive spurious
+level -130.161493 dBFS. Whine ablations are deterministic, finite and valid PCM24.
+An optional historical-reference check passed locally with exact preserved SHA;
+Linux does not pretend to have compared that Windows reference. Historical LUT
+Native/WASM differences are exposed explicitly, not hidden by a modern probe.
+
+The old six-second engine rule still reports 23/27, retaining four named decay
+observations. Those four are superseded only by the separately required measured
+60-second stability gate. Other original assertions must pass. Raw spectra are
+unnormalized FFT-power observations with explicit units, not an invented spectral
+acceptance gate. Four tails show limited sustain; both Reverse tails decay to
+zero (-240 dB numerical floor). Maximum output peak 0.90766525; zero limiter-ceiling
+samples; no NaN/Inf. Probe input fixtures/128-frame blocks are shared and output
+windows must match full-engine bits. All five parameter-transition scenarios remain.
+
+## Real AudioWorklet reset
+
+Suspended-context messages and the real DSP reset/ack were observed in Chrome.
+Requests coalesce, acknowledgements carry request IDs, errors reach the host and
+an absent ack rejects after 2000 ms. Failures keep audio suspended; stopped audio
+stays stopped. No graph reconstruction or new DSP reset semantics were needed.
+
+Observed Linux end-to-end times: running 3.2 ms; stopped 1.5 ms; controlled
+exception 3.5 ms; repeated concurrent requests 3.1 ms; timeout 2000.7 ms.
+These are host timings, not isolated buffer-wipe CPU measurements. Fault injection
+uses only a test subclass. Other browsers and hardware audio latency remain outside
+this Chrome evidence. See [reset contract](PHASE6_RESET_CONTRACT.md).
+
+## Verified listening delivery
+
+[Download final review package for the validated code HEAD](https://github.com/ovelhaaa/hydra-tape-engine/actions/runs/44842365950/artifacts/14681004034).
+The artifact was downloaded again, its inner ZIP and manifest/file hashes verified,
+and its physical contents counted: 20 stereo PCM24 WAVs at 48 kHz, 10 CSVs,
+manifest, DSP metadata, ten-pair guide and player. Nine pairs have 288000 frames;
+the feedback pair has 2880000 frames (60 s). Audio/telemetry total: 66567413 bytes.
+
+Inner ZIP SHA-256:
+`3e7daaa73d244d834a4e63a2e44b4e34879da0df541623ebb434eb41ee7b7440`.
+Manifest SHA-256:
+`99e551e69a650671cb564ec3d2d58fa6ce2a4a856c2a0daac96b0ec5df41e540`.
+Reference commit: `e2c94972cc295f2c8ac81ea0b0ecc410868b8961`;
+A-side DSP commit: `7431a6db05abfde97838721cd089f94c7fed5047`.
+The PR also links any newer artifact regenerated by the final record-only CI.
+Artifacts have 30-day retention; regenerate after expiration.
+
+PCM24 correction: one normalized signed LSB is 2^-23 = 1.1920929e-7.
+A 3e-5 difference is approximately 252 LSB (-90.46 dBFS peak error), not a fraction
+of an LSB. Small amplitude error and automated playback do not establish human
+approval. Prior Phase6.2/6.3 listening decisions remain historical only.
+
+## Physical follow-up
+
+COM15, VID303A:1001, serial/MAC B8:F8:62:E3:E4:A4 identified by esptool:
+ESP32-S3 rev0.2, 8 MB PSRAM, USB Serial/JTAG. RTS reset succeeded at the programmer
+level; firmware banner/help returned zero bytes. No firmware was flashed in this
+phase. Local firmware SHA-256:
+`ed68bc89e0f9bf508c2a181680aca80fec99602e6605e588b023d3e2872ddabd`.
+
+Runtime/audio loop, benchmarks, overruns, I2S faults, stack, heap and PSRAM stability
+are **not measured** for this phase. Older physical results are not reused.
+Manual procedure: unplug/reconnect USB power with BOOT released for normal boot,
+pulse EN if accessible, identify the reenumerated port and confirm banner/help
+before benchmarks. Repeat delay, Reverse1/4,1/8,1/16,95% feedback, Multi-Head and
+combined stress. Require zero overruns/I2S faults, stable heap/PSRAM, sufficient
+stack and no deadline regression. External MIDI hardware also remains unavailable.
+Physical access does not block CI repair; it remains a release gate.
+
+## Reproduction and commit trail
+
+Run the checked-in Core, Bias, Reverse, Listening and Web workflows on this branch.
+The long 60-second diagnostics run once, in Reverse; Bias retains its historical
+six-second measurements. Local Windows tests used an accessible workspace TMP/TEMP
+directory after OS-temp file-open failures; tests were rerun, not disabled.
+
+Commits after audit: `8b9c363` clean probes; `2dd13e6` diagnostics/reset/gates;
+`866ab96` arithmetic controls and evidence; `60a9da6` FMA rounding correction;
+`e2c9497` exact diagnostic inputs, standalone whine and final listening delivery.
+This record commit adds verified evidence and corrects the silence classification
+label without changing DSP, thresholds or acceptance outcomes. A final full CI run
+is required and linked in the PR. No new effects, Reverse rewrite, ABI, GTC,
+Tap Tempo, MIDI Clock, goldens or phase-averaged bias changes. No new PR or merge.

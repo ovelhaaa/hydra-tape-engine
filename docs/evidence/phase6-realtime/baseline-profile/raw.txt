@@ -1,0 +1,280 @@
+
+COMMAND perf
+
+=== HYDRA DSP PERFORMANCE TELEMETRY ===
+Block Size          : 128 frames
+Sample Rate         : 44100 Hz
+CPU Clock           : 240 MHz
+Block Time Budget   : 2902.5 us
+Blocks Processed    : 1962405
+Avg DSP Block Time  : 1397 us
+Last DSP Block Time : 1379 us
+Peak DSP Block Time : 1841 us
+DSP Budget Use (EMA): 47.6 %
+DSP Budget Overruns : 0
+I2S TX Write Failures: 0
+Internal Free Heap  : 122928 bytes
+SPIRAM (PSRAM) Free : 1663048 bytes
+Warp Active         : NO
+========================================
+
+
+COMMAND byp 0
+Bypass: OFF
+
+COMMAND gen 1
+Generator: ON
+
+COMMAND src 1
+Source: 1 (0=MP3, 1=SYNTH, 2=I2S)
+
+COMMAND mod 1
+Engine Mode: TAPE DELAY
+> mod updated
+
+COMMAND dly 500
+Delay: 500 ms
+
+COMMAND fbk 40
+Feedback     [#######-------------] 39%
+
+COMMAND hds 4
+> hds updated
+
+COMMAND mix 50
+Mix          [##########----------] 50%
+
+COMMAND drv 75
+Drive        [###############-----] 75%
+
+COMMAND nlv 10
+Noise        [#-------------------] 9%
+
+COMMAND ftd 8
+Flutter      [#-------------------] 8%
+
+COMMAND wwd 6
+Wow          [#-------------------] 6%
+
+COMMAND dps 0
+Dropouts     [--------------------] 0%
+
+COMMAND tps 50
+Speed        [##########----------] 50%
+
+COMMAND tpa 50
+Age          [##########----------] 50%
+
+COMMAND ppg 0
+Ping-Pong: OFF
+> ppg updated
+
+COMMAND frz 0
+Freeze: OFF
+> frz updated
+
+COMMAND frv 0
+Freeverb: OFF
+> frv updated
+
+COMMAND wrp 0
+Accidental Warp: OFF
+> wrp updated
+
+COMMAND rev 0
+Reverse: OFF
+> rev updated
+
+COMMAND spr 0
+Spring Reverb: OFF
+> spr updated
+
+COMMAND transport play
+Transport: PLAY
+> transport updated
+
+COMMAND rev 0
+Reverse: OFF
+> rev updated
+
+COMMAND stageprof 1000 256
+
+=== STAGE PROFILE (1000 blocks, warmup 256 @ 240MHz) ===
+A1 Source/Gen/In :   103.73 us/blk (  5.7% tot |   3.6% budget) [24895 cyc/blk]
+A2 TapeCore/DSP  :  1669.84 us/blk ( 91.8% tot |  57.5% budget) [400761 cyc/blk]
+A3a Ext tanhf()  :     0.03 us/blk (  0.0% tot |   0.0% budget) [8 cyc/blk]
+A3b NoiseGate    :    24.31 us/blk (  1.3% tot |   0.8% budget) [5834 cyc/blk]
+A3c Freeverb     :     0.15 us/blk (  0.0% tot |   0.0% budget) [34 cyc/blk]
+A3d PCM Out      :    21.10 us/blk (  1.2% tot |   0.7% budget) [5063 cyc/blk]
+Loop/Timer Ovh   :     0.01 us/blk (  0.0% tot |   0.0% budget)
+TOTAL BLOCK      :  1819.17 us/blk (100.0% tot |  62.7% budget) [436599 cyc/blk]
+=====================================================
+
+COMMAND rev 1
+Reverse: ON
+> rev updated
+
+COMMAND revmode 0
+Reverse mode: 0
+> revmode updated
+
+COMMAND revdiv 0
+Reverse division: 0
+> revdiv updated
+
+COMMAND stageprof 1000 256
+
+=== STAGE PROFILE (1000 blocks, warmup 256 @ 240MHz) ===
+A1 Source/Gen/In :   100.44 us/blk (  3.5% tot |   3.5% budget) [24105 cyc/blk]
+A2 TapeCore/DSP  :  2686.59 us/blk ( 94.8% tot |  92.6% budget) [644781 cyc/blk]
+A3a Ext tanhf()  :     0.03 us/blk (  0.0% tot |   0.0% budget) [8 cyc/blk]
+A3b NoiseGate    :    24.32 us/blk (  0.9% tot |   0.8% budget) [5835 cyc/blk]
+A3c Freeverb     :     0.15 us/blk (  0.0% tot |   0.0% budget) [36 cyc/blk]
+A3d PCM Out      :    21.09 us/blk (  0.7% tot |   0.7% budget) [5062 cyc/blk]
+Loop/Timer Ovh   :     0.01 us/blk (  0.0% tot |   0.0% budget)
+TOTAL BLOCK      :  2832.63 us/blk (100.0% tot |  97.6% budget) [679831 cyc/blk]
+=====================================================
+
+COMMAND revdiv 1
+Reverse division: 1
+> revdiv updated
+
+COMMAND stageprof 1000 256
+
+=== STAGE PROFILE (1000 blocks, warmup 256 @ 240MHz) ===
+A1 Source/Gen/In :   110.22 us/blk (  3.9% tot |   3.8% budget) [26453 cyc/blk]
+A2 TapeCore/DSP  :  2690.57 us/blk ( 94.5% tot |  92.7% budget) [645736 cyc/blk]
+A3a Ext tanhf()  :     0.03 us/blk (  0.0% tot |   0.0% budget) [8 cyc/blk]
+A3b NoiseGate    :    24.31 us/blk (  0.9% tot |   0.8% budget) [5833 cyc/blk]
+A3c Freeverb     :     0.15 us/blk (  0.0% tot |   0.0% budget) [36 cyc/blk]
+A3d PCM Out      :    21.13 us/blk (  0.7% tot |   0.7% budget) [5072 cyc/blk]
+Loop/Timer Ovh   :     0.01 us/blk (  0.0% tot |   0.0% budget)
+TOTAL BLOCK      :  2846.43 us/blk (100.0% tot |  98.1% budget) [683143 cyc/blk]
+=====================================================
+
+COMMAND revdiv 2
+Reverse division: 2
+> revdiv updated
+
+COMMAND stageprof 1000 256
+
+=== STAGE PROFILE (1000 blocks, warmup 256 @ 240MHz) ===
+A1 Source/Gen/In :    98.98 us/blk (  3.5% tot |   3.4% budget) [23754 cyc/blk]
+A2 TapeCore/DSP  :  2685.73 us/blk ( 94.9% tot |  92.5% budget) [644574 cyc/blk]
+A3a Ext tanhf()  :     0.03 us/blk (  0.0% tot |   0.0% budget) [8 cyc/blk]
+A3b NoiseGate    :    24.33 us/blk (  0.9% tot |   0.8% budget) [5838 cyc/blk]
+A3c Freeverb     :     0.15 us/blk (  0.0% tot |   0.0% budget) [36 cyc/blk]
+A3d PCM Out      :    21.10 us/blk (  0.7% tot |   0.7% budget) [5063 cyc/blk]
+Loop/Timer Ovh   :     0.01 us/blk (  0.0% tot |   0.0% budget)
+TOTAL BLOCK      :  2830.32 us/blk (100.0% tot |  97.5% budget) [679277 cyc/blk]
+=====================================================
+
+COMMAND revdiv 0
+Reverse division: 0
+> revdiv updated
+
+COMMAND fbk 95
+Feedback     [###################-] 95%
+
+COMMAND stageprof 1000 256
+
+=== STAGE PROFILE (1000 blocks, warmup 256 @ 240MHz) ===
+A1 Source/Gen/In :   103.79 us/blk (  3.7% tot |   3.6% budget) [24910 cyc/blk]
+A2 TapeCore/DSP  :  2686.36 us/blk ( 94.7% tot |  92.6% budget) [644726 cyc/blk]
+A3a Ext tanhf()  :     0.03 us/blk (  0.0% tot |   0.0% budget) [8 cyc/blk]
+A3b NoiseGate    :    24.33 us/blk (  0.9% tot |   0.8% budget) [5838 cyc/blk]
+A3c Freeverb     :     0.15 us/blk (  0.0% tot |   0.0% budget) [35 cyc/blk]
+A3d PCM Out      :    21.10 us/blk (  0.7% tot |   0.7% budget) [5063 cyc/blk]
+Loop/Timer Ovh   :     0.01 us/blk (  0.0% tot |   0.0% budget)
+TOTAL BLOCK      :  2835.77 us/blk (100.0% tot |  97.7% budget) [680584 cyc/blk]
+=====================================================
+
+COMMAND rev 0
+Reverse: OFF
+> rev updated
+
+COMMAND hds 7
+> hds updated
+
+COMMAND stageprof 1000 256
+
+=== STAGE PROFILE (1000 blocks, warmup 256 @ 240MHz) ===
+A1 Source/Gen/In :   110.72 us/blk (  5.4% tot |   3.8% budget) [26571 cyc/blk]
+A2 TapeCore/DSP  :  1907.10 us/blk ( 92.4% tot |  65.7% budget) [457704 cyc/blk]
+A3a Ext tanhf()  :     0.03 us/blk (  0.0% tot |   0.0% budget) [8 cyc/blk]
+A3b NoiseGate    :    24.31 us/blk (  1.2% tot |   0.8% budget) [5834 cyc/blk]
+A3c Freeverb     :     0.15 us/blk (  0.0% tot |   0.0% budget) [35 cyc/blk]
+A3d PCM Out      :    21.13 us/blk (  1.0% tot |   0.7% budget) [5070 cyc/blk]
+Loop/Timer Ovh   :     0.01 us/blk (  0.0% tot |   0.0% budget)
+TOTAL BLOCK      :  2063.45 us/blk (100.0% tot |  71.1% budget) [495226 cyc/blk]
+=====================================================
+
+COMMAND rev 1
+Reverse: ON
+> rev updated
+
+COMMAND fbk 40
+Feedback     [#######-------------] 39%
+
+COMMAND bpm 137
+Tempo: 137.0 BPM
+> bpm updated
+
+COMMAND stageprof 1000 256
+
+=== STAGE PROFILE (1000 blocks, warmup 256 @ 240MHz) ===
+A1 Source/Gen/In :   108.12 us/blk (  3.8% tot |   3.7% budget) [25949 cyc/blk]
+A2 TapeCore/DSP  :  2693.56 us/blk ( 94.6% tot |  92.8% budget) [646454 cyc/blk]
+A3a Ext tanhf()  :     0.03 us/blk (  0.0% tot |   0.0% budget) [8 cyc/blk]
+A3b NoiseGate    :    24.29 us/blk (  0.9% tot |   0.8% budget) [5830 cyc/blk]
+A3c Freeverb     :     0.15 us/blk (  0.0% tot |   0.0% budget) [36 cyc/blk]
+A3d PCM Out      :    21.11 us/blk (  0.7% tot |   0.7% budget) [5066 cyc/blk]
+Loop/Timer Ovh   :     0.01 us/blk (  0.0% tot |   0.0% budget)
+TOTAL BLOCK      :  2847.29 us/blk (100.0% tot |  98.1% budget) [683348 cyc/blk]
+=====================================================
+
+COMMAND wrp 1
+Accidental Warp: ON
+> wrp updated
+
+COMMAND spr 1
+Spring Reverb: ON
+> spr updated
+
+COMMAND rev 1
+Reverse: ON
+> rev updated
+
+COMMAND fbk 50
+Feedback     [##########----------] 50%
+
+COMMAND stageprof 1000 256
+
+=== STAGE PROFILE (1000 blocks, warmup 256 @ 240MHz) ===
+A1 Source/Gen/In :   105.78 us/blk (  5.4% tot |   3.6% budget) [25387 cyc/blk]
+A2 TapeCore/DSP  :  1801.12 us/blk ( 92.3% tot |  62.1% budget) [432268 cyc/blk]
+A3a Ext tanhf()  :     0.04 us/blk (  0.0% tot |   0.0% budget) [9 cyc/blk]
+A3b NoiseGate    :    24.10 us/blk (  1.2% tot |   0.8% budget) [5783 cyc/blk]
+A3c Freeverb     :     0.15 us/blk (  0.0% tot |   0.0% budget) [35 cyc/blk]
+A3d PCM Out      :    21.14 us/blk (  1.1% tot |   0.7% budget) [5074 cyc/blk]
+Loop/Timer Ovh   :     0.01 us/blk (  0.0% tot |   0.0% budget)
+TOTAL BLOCK      :  1952.34 us/blk (100.0% tot |  67.3% budget) [468561 cyc/blk]
+=====================================================
+
+COMMAND gen 0
+Generator: OFF
+
+COMMAND rev 0
+Reverse: OFF
+> rev updated
+
+COMMAND wrp 0
+Accidental Warp: OFF
+> wrp updated
+
+COMMAND spr 0
+Spring Reverb: OFF
+> spr updated
+
+COMMAND fbk 40
+Feedback     [#######-------------] 39%

@@ -264,8 +264,12 @@ class HydraProcessor extends AudioWorkletProcessor {
       this.bypassMixTarget = this.bypass ? 0 : 1;
       this.port.postMessage({ type: 'stateAck', key: 'bypass', value: this.bypass ? 1 : 0 });
     } else if (msg.type === 'reset') {
-      this.api.reset(this.handle);
-      this.port.postMessage({ type: 'stateAck', key: 'reset', value: 1 });
+      try {
+        this.api.reset(this.handle);
+        this.port.postMessage({ type: 'stateAck', key: 'reset', value: 1, requestId: msg.requestId });
+      } catch (error) {
+        this.port.postMessage({ type: 'resetError', key: 'reset', requestId: msg.requestId, message: String(error.message || error) });
+      }
     } else if (msg.type === 'command') {
       const { command, value } = msg;
       

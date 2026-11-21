@@ -1,0 +1,74 @@
+import {chromium} from 'playwright';
+import {createServer} from 'node:http';
+import {readFile, mkdir, writeFile} from 'node:fs/promises';
+import {resolve, extname, join} from 'node:path';
+import {fileURLToPath} from 'node:url';
+import assert from 'node:assert/strict';
+const root = fileURLToPath(new URL('../../../', import.meta.url));
+const packageDir = resolve(root, process.env.HYDRA_LISTENING_PACKAGE ?? 'artifacts/listening-lab/phase6-musical-validation');
+const inputManifest = JSON.parse(await readFile(join(packageDir,'manifest.json'),'utf8'));
+const scenarioCount = Object.keys(inputManifest.scenarios).length;
+const firstOriginal = Object.values(inputManifest.scenarios)[0].original_wav_file;
+const reportDir = resolve(root, process.env.HYDRA_BROWSER_REPORT ?? 'artifacts/listening-lab-browser'); await mkdir(reportDir,{recursive:true});
+const server=createServer(async(req,res)=>{try{const path=resolve(root,'.'+decodeURIComponent(req.url.split('?')[0])); if(!path.startsWith(root))throw Error(); const data=await readFile(path); res.setHeader('Content-Type',({'.html':'text/html','.mjs':'text/javascript','.css':'text/css'})[extname(path)]??'application/octet-stream');res.end(data);}catch{res.statusCode=404;res.end('Missing');}});
+await new Promise(r=>server.listen(0,'127.0.0.1',r));
+const browser=await chromium.launch({headless:true, ...(process.env.HYDRA_BROWSER_CHANNEL ? {channel:process.env.HYDRA_BROWSER_CHANNEL} : {})});
+let activePage;
+try{
+ const page=await browser.newPage({viewport:{width:1440,height:1000},acceptDownloads:true}); const errors=[]; page.on('pageerror',e=>errors.push(e.message));
+ activePage=page;
+ // Model devices whose default output rate is 44.1 kHz, including Linux CI.
+ // Explicit context requests remain honored.
+ await page.addInitScript(()=>{const NativeContext=AudioContext; globalThis.AudioContext=class extends NativeContext{constructor(options={}){super({sampleRate:44100,...options});}};});
+ await page.addInitScript(()=>{globalThis.audioStarts=[];globalThis.audioStops=0;const start=AudioBufferSourceNode.prototype.start,stop=AudioBufferSourceNode.prototype.stop; AudioBufferSourceNode.prototype.start=function(...args){audioStarts.push(args);return start.apply(this,args);};AudioBufferSourceNode.prototype.stop=function(...args){audioStops++;return stop.apply(this,args);};});
+ await page.goto(`http://127.0.0.1:${server.address().port}/tools/phase6-listening-lab/index.html`);
+ await page.locator('#package').setInputFiles(packageDir);
+ await page.waitForFunction(()=>!document.getElementById('play').disabled || document.getElementById('message').className==='error');
+ assert.equal(await page.locator('#message.error').count(),0,await page.locator('#message').textContent());
+ assert.equal(await page.locator('#library button').count(),scenarioCount);
+ if(inputManifest.suite==='Hydra Phase 6.2 Bias A/B'){
+  assert.match(await page.locator('#edition').innerText(),/PHASE 6.2/);
+  assert.equal(await page.locator('#library h3').count(),12);
+  assert.equal(await page.locator('#a').innerText(),'A · Triangular baseline');
+  assert.equal(await page.locator('#b').innerText(),'B · Phase average (candidate)');
+  assert.equal(await page.locator('#criteria select').count(),10);
+  assert.match(await page.locator('#wave').getAttribute('aria-label'),/Phase average/);
+ }
+ assert.equal(await page.evaluate(()=>audioStarts.length),0,'no autoplay after decoding');
+ await page.locator('#play').click();await page.waitForTimeout(200);
+ const started=await page.evaluate(()=>audioStarts);assert.equal(started.length,2);assert.deepEqual(started[0],started[1]);
+ const before=Number(await page.locator('#seek').inputValue()); await page.locator('#b').click(); const after=Number(await page.locator('#seek').inputValue());assert.ok(after>=before && after-before<.5);assert.equal(await page.evaluate(()=>audioStarts.length),2,'A/B must not restart buffers');
+ await page.locator('#seek').evaluate(el=>{el.value='1.2';el.dispatchEvent(new Event('input'));});await page.waitForTimeout(50);
+ assert.ok(Number(await page.locator('#seek').inputValue())>=1.2);
+ const seeks=await page.evaluate(()=>audioStarts);assert.deepEqual(seeks.at(-1),seeks.at(-2));assert.equal(seeks.at(-1)[1],1.2);
+ await page.locator('#loop-start').fill('0.5');await page.locator('#loop-end').fill('0.8');await page.locator('#loop').check();await page.waitForTimeout(850);
+ const loopPos=Number(await page.locator('#seek').inputValue());assert.ok(loopPos>=.5 && loopPos<.8,`loop position ${loopPos}`);
+ const stopsBefore=await page.evaluate(()=>audioStops);await page.locator('#library button').nth(1).click();await page.waitForFunction(()=>!document.getElementById('play').disabled);
+ assert.equal(await page.locator('#a').getAttribute('aria-pressed'),'true');
+ assert.equal(await page.locator('#b').getAttribute('aria-pressed'),'false');
+ assert.ok(await page.evaluate(()=>audioStops)>=stopsBefore+2);
+ const startsAfterSwitch=await page.evaluate(()=>audioStarts.length);await page.waitForTimeout(150);assert.equal(await page.evaluate(()=>audioStarts.length),startsAfterSwitch);assert.equal(await page.locator('#seek').inputValue(),'0');
+ await page.locator('#state').selectOption('NEEDS ATTENTION');await page.locator('#comments').fill('Browser test review');await page.locator('#note-time').fill('1.5');await page.locator('#note-description').fill('Inspect repeat');await page.locator('#add-note').click();
+ const downloadPromise=page.waitForEvent('download');await page.locator('#export').click();const download=await downloadPromise;const jsonPath=join(reportDir,'reviews.json');await download.saveAs(jsonPath);const exported=JSON.parse(await readFile(jsonPath,'utf8'));const id=Object.keys(exported.reviews).find(id=>id.startsWith('02_'));assert.equal(exported.reviews[id].notes[0].time,1.5);
+ await page.locator('#state').selectOption('FAIL');await page.locator('#import').setInputFiles(jsonPath);await page.waitForFunction(()=>document.getElementById('state').value==='NEEDS ATTENTION');assert.equal(await page.locator('#comments').inputValue(),'Browser test review');
+ await page.reload();await page.locator('#package').setInputFiles(packageDir);await page.waitForFunction(()=>!document.getElementById('play').disabled);await page.locator('#library button').nth(1).click();await page.waitForFunction(()=>!document.getElementById('play').disabled);assert.equal(await page.locator('#state').inputValue(),'NEEDS ATTENTION');
+ // Decode/verify every scenario and exercise real event rendering.
+ for(let i=0;i<scenarioCount;i++){await page.locator('#library button').nth(i).click();await page.waitForFunction(()=>!document.getElementById('play').disabled);assert.equal(await page.locator('#message.error').count(),0);}
+ const entries=Object.values(inputManifest.scenarios);
+ const automationIndex=entries.findIndex(s=>s.events?.length);
+ // Static bias ablations have no automation; their actual timeline markers
+ // still exercise event navigation without inventing automation in the audio.
+ const eventIndex=automationIndex>=0?automationIndex:entries.findIndex(s=>s.markers?.length);
+ assert.ok(eventIndex>=0,'Package must contain timeline events or markers');
+ await page.locator('#library button').nth(eventIndex).click();await page.waitForFunction(()=>!document.getElementById('play').disabled);assert.ok(await page.locator('#events button').count()>0);
+ await page.screenshot({path:join(reportDir,'desktop.png'),fullPage:true});await page.setViewportSize({width:390,height:844});await page.screenshot({path:join(reportDir,'mobile.png'),fullPage:true});assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
+ // Fault-inject an actually absent File from the real, browser-selected package.
+ // Initial/reload directory selection is covered above. Avoid Chrome/CDP's timeout
+ // replacing an existing directory selection with a different directory on Linux.
+ await page.locator('#package').evaluate((input,missing)=>{const transfer=new DataTransfer();for(const file of input.files)if(file.name!==missing)transfer.items.add(file);input.files=transfer.files;input.dispatchEvent(new Event('change'));},firstOriginal);
+ await page.waitForFunction(()=>document.getElementById('message').className==='error');assert.match(await page.locator('#message').textContent(),/Missing/);assert.equal(await page.locator('#play').isDisabled(),true);
+ assert.deepEqual(errors,[]);await writeFile(join(reportDir,'result.json'),JSON.stringify({status:'PASS',browser:browser.version(),scenarios:scenarioCount,checks:['manifest','WAV/CSV decode and hashes','no autoplay','A/B shared clock/no restart','seek','loop','scenario stop','events','review export/import/persistence','missing file error','responsive layout']},null,2));console.log(`PASS: Chromium real Web Audio Listening Lab checks (${scenarioCount} scenarios).`);
+}catch(error){
+ if(activePage){await activePage.screenshot({path:join(reportDir,'failure.png'),fullPage:true}); const diagnostic=await activePage.locator('body').innerText(); await writeFile(join(reportDir,'failure.txt'),`${error.stack}\n${diagnostic}`); console.error(diagnostic);}
+ throw error;
+}finally{await browser.close();server.close();}

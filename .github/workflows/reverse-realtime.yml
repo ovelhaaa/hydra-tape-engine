@@ -1,0 +1,121 @@
+name: Phase 6.3 Reverse Real-Time
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: reverse-realtime-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    env:
+      PYTHONUTF8: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install dependencies
+        run: |
+          python -m pip install -r scripts/listening-lab-requirements.txt matplotlib platformio
+          mkdir -p ci-reports/reverse
+
+      - name: Build Native suite
+        run: |
+          cmake -S . -B build-native -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=ON
+          cmake --build build-native -j 2
+
+      - name: Run all Native regressions
+        run: |
+          set -o pipefail
+          ctest --test-dir build-native --output-on-failure | tee ci-reports/reverse/native-ctest.txt
+
+      - name: Setup Emscripten
+        uses: mymindstorm/setup-emsdk@v14
+        with:
+          version: 3.1.62
+
+      - name: Build WASM suite
+        run: |
+          emcmake cmake -S . -B build-wasm -DCMAKE_BUILD_TYPE=Release -DBUILD_WEB=ON -DBUILD_TESTING=ON -DHYDRA_NATIVE_TRACE_RUNNER="$PWD/build-native/hydra_render_trace_native"
+          cmake --build build-wasm -j 2
+
+      - name: Run WASM regressions
+        id: wasm
+        run: |
+          set -o pipefail
+          ctest --test-dir build-wasm --output-on-failure | tee ci-reports/reverse/wasm-ctest.txt
+
+      - name: Compare Native and WASM with unchanged thresholds (issue #48)
+        id: equivalence
+        run: |
+          set -o pipefail
+          python tests/core/compare_native_wasm.py \
+            --native build-native/hydra_render_trace_native \
+            --wasm-js build-wasm/wasm-tests/hydra_render_trace.js \
+            --test-name phase63_native_vs_wasm \
+            --max-abs-threshold 1e-5 --rmse-threshold 1e-6 \
+            --report-json ci-reports/reverse/equivalence.json \
+            --report-txt ci-reports/reverse/equivalence.txt \
+            --diff-csv ci-reports/reverse/equivalence-diff.csv
+
+      - name: Validate 60-second feedback, full engine and five parameter transitions
+        run: |
+          python scripts/phase64_validate_engine.py --library "$PWD/build-native/libhydra_abi_test_library.so" --output ci-reports/reverse/engine
+          python scripts/phase64_feedback_stability.py --library "$PWD/build-native/libhydra_abi_test_library.so" --seconds 60 --stages --output ci-reports/reverse/feedback
+          python scripts/phase64_transition_analysis.py --library "$PWD/build-native/libhydra_abi_test_library.so" --output ci-reports/reverse/transitions
+
+      - name: Build ESP32-S3 production and diagnostic firmware
+        run: |
+          set -o pipefail
+          pio run -e esp32-s3-devkitc-1 | tee ci-reports/reverse/esp32-production.txt
+          pio run -e esp32-s3-stageprofile | tee ci-reports/reverse/esp32-stageprofile.txt
+
+      - name: Preserve frozen Phase 6.3 optimization equivalence (current audio reviewed separately)
+        run: |
+          set -o pipefail
+          python scripts/package_reverse_ab.py --after-commit 7431a6db05abfde97838721cd089f94c7fed5047 --archive artifacts/hydra-phase6-reverse-ab.zip | tee ci-reports/reverse/ab-package.txt
+          python - <<'PY'
+          import json, pathlib, sys
+          report = json.loads(pathlib.Path('artifacts/listening-lab/phase6-reverse-optimization/reports/comparison.json').read_text())
+          rows = report['comparisons']
+          if len(rows) != 10:
+              sys.exit(f'expected 10 comparisons, got {len(rows)}')
+          worst = max(value['max_abs'] for value in rows.values())
+          print(f'10 pairs; max_abs={worst}')
+          if worst != 0.0:
+              sys.exit('before/after is not bit-exact')
+          PY
+
+      - name: Upload technical evidence and A/B package
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: hydra-phase6-reverse-ab
+          path: |
+            ci-reports/reverse/
+            artifacts/hydra-phase6-reverse-ab.zip
+          retention-days: 30
+
+      - name: Require strict equivalence and preserve pending human review
+        if: always()
+        run: |
+          echo "All Native/WASM tests and strict numerical equivalence are mandatory."
+          echo "Phase 6.3 optimization is checked using frozen historical sources. Current Phase 6.4.1 audio is published in the final Listening Lab artifact and requires fresh human review. No merge is authorized."
+          if [ "${{ steps.equivalence.outcome }}" != "success" ]; then
+            echo "::error::Issue #48 strict Native/WASM equivalence still fails with unchanged thresholds; this is documented, not new and blocks merge readiness."
+            exit 1
+          fi

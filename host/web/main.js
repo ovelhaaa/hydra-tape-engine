@@ -1,3 +1,4 @@
+import { createResetController } from './resetController.js';
 import { createTransportState } from './transportState.js';
 import { createTransportController } from './transportController.js';
 import { DEFAULT_CONTROL_STATE, deserializePresetFromText, serializePreset } from './presetSerialization.js';
@@ -491,10 +492,23 @@ bypassBtn.addEventListener('click', () => {
   setActionFeedback(bypass ? 'Plugin bypassed' : 'Plugin active', bypass ? 'warning' : 'success');
 });
 
-resetBtn.addEventListener('click', () => {
-  post({ type: 'reset' });
-  setStatus('DSP Core clear command sent.', 'info');
-  setActionFeedback('DSP buffers cleared', 'success');
+// Serialize explicit destructive resets and resume only after a correlated ack.
+const resetWithAudioSuspended = createResetController({
+  getContext: () => context,
+  getNode: () => fxNode
+});
+resetBtn.addEventListener('click', async () => {
+  resetBtn.disabled = true;
+  try {
+    await resetWithAudioSuspended();
+    setStatus('DSP Core cleared with the audio context suspended.', 'info');
+    setActionFeedback('DSP buffers cleared', 'success');
+  } catch (error) {
+    setStatus(`DSP reset failed: ${error.message}`, 'error');
+    setActionFeedback('Reset failed; audio remains suspended', 'error');
+  } finally {
+    resetBtn.disabled = false;
+  }
 });
 
 function updateTransportUI(data) {

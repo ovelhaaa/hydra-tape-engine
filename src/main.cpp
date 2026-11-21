@@ -9,11 +9,14 @@
 #include "hydra_dsp_esp32_adapter.h"
 #include "hydra_pcm.hpp"
 #include "realtime_profile.hpp"
+#include "hydra_firmware_identity.h"
 #include "DisplayUI.h"
 #include "ParamDefs.h"
 
 #include "esp_cpu.h"
 #include "esp_heap_caps.h"
+#include <esp_app_desc.h>
+#include <esp_system.h>
 #include <Arduino.h>
 #include <driver/i2s.h>
 #include <esp_task_wdt.h>
@@ -98,10 +101,29 @@ struct DspPerformance {
   int64_t peakUs = 0;
   uint32_t overruns = 0;
   uint32_t i2sWriteFailures = 0;
+  int64_t fullWorkPeakUs = 0;
+  uint32_t fullWorkOverruns = 0;
   float budgetLoadEma = 0.0f;
 };
 DspPerformance g_dsp_perf;
 portMUX_TYPE g_dsp_perf_mux = portMUX_INITIALIZER_UNLOCKED;
+
+// One requested PCM snapshot, copied under the existing telemetry lock. No logs,
+// allocation, DSP access or waiting in the audio task; idle path scans no samples.
+struct AudioHealth {
+  bool pending = false;
+  bool ready = false;
+  uint32_t nonzeroWords = 0;
+  uint32_t peakAbs = 0;
+  uint32_t saturatedWords = 0;
+  uint32_t txBytes = 0;
+  int32_t txError = ESP_FAIL;
+  int64_t completedUs = 0;
+  int64_t stackScanUs = 0;
+  int64_t fullWorkUs = 0;
+};
+AudioHealth g_audio_health;
+bool g_i2s_initialized = false; // Set before audio task creation; then immutable.
 
 // === PASS A1 PROFILING TELEMETRY ===
 constexpr size_t kBenchHistBins = 8192;
@@ -129,8 +151,17 @@ struct BlockBenchState {
   uint32_t* hist = nullptr;
 };
 BlockBenchState g_bench;
-// Stack high-water mark observed on the audio task (FreeRTOS words -> bytes).
-volatile uint32_t g_audio_stack_min = 0xFFFFFFFFu;
+// ESP-IDF returns bytes. Scan the retained watermark from the CLI, not once per
+// audio block: scanning 27 KB of unused stack cost ~1144 us on the actual board.
+uint32_t g_audio_stack_min = 0xFFFFFFFFu;
+TaskHandle_t g_audio_task_handle = nullptr;
+
+void sampleAudioStackWatermark() {
+  if (g_audio_task_handle) {
+    const uint32_t freeBytes = uxTaskGetStackHighWaterMark(g_audio_task_handle);
+    if (freeBytes < g_audio_stack_min) g_audio_stack_min = freeBytes;
+  }
+}
 
 enum StageProfState : uint8_t { STAGE_IDLE = 0, STAGE_WARMUP = 1, STAGE_RUNNING = 2, STAGE_DONE = 3 };
 struct StageProfileState {
@@ -569,6 +600,7 @@ void audioTask(void *parameter) {
 
   while (true) {
     // Watchdog Reset Manual - REMOVED (Invalid context)
+    const int64_t iterationStartUs = esp_timer_get_time();
     // esp_task_wdt_reset();
 
     if (dspParamsDirty && xSemaphoreTake(paramMutex, 0) == pdTRUE) {
@@ -904,8 +936,6 @@ void audioTask(void *parameter) {
 
     // Includes generation/DSP and PCM packing, with I2S calls outside the timer.
     const int64_t durationUs = esp_timer_get_time() - block_start_us;
-    const uint32_t stackWords = uxTaskGetStackHighWaterMark(nullptr);
-    if (stackWords < g_audio_stack_min) g_audio_stack_min = stackWords;
     const float budgetLoad = 100.0f * durationUs / kDspBlockBudgetUs;
     portENTER_CRITICAL(&g_dsp_perf_mux);
     g_dsp_perf.lastUs = durationUs;
@@ -955,11 +985,40 @@ void audioTask(void *parameter) {
       }
     }
 
+    AudioHealth health;
+    portENTER_CRITICAL(&g_dsp_perf_mux);
+    const bool healthRequested = g_audio_health.pending;
+    portEXIT_CRITICAL(&g_dsp_perf_mux);
+    if (healthRequested) {
+      for (const int32_t word : synthBuf) {
+        const uint32_t magnitude = word < 0 ? uint32_t(-int64_t(word)) : uint32_t(word);
+        if (word != 0) ++health.nonzeroWords;
+        if (magnitude > health.peakAbs) health.peakAbs = magnitude;
+        if (word == INT32_MIN || word == INT32_MAX) ++health.saturatedWords;
+      }
+    }
     // Write block to I2S
     // Use a longer timeout (e.g., 100ms) to ensure we block if buffer is full.
     // If we return early, we might spin.
+    const int64_t fullWorkUs = esp_timer_get_time() - iterationStartUs;
+    portENTER_CRITICAL(&g_dsp_perf_mux);
+    if (fullWorkUs > g_dsp_perf.fullWorkPeakUs) g_dsp_perf.fullWorkPeakUs = fullWorkUs;
+    if (fullWorkUs > kDspBlockBudgetUs) ++g_dsp_perf.fullWorkOverruns;
+    portEXIT_CRITICAL(&g_dsp_perf_mux);
     esp_err_t wErr = i2s_write(I2S_PORT, synthBuf, sizeof(synthBuf),
                                &bytesWritten, pdMS_TO_TICKS(50));
+
+    if (healthRequested) {
+      health.ready = true;
+      health.txBytes = bytesWritten;
+      health.txError = wErr;
+      health.completedUs = esp_timer_get_time();
+      health.stackScanUs = 0; // Stack scanning is now confined to the CLI.
+      health.fullWorkUs = fullWorkUs;
+      portENTER_CRITICAL(&g_dsp_perf_mux);
+      g_audio_health = health;
+      portEXIT_CRITICAL(&g_dsp_perf_mux);
+    }
 
     // Safety check: if we are somehow running too fast or I2S fails, yield
     // But normally i2s_write blocks.
@@ -1191,6 +1250,8 @@ void printHelp() {
   dualPrintln("  wfb <0-95>  : Warp Feedback %");
   dualPrintln("  wmd <0-3>   : Warp Mode (0=2T-Herm, 1=1T-Herm, 2=1T-Raw, 3=2T-Raw)");
   dualPrintln("  perf        : DSP Performance & Telemetry Stats");
+  dualPrintln("  identity    : Firmware commit/source/ELF identity and boot configuration");
+  dualPrintln("  audiohealth : One real PCM block and I2S write result (outside benchmark)");
   dualPrintln(" [GLOBAL TRANSPORT CLOCK]");
   dualPrintln("  tempo <bpm> : Set global BPM");
   dualPrintln("  transport <play|pause|stop|reset|status> : Transport controls");
@@ -1202,6 +1263,7 @@ void printHelp() {
 }
 
 void printDspPerformanceStats() {
+  sampleAudioStackWatermark();
   dualPrintln("\n=== HYDRA DSP PERFORMANCE TELEMETRY ===");
   dualPrintf("Block Size          : %d frames\n", AUDIO_CHUNK_SIZE);
   dualPrintf("Sample Rate         : %d Hz\n", SAMPLE_RATE);
@@ -1218,6 +1280,8 @@ void printDspPerformanceStats() {
   dualPrintf("DSP Budget Use (EMA): %.1f %%\n", perf.budgetLoadEma);
   dualPrintf("DSP Budget Overruns : %u\n", perf.overruns);
   dualPrintf("I2S TX Write Failures: %u\n", perf.i2sWriteFailures);
+  dualPrintf("Full Work Peak      : %lld us\nFull Work Overruns  : %u\n",
+             (long long)perf.fullWorkPeakUs, perf.fullWorkOverruns);
   dualPrintf("Internal Free Heap  : %u bytes\n", heap_caps_get_free_size(MALLOC_CAP_INTERNAL));
   dualPrintf("SPIRAM (PSRAM) Free : %u bytes\n", heap_caps_get_free_size(MALLOC_CAP_SPIRAM));
   dualPrintf("Audio Stack Min Free: %u bytes\n", (unsigned)g_audio_stack_min);
@@ -1291,6 +1355,42 @@ void printStatus() {
 void executeCommand(String line) {
   if (line.length() == 0)
     return;
+
+  if (line == "identity") {
+    const esp_app_desc_t* app = esp_app_get_description();
+    dualPrintf("FirmwareCommit=%s\nSourceSHA256=%s\nELFSHA256=", HYDRA_FIRMWARE_COMMIT,
+               HYDRA_FIRMWARE_SOURCE_SHA256);
+    for (uint8_t byte : app->app_elf_sha256) dualPrintf("%02x", byte);
+    dualPrintf("\nResetReason=%d CPU=%u SampleRate=%d BlockFrames=%d PSRAMBytes=%u FlashBytes=%u I2SInitialized=%d\n",
+               int(esp_reset_reason()), getCpuFrequencyMhz(), SAMPLE_RATE, AUDIO_CHUNK_SIZE,
+               ESP.getPsramSize(), ESP.getFlashChipSize(), g_i2s_initialized ? 1 : 0);
+    dualPrintln("=== IDENTITY END ===");
+    return;
+  }
+  if (line == "audiohealth") {
+    portENTER_CRITICAL(&g_dsp_perf_mux);
+    g_audio_health = AudioHealth{};
+    g_audio_health.pending = true;
+    portEXIT_CRITICAL(&g_dsp_perf_mux);
+    AudioHealth snapshot;
+    const int64_t deadline = esp_timer_get_time() + 2000000;
+    do {
+      vTaskDelay(1); // CLI task only, never the audio callback.
+      portENTER_CRITICAL(&g_dsp_perf_mux);
+      snapshot = g_audio_health;
+      portEXIT_CRITICAL(&g_dsp_perf_mux);
+    } while (!snapshot.ready && esp_timer_get_time() < deadline);
+    if (!snapshot.ready) {
+      dualPrintln("AUDIOHEALTH TIMEOUT");
+    } else {
+      dualPrintf("AudioHealth NonZeroWords=%u PeakAbsPcm32=%u SaturatedWords=%u TxBytes=%u TxError=%ld CompletedUs=%lld StackScanUs=%lld FullWorkUs=%lld\n",
+                 snapshot.nonzeroWords, snapshot.peakAbs, snapshot.saturatedWords,
+                 snapshot.txBytes, long(snapshot.txError), (long long)snapshot.completedUs,
+                 (long long)snapshot.stackScanUs, (long long)snapshot.fullWorkUs);
+    }
+    dualPrintln("=== AUDIOHEALTH END ===");
+    return;
+  }
 
   int spaceIdx = line.indexOf(' ');
   String cmd = line;
@@ -1376,7 +1476,8 @@ void executeCommand(String line) {
                (unsigned long)g_bench.startHeap, (unsigned long)g_bench.endHeap,
                (unsigned long)g_bench.minFreeHeap, (unsigned long)g_bench.startPsram,
                (unsigned long)g_bench.endPsram, (long long)g_bench.maxParamUpdateUs);
-    dualPrintf("StackMinWords=%u\n", (unsigned)g_audio_stack_min);
+    sampleAudioStackWatermark();
+    dualPrintf("StackMinWords=%u\n", (unsigned)g_audio_stack_min); // Legacy key; ESP-IDF units are bytes.
     dualPrintln("=========================================");
     g_bench.state = BENCH_IDLE;
     return;
@@ -1516,6 +1617,8 @@ void executeCommand(String line) {
     g_dsp_perf.peakUs = 0;
     g_dsp_perf.overruns = 0;
     g_dsp_perf.i2sWriteFailures = 0;
+    g_dsp_perf.fullWorkPeakUs = 0;
+    g_dsp_perf.fullWorkOverruns = 0;
     g_dsp_perf.budgetLoadEma = 0.0f;
     portEXIT_CRITICAL(&g_dsp_perf_mux);
     g_bench.lastParamUpdateUs = 0;
@@ -2036,12 +2139,13 @@ void setup() {
   }
   
   i2s_zero_dma_buffer(I2S_PORT);
+  g_i2s_initialized = i2s_err == ESP_OK;
 
   Serial.println("I2S Configured. Starting Tasks...");
 
   // Create tasks with proper stack sizes
   BaseType_t ret =
-      xTaskCreatePinnedToCore(audioTask, "Audio", 32768, NULL, 5, NULL, 1);
+      xTaskCreatePinnedToCore(audioTask, "Audio", 32768, NULL, 5, &g_audio_task_handle, 1);
   if (ret == pdPASS) {
     Serial.println("Audio task created successfully");
   } else {

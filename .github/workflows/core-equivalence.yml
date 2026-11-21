@@ -219,12 +219,23 @@ jobs:
             --diff-csv ci-reports/native-vs-wasm/diff.csv \
             --render-wav-dir ci-reports/native-vs-wasm/audio
 
-      - name: Diagnose current stages on clean toolchains
+      - name: Verify current stages and preserve contraction control evidence
         if: ${{ !cancelled() && matrix.os == 'ubuntu-26.04' }}
         run: |
           python3 tests/core/diagnose_equivalence.py --current --output ci-reports/native-vs-wasm/stages-gcc15.json
           python3 tests/core/diagnose_equivalence.py --current --extra-flags=-ffp-contract=off --output ci-reports/native-vs-wasm/stages-no-contract.json
           g++ -dM -E -x c++ /dev/null > ci-reports/native-vs-wasm/native-macros.txt
+          g++ -Q --help=target > ci-reports/native-vs-wasm/native-target.txt
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          report = json.loads(Path('ci-reports/native-vs-wasm/stages-no-contract.json').read_text())
+          assert len(report['scenarios']) == 5
+          for name, row in report['scenarios'].items():
+              assert row['instrumentation_preserves_output_per_backend'], name
+              assert row['release']['max_abs'] == row['release']['rmse'] == 0, name
+              assert not row['instrumented']['operations'], name
+          PY
 
       - name: Summarize equivalence results
         if: ${{ always() && hashFiles('ci-reports/native-vs-wasm/equivalence_report.json') != '' }}

@@ -8,6 +8,14 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+# Keep multiply/add rounding identical to scalar WASM. Ubuntu 26.04's default
+# x86-64-v3 target enables FMA even without -ffast-math; contracting a*b+c
+# changes filter/state bits and breaks the strict Native/WASM release gate.
+# PlatformIO's separately validated ESP32 build is unaffected by this setting.
+if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+  add_compile_options("$<$<COMPILE_LANGUAGE:CXX>:-ffp-contract=off>")
+endif()
+
 add_library(hydra_dsp_core STATIC
   dsp/core/tape_core.cpp
   dsp/core/hydra_dsp_c_api.cpp

@@ -140,3 +140,14 @@ latency are not inferred from this harness.
 * A non-destructive reset (for example, a buffer generation tag) would remove the
   constraint, but it is a design change to an approved buffer model and is explicitly out
   of scope for Phase 6.4.
+
+
+## Phase 6.4.1 clean Linux confirmation
+
+[Web Demo run 44840803936](https://github.com/ovelhaaa/hydra-tape-engine/actions/runs/44840803936)
+passed on HEAD `866ab965a05aa0195d0d00e4226f556fab708eaf`, clean Emscripten
+3.1.62 build and real Chrome 157.0.8103.78. All five cases passed: running 152 ms,
+stopped 1.8 ms, controlled exception 24.3 ms, concurrent repeated 5.3 ms,
+ack timeout 2000.8 ms. The context resumed only for running-success cases.
+The evidence artifact records actual hashes/events. These are observed host
+end-to-end durations, not DSP reset CPU-time benchmarks.

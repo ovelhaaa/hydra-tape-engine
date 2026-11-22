@@ -1,2 +1,4 @@
 # These are hashed acquisition bytes, including raw serial line endings.
 docs/evidence/phase65-physical/** -text
+# Preserve the exact human export bytes across Windows/Linux checkouts.
+docs/evidence/phase66-human-reviews-a7e2202.json -text

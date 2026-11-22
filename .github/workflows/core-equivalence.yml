@@ -359,8 +359,22 @@ jobs:
           python-version: '3.11'
       - name: Install PlatformIO
         run: pip install platformio
-      - name: Build ESP32-S3 Firmware
+      - name: Build ESP32-S3 Classic C production firmware
         run: pio run -e esp32-s3-devkitc-1
+      - name: Build ESP32-S3 Legacy A rollback firmware
+        run: pio run -e esp32-s3-legacy-a
+      - name: Upload Classic C production firmware
+        uses: actions/upload-artifact@v4
+        with:
+          name: hydra-esp32-s3-production-classic-c
+          path: .pio/build/esp32-s3-devkitc-1/firmware.bin
+          if-no-files-found: error
+      - name: Upload Legacy A rollback firmware
+        uses: actions/upload-artifact@v4
+        with:
+          name: hydra-esp32-s3-rollback-legacy-a
+          path: .pio/build/esp32-s3-legacy-a/firmware.bin
+          if-no-files-found: error
       - name: Validate archived Phase 6.5 physical evidence (not a hardware rerun)
         run: python scripts/validate_phase65_evidence.py docs/evidence/phase65-physical
       - name: Publish verified physical acquisition evidence

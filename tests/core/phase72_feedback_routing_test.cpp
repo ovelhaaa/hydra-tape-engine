@@ -1,6 +1,7 @@
 #include "feedback_routing_experiment.hpp"
 
 #include <cmath>
+#include <initializer_list>
 #include <cstdio>
 #include <cstdlib>
 

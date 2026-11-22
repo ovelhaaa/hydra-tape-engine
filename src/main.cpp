@@ -645,6 +645,8 @@ void audioTask(void *parameter) {
     // esp_task_wdt_reset();
 #if defined(HYDRA_PHASE72E_DEADLINE_TRACE) && HYDRA_PHASE72E_DEADLINE_TRACE
     bool dlParamUpdated = false;
+    bool dlHeapChecked = false;  // Actual heap-query event for this block.
+    bool dlBenchSampled = false; // Benchmark sample before state transitions.
     uint16_t dlParamUpdUs = 0;
     uint32_t dlTapeCyc = 0;
 #endif
@@ -821,10 +823,12 @@ void audioTask(void *parameter) {
     // Simple synth processing only for now
     int32_t synthBuf[AUDIO_CHUNK_SIZE * 2];
     size_t bytesWritten = 0;
-    // Prepare input buffer for I2S
+    // A concurrent 'src' command cannot switch source between acquisition
+    // and conversion and make an uninitialized rxBuf become audible.
+    const AudioSource blockSource = p_source;
     int32_t rxBuf[AUDIO_CHUNK_SIZE * 2];
 
-    if (p_source == SOURCE_I2S_IN) {
+    if (blockSource == SOURCE_I2S_IN) {
       memset(rxBuf, 0, sizeof(rxBuf));
       size_t bytesRead = 0;
       // Non-blocking read (short timeout) to prevent WDT issues
@@ -833,7 +837,7 @@ void audioTask(void *parameter) {
 
     int64_t block_start_us = esp_timer_get_time();
 
-    if (p_source == SOURCE_MP3 && mp3 && file && out) {
+    if (blockSource == SOURCE_MP3 && mp3 && file && out) {
       for (int i = 0; i < AUDIO_CHUNK_SIZE; i++) {
         if (mp3->isRunning()) {
           if (!mp3->loop()) {
@@ -855,13 +859,13 @@ void audioTask(void *parameter) {
 
       // === STAGE A1: INPUT / MELODYGEN ===
       if (stageProfActive) c0 = esp_cpu_get_cycle_count();
-      if (p_source == SOURCE_I2S_IN) {
+      if (blockSource == SOURCE_I2S_IN) {
         constexpr float kInvInt32 = 1.0f / 2147483648.0f;
         for (int i = 0; i < AUDIO_CHUNK_SIZE; ++i) {
           blockL[i] = (float)rxBuf[i * 2] * kInvInt32;
           blockR[i] = (float)rxBuf[i * 2 + 1] * kInvInt32;
         }
-      } else if (p_source == SOURCE_SYNTH && p_genActive && melody) {
+      } else if (blockSource == SOURCE_SYNTH && p_genActive && melody) {
         melody->nextStereoBlock(blockL, blockR, AUDIO_CHUNK_SIZE);
       } else {
         memset(blockL, 0, sizeof(blockL));
@@ -1011,6 +1015,9 @@ void audioTask(void *parameter) {
         g_bench.peakUs = 0;
         g_bench.overruns = 0;
         g_bench.startI2sFail = curI2sFail;
+#if defined(HYDRA_PHASE72E_DEADLINE_TRACE) && HYDRA_PHASE72E_DEADLINE_TRACE
+        dlHeapChecked = true;
+#endif
         g_bench.startHeap = heap_caps_get_free_size(MALLOC_CAP_INTERNAL);
         g_bench.minFreeHeap = g_bench.startHeap;
         g_bench.startPsram = heap_caps_get_free_size(MALLOC_CAP_SPIRAM);
@@ -1018,6 +1025,9 @@ void audioTask(void *parameter) {
         g_bench.state = BENCH_RUNNING;
       }
     } else if (g_bench.state == BENCH_RUNNING && g_bench.hist) {
+#if defined(HYDRA_PHASE72E_DEADLINE_TRACE) && HYDRA_PHASE72E_DEADLINE_TRACE
+      dlBenchSampled = true;
+#endif
       const uint32_t bin = (durationUs < 0) ? 0u : (durationUs >= (int64_t)(kBenchHistBins - 1) ? (uint32_t)(kBenchHistBins - 1) : (uint32_t)durationUs);
       ++g_bench.hist[bin];
       g_bench.sumUs += durationUs;
@@ -1026,12 +1036,18 @@ void audioTask(void *parameter) {
       if (durationUs > kDspBlockBudgetUs) ++g_bench.overruns;
       ++g_bench.collected;
       if ((g_bench.collected & 63u) == 0u) {
+#if defined(HYDRA_PHASE72E_DEADLINE_TRACE) && HYDRA_PHASE72E_DEADLINE_TRACE
+        dlHeapChecked = true;
+#endif
         const uint32_t hNow = heap_caps_get_free_size(MALLOC_CAP_INTERNAL);
         if (hNow < g_bench.minFreeHeap) g_bench.minFreeHeap = hNow;
       }
       if (g_bench.collected >= g_bench.targetBlocks) {
         g_bench.endWallUs = esp_timer_get_time();
         g_bench.endI2sFail = curI2sFail;
+#if defined(HYDRA_PHASE72E_DEADLINE_TRACE) && HYDRA_PHASE72E_DEADLINE_TRACE
+        dlHeapChecked = true;
+#endif
         g_bench.endHeap = heap_caps_get_free_size(MALLOC_CAP_INTERNAL);
         if (g_bench.endHeap < g_bench.minFreeHeap) g_bench.minFreeHeap = g_bench.endHeap;
         g_bench.endPsram = heap_caps_get_free_size(MALLOC_CAP_SPIRAM);
@@ -1068,8 +1084,10 @@ void audioTask(void *parameter) {
       const uint16_t postU = (postRaw < 0) ? 0u : (postRaw > 65535 ? 65535u : (uint16_t)postRaw);
       const uint16_t fwU = (fullWorkUs < 0) ? 0u : (fullWorkUs > 65535 ? 65535u : (uint16_t)fullWorkUs);
       const uint16_t tapeU = (uint16_t)(dlTapeCyc / 240u);
-      const bool benchRun = (g_bench.state == BENCH_RUNNING);
-      const bool heapChk = benchRun && (((g_bench.collected - 1u) & 63u) == 0u);
+      // These flags reflect events in the present iteration, including
+      // warmup-to-running and running-to-done transitions.
+      const bool benchRun = dlBenchSampled;
+      const bool heapChk = dlHeapChecked;
       const bool isOverrun = (fullWorkUs > kDspBlockBudgetUs);
       const bool isNewPeak = (fwU > g_dl_trace.maxFullWorkUs);
       if (isOverrun) ++g_dl_trace.overruns;
@@ -1101,7 +1119,7 @@ void audioTask(void *parameter) {
                    (healthRequested ? 128u : 0u);
         ev.heads = (uint8_t)p_activeHeads;
         ev.feedback = (uint8_t)p_feedback;
-        ev.mode = (uint8_t)p_source;
+        ev.mode = (uint8_t)blockSource;
         ++g_dl_trace.ringWriteCount;
       }
     }

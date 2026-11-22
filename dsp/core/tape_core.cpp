@@ -13,7 +13,13 @@
 #include "hydra_mech_noise.hpp"
 #include "tape_integrity.hpp"
 #include "realtime_profile.hpp"
-#if defined(HYDRA_PHASE72_EXPERIMENTAL_FEEDBACK_ROUTING) && HYDRA_PHASE72_EXPERIMENTAL_FEEDBACK_ROUTING
+// The B and C listening variants are deliberately separate binaries.
+#if defined(HYDRA_PHASE72_EXPERIMENTAL_FEEDBACK_ROUTING) && HYDRA_PHASE72_EXPERIMENTAL_FEEDBACK_ROUTING && \
+    defined(HYDRA_PHASE72_CLASSIC_FEEDBACK_ROUTING) && HYDRA_PHASE72_CLASSIC_FEEDBACK_ROUTING
+#error "Phase 7.2 experiments B and C must not be enabled together"
+#endif
+#if (defined(HYDRA_PHASE72_EXPERIMENTAL_FEEDBACK_ROUTING) && HYDRA_PHASE72_EXPERIMENTAL_FEEDBACK_ROUTING) || \
+    (defined(HYDRA_PHASE72_CLASSIC_FEEDBACK_ROUTING) && HYDRA_PHASE72_CLASSIC_FEEDBACK_ROUTING)
 #include "feedback_routing_experiment.hpp"
 #endif
 #include "reverse_windows.hpp"
@@ -386,7 +392,14 @@ struct TapeCore::Impl {
   float warpPhase=0.0f, smoothedGrainSamples=3840.0f;
   float warpSpeedClamped=1.0f, warpTargetGrainSamples=3840.0f, warpStereoOffset=0.125f, warpFbGain=0.0f;
   BiquadFilter warpHPF_L,warpHPF_R,warpLPF_L,warpLPF_R;
-  BiquadFilter flutterLPF,flutterLPFR; MechNoise mechNoiseL{22222u},mechNoiseR{33333u}; DropoutGenerator dropout; TapeNoiseGenerator noiseGen, noiseGenR; BiquadFilter reproHeadBump,tapeRolloff,gapLossLPF; OnePoleLP dropoutLPF,dropoutLPFR; AllpassFilter azimuthFilter; DCBlocker dcBlocker; BiquadFilter inputHPF,inputLPF; BiquadFilter reproHeadBumpR,tapeRolloffR,gapLossLPFR; AllpassFilter azimuthFilterR; DCBlocker dcBlockerR; BiquadFilter inputHPFR,inputLPFR; OnePoleLP feedbackGapLoss,feedbackGapLossR; BiquadFilter feedbackHPF,feedbackHPFR,feedbackHeadBump,feedbackHeadBumpR; AllpassFilter feedbackPhase,feedbackPhaseR;  DelayAllpass springAP_L[6],springAP_R[6],reverseAP_L[4],reverseAP_R[4]; BiquadFilter springLPF_L[6],springLPF_R[6]; float springFB_L=0,springFB_R=0; float freezeFade=0; float delayEnableRamp=0,smoothedDelaySamples=0,smoothedAzCoeff=0; float* delayLine=nullptr; float* delayLineR=nullptr; int32_t normalBufferSize=0,bufferSize=0,bufferCapacity=0,writeHead=0,reverseCounter=0,reverseWindowSize=0;
+  BiquadFilter flutterLPF,flutterLPFR; MechNoise mechNoiseL{22222u},mechNoiseR{33333u}; DropoutGenerator dropout; TapeNoiseGenerator noiseGen, noiseGenR; BiquadFilter reproHeadBump,tapeRolloff,gapLossLPF; OnePoleLP dropoutLPF,dropoutLPFR; AllpassFilter azimuthFilter; DCBlocker dcBlocker; BiquadFilter inputHPF,inputLPF; BiquadFilter reproHeadBumpR,tapeRolloffR,gapLossLPFR; AllpassFilter azimuthFilterR; DCBlocker dcBlockerR; BiquadFilter inputHPFR,inputLPFR; OnePoleLP feedbackGapLoss,feedbackGapLossR; BiquadFilter feedbackHPF,feedbackHPFR,feedbackHeadBump,feedbackHeadBumpR; AllpassFilter feedbackPhase,feedbackPhaseR;
+#if defined(HYDRA_PHASE72_CLASSIC_FEEDBACK_ROUTING) && HYDRA_PHASE72_CLASSIC_FEEDBACK_ROUTING
+  // Dedicated reproduction EQ memory: never advance monitor filters twice.
+  BiquadFilter classicRolloffL,classicRolloffR,classicReproBumpL,classicReproBumpR,classicGapLossL,classicGapLossR;
+  OnePoleLP classicDropoutL,classicDropoutR;
+  AllpassFilter classicAzimuthL,classicAzimuthR;
+#endif
+  DelayAllpass springAP_L[6],springAP_R[6],reverseAP_L[4],reverseAP_R[4]; BiquadFilter springLPF_L[6],springLPF_R[6]; float springFB_L=0,springFB_R=0; float freezeFade=0; float delayEnableRamp=0,smoothedDelaySamples=0,smoothedAzCoeff=0; float* delayLine=nullptr; float* delayLineR=nullptr; int32_t normalBufferSize=0,bufferSize=0,bufferCapacity=0,writeHead=0,reverseCounter=0,reverseWindowSize=0;
 };
 
 void TapeCore::Impl::updateCachedParams(){
@@ -487,6 +500,15 @@ void TapeCore::Impl::updatePlaybackFilters(){
   reproHeadBump.setPeak(sampleRate,bumpFreq,0.9f,pbBump); reproHeadBumpR.setPeak(sampleRate,bumpFreq,0.9f,pbBump);
   float baseFreq=6000+(pbSpeed*10000),ageFactor=1-(pbAge*0.90f),toneFactor=(pbTone-0.5f)*2; if(toneFactor>0){ageFactor+=toneFactor*0.5f;if(ageFactor>1)ageFactor=1;} else ageFactor*=1+(toneFactor*0.5f); float cut=std::max(400.f,baseFreq*ageFactor);
   tapeRolloff.setHighShelf(sampleRate,cut*2.f,0.5f,-12.f); tapeRolloffR.setHighShelf(sampleRate,cut*2.f,0.5f,-12.f); gapLossLPF.setLowpass(sampleRate,cut,0.707f); gapLossLPFR.setLowpass(sampleRate,cut,0.707f);
+#if defined(HYDRA_PHASE72_CLASSIC_FEEDBACK_ROUTING) && HYDRA_PHASE72_CLASSIC_FEEDBACK_ROUTING
+  // Same playback EQ coefficients and 20 ms coefficient interpolation.
+  classicReproBumpL.setPeak(sampleRate,bumpFreq,0.9f,pbBump);
+  classicReproBumpR.setPeak(sampleRate,bumpFreq,0.9f,pbBump);
+  classicRolloffL.setHighShelf(sampleRate,cut*2.f,0.5f,-12.f);
+  classicRolloffR.setHighShelf(sampleRate,cut*2.f,0.5f,-12.f);
+  classicGapLossL.setLowpass(sampleRate,cut,0.707f);
+  classicGapLossR.setLowpass(sampleRate,cut,0.707f);
+#endif
 }
 
 TapeCore::TapeCore(float sampleRate,float maxDelayMs)
@@ -647,6 +669,13 @@ void TapeCore::reset(){
   impl_->flutterLPF.reset(); impl_->flutterLPFR.reset(); impl_->warpHPF_L.reset(); impl_->warpHPF_R.reset(); impl_->warpLPF_L.reset(); impl_->warpLPF_R.reset(); impl_->reproHeadBump.reset(); impl_->reproHeadBumpR.reset(); impl_->tapeRolloff.reset(); impl_->tapeRolloffR.reset(); impl_->gapLossLPF.reset(); impl_->gapLossLPFR.reset(); impl_->dropoutLPF.reset(); impl_->dropoutLPFR.reset();
   impl_->inputHPF.reset(); impl_->inputHPFR.reset(); impl_->inputLPF.reset(); impl_->inputLPFR.reset(); impl_->feedbackGapLoss.reset(); impl_->feedbackGapLossR.reset(); impl_->feedbackHeadBump.reset(); impl_->feedbackHeadBumpR.reset(); impl_->feedbackHPF.reset(); impl_->feedbackHPFR.reset();
   impl_->azimuthFilter.reset(); impl_->azimuthFilterR.reset(); impl_->feedbackPhase.reset(); impl_->feedbackPhaseR.reset();
+#if defined(HYDRA_PHASE72_CLASSIC_FEEDBACK_ROUTING) && HYDRA_PHASE72_CLASSIC_FEEDBACK_ROUTING
+  impl_->classicRolloffL.reset(); impl_->classicRolloffR.reset();
+  impl_->classicReproBumpL.reset(); impl_->classicReproBumpR.reset();
+  impl_->classicGapLossL.reset(); impl_->classicGapLossR.reset();
+  impl_->classicDropoutL.reset(); impl_->classicDropoutR.reset();
+  impl_->classicAzimuthL.reset(); impl_->classicAzimuthR.reset();
+#endif
   for(int i=0;i<6;i++){ impl_->springAP_L[i].clear(); impl_->springAP_R[i].clear(); impl_->springLPF_L[i].reset(); impl_->springLPF_R[i].reset(); }
   for(int i=0;i<4;i++){ impl_->reverseAP_L[i].clear(); impl_->reverseAP_R[i].clear(); }
   impl_->tapTempo.reset();
@@ -669,6 +698,13 @@ void TapeCore::updateParams(const TapeParams& newParams){
     impl_->reproHeadBump.reset(); impl_->reproHeadBumpR.reset(); impl_->tapeRolloff.reset(); impl_->tapeRolloffR.reset();
     impl_->gapLossLPF.reset(); impl_->gapLossLPFR.reset(); impl_->dropoutLPF.reset(); impl_->dropoutLPFR.reset();
     impl_->azimuthFilter.reset(); impl_->azimuthFilterR.reset(); impl_->feedbackGapLoss.reset(); impl_->feedbackGapLossR.reset();
+#if defined(HYDRA_PHASE72_CLASSIC_FEEDBACK_ROUTING) && HYDRA_PHASE72_CLASSIC_FEEDBACK_ROUTING
+    impl_->classicRolloffL.reset(); impl_->classicRolloffR.reset();
+    impl_->classicReproBumpL.reset(); impl_->classicReproBumpR.reset();
+    impl_->classicGapLossL.reset(); impl_->classicGapLossR.reset();
+    impl_->classicDropoutL.reset(); impl_->classicDropoutR.reset();
+    impl_->classicAzimuthL.reset(); impl_->classicAzimuthR.reset();
+#endif
     impl_->feedbackHeadBump.reset(); impl_->feedbackHeadBumpR.reset(); impl_->feedbackHPF.reset(); impl_->feedbackHPFR.reset();
     impl_->feedbackPhase.reset(); impl_->feedbackPhaseR.reset();
     impl_->warpHPF_L.reset(); impl_->warpHPF_R.reset(); impl_->warpLPF_L.reset(); impl_->warpLPF_R.reset();
@@ -731,6 +767,13 @@ HYDRA_DSP_IRAM void TapeCore::Impl::flushDenormals(){
   feedbackHPF.flushDenormals(); feedbackHPFR.flushDenormals();
   feedbackHeadBump.flushDenormals(); feedbackHeadBumpR.flushDenormals();
   feedbackPhase.flushDenormals(); feedbackPhaseR.flushDenormals();
+#if defined(HYDRA_PHASE72_CLASSIC_FEEDBACK_ROUTING) && HYDRA_PHASE72_CLASSIC_FEEDBACK_ROUTING
+  classicRolloffL.flushDenormals(); classicRolloffR.flushDenormals();
+  classicReproBumpL.flushDenormals(); classicReproBumpR.flushDenormals();
+  classicGapLossL.flushDenormals(); classicGapLossR.flushDenormals();
+  classicDropoutL.flushDenormals(); classicDropoutR.flushDenormals();
+  classicAzimuthL.flushDenormals(); classicAzimuthR.flushDenormals();
+#endif
   if(spring){
     for(int i=0;i<6;++i){ springLPF_L[i].flushDenormals(); springLPF_R[i].flushDenormals(); }
     if(std::fabs(springFB_L)<1e-20f) springFB_L=0.0f;
@@ -812,6 +855,10 @@ HYDRA_DSP_IRAM void TapeCore::processStereoBlock(const float* inLBlock,const flo
     impl_->smoothedAzCoeff += 0.001f * (targetAz - impl_->smoothedAzCoeff);
     impl_->azimuthFilter.setCoeff(impl_->smoothedAzCoeff);
     impl_->azimuthFilterR.setCoeff(impl_->smoothedAzCoeff);
+#if defined(HYDRA_PHASE72_CLASSIC_FEEDBACK_ROUTING) && HYDRA_PHASE72_CLASSIC_FEEDBACK_ROUTING
+    impl_->classicAzimuthL.setCoeff(impl_->smoothedAzCoeff);
+    impl_->classicAzimuthR.setCoeff(impl_->smoothedAzCoeff);
+#endif
   }
 
   impl_->dropout.beginFrame(impl_->sampleRate);
@@ -1049,7 +1096,10 @@ HYDRA_DSP_IRAM void TapeCore::processStereoBlock(const float* inLBlock,const flo
     if (impl_->warpActive) {
       frame.feedbackSource = warpFb;
     } else {
-#if defined(HYDRA_PHASE72_EXPERIMENTAL_FEEDBACK_ROUTING) && HYDRA_PHASE72_EXPERIMENTAL_FEEDBACK_ROUTING
+#if defined(HYDRA_PHASE72_CLASSIC_FEEDBACK_ROUTING) && HYDRA_PHASE72_CLASSIC_FEEDBACK_ROUTING
+      // Dedicated coloration occurs after readCh; Reverse already blended.
+      frame.feedbackSource = delaySig;
+#elif defined(HYDRA_PHASE72_EXPERIMENTAL_FEEDBACK_ROUTING) && HYDRA_PHASE72_EXPERIMENTAL_FEEDBACK_ROUTING
       // Phase 7.2A experiment ONLY. The forward/reverse blend is already
       // applied to delaySig. Avoid a second reverse blend and keep monitoring
       // gains, injected hiss and playback-only texture outside the repeat loop.
@@ -1122,6 +1172,34 @@ HYDRA_DSP_IRAM void TapeCore::processStereoBlock(const float* inLBlock,const flo
 
   ChannelFrame frameL=readCh(inL,hissL,impl_->delayLine,impl_->reproHeadBump,impl_->tapeRolloff,impl_->gapLossLPF,impl_->azimuthFilter,impl_->inputHPF,impl_->inputLPF,impl_->dropoutLPF,dropoutL,modL,warpSigL,warpFbL);
   ChannelFrame frameR=readCh(inR,hissR,impl_->delayLineR,impl_->reproHeadBumpR,impl_->tapeRolloffR,impl_->gapLossLPFR,impl_->azimuthFilterR,impl_->inputHPFR,impl_->inputLPFR,impl_->dropoutLPFR,dropoutR,modR,warpSigR,warpFbR);
+#if defined(HYDRA_PHASE72_CLASSIC_FEEDBACK_ROUTING) && HYDRA_PHASE72_CLASSIC_FEEDBACK_ROUTING
+  if (!impl_->warpActive) {
+    // Version C: read-head playback degradation before the original feedback
+    // electronics and the unchanged magnetic write. All filters are private
+    // to this path, so monitoring outputs and their state stay unchanged.
+    const auto colorTapeFeedback = [&](float readHead, float hiss, DropoutFrame drop,
+                                       OnePoleLP& dropoutLP, AllpassFilter& azimuth,
+                                       BiquadFilter& shelf, BiquadFilter& bump,
+                                       BiquadFilter& gap) HYDRA_LAMBDA_INLINE HYDRA_DSP_IRAM {
+      float playback = readHead;
+      if (drop.hfLoss < 0.9995f || drop.ampGain < 0.9995f) {
+        const float cutoff = (6000.f + p->tapeSpeed * 100.f) *
+                             (0.35f + 0.65f * drop.hfLoss);
+        dropoutLP.setCutoffFastInv(impl_->maxDropoutFc, impl_->invSampleRate, cutoff);
+        playback = dropoutLP.process(playback) * drop.ampGain;
+      }
+      if (useAzimuth) playback = azimuth.process(playback);
+      playback = gap.process(bump.process(shelf.process(playback)));
+      return experimental::classicTapeFeedbackSource(playback, hiss);
+    };
+    frameL.feedbackSource = colorTapeFeedback(frameL.feedbackSource, hissL, dropoutL,
+        impl_->classicDropoutL, impl_->classicAzimuthL,
+        impl_->classicRolloffL, impl_->classicReproBumpL, impl_->classicGapLossL);
+    frameR.feedbackSource = colorTapeFeedback(frameR.feedbackSource, hissR, dropoutR,
+        impl_->classicDropoutR, impl_->classicAzimuthR,
+        impl_->classicRolloffR, impl_->classicReproBumpR, impl_->classicGapLossR);
+  }
+#endif
   const float fbSourceL=impl_->pingPong?frameR.feedbackSource:frameL.feedbackSource;
   const float fbSourceR=impl_->pingPong?frameL.feedbackSource:frameR.feedbackSource;
   const float feedbackL=feedbackFrom(fbSourceL,impl_->feedbackHPF,impl_->feedbackHeadBump,impl_->feedbackGapLoss,impl_->feedbackPhase,impl_->inEnvL);

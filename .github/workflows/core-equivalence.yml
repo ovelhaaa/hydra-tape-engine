@@ -53,6 +53,9 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
+      - name: Run firmware source and deadline trace regression guards
+        run: python3 -m unittest discover -s tests/core -p 'test_audio_task_invariants.py'
+
       - name: Configure native core
         run: cmake -S . -B build-native -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} -DBUILD_TESTING=ON -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
 

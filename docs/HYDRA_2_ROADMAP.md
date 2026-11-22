@@ -208,3 +208,11 @@ flowchart LR
 - P99 máximo2215us (76.31% do orçamento), trabalho completo máximo2820us; a meta preferencial70% não foi obtida fora de Delay. Divisões históricas 1/8 e 1/16 estavam rotuladas incorretamente e não são comparações diretas.
 - `PHYSICAL_MIDI_CLOCK_NOT_TESTED`; LittleFS/OLED apresentam limitações documentadas; aprovação humana do pacote final continua `PENDING_HUMAN_AUDITION`.
 - Evidências, reprodução e limites: [Aceitação física](PHASE65_PHYSICAL_HARDWARE_ACCEPTANCE.md). CI do HEAD atual: checks e links da PR#54, sem transferir resultados antigos.
+
+
+### FASE 6.6 — Auditoria final e sessão musical (2026-11-21)
+- **PENDING_HUMAN_AUDITION; sem merge.** Dez cenários finais NOT REVIEWED; nenhuma aprovação antiga transferida.
+- HEAD auditado a7e2202: cinco workflows PASS; Native/WASM16/16, ABI/goldens e equivalência estrita Ubuntu24/26 com erro zero.
+- Artifact14730235810 baixado e verificado:20 PCM24/48kHz,10 CSVs, hashes/frames íntegros; sem regeneração/DSP novo.
+- Evidência física6.5 revalidada; margem integral observada82.49us, sem aceite analógico/RX/MIDI externo/LittleFS/OLED.
+- [Sessão, auditoria e condições finais](PHASE66_FINAL_MUSICAL_ACCEPTANCE.md). JSON humano e aprovação geral explícita ainda necessários.

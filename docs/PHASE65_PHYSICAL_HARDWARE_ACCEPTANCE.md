@@ -236,3 +236,15 @@ off. No final human listening approval, external MIDI result, filesystem/display
 acceptance or analog quality claim is inferred. Fresh local Native16/16,
 WASM16/16 and strict Native/WASM0/0 logs are archived. Mandatory final-head GitHub
 workflows and the published physical-evidence artifact are linked in PR#54.
+
+
+## Phase 6.6 audit addendum - 2026-11-21
+
+Archived raw/JSON/SHA evidence revalidated with validate_phase65_evidence.py:
+PASS. No new measurement or physical audition performed. Firmware identity and
+original acquisition results above are preserved. Audited candidate a7e2202 has
+identical firmware inputs to measured 990e5e9. Full-work 2820us vs 2902.49us leaves
+82.49us (2.84%) observed margin, not a universal deadline guarantee. Analog DAC,
+external I2S RX/MIDI Clock, LittleFS and OLED/I2C remain outside acceptance.
+Final package human audition remains PENDING_HUMAN_AUDITION; see
+[Phase 6.6 audit](PHASE66_FINAL_MUSICAL_ACCEPTANCE.md).

@@ -1,8 +1,39 @@
-# Phase 6.5 — Release Decision Record (Phase 6.4.1 evidence retained)
+# Phase 6.6 — Release Decision Record (historical evidence retained)
 
 Updated: 2026-11-21. Repository `ovelhaaa/hydra-tape-engine`, existing
 [PR #54](https://github.com/ovelhaaa/hydra-tape-engine/pull/54), branch
 `feature/musical-validation-phase6` to `main`. No merge performed.
+
+## Phase 6.6 current audit — 2026-11-21
+
+**PENDING HUMAN AUDITION** (`PENDING_HUMAN_AUDITION`). Audited candidate HEAD:
+`a7e22022f71f670e51a77e63149148c88605d9f0`; no later remote commits at initial audit.
+All five mandatory workflows passed on that exact HEAD: Core44961696922,
+Bias44961696854, Reverse44961696810, Listening44961696878, Web44961696825.
+Native/WASM16/16, ABI/goldens and strict Ubuntu24/26 max_abs=RMSE=0 confirmed.
+
+[Complete Phase6.6 audit and session](PHASE66_FINAL_MUSICAL_ACCEPTANCE.md) and
+[verified package hashes](evidence/phase66-final-audit.json) supersede the older
+current-status prose below; historical run links remain labeled as historical.
+Published final artifact14730235810 matches this candidate commit, with ten
+pairs, twenty PCM24/48kHz stereo WAVs and ten CSVs, all hashes/frames valid.
+No DSP difference from Phase6.4.1; no regeneration. No human final export received:
+**all ten scenes NOT REVIEWED**, including priority speed transition08.
+Earlier approvals remain bound to their original packages.
+
+Measured firmware remains990e5e9bc0cb22e469705555c26ef1ef9c94ae06; its exact
+firmware inputs match the candidate. Archived hardware evidence revalidated:
+PASS, seven cases and300.2168s sustain, zero observed full-work/TX failures.
+Worst P99=2215us, full-work peak2820us against2902.49us budget: only82.49us
+observed margin; no universal deadline guarantee. Physical acceptance excludes
+analog DAC quality, external RX/MIDI, LittleFS and OLED/I2C. API1.7, Native,
+WASM and ESP32 build compatibility retained. Peripheral errors and limited
+runtime margin remain residual risks. No musical integrity claim before audition.
+
+Any subsequent Phase6.6 commit needs its own five green workflows; these runs
+are not transferred to another HEAD. Final classification stays pending until
+validated human JSON plus explicit overall approval and exact-head CI review.
+No merge authorized. Issue48 closure draft prepared, not posted/closed.
 
 ## Classification
 

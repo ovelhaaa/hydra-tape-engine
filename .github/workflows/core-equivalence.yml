@@ -222,6 +222,7 @@ jobs:
       - name: Verify current stages and preserve contraction control evidence
         if: ${{ !cancelled() && matrix.os == 'ubuntu-26.04' }}
         run: |
+          python3 -m unittest discover -s tests/core -p 'test_diagnostic_setter_probe.py'
           python3 tests/core/diagnose_equivalence.py --current --output ci-reports/native-vs-wasm/stages-gcc15.json
           python3 tests/core/diagnose_equivalence.py --current --extra-flags=-ffp-contract=off --output ci-reports/native-vs-wasm/stages-no-contract.json
           g++ -dM -E -x c++ /dev/null > ci-reports/native-vs-wasm/native-macros.txt

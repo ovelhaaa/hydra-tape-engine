@@ -13,6 +13,33 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+
+  firmware_classic_c:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install PlatformIO
+        run: python -m pip install platformio
+      - name: Compile opt-in ESP32-S3 Classic C firmware
+        run: pio run -e esp32-s3-classic-c
+      - name: Compile opt-in Classic C stage-profile firmware
+        run: pio run -e esp32-s3-classic-c-stageprofile
+      - name: Archive test-only firmware; do not flash automatically
+        uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: hydra-phase7-2c-esp32-test-binaries
+          path: |
+            .pio/build/esp32-s3-classic-c/firmware.bin
+            .pio/build/esp32-s3-classic-c-stageprofile/firmware.bin
+          retention-days: 14
+
   audition_package:
     runs-on: ubuntu-24.04
     timeout-minutes: 60

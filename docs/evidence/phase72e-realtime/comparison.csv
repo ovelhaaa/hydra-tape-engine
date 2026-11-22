@@ -1,0 +1,8 @@
+scenario,name,orig_c_mean_us,opt_c_mean_us,orig_c_p99_us,opt_c_p99_us,orig_c_peak_us,opt_c_peak_us,orig_c_fw_peak_us,opt_c_fw_peak_us,opt_c_fw_margin_us,opt_c_dsp_overruns,opt_c_fw_overruns,opt_c_i2s_failures,status
+T1,Delay convencional,1943.26,1939.53,2100,2081,2367,2376,2722,2384,518.49,0,0,0,PASS
+T2,Multi-Head,2229.31,2195.78,2372,2333,2666,2596,2891,2604,298.49,0,0,0,PASS
+T3,Reverse 1/4,2021.95,2014.89,2217,2195,2489,2420,2717,2430,472.49,0,0,0,PASS
+T4,Reverse feedback 95,2013.41,1996.44,2178,2159,2471,2456,2918,2464,438.49,0,0,0,PASS
+T5,Fita envelhecida,2012.96,1983.84,2111,2086,2396,2366,2788,2373,529.49,0,0,0,PASS
+T6,Fita rapida e brilhante,1942.78,1925.63,2103,2074,2390,2294,2653,2299,603.49,0,0,0,PASS
+T7,Warp (controle negativo),1721.2,1731.08,1826,1821,2074,2068,2520,2075,827.49,0,0,0,PASS

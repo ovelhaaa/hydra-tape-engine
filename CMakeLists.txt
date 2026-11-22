@@ -38,6 +38,27 @@ if(BUILD_TESTING)
   target_include_directories(hydra_phase7_integrity PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/dsp/core)
   add_test(NAME phase7_dsp_integrity COMMAND hydra_phase7_integrity)
 
+  # Phase 7.2A experiment is compile-time only; production DSP is unchanged.
+  add_executable(hydra_phase72_feedback_routing_test tests/core/phase72_feedback_routing_test.cpp)
+  target_include_directories(hydra_phase72_feedback_routing_test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/dsp/core)
+  add_test(NAME phase72_feedback_routing_contract COMMAND hydra_phase72_feedback_routing_test)
+
+  # Variant C is built and smoke-tested independently, because the normal
+  # DSP and its Native/WASM goldens must keep the approved Phase 7.1 topology.
+  add_executable(hydra_phase72_classic_core_smoke
+    tests/core/smoke_core.cpp
+    dsp/core/tape_core.cpp
+    dsp/core/hydra_dsp_c_api.cpp
+  )
+  target_include_directories(hydra_phase72_classic_core_smoke PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/dsp/core
+  )
+  target_compile_definitions(hydra_phase72_classic_core_smoke PRIVATE
+    HYDRA_PHASE72_CLASSIC_FEEDBACK_ROUTING=1
+  )
+  add_test(NAME phase72_classic_core_smoke COMMAND hydra_phase72_classic_core_smoke)
+
   add_executable(hydra_core_smoke tests/core/smoke_core.cpp)
   target_link_libraries(hydra_core_smoke PRIVATE hydra_dsp_core)
   add_test(NAME core_smoke COMMAND hydra_core_smoke)

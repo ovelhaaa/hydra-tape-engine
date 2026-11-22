@@ -1,0 +1,143 @@
+=== SCENARIO T4: Reverse feedback 95 ===
+> src 1
+Source: 1 (0=MP3, 1=SYNTH, 2=I2S)
+> gen 1
+Generator: ON
+> vol 10
+Volume       [#-------------------] 9%
+> byp 0
+Bypass: OFF
+> mod 1
+Engine Mode: TAPE DELAY
+> mod updated
+> mix 70
+Mix          [##############------] 70%
+> wrp 0
+Accidental Warp: OFF
+> wrp updated
+> rev 0
+Reverse: OFF
+> rev updated
+> spr 0
+Spring Reverb: OFF
+> spr updated
+> frv 0
+Freeverb: OFF
+> frv updated
+> ppg 0
+Ping-Pong: OFF
+> ppg updated
+> dly 500
+Delay: 500 ms
+> hds 4
+> hds updated
+> fbk 55
+Feedback     [###########---------] 55%
+> drv 30
+Drive        [#####---------------] 29%
+> tps 50
+Speed        [##########----------] 50%
+> tpa 45
+Age          [#########-----------] 45%
+> ton 50
+Tone         [##########----------] 50%
+> hbp 30
+> hbp updated
+> nlv 12
+Noise        [##------------------] 12%
+> dps 10
+Dropouts     [#-------------------] 9%
+> ftd 10
+Flutter      [#-------------------] 9%
+> wwd 10
+Wow          [#-------------------] 9%
+> tempo 120
+Tempo: 120.0 BPM
+> tempo updated
+> hds 4
+> hds updated
+> ppg 0
+Ping-Pong: OFF
+> ppg updated
+> rev 1
+Reverse: ON
+> rev updated
+> revmode 0
+Reverse mode: 0
+> revmode updated
+> revdiv 0
+Reverse division: 0
+> revdiv updated
+> fbk 95
+Feedback     [###################-] 95%
+> list
+
+================= TAPE DSP DASHBOARD ==================
+ [ MIXER ]
+ Volume      [#-------------------] 9%
+ Dry/Wet     [##############------] 70%
+ Source      : SYNTH
+ Bypass      : NO
+
+ [ TAPE ENGINE ]
+ Delay Time  : 500 ms       Feedback     [###################-] 95%
+ Speed       [##########----------] 50%
+ Age         [#########-----------] 45%
+ Heads       : 4 (Free)
+
+ [ ACCIDENTAL WARP ]
+ Warp Active : NO
+
+ [ COLOR & TONE ]
+ Drive       [#####---------------] 29%
+ Tone        [##########----------] 50%
+ Noise       [##------------------] 12%
+ Guitar Mode : OFF (Full Range)
+
+ [ MODULATION ]
+ Wow         [#-------------------] 9%
+ Flutter     [#-------------------] 9%
+ Dropouts    [#-------------------] 9%
+=======================================================
+
+> perf reset
+DSP Performance Stats: RESET
+
+> bench 10000 256 (wall=29.88s)
+
+=== BENCH RESULT (FW Nov 22 2026 17:28:33) ===
+Cfg: src=1 gen=1 byp=0 mod=1 dly=500 fbk=95 hds=4 tps=50 tpa=45 drv=30 nlv=12 ftd=4 wwd=3 dps=4 wrp=0 wmd=0 wsp=1.00 wgr=80 wst=0.50 wfb=0 fv=0 ngt=0.0010 ppg=0 frz=0 rev=1 spr=0
+Blocks=10000 Warmup=256 WallMs=29025.7 BudgetUs=2902.49
+MeanUs=1934.86 MinUs=1867 P50Us=1938 P95Us=2022 P99Us=2093 PeakUs=2335
+BudgetMeanPct=66.66% BudgetP99Pct=72.11% Overruns=0 (0.00%) SatBins=0
+I2SFailDelta=0 HeapStart=125456 HeapEnd=125456 HeapMin=125456 PsramStart=1663048 PsramEnd=1663048 MaxParamUpdUs=380
+StackMinWords=27268
+=========================================
+
+> perf
+
+=== HYDRA DSP PERFORMANCE TELEMETRY ===
+Block Size          : 128 frames
+Sample Rate         : 44100 Hz
+CPU Clock           : 240 MHz
+Block Time Budget   : 2902.5 us
+Blocks Processed    : 10432
+Avg DSP Block Time  : 1936 us
+Last DSP Block Time : 1954 us
+Peak DSP Block Time : 2335 us
+DSP Budget Use (EMA): 67.6 %
+DSP Budget Overruns : 0
+I2S TX Write Failures: 0
+Full Work Peak      : 2648 us
+Full Work Overruns  : 0
+Internal Free Heap  : 125552 bytes
+SPIRAM (PSRAM) Free : 1663048 bytes
+Audio Stack Min Free: 27268 bytes
+Warp Active         : NO
+========================================
+
+
+> audiohealth
+AudioHealth NonZeroWords=256 PeakAbsPcm32=94519056 SaturatedWords=0 TxBytes=1024 TxError=0 CompletedUs=178618980 StackScanUs=0 FullWorkUs=2001
+=== AUDIOHEALTH END ===
+

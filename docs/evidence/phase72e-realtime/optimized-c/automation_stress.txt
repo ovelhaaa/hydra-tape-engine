@@ -1,0 +1,31 @@
+Automation sequence: 32 steps in 3.86s
+
+=== HYDRA DSP PERFORMANCE TELEMETRY ===
+
+Block Size          : 128 frames
+Sample Rate         : 44100 Hz
+CPU Clock           : 240 MHz
+Block Time Budget   : 2902.5 us
+Blocks Processed    : 1544
+Avg DSP Block Time  : 2074 us
+Last DSP Block Time : 1887 us
+Peak DSP Block Time : 2517 us
+DSP Budget Use (EMA): 65.5 %
+DSP Budget Overruns : 0
+I2S TX Write Failures: 0
+Full Work Peak      : 2560 us
+Full Work Overruns  : 0
+Internal Free Heap  : 116912 bytes
+SPIRAM (PSRAM) Free : 1663048 bytes
+Audio Stack Min Free: 27268 bytes
+Warp Active         : NO
+========================================
+
+
+
+AudioHealth NonZeroWords=256 PeakAbsPcm32=48340196 SaturatedWords=0 TxBytes=1024 TxError=0 CompletedUs=21592428 StackScanUs=0 FullWorkUs=1922
+=== AUDIOHEALTH END ===
+
+
+> dltrace updated
+

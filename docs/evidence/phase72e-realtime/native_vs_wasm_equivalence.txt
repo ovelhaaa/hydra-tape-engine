@@ -1,0 +1,5 @@
+test=native_vs_wasm_equivalence
+samples=10240
+max_abs=0.000000000000e+00
+rmse=0.000000000000e+00
+status=PASS

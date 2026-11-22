@@ -1,0 +1,192 @@
+FirmwareCommit=ad08ca6705b5cf0eb301ec22b1ff08df3d1edc22
+SourceSHA256=7714d8a2b185832adfbdb3d65e657b062465bbb19a9dc380a24cedfd6cf80329
+ELFSHA256=d401a5c188efb6a003f0d7544ea8cc575c1491f42a6377b8d33124edfdd0cfe1
+ResetReason=1 CPU=240 SampleRate=44100 BlockFrames=128 PSRAMBytes=8388608 FlashBytes=16777216 I2SInitialized=1
+FeedbackRouting=PHASE72_CLASSIC_C
+=== IDENTITY END ===
+
+=== T1 ===
+
+=== STAGE PROFILE (1000 blocks, warmup 256 @ 240MHz) ===
+A1 Source/Gen/In :    96.64 us/blk (  4.7% tot |   3.3% budget) [23194 cyc/blk]
+A2 TapeCore/DSP  :  1922.22 us/blk ( 93.1% tot |  66.2% budget) [461331 cyc/blk]
+A3a Ext tanhf()  :     0.04 us/blk (  0.0% tot |   0.0% budget) [9 cyc/blk]
+A3b NoiseGate    :    25.07 us/blk (  1.2% tot |   0.9% budget) [6016 cyc/blk]
+A3c Freeverb     :     0.05 us/blk (  0.0% tot |   0.0% budget) [12 cyc/blk]
+A3d PCM Out      :    21.13 us/blk (  1.0% tot |   0.7% budget) [5070 cyc/blk]
+Loop/Timer Ovh   :     0.01 us/blk (  0.0% tot |   0.0% budget)
+TOTAL BLOCK      :  2065.16 us/blk (100.0% tot |  71.2% budget) [495638 cyc/blk]
+=====================================================
+
+
+=== TAPECORE STAGE PROFILE (1000 blocks, warmup 256) ===
+stage                    us/blk    %core  %budget
+modulation_noise         731.22    40.7%    25.2%
+warp                       5.90     0.3%     0.2%
+reverse_control           30.05     1.7%     1.0%
+record_filters            39.71     2.2%     1.4%
+conventional_reads       296.45    16.5%    10.2%
+reverse_reads             10.19     0.6%     0.4%
+crossfade                  0.00     0.0%     0.0%
+playback_filters         133.35     7.4%     4.6%
+feedback                 258.83    14.4%     8.9%
+record_amplifier          17.70     1.0%     0.6%
+magnetic_write           184.36    10.3%     6.4%
+limiter                   50.93     2.8%     1.8%
+auxiliary                 14.99     0.8%     0.5%
+transport                 22.53     1.3%     0.8%
+interpolation              0.00     0.0%     0.0%
+parameter_clear            0.00     0.0%     0.0%
+parameter_filters          0.00     0.0%     0.0%
+parameter_apply            0.00     0.0%     0.0%
+TOTAL STAGES            1796.21   100.0%    61.9%
+=====================================================
+
+=== T2 ===
+
+=== STAGE PROFILE (1000 blocks, warmup 256 @ 240MHz) ===
+A1 Source/Gen/In :    98.94 us/blk (  4.3% tot |   3.4% budget) [23746 cyc/blk]
+A2 TapeCore/DSP  :  2159.49 us/blk ( 93.7% tot |  74.4% budget) [518277 cyc/blk]
+A3a Ext tanhf()  :     0.04 us/blk (  0.0% tot |   0.0% budget) [9 cyc/blk]
+A3b NoiseGate    :    25.06 us/blk (  1.1% tot |   0.9% budget) [6013 cyc/blk]
+A3c Freeverb     :     0.05 us/blk (  0.0% tot |   0.0% budget) [12 cyc/blk]
+A3d PCM Out      :    21.10 us/blk (  0.9% tot |   0.7% budget) [5064 cyc/blk]
+Loop/Timer Ovh   :     0.02 us/blk (  0.0% tot |   0.0% budget)
+TOTAL BLOCK      :  2304.70 us/blk (100.0% tot |  79.4% budget) [553128 cyc/blk]
+=====================================================
+
+
+=== TAPECORE STAGE PROFILE (1000 blocks, warmup 256) ===
+stage                    us/blk    %core  %budget
+modulation_noise         735.76    35.4%    25.3%
+warp                       5.89     0.3%     0.2%
+reverse_control           29.96     1.4%     1.0%
+record_filters            39.64     1.9%     1.4%
+conventional_reads       578.91    27.9%    19.9%
+reverse_reads             10.20     0.5%     0.4%
+crossfade                  0.00     0.0%     0.0%
+playback_filters         126.88     6.1%     4.4%
+feedback                 258.76    12.5%     8.9%
+record_amplifier          17.67     0.9%     0.6%
+magnetic_write           184.44     8.9%     6.4%
+limiter                   50.90     2.5%     1.8%
+auxiliary                 14.98     0.7%     0.5%
+transport                 22.52     1.1%     0.8%
+interpolation              0.00     0.0%     0.0%
+parameter_clear            0.00     0.0%     0.0%
+parameter_filters          0.00     0.0%     0.0%
+parameter_apply            0.00     0.0%     0.0%
+TOTAL STAGES            2076.49   100.0%    71.5%
+=====================================================
+
+=== T3 ===
+
+=== STAGE PROFILE (1000 blocks, warmup 256 @ 240MHz) ===
+A1 Source/Gen/In :   110.15 us/blk (  5.3% tot |   3.8% budget) [26436 cyc/blk]
+A2 TapeCore/DSP  :  1931.32 us/blk ( 92.5% tot |  66.5% budget) [463517 cyc/blk]
+A3a Ext tanhf()  :     0.04 us/blk (  0.0% tot |   0.0% budget) [10 cyc/blk]
+A3b NoiseGate    :    25.44 us/blk (  1.2% tot |   0.9% budget) [6105 cyc/blk]
+A3c Freeverb     :     0.06 us/blk (  0.0% tot |   0.0% budget) [13 cyc/blk]
+A3d PCM Out      :    21.13 us/blk (  1.0% tot |   0.7% budget) [5070 cyc/blk]
+Loop/Timer Ovh   :     0.01 us/blk (  0.0% tot |   0.0% budget)
+TOTAL BLOCK      :  2088.16 us/blk (100.0% tot |  71.9% budget) [501157 cyc/blk]
+=====================================================
+
+
+=== TAPECORE STAGE PROFILE (1000 blocks, warmup 256) ===
+stage                    us/blk    %core  %budget
+modulation_noise         733.96    40.0%    25.3%
+warp                       5.89     0.3%     0.2%
+reverse_control           69.29     3.8%     2.4%
+record_filters            39.65     2.2%     1.4%
+conventional_reads       142.62     7.8%     4.9%
+reverse_reads            166.74     9.1%     5.7%
+crossfade                  0.00     0.0%     0.0%
+playback_filters         128.61     7.0%     4.4%
+feedback                 258.74    14.1%     8.9%
+record_amplifier          17.69     1.0%     0.6%
+magnetic_write           183.05    10.0%     6.3%
+limiter                   50.92     2.8%     1.8%
+auxiliary                 15.01     0.8%     0.5%
+transport                 22.53     1.2%     0.8%
+interpolation              0.00     0.0%     0.0%
+parameter_clear            0.00     0.0%     0.0%
+parameter_filters          0.00     0.0%     0.0%
+parameter_apply            0.00     0.0%     0.0%
+TOTAL STAGES            1834.69   100.0%    63.2%
+=====================================================
+
+=== T4 ===
+
+=== STAGE PROFILE (1000 blocks, warmup 256 @ 240MHz) ===
+A1 Source/Gen/In :   108.94 us/blk (  5.1% tot |   3.8% budget) [26145 cyc/blk]
+A2 TapeCore/DSP  :  1997.07 us/blk ( 92.8% tot |  68.8% budget) [479295 cyc/blk]
+A3a Ext tanhf()  :     0.05 us/blk (  0.0% tot |   0.0% budget) [10 cyc/blk]
+A3b NoiseGate    :    25.44 us/blk (  1.2% tot |   0.9% budget) [6104 cyc/blk]
+A3c Freeverb     :     0.06 us/blk (  0.0% tot |   0.0% budget) [14 cyc/blk]
+A3d PCM Out      :    21.11 us/blk (  1.0% tot |   0.7% budget) [5066 cyc/blk]
+Loop/Timer Ovh   :     0.02 us/blk (  0.0% tot |   0.0% budget)
+TOTAL BLOCK      :  2152.67 us/blk (100.0% tot |  74.2% budget) [516641 cyc/blk]
+=====================================================
+
+
+=== TAPECORE STAGE PROFILE (1000 blocks, warmup 256) ===
+stage                    us/blk    %core  %budget
+modulation_noise         735.17    40.6%    25.3%
+warp                       5.88     0.3%     0.2%
+reverse_control           69.22     3.8%     2.4%
+record_filters            39.70     2.2%     1.4%
+conventional_reads       142.57     7.9%     4.9%
+reverse_reads            166.74     9.2%     5.7%
+crossfade                  0.00     0.0%     0.0%
+playback_filters         103.96     5.7%     3.6%
+feedback                 258.84    14.3%     8.9%
+record_amplifier          17.69     1.0%     0.6%
+magnetic_write           184.02    10.2%     6.3%
+limiter                   50.94     2.8%     1.8%
+auxiliary                 15.00     0.8%     0.5%
+transport                 22.53     1.2%     0.8%
+interpolation              0.00     0.0%     0.0%
+parameter_clear            0.00     0.0%     0.0%
+parameter_filters          0.00     0.0%     0.0%
+parameter_apply            0.00     0.0%     0.0%
+TOTAL STAGES            1812.26   100.0%    62.4%
+=====================================================
+
+=== T7 ===
+
+=== STAGE PROFILE (1000 blocks, warmup 256 @ 240MHz) ===
+A1 Source/Gen/In :    96.10 us/blk (  5.2% tot |   3.3% budget) [23064 cyc/blk]
+A2 TapeCore/DSP  :  1692.23 us/blk ( 92.2% tot |  58.3% budget) [406134 cyc/blk]
+A3a Ext tanhf()  :     0.04 us/blk (  0.0% tot |   0.0% budget) [9 cyc/blk]
+A3b NoiseGate    :    25.06 us/blk (  1.4% tot |   0.9% budget) [6014 cyc/blk]
+A3c Freeverb     :     0.05 us/blk (  0.0% tot |   0.0% budget) [12 cyc/blk]
+A3d PCM Out      :    21.09 us/blk (  1.1% tot |   0.7% budget) [5062 cyc/blk]
+Loop/Timer Ovh   :     0.01 us/blk (  0.0% tot |   0.0% budget)
+TOTAL BLOCK      :  1834.59 us/blk (100.0% tot |  63.2% budget) [440301 cyc/blk]
+=====================================================
+
+
+=== TAPECORE STAGE PROFILE (1000 blocks, warmup 256) ===
+stage                    us/blk    %core  %budget
+modulation_noise         734.49    44.9%    25.3%
+warp                     360.75    22.0%    12.4%
+reverse_control           30.03     1.8%     1.0%
+record_filters            39.65     2.4%     1.4%
+conventional_reads        18.77     1.1%     0.6%
+reverse_reads             10.17     0.6%     0.4%
+crossfade                  0.00     0.0%     0.0%
+playback_filters         115.11     7.0%     4.0%
+feedback                  36.94     2.3%     1.3%
+record_amplifier          17.68     1.1%     0.6%
+magnetic_write           184.41    11.3%     6.4%
+limiter                   50.88     3.1%     1.8%
+auxiliary                 14.97     0.9%     0.5%
+transport                 22.51     1.4%     0.8%
+interpolation              0.00     0.0%     0.0%
+parameter_clear            0.00     0.0%     0.0%
+parameter_filters          0.00     0.0%     0.0%
+parameter_apply            0.00     0.0%     0.0%
+TOTAL STAGES            1636.36   100.0%    56.4%
+=====================================================
+

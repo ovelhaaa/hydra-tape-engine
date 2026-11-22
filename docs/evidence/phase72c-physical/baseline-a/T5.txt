@@ -1,0 +1,140 @@
+=== SCENARIO T5: Fita envelhecida ===
+> src 1
+Source: 1 (0=MP3, 1=SYNTH, 2=I2S)
+> gen 1
+Generator: ON
+> vol 10
+Volume       [#-------------------] 9%
+> byp 0
+Bypass: OFF
+> mod 1
+Engine Mode: TAPE DELAY
+> mod updated
+> mix 70
+Mix          [##############------] 70%
+> wrp 0
+Accidental Warp: OFF
+> wrp updated
+> rev 0
+Reverse: OFF
+> rev updated
+> spr 0
+Spring Reverb: OFF
+> spr updated
+> frv 0
+Freeverb: OFF
+> frv updated
+> ppg 0
+Ping-Pong: OFF
+> ppg updated
+> dly 500
+Delay: 500 ms
+> hds 4
+> hds updated
+> fbk 55
+Feedback     [###########---------] 55%
+> drv 30
+Drive        [#####---------------] 29%
+> tps 50
+Speed        [##########----------] 50%
+> tpa 45
+Age          [#########-----------] 45%
+> ton 50
+Tone         [##########----------] 50%
+> hbp 30
+> hbp updated
+> nlv 12
+Noise        [##------------------] 12%
+> dps 10
+Dropouts     [#-------------------] 9%
+> ftd 10
+Flutter      [#-------------------] 9%
+> wwd 10
+Wow          [#-------------------] 9%
+> tempo 120
+Tempo: 120.0 BPM
+> tempo updated
+> rev 0
+Reverse: OFF
+> rev updated
+> tpa 90
+Age          [##################--] 90%
+> ton 20
+Tone         [###-----------------] 19%
+> dps 35
+Dropouts     [#######-------------] 35%
+> nlv 40
+Noise        [#######-------------] 39%
+> fbk 85
+Feedback     [#################---] 85%
+> list
+
+================= TAPE DSP DASHBOARD ==================
+ [ MIXER ]
+ Volume      [#-------------------] 9%
+ Dry/Wet     [##############------] 70%
+ Source      : SYNTH
+ Bypass      : NO
+
+ [ TAPE ENGINE ]
+ Delay Time  : 500 ms       Feedback     [#################---] 85%
+ Speed       [##########----------] 50%
+ Age         [##################--] 90%
+ Heads       : 4 (Free)
+
+ [ ACCIDENTAL WARP ]
+ Warp Active : NO
+
+ [ COLOR & TONE ]
+ Drive       [#####---------------] 29%
+ Tone        [###-----------------] 19%
+ Noise       [#######-------------] 39%
+ Guitar Mode : OFF (Full Range)
+
+ [ MODULATION ]
+ Wow         [#-------------------] 9%
+ Flutter     [#-------------------] 9%
+ Dropouts    [#######-------------] 35%
+=======================================================
+
+> perf reset
+DSP Performance Stats: RESET
+
+> bench 10000 256 (wall=29.88s)
+
+=== BENCH RESULT (FW Nov 22 2026 17:28:33) ===
+Cfg: src=1 gen=1 byp=0 mod=1 dly=500 fbk=85 hds=4 tps=50 tpa=90 drv=30 nlv=40 ftd=4 wwd=3 dps=14 wrp=0 wmd=0 wsp=1.00 wgr=80 wst=0.50 wfb=0 fv=0 ngt=0.0010 ppg=0 frz=0 rev=0 spr=0
+Blocks=10000 Warmup=256 WallMs=29023.6 BudgetUs=2902.49
+MeanUs=1879.87 MinUs=1810 P50Us=1884 P95Us=1952 P99Us=1967 PeakUs=2228
+BudgetMeanPct=64.77% BudgetP99Pct=67.77% Overruns=0 (0.00%) SatBins=0
+I2SFailDelta=0 HeapStart=125456 HeapEnd=125456 HeapMin=125456 PsramStart=1663048 PsramEnd=1663048 MaxParamUpdUs=527
+StackMinWords=27268
+=========================================
+
+> perf
+
+=== HYDRA DSP PERFORMANCE TELEMETRY ===
+Block Size          : 128 frames
+Sample Rate         : 44100 Hz
+CPU Clock           : 240 MHz
+Block Time Budget   : 2902.5 us
+Blocks Processed    : 10431
+Avg DSP Block Time  : 1880 us
+Last DSP Block Time : 1883 us
+Peak DSP Block Time : 2233 us
+DSP Budget Use (EMA): 67.3 %
+DSP Budget Overruns : 0
+I2S TX Write Failures: 0
+Full Work Peak      : 2651 us
+Full Work Overruns  : 0
+Internal Free Heap  : 125552 bytes
+SPIRAM (PSRAM) Free : 1663048 bytes
+Audio Stack Min Free: 27268 bytes
+Warp Active         : NO
+========================================
+
+
+> audiohealth
+AudioHealth NonZeroWords=256 PeakAbsPcm32=43191296 SaturatedWords=0 TxBytes=1024 TxError=0 CompletedUs=220823480 StackScanUs=0 FullWorkUs=1867
+=== AUDIOHEALTH END ===
+

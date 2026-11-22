@@ -1,0 +1,58 @@
+name: Phase 7.2 Feedback Routing A-B Experiment
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: phase72-feedback-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  audition_package:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    env:
+      PYTHONUTF8: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install numeric and audio requirements
+        run: python -m pip install -r scripts/listening-lab-requirements.txt
+      - name: Confirm approved Phase 7.1 baseline exists
+        run: git cat-file -e 24977b67e1ab8441080a29d9e5d40114c966ac50^{commit}
+      - name: Build CMake contract test
+        run: |
+          cmake -S . -B build-native -DBUILD_TESTING=ON -DCMAKE_BUILD_TYPE=Release
+          cmake --build build-native --target hydra_phase72_feedback_routing_test -j 2
+      - name: Check routing contract without changing production audio
+        run: ctest --test-dir build-native -R '^phase72_feedback_routing_contract$' --output-on-failure
+      - name: Build approved, default and isolated DSPs and render the A-B
+        run: |
+          python scripts/package_phase72_feedback_ab.py \
+            --before-commit 24977b67e1ab8441080a29d9e5d40114c966ac50 \
+            --output artifacts/listening-lab/phase7-2-feedback \
+            --archive artifacts/hydra-phase7-2-feedback.zip
+      - name: Verify physical PCM24 stereo files, SHA-256 and ZIP
+        run: |
+          python scripts/package_listening_lab.py \
+            artifacts/listening-lab/phase7-2-feedback --validate-only
+          (cd artifacts && sha256sum -c hydra-phase7-2-feedback.zip.sha256)
+      - name: Upload listening comparisons, not a human signoff
+        uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: hydra-phase7-2-feedback-audio-ab
+          path: |
+            artifacts/hydra-phase7-2-feedback.zip
+            artifacts/hydra-phase7-2-feedback.zip.sha256
+          retention-days: 30

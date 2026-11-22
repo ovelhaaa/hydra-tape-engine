@@ -1,0 +1,628 @@
+=== SUSTAINED 5-MIN TEST (OPTIMIZED C - REVERSE FB85) ===
+FirmwareCommit=a1894876ccbad094b51648eba59209032c79936f
+SourceSHA256=209fd4a180e4f1e1fb1b41a8cf7adfad4689df7d969379ee9c8857487535cb8a
+ELFSHA256=85a07e402878cbdb4529c6a8920cb8522af8b5709543bbd390defe0bdc79faa3
+ResetReason=11 CPU=240 SampleRate=44100 BlockFrames=128 PSRAMBytes=8388608 FlashBytes=16777216 I2SInitialized=1
+FeedbackRouting=PHASE72_CLASSIC_C
+=== IDENTITY END ===
+
+> src 1
+Source: 1 (0=MP3, 1=SYNTH, 2=I2S)
+> gen 1
+Generator: ON
+> vol 10
+Volume       [#-------------------] 9%
+> byp 0
+Bypass: OFF
+> mod 1
+Engine Mode: TAPE DELAY
+> mod updated
+> mix 70
+Mix          [##############------] 70%
+> wrp 0
+Accidental Warp: OFF
+> wrp updated
+> rev 0
+Reverse: OFF
+> rev updated
+> spr 0
+Spring Reverb: OFF
+> spr updated
+> frv 0
+Freeverb: OFF
+> frv updated
+> ppg 0
+Ping-Pong: OFF
+> ppg updated
+> dly 500
+Delay: 500 ms
+> hds 4
+> hds updated
+> fbk 55
+Feedback     [###########---------] 55%
+> drv 30
+Drive        [#####---------------] 29%
+> tps 50
+Speed        [##########----------] 50%
+> tpa 45
+Age          [#########-----------] 45%
+> ton 50
+Tone         [##########----------] 50%
+> hbp 30
+> hbp updated
+> nlv 12
+Noise        [##------------------] 12%
+> dps 10
+Dropouts     [#-------------------] 9%
+> ftd 10
+Flutter      [#-------------------] 9%
+> wwd 10
+Wow          [#-------------------] 9%
+> tempo 120
+Tempo: 120.0 BPM
+> tempo updated
+> rev 1
+Reverse: ON
+> rev updated
+> revmode 0
+Reverse mode: 0
+> revmode updated
+> revdiv 0
+Reverse division: 0
+> revdiv updated
+> fbk 85
+Feedback     [#################---] 85%
+> tpa 80
+Age          [###############-----] 79%
+> ftd 25
+Flutter      [#####---------------] 25%
+> wwd 25
+Wow          [#####---------------] 25%
+> list
+
+================= TAPE DSP DASHBOARD ==================
+ [ MIXER ]
+ Volume      [#-------------------] 9%
+ Dry/Wet     [##############------] 70%
+ Source      : SYNTH
+ Bypass      : NO
+
+ [ TAPE ENGINE ]
+ Delay Time  : 500 ms       Feedback     [#################---] 85%
+ Speed       [##########----------] 50%
+ Age         [###############-----] 79%
+ Heads       : 4 (Free)
+
+ [ ACCIDENTAL WARP ]
+ Warp Active : NO
+
+ [ COLOR & TONE ]
+ Drive       [#####---------------] 29%
+ Tone        [##########----------] 50%
+ Noise       [##------------------] 12%
+ Guitar Mode : OFF (Full Range)
+
+ [ MODULATION ]
+ Wow         [#####---------------] 25%
+ Flutter     [#####---------------] 25%
+ Dropouts    [#-------------------] 9%
+=======================================================
+
+> perf reset
+DSP Performance Stats: RESET
+
+--- SAMPLE 0 (t=0.0s) ---
+
+=== HYDRA DSP PERFORMANCE TELEMETRY ===
+Block Size          : 128 frames
+Sample Rate         : 44100 Hz
+CPU Clock           : 240 MHz
+Block Time Budget   : 2902.5 us
+Blocks Processed    : 74
+Avg DSP Block Time  : 2103 us
+Last DSP Block Time : 2108 us
+Peak DSP Block Time : 2275 us
+DSP Budget Use (EMA): 70.7 %
+DSP Budget Overruns : 0
+I2S TX Write Failures: 0
+Full Work Peak      : 2284 us
+Full Work Overruns  : 0
+Internal Free Heap  : 116912 bytes
+SPIRAM (PSRAM) Free : 1663048 bytes
+Audio Stack Min Free: 27268 bytes
+Warp Active         : NO
+========================================
+
+
+> audiohealth
+AudioHealth NonZeroWords=256 PeakAbsPcm32=6922221 SaturatedWords=0 TxBytes=1024 TxError=0 CompletedUs=23587478 StackScanUs=0 FullWorkUs=2021
+=== AUDIOHEALTH END ===
+
+
+--- SAMPLE 1 (t=15.1s) ---
+
+=== HYDRA DSP PERFORMANCE TELEMETRY ===
+Block Size          : 128 frames
+Sample Rate         : 44100 Hz
+CPU Clock           : 240 MHz
+Block Time Budget   : 2902.5 us
+Blocks Processed    : 5268
+Avg DSP Block Time  : 2041 us
+Last DSP Block Time : 1959 us
+Peak DSP Block Time : 2446 us
+DSP Budget Use (EMA): 67.9 %
+DSP Budget Overruns : 0
+I2S TX Write Failures: 0
+Full Work Peak      : 2457 us
+Full Work Overruns  : 0
+Internal Free Heap  : 116912 bytes
+SPIRAM (PSRAM) Free : 1663048 bytes
+Audio Stack Min Free: 27268 bytes
+Warp Active         : NO
+========================================
+
+
+
+--- SAMPLE 2 (t=30.0s) ---
+
+=== HYDRA DSP PERFORMANCE TELEMETRY ===
+Block Size          : 128 frames
+Sample Rate         : 44100 Hz
+CPU Clock           : 240 MHz
+Block Time Budget   : 2902.5 us
+Blocks Processed    : 10414
+Avg DSP Block Time  : 2028 us
+Last DSP Block Time : 1954 us
+Peak DSP Block Time : 2475 us
+DSP Budget Use (EMA): 67.7 %
+DSP Budget Overruns : 0
+I2S TX Write Failures: 0
+Full Work Peak      : 2481 us
+Full Work Overruns  : 0
+Internal Free Heap  : 116912 bytes
+SPIRAM (PSRAM) Free : 1663048 bytes
+Audio Stack Min Free: 27268 bytes
+Warp Active         : NO
+========================================
+
+
+
+--- SAMPLE 3 (t=45.2s) ---
+
+=== HYDRA DSP PERFORMANCE TELEMETRY ===
+Block Size          : 128 frames
+Sample Rate         : 44100 Hz
+CPU Clock           : 240 MHz
+Block Time Budget   : 2902.5 us
+Blocks Processed    : 15635
+Avg DSP Block Time  : 2018 us
+Last DSP Block Time : 1955 us
+Peak DSP Block Time : 2475 us
+DSP Budget Use (EMA): 67.9 %
+DSP Budget Overruns : 0
+I2S TX Write Failures: 0
+Full Work Peak      : 2481 us
+Full Work Overruns  : 0
+Internal Free Heap  : 116912 bytes
+SPIRAM (PSRAM) Free : 1663048 bytes
+Audio Stack Min Free: 27268 bytes
+Warp Active         : NO
+========================================
+
+
+
+--- SAMPLE 4 (t=60.1s) ---
+
+=== HYDRA DSP PERFORMANCE TELEMETRY ===
+Block Size          : 128 frames
+Sample Rate         : 44100 Hz
+CPU Clock           : 240 MHz
+Block Time Budget   : 2902.5 us
+Blocks Processed    : 20766
+Avg DSP Block Time  : 2027 us
+Last DSP Block Time : 2034 us
+Peak DSP Block Time : 2475 us
+DSP Budget Use (EMA): 69.9 %
+DSP Budget Overruns : 0
+I2S TX Write Failures: 0
+Full Work Peak      : 2481 us
+Full Work Overruns  : 0
+Internal Free Heap  : 116912 bytes
+SPIRAM (PSRAM) Free : 1663048 bytes
+Audio Stack Min Free: 27268 bytes
+Warp Active         : NO
+========================================
+
+
+
+--- SAMPLE 5 (t=75.1s) ---
+
+=== HYDRA DSP PERFORMANCE TELEMETRY ===
+Block Size          : 128 frames
+Sample Rate         : 44100 Hz
+CPU Clock           : 240 MHz
+Block Time Budget   : 2902.5 us
+Blocks Processed    : 25949
+Avg DSP Block Time  : 2024 us
+Last DSP Block Time : 1953 us
+Peak DSP Block Time : 2475 us
+DSP Budget Use (EMA): 67.8 %
+DSP Budget Overruns : 0
+I2S TX Write Failures: 0
+Full Work Peak      : 2481 us
+Full Work Overruns  : 0
+Internal Free Heap  : 116912 bytes
+SPIRAM (PSRAM) Free : 1663048 bytes
+Audio Stack Min Free: 27268 bytes
+Warp Active         : NO
+========================================
+
+
+
+--- SAMPLE 6 (t=90.1s) ---
+
+=== HYDRA DSP PERFORMANCE TELEMETRY ===
+Block Size          : 128 frames
+Sample Rate         : 44100 Hz
+CPU Clock           : 240 MHz
+Block Time Budget   : 2902.5 us
+Blocks Processed    : 31130
+Avg DSP Block Time  : 2026 us
+Last DSP Block Time : 2102 us
+Peak DSP Block Time : 2475 us
+DSP Budget Use (EMA): 72.9 %
+DSP Budget Overruns : 0
+I2S TX Write Failures: 0
+Full Work Peak      : 2481 us
+Full Work Overruns  : 0
+Internal Free Heap  : 116912 bytes
+SPIRAM (PSRAM) Free : 1663048 bytes
+Audio Stack Min Free: 27268 bytes
+Warp Active         : NO
+========================================
+
+
+
+--- SAMPLE 7 (t=105.1s) ---
+
+=== HYDRA DSP PERFORMANCE TELEMETRY ===
+Block Size          : 128 frames
+Sample Rate         : 44100 Hz
+CPU Clock           : 240 MHz
+Block Time Budget   : 2902.5 us
+Blocks Processed    : 36292
+Avg DSP Block Time  : 2023 us
+Last DSP Block Time : 1956 us
+Peak DSP Block Time : 2475 us
+DSP Budget Use (EMA): 67.8 %
+DSP Budget Overruns : 0
+I2S TX Write Failures: 0
+Full Work Peak      : 2481 us
+Full Work Overruns  : 0
+Internal Free Heap  : 116912 bytes
+SPIRAM (PSRAM) Free : 1663048 bytes
+Audio Stack Min Free: 27268 bytes
+Warp Active         : NO
+========================================
+
+
+
+--- SAMPLE 8 (t=120.2s) ---
+
+=== HYDRA DSP PERFORMANCE TELEMETRY ===
+Block Size          : 128 frames
+Sample Rate         : 44100 Hz
+CPU Clock           : 240 MHz
+Block Time Budget   : 2902.5 us
+Blocks Processed    : 41495
+Avg DSP Block Time  : 2020 us
+Last DSP Block Time : 2127 us
+Peak DSP Block Time : 2475 us
+DSP Budget Use (EMA): 74.2 %
+DSP Budget Overruns : 0
+I2S TX Write Failures: 0
+Full Work Peak      : 2481 us
+Full Work Overruns  : 0
+Internal Free Heap  : 116912 bytes
+SPIRAM (PSRAM) Free : 1663048 bytes
+Audio Stack Min Free: 27268 bytes
+Warp Active         : NO
+========================================
+
+
+
+--- SAMPLE 9 (t=135.2s) ---
+
+=== HYDRA DSP PERFORMANCE TELEMETRY ===
+Block Size          : 128 frames
+Sample Rate         : 44100 Hz
+CPU Clock           : 240 MHz
+Block Time Budget   : 2902.5 us
+Blocks Processed    : 46643
+Avg DSP Block Time  : 2023 us
+Last DSP Block Time : 2015 us
+Peak DSP Block Time : 2476 us
+DSP Budget Use (EMA): 70.1 %
+DSP Budget Overruns : 0
+I2S TX Write Failures: 0
+Full Work Peak      : 2485 us
+Full Work Overruns  : 0
+Internal Free Heap  : 116912 bytes
+SPIRAM (PSRAM) Free : 1663048 bytes
+Audio Stack Min Free: 27268 bytes
+Warp Active         : NO
+========================================
+
+
+
+--- SAMPLE 10 (t=150.1s) ---
+
+=== HYDRA DSP PERFORMANCE TELEMETRY ===
+Block Size          : 128 frames
+Sample Rate         : 44100 Hz
+CPU Clock           : 240 MHz
+Block Time Budget   : 2902.5 us
+Blocks Processed    : 51793
+Avg DSP Block Time  : 2024 us
+Last DSP Block Time : 1963 us
+Peak DSP Block Time : 2476 us
+DSP Budget Use (EMA): 68.7 %
+DSP Budget Overruns : 0
+I2S TX Write Failures: 0
+Full Work Peak      : 2485 us
+Full Work Overruns  : 0
+Internal Free Heap  : 116912 bytes
+SPIRAM (PSRAM) Free : 1663048 bytes
+Audio Stack Min Free: 27268 bytes
+Warp Active         : NO
+========================================
+
+
+> audiohealth
+AudioHealth NonZeroWords=256 PeakAbsPcm32=6017320 SaturatedWords=0 TxBytes=1024 TxError=0 CompletedUs=173700994 StackScanUs=0 FullWorkUs=2049
+=== AUDIOHEALTH END ===
+
+
+--- SAMPLE 11 (t=165.2s) ---
+
+=== HYDRA DSP PERFORMANCE TELEMETRY ===
+Block Size          : 128 frames
+Sample Rate         : 44100 Hz
+CPU Clock           : 240 MHz
+Block Time Budget   : 2902.5 us
+Blocks Processed    : 56987
+Avg DSP Block Time  : 2024 us
+Last DSP Block Time : 2002 us
+Peak DSP Block Time : 2476 us
+DSP Budget Use (EMA): 69.8 %
+DSP Budget Overruns : 0
+I2S TX Write Failures: 0
+Full Work Peak      : 2485 us
+Full Work Overruns  : 0
+Internal Free Heap  : 116912 bytes
+SPIRAM (PSRAM) Free : 1663048 bytes
+Audio Stack Min Free: 27268 bytes
+Warp Active         : NO
+========================================
+
+
+
+--- SAMPLE 12 (t=180.1s) ---
+
+=== HYDRA DSP PERFORMANCE TELEMETRY ===
+Block Size          : 128 frames
+Sample Rate         : 44100 Hz
+CPU Clock           : 240 MHz
+Block Time Budget   : 2902.5 us
+Blocks Processed    : 62133
+Avg DSP Block Time  : 2021 us
+Last DSP Block Time : 1962 us
+Peak DSP Block Time : 2476 us
+DSP Budget Use (EMA): 68.5 %
+DSP Budget Overruns : 0
+I2S TX Write Failures: 0
+Full Work Peak      : 2485 us
+Full Work Overruns  : 0
+Internal Free Heap  : 116912 bytes
+SPIRAM (PSRAM) Free : 1663048 bytes
+Audio Stack Min Free: 27268 bytes
+Warp Active         : NO
+========================================
+
+
+
+--- SAMPLE 13 (t=195.0s) ---
+
+=== HYDRA DSP PERFORMANCE TELEMETRY ===
+Block Size          : 128 frames
+Sample Rate         : 44100 Hz
+CPU Clock           : 240 MHz
+Block Time Budget   : 2902.5 us
+Blocks Processed    : 67267
+Avg DSP Block Time  : 2020 us
+Last DSP Block Time : 2133 us
+Peak DSP Block Time : 2476 us
+DSP Budget Use (EMA): 74.6 %
+DSP Budget Overruns : 0
+I2S TX Write Failures: 0
+Full Work Peak      : 2485 us
+Full Work Overruns  : 0
+Internal Free Heap  : 116912 bytes
+SPIRAM (PSRAM) Free : 1663048 bytes
+Audio Stack Min Free: 27268 bytes
+Warp Active         : NO
+========================================
+
+
+
+--- SAMPLE 14 (t=210.1s) ---
+
+=== HYDRA DSP PERFORMANCE TELEMETRY ===
+Block Size          : 128 frames
+Sample Rate         : 44100 Hz
+CPU Clock           : 240 MHz
+Block Time Budget   : 2902.5 us
+Blocks Processed    : 72469
+Avg DSP Block Time  : 2022 us
+Last DSP Block Time : 2020 us
+Peak DSP Block Time : 2476 us
+DSP Budget Use (EMA): 70.0 %
+DSP Budget Overruns : 0
+I2S TX Write Failures: 0
+Full Work Peak      : 2485 us
+Full Work Overruns  : 0
+Internal Free Heap  : 116912 bytes
+SPIRAM (PSRAM) Free : 1663048 bytes
+Audio Stack Min Free: 27268 bytes
+Warp Active         : NO
+========================================
+
+
+
+--- SAMPLE 15 (t=225.1s) ---
+
+=== HYDRA DSP PERFORMANCE TELEMETRY ===
+Block Size          : 128 frames
+Sample Rate         : 44100 Hz
+CPU Clock           : 240 MHz
+Block Time Budget   : 2902.5 us
+Blocks Processed    : 77638
+Avg DSP Block Time  : 2025 us
+Last DSP Block Time : 2177 us
+Peak DSP Block Time : 2476 us
+DSP Budget Use (EMA): 74.3 %
+DSP Budget Overruns : 0
+I2S TX Write Failures: 0
+Full Work Peak      : 2485 us
+Full Work Overruns  : 0
+Internal Free Heap  : 116912 bytes
+SPIRAM (PSRAM) Free : 1663048 bytes
+Audio Stack Min Free: 27268 bytes
+Warp Active         : NO
+========================================
+
+
+
+--- SAMPLE 16 (t=240.1s) ---
+
+=== HYDRA DSP PERFORMANCE TELEMETRY ===
+Block Size          : 128 frames
+Sample Rate         : 44100 Hz
+CPU Clock           : 240 MHz
+Block Time Budget   : 2902.5 us
+Blocks Processed    : 82786
+Avg DSP Block Time  : 2023 us
+Last DSP Block Time : 2081 us
+Peak DSP Block Time : 2476 us
+DSP Budget Use (EMA): 72.2 %
+DSP Budget Overruns : 0
+I2S TX Write Failures: 0
+Full Work Peak      : 2485 us
+Full Work Overruns  : 0
+Internal Free Heap  : 116912 bytes
+SPIRAM (PSRAM) Free : 1663048 bytes
+Audio Stack Min Free: 27268 bytes
+Warp Active         : NO
+========================================
+
+
+
+--- SAMPLE 17 (t=255.2s) ---
+
+=== HYDRA DSP PERFORMANCE TELEMETRY ===
+Block Size          : 128 frames
+Sample Rate         : 44100 Hz
+CPU Clock           : 240 MHz
+Block Time Budget   : 2902.5 us
+Blocks Processed    : 87996
+Avg DSP Block Time  : 2023 us
+Last DSP Block Time : 2002 us
+Peak DSP Block Time : 2476 us
+DSP Budget Use (EMA): 69.7 %
+DSP Budget Overruns : 0
+I2S TX Write Failures: 0
+Full Work Peak      : 2485 us
+Full Work Overruns  : 0
+Internal Free Heap  : 116912 bytes
+SPIRAM (PSRAM) Free : 1663048 bytes
+Audio Stack Min Free: 27268 bytes
+Warp Active         : NO
+========================================
+
+
+
+--- SAMPLE 18 (t=270.1s) ---
+
+=== HYDRA DSP PERFORMANCE TELEMETRY ===
+Block Size          : 128 frames
+Sample Rate         : 44100 Hz
+CPU Clock           : 240 MHz
+Block Time Budget   : 2902.5 us
+Blocks Processed    : 93145
+Avg DSP Block Time  : 2023 us
+Last DSP Block Time : 2099 us
+Peak DSP Block Time : 2476 us
+DSP Budget Use (EMA): 72.3 %
+DSP Budget Overruns : 0
+I2S TX Write Failures: 0
+Full Work Peak      : 2485 us
+Full Work Overruns  : 0
+Internal Free Heap  : 116912 bytes
+SPIRAM (PSRAM) Free : 1663048 bytes
+Audio Stack Min Free: 27268 bytes
+Warp Active         : NO
+========================================
+
+
+
+--- SAMPLE 19 (t=285.1s) ---
+
+=== HYDRA DSP PERFORMANCE TELEMETRY ===
+Block Size          : 128 frames
+Sample Rate         : 44100 Hz
+CPU Clock           : 240 MHz
+Block Time Budget   : 2902.5 us
+Blocks Processed    : 98290
+Avg DSP Block Time  : 2023 us
+Last DSP Block Time : 2091 us
+Peak DSP Block Time : 2476 us
+DSP Budget Use (EMA): 72.0 %
+DSP Budget Overruns : 0
+I2S TX Write Failures: 0
+Full Work Peak      : 2485 us
+Full Work Overruns  : 0
+Internal Free Heap  : 116912 bytes
+SPIRAM (PSRAM) Free : 1663048 bytes
+Audio Stack Min Free: 27268 bytes
+Warp Active         : NO
+========================================
+
+
+
+--- SAMPLE 20 (t=300.0s) ---
+
+=== HYDRA DSP PERFORMANCE TELEMETRY ===
+Block Size          : 128 frames
+Sample Rate         : 44100 Hz
+CPU Clock           : 240 MHz
+Block Time Budget   : 2902.5 us
+Blocks Processed    : 103439
+Avg DSP Block Time  : 2022 us
+Last DSP Block Time : 2158 us
+Peak DSP Block Time : 2536 us
+DSP Budget Use (EMA): 74.3 %
+DSP Budget Overruns : 0
+I2S TX Write Failures: 0
+Full Work Peak      : 2556 us
+Full Work Overruns  : 0
+Internal Free Heap  : 116912 bytes
+SPIRAM (PSRAM) Free : 1663048 bytes
+Audio Stack Min Free: 27268 bytes
+Warp Active         : NO
+========================================
+
+
+> audiohealth
+AudioHealth NonZeroWords=256 PeakAbsPcm32=1134531 SaturatedWords=0 TxBytes=1024 TxError=0 CompletedUs=323606064 StackScanUs=0 FullWorkUs=2195
+=== AUDIOHEALTH END ===
+

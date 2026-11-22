@@ -1373,6 +1373,9 @@ void executeCommand(String line) {
     dualPrintf("\nResetReason=%d CPU=%u SampleRate=%d BlockFrames=%d PSRAMBytes=%u FlashBytes=%u I2SInitialized=%d\n",
                int(esp_reset_reason()), getCpuFrequencyMhz(), SAMPLE_RATE, AUDIO_CHUNK_SIZE,
                ESP.getPsramSize(), ESP.getFlashChipSize(), g_i2s_initialized ? 1 : 0);
+#if defined(HYDRA_PHASE72_CLASSIC_FEEDBACK_ROUTING) && HYDRA_PHASE72_CLASSIC_FEEDBACK_ROUTING
+    dualPrintln("FeedbackRouting=PHASE72_CLASSIC_C");
+#endif
     dualPrintln("=== IDENTITY END ===");
     return;
   }

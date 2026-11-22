@@ -1,8 +1,10 @@
-"""Phase 7.2A: three-way tape feedback routing experiment.
+"""Phase 7.2 A/B/C tape feedback routing listening experiment.
 
 A: exact approved Phase 7.1 main commit, ordinary DSP.
 A0: new branch with experiment disabled (MUST BE FLOAT BIT-EXACT to A).
-B: same new branch with compile-time isolated feedback source enabled.
+B: compile-time isolated clean read-head feedback source.
+C: compile-time independent but *degraded* read-head feedback source.
+Generate separate A/B and A/C paired archives for the existing two-way player.
 
 Every case uses identical synthesized input, parameters, event positions and
 random state. Results are listening evidence, not a replacement for human review.
@@ -27,7 +29,9 @@ import render_phase6_review as render
 ROOT = Path(__file__).resolve().parents[1]
 APPROVED_COMMIT = "24977b67e1ab8441080a29d9e5d40114c966ac50"
 SUITE = "Hydra Phase 7.2 Feedback Routing A/B"
+CLASSIC_SUITE = "Hydra Phase 7.2 Classic Playback A/C"
 EXPERIMENT_DEFINE = "-DHYDRA_PHASE72_EXPERIMENTAL_FEEDBACK_ROUTING=1"
+CLASSIC_DEFINE = "-DHYDRA_PHASE72_CLASSIC_FEEDBACK_ROUTING=1"
 
 DEFAULT = {
     0: 8, 1: 6, 2: 5, 3: 30, 4: 12,
@@ -73,12 +77,14 @@ CASES = [
 ]
 
 
-def build_shared(source_root, output, experimental=False):
+def build_shared(source_root, output, experiment_define=None):
     compiler = common.compiler_path()
     args = [compiler, "-O3", "-DNDEBUG", "-std=c++17",
             "-ffp-contract=off", "-shared", "-fPIC"]
-    if experimental:
-        args.append(EXPERIMENT_DEFINE)
+    if experiment_define is not None:
+        if experiment_define not in (EXPERIMENT_DEFINE, CLASSIC_DEFINE):
+            raise ValueError("Unknown DSP experiment define")
+        args.append(experiment_define)
     if sys.platform == "win32":
         args.append("-Wl,--export-all-symbols")
     args += [f"-I{source_root / 'include'}",
@@ -123,6 +129,9 @@ def ensure_safe(audio, title):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--before-commit", default=APPROVED_COMMIT)
+    parser.add_argument("--variant", choices=("isolated", "classic"),
+                        default="isolated",
+                        help="B uses uncolored head, C uses colored playback-head feedback")
     parser.add_argument("--output", type=Path,
                         default=ROOT / "artifacts/listening-lab/phase7-2-feedback")
     parser.add_argument("--archive", type=Path,
@@ -130,6 +139,10 @@ def main():
     parser.add_argument("--work", type=Path,
                         default=ROOT / "artifacts/tmp/phase72-feedback")
     args = parser.parse_args()
+    is_classic = args.variant == "classic"
+    experiment_define = CLASSIC_DEFINE if is_classic else EXPERIMENT_DEFINE
+    suite = CLASSIC_SUITE if is_classic else SUITE
+    variant_label = "C" if is_classic else "B"
     current = subprocess.check_output(
         ["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip()
     if current == args.before_commit:
@@ -145,11 +158,13 @@ def main():
     build.mkdir(exist_ok=True)
     ref_path = build / "approved.dll"
     candidate_default_path = build / "branch_default.dll"
-    candidate_experiment_path = build / "branch_isolated.dll"
+    candidate_experiment_path = build / (
+        "branch_classic.dll" if is_classic else "branch_isolated.dll")
 
     ref_hash, ref_cmd = build_shared(args.work, ref_path)
     default_hash, default_cmd = build_shared(ROOT, candidate_default_path)
-    experiment_hash, experiment_cmd = build_shared(ROOT, candidate_experiment_path, True)
+    experiment_hash, experiment_cmd = build_shared(
+        ROOT, candidate_experiment_path, experiment_define)
 
     approved = render.HydraEngineRunner(ref_path)
     candidate_default = render.HydraEngineRunner(candidate_default_path)
@@ -162,11 +177,12 @@ def main():
         shutil.rmtree(args.output)
     args.output.mkdir(parents=True)
     manifest = dict(
-        schema_version=1, suite=SUITE, reference_commit=current,
+        schema_version=1, suite=suite, reference_commit=current,
         before_commit=args.before_commit, api_version=alternate.api_version,
         source_sha256=render.sha256_file(ROOT / "dsp/core/tape_core.cpp"),
         before_library_sha256=ref_hash, default_library_sha256=default_hash,
-        after_library_sha256=experiment_hash, compile_time_experiment=EXPERIMENT_DEFINE,
+        after_library_sha256=experiment_hash, compile_time_experiment=experiment_define,
+        experimental_variant=args.variant,
         random_seed=7200, sample_rate_hz=render.RATE,
         block_size_frames=render.BLOCK, working_tree_dirty=False,
         environment=dict(os=platform.platform(), python=platform.python_version(),
@@ -192,23 +208,28 @@ def main():
             raise RuntimeError(
                 f"{name}: experiment-OFF must match approved main bit-exact: {delta}")
         before_peak = ensure_safe(a["output"], name + "/approved")
-        after_peak = ensure_safe(b["output"], name + "/experimental")
+        after_peak = ensure_safe(b["output"], name + "/" + variant_label)
         if name == "Warp negative control" and not np.array_equal(a["output"], b["output"]):
             raise RuntimeError("Warp audio changed, despite an independent routing path")
         delta = common.metrics(a["output"], b["output"])
         comparisons[name] = dict(
             **delta, approved_peak=before_peak, experimental_peak=after_peak,
+            experimental_variant=args.variant,
             approved_per_second=audio_metrics(a["output"], render.RATE),
             experimental_per_second=audio_metrics(b["output"], render.RATE))
         key = f"{i:02d}_feedback_{i:02d}"
         entry = dict(
-            name=name, group="Phase 7.2 Feedback Routing A/B",
-            description="A=approved main Phase 7.1; B=experimental monitor-independent "
-                        "feedback. Identical stimulus, seed, gains and transport; no normalization.",
+            name=name, group=("Phase 7.2 Classic Playback A/C" if is_classic
+                              else "Phase 7.2 Feedback Routing A/B"),
+            description=("A=approved Phase 7.1; " + variant_label + "=" +
+                        ("independent degraded playback-head feedback"
+                         if is_classic else "independent uncolored read-head feedback") +
+                        ". Identical source, seed, gains and transport; no normalization."),
             duration_sec=float(seconds), bpm=120.0, tempo_source=0,
             reference_commit=current, random_seed=seed, events=events,
             clock_pulses=[], sample_rate_hz=render.RATE,
-            source_material=source, comparison_variant="isolated-feedback",
+            source_material=source, comparison_variant=(
+                "classic-playback-feedback" if is_classic else "isolated-feedback"),
             comparison_case=i, comparison_title=name,
             human_review_state="NOT REVIEWED",
             stimulus_sha256=hashlib.sha256(stimulus.tobytes()).hexdigest(),
@@ -246,7 +267,9 @@ def main():
             approved_commit=args.before_commit, experimental_commit=current,
             approved_binary_sha256=ref_hash, default_binary_sha256=default_hash,
             experimental_binary_sha256=experiment_hash,
-            builds=dict(approved=ref_cmd, default=default_cmd, isolated=experiment_cmd),
+            variant=args.variant, experiment_define=experiment_define,
+            builds=dict(approved=ref_cmd, default=default_cmd,
+                        experimental=experiment_cmd),
             monitor_independent_route_is_experimental=True,
             production_reference_proved_bit_exact=True,
             comparisons=comparisons), indent=2, allow_nan=False),

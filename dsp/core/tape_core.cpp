@@ -22,6 +22,14 @@
     (defined(HYDRA_PHASE72_CLASSIC_FEEDBACK_ROUTING) && HYDRA_PHASE72_CLASSIC_FEEDBACK_ROUTING)
 #include "feedback_routing_experiment.hpp"
 #endif
+#if defined(HYDRA_PHASE74_REPEAT_AGING_MODE) && (HYDRA_PHASE74_REPEAT_AGING_MODE > 0)
+#if !(defined(HYDRA_PHASE72_CLASSIC_FEEDBACK_ROUTING) && HYDRA_PHASE72_CLASSIC_FEEDBACK_ROUTING)
+#error "Phase 7.4A repeat aging requires HYDRA_PHASE72_CLASSIC_FEEDBACK_ROUTING=1"
+#endif
+#if HYDRA_PHASE74_REPEAT_AGING_MODE > 3
+#error "HYDRA_PHASE74_REPEAT_AGING_MODE must be 0 (C0), 1 (C1), 2 (C2), or 3 (C3)"
+#endif
+#endif
 #include "reverse_windows.hpp"
 
 #include <algorithm>
@@ -270,7 +278,11 @@ struct TapeCore::Impl {
     if (ptr) heap_caps_free(ptr);
   }
 #endif
-  explicit Impl(float fs,float maxDelayMs,float historyMs):sampleRate(fs),noiseGen(fs,123456789u),noiseGenR(fs,987654321u){ magneticsL.lut=&tanhLUT; magneticsR.lut=&tanhLUT; updateSampleRateConstants(); dropout.setSampleRate(fs); magneticsL.updateParams(fs,currentParams); magneticsR.updateParams(fs,currentParams); normalBufferSize=(int32_t)(fs*(maxDelayMs/1000.f)); bufferSize=(int32_t)(fs*(historyMs/1000.f)); bufferSizeF=static_cast<float>(bufferSize); maxReadDelayF=static_cast<float>(normalBufferSize)-4.0f; bufferCapacity=bufferSize+TAPE_BUFFER_GUARD; delayLine=allocateDelayBuffer(bufferCapacity); delayLineR=allocateDelayBuffer(bufferCapacity); if(!delayLine||!delayLineR){freeDelayBuffer(delayLine);freeDelayBuffer(delayLineR);delayLine=delayLineR=nullptr;bufferSize=0;return;} static const float sc[6]={0.7f,0.65f,0.6f,0.6f,0.5f,0.5f}; static const int st[6]={223,367,491,647,821,1039}; for(int i=0;i<6;i++){springAP_L[i].init(st[i]);springAP_R[i].init(st[i]+23);springAP_L[i].setCoeff(sc[i]);springAP_R[i].setCoeff(sc[i]);springLPF_L[i].setLowpass(fs,2500,0.5f);springLPF_R[i].setLowpass(fs,2500,0.5f);} static const float rc[4]={0.6f,0.55f,0.5f,0.45f}; static const int rt[4]={151,313,569,797}; for(int i=0;i<4;i++){reverseAP_L[i].init(rt[i]);reverseAP_R[i].init(rt[i]+17);reverseAP_L[i].setCoeff(rc[i]);reverseAP_R[i].setCoeff(rc[i]);} updateFilters(); flutterLPF.setLowpass(fs,15,0.707f); flutterLPFR.setLowpass(fs,15,0.707f); cachedFlutterCutoff=-1.0f; warpHPF_L.setHighpass(fs,120.0f,0.707f); warpHPF_R.setHighpass(fs,120.0f,0.707f); warpLPF_L.setLowpass(fs,2200.0f,0.707f); warpLPF_R.setLowpass(fs,2200.0f,0.707f); smoothedGrainSamples=std::max(64.0f,80.0f*0.001f*fs); transportClock.prepare(fs); transportClock.setBpm(120.0f); tapTempo.prepare(fs); tapTempo.setAppliedBpm(120.0f); midiClockSync.prepare(fs); midiClockSync.setAppliedBpm(120.0f);}
+  explicit Impl(float fs,float maxDelayMs,float historyMs):sampleRate(fs),noiseGen(fs,123456789u),noiseGenR(fs,987654321u){ magneticsL.lut=&tanhLUT; magneticsR.lut=&tanhLUT; updateSampleRateConstants();
+#if defined(HYDRA_PHASE74_REPEAT_AGING_MODE) && (HYDRA_PHASE74_REPEAT_AGING_MODE > 0)
+    repeatAgingL.reset(); repeatAgingR.reset();
+#endif
+    dropout.setSampleRate(fs); magneticsL.updateParams(fs,currentParams); magneticsR.updateParams(fs,currentParams); normalBufferSize=(int32_t)(fs*(maxDelayMs/1000.f)); bufferSize=(int32_t)(fs*(historyMs/1000.f)); bufferSizeF=static_cast<float>(bufferSize); maxReadDelayF=static_cast<float>(normalBufferSize)-4.0f; bufferCapacity=bufferSize+TAPE_BUFFER_GUARD; delayLine=allocateDelayBuffer(bufferCapacity); delayLineR=allocateDelayBuffer(bufferCapacity); if(!delayLine||!delayLineR){freeDelayBuffer(delayLine);freeDelayBuffer(delayLineR);delayLine=delayLineR=nullptr;bufferSize=0;return;} static const float sc[6]={0.7f,0.65f,0.6f,0.6f,0.5f,0.5f}; static const int st[6]={223,367,491,647,821,1039}; for(int i=0;i<6;i++){springAP_L[i].init(st[i]);springAP_R[i].init(st[i]+23);springAP_L[i].setCoeff(sc[i]);springAP_R[i].setCoeff(sc[i]);springLPF_L[i].setLowpass(fs,2500,0.5f);springLPF_R[i].setLowpass(fs,2500,0.5f);} static const float rc[4]={0.6f,0.55f,0.5f,0.45f}; static const int rt[4]={151,313,569,797}; for(int i=0;i<4;i++){reverseAP_L[i].init(rt[i]);reverseAP_R[i].init(rt[i]+17);reverseAP_L[i].setCoeff(rc[i]);reverseAP_R[i].setCoeff(rc[i]);} updateFilters(); flutterLPF.setLowpass(fs,15,0.707f); flutterLPFR.setLowpass(fs,15,0.707f); cachedFlutterCutoff=-1.0f; warpHPF_L.setHighpass(fs,120.0f,0.707f); warpHPF_R.setHighpass(fs,120.0f,0.707f); warpLPF_L.setLowpass(fs,2200.0f,0.707f); warpLPF_R.setLowpass(fs,2200.0f,0.707f); smoothedGrainSamples=std::max(64.0f,80.0f*0.001f*fs); transportClock.prepare(fs); transportClock.setBpm(120.0f); tapTempo.prepare(fs); tapTempo.setAppliedBpm(120.0f); midiClockSync.prepare(fs); midiClockSync.setAppliedBpm(120.0f);}
   ~Impl(){freeDelayBuffer(delayLine);freeDelayBuffer(delayLineR);}
   bool valid() const {return delayLine&&delayLineR&&bufferSize>0;}
   HYDRA_DSP_IRAM HYDRA_AUDIO_INLINE float feedbackCompressor(float x){ return detail::continuousFeedbackSoftKnee(x); }
@@ -342,7 +354,20 @@ struct TapeCore::Impl {
   float maxHistoryMs() const {
     return (sampleRate > 0.f) ? (static_cast<float>(bufferSize) / sampleRate * 1000.f) : 0.f;
   }
-  void updateSampleRateConstants(){ const float fs=std::max(1.0f,sampleRate); invSampleRate=1.0f/fs; reverseFadeStep=1.f/std::max(1.f,0.010f*fs); reverseControlAlpha=1.f-std::exp(-1.f/(0.015f*fs)); maxDropoutFc=0.45f*fs; delaySmoothAlpha=1.f-std::exp(-1.f/(0.200f*fs)); delayRampInc=1.f/(0.250f*fs); azimuthInc=0.2f*invSampleRate; mechNoiseSlowAlpha=mechNoiseOnePoleAlpha(fs,kMechNoiseSlowTimeSeconds); mechNoiseFastAlpha=mechNoiseOnePoleAlpha(fs,kMechNoiseFastTimeSeconds); duckAttackCoeff=1.f-std::exp(-1.f/(kHissDuckAttackTimeSeconds*fs)); duckReleaseCoeff=1.f-std::exp(-1.f/(kHissDuckReleaseTimeSeconds*fs)); }
+  void updateSampleRateConstants(){ const float fs=std::max(1.0f,sampleRate); invSampleRate=1.0f/fs; reverseFadeStep=1.f/std::max(1.f,0.010f*fs); reverseControlAlpha=1.f-std::exp(-1.f/(0.015f*fs)); maxDropoutFc=0.45f*fs; delaySmoothAlpha=1.f-std::exp(-1.f/(0.200f*fs)); delayRampInc=1.f/(0.250f*fs); azimuthInc=0.2f*invSampleRate; mechNoiseSlowAlpha=mechNoiseOnePoleAlpha(fs,kMechNoiseSlowTimeSeconds); mechNoiseFastAlpha=mechNoiseOnePoleAlpha(fs,kMechNoiseFastTimeSeconds); duckAttackCoeff=1.f-std::exp(-1.f/(kHissDuckAttackTimeSeconds*fs)); duckReleaseCoeff=1.f-std::exp(-1.f/(kHissDuckReleaseTimeSeconds*fs));
+#if defined(HYDRA_PHASE74_REPEAT_AGING_MODE) && (HYDRA_PHASE74_REPEAT_AGING_MODE > 0)
+    c1EnvAttackAlpha=1.f-std::exp(-1.f/(0.015f*fs));
+    c1EnvReleaseAlpha=1.f-std::exp(-1.f/(0.180f*fs));
+    c1HfAttackAlpha=1.f-std::exp(-1.f/(0.008f*fs));
+    c1HfReleaseAlpha=1.f-std::exp(-1.f/(0.120f*fs));
+    c2FastAttackAlpha=1.f-std::exp(-1.f/(0.001f*fs));
+    c2FastReleaseAlpha=1.f-std::exp(-1.f/(0.012f*fs));
+    c2SlowAttackAlpha=1.f-std::exp(-1.f/(0.022f*fs));
+    c2SlowReleaseAlpha=1.f-std::exp(-1.f/(0.110f*fs));
+    c2TransAttackAlpha=1.f-std::exp(-1.f/(0.0015f*fs));
+    c2TransReleaseAlpha=1.f-std::exp(-1.f/(0.035f*fs));
+#endif
+  }
   void updateCachedParams();
   void updateFilters();
   void updatePlaybackFilters();
@@ -410,6 +435,83 @@ struct TapeCore::Impl {
   BiquadFilter classicRolloffL,classicRolloffR,classicReproBumpL,classicReproBumpR,classicGapLossL,classicGapLossR;
   OnePoleLP classicDropoutL,classicDropoutR;
   AllpassFilter classicAzimuthL,classicAzimuthR;
+#endif
+#if defined(HYDRA_PHASE74_REPEAT_AGING_MODE) && (HYDRA_PHASE74_REPEAT_AGING_MODE > 0)
+  struct RepeatAgingChannelState {
+    float prevX = 0.0f;
+    float envSlow = 0.0f;
+    float hfEnv = 0.0f;
+    OnePoleLP wearLPF;
+    float fastEnv = 0.0f;
+    float slowEnv = 0.0f;
+    float transSmooth = 0.0f;
+    OnePoleLP softLPF;
+    AllpassFilter smearAP;
+    void reset() {
+      prevX = 0.0f;
+      envSlow = 0.0f;
+      hfEnv = 0.0f;
+      wearLPF.reset();
+      fastEnv = 0.0f;
+      slowEnv = 0.0f;
+      transSmooth = 0.0f;
+      softLPF.reset();
+      smearAP.reset();
+      smearAP.setCoeff(0.38f);
+    }
+    void flushDenormals() {
+      if (std::fabs(prevX) < 1e-20f) prevX = 0.0f;
+      if (std::fabs(envSlow) < 1e-20f) envSlow = 0.0f;
+      if (std::fabs(hfEnv) < 1e-20f) hfEnv = 0.0f;
+      wearLPF.flushDenormals();
+      if (std::fabs(fastEnv) < 1e-20f) fastEnv = 0.0f;
+      if (std::fabs(slowEnv) < 1e-20f) slowEnv = 0.0f;
+      if (std::fabs(transSmooth) < 1e-20f) transSmooth = 0.0f;
+      softLPF.flushDenormals();
+      smearAP.flushDenormals();
+    }
+  };
+  float c1EnvAttackAlpha=0, c1EnvReleaseAlpha=0, c1HfAttackAlpha=0, c1HfReleaseAlpha=0;
+  float c2FastAttackAlpha=0, c2FastReleaseAlpha=0, c2SlowAttackAlpha=0, c2SlowReleaseAlpha=0;
+  float c2TransAttackAlpha=0, c2TransReleaseAlpha=0;
+  RepeatAgingChannelState repeatAgingL, repeatAgingR;
+
+  HYDRA_DSP_IRAM HYDRA_AUDIO_INLINE float processDynamicSpectralWear(float x, RepeatAgingChannelState& st, float depthScale) const {
+    const float absX = std::fabs(x);
+    const float absHf = std::fabs(x - st.prevX);
+    st.prevX = x;
+    const float aEnv = (absX > st.envSlow) ? c1EnvAttackAlpha : c1EnvReleaseAlpha;
+    st.envSlow += aEnv * (absX - st.envSlow);
+    const float aHf = (absHf > st.hfEnv) ? c1HfAttackAlpha : c1HfReleaseAlpha;
+    st.hfEnv += aHf * (absHf - st.hfEnv);
+    const float wearNorm = clampf(1.4f * st.envSlow + 1.1f * st.hfEnv, 0.0f, 1.0f);
+    const float ageHeadroom = 0.35f + 0.65f * (1.0f - 0.60f * tapeAgeNorm);
+    const float maxCut = clampf(11000.0f + 3000.0f * tapeSpeedNorm, 4000.0f, maxDropoutFc);
+    const float minCut = 2400.0f + 600.0f * tapeSpeedNorm;
+    const float fc = maxCut - (maxCut - minCut) * (wearNorm * 0.78f * ageHeadroom * depthScale);
+    st.wearLPF.setCutoffFastInv(maxDropoutFc, invSampleRate, fc);
+    return st.wearLPF.process(x);
+  }
+
+  HYDRA_DSP_IRAM HYDRA_AUDIO_INLINE float processTransientSoftening(float x, RepeatAgingChannelState& st, float depthScale) const {
+    const float absX = std::fabs(x);
+    const float aFast = (absX > st.fastEnv) ? c2FastAttackAlpha : c2FastReleaseAlpha;
+    st.fastEnv += aFast * (absX - st.fastEnv);
+    const float aSlow = (absX > st.slowEnv) ? c2SlowAttackAlpha : c2SlowReleaseAlpha;
+    st.slowEnv += aSlow * (absX - st.slowEnv);
+    const float transient = std::max(0.0f, st.fastEnv - 1.15f * st.slowEnv);
+    const float transNorm = clampf(transient * fastRecip(st.slowEnv + 0.03f), 0.0f, 1.0f);
+    const float aTrans = (transNorm > st.transSmooth) ? c2TransAttackAlpha : c2TransReleaseAlpha;
+    st.transSmooth += aTrans * (transNorm - st.transSmooth);
+    const float mod = clampf(st.transSmooth * depthScale, 0.0f, 1.0f);
+    const float minCut = 1400.0f + 600.0f * tapeSpeedNorm;
+    const float maxCut = std::min(14000.0f, maxDropoutFc);
+    const float fc = maxCut - (maxCut - minCut) * mod;
+    st.softLPF.setCutoffFastInv(maxDropoutFc, invSampleRate, fc);
+    const float y = st.softLPF.process(x);
+    const float ap = st.smearAP.process(y);
+    return y + (0.30f * mod) * (ap - y);
+  }
 #endif
   DelayAllpass springAP_L[6],springAP_R[6],reverseAP_L[4],reverseAP_R[4]; BiquadFilter springLPF_L[6],springLPF_R[6]; float springFB_L=0,springFB_R=0; float freezeFade=0; float delayEnableRamp=0,smoothedDelaySamples=0,smoothedAzCoeff=0; float* delayLine=nullptr; float* delayLineR=nullptr; int32_t normalBufferSize=0,bufferSize=0,bufferCapacity=0,writeHead=0,reverseCounter=0,reverseWindowSize=0; float bufferSizeF=0.0f,maxReadDelayF=2.0f;
 };
@@ -739,6 +841,9 @@ void TapeCore::reset(){
   impl_->classicDropoutL.reset(); impl_->classicDropoutR.reset();
   impl_->classicAzimuthL.reset(); impl_->classicAzimuthR.reset();
 #endif
+#if defined(HYDRA_PHASE74_REPEAT_AGING_MODE) && (HYDRA_PHASE74_REPEAT_AGING_MODE > 0)
+  impl_->repeatAgingL.reset(); impl_->repeatAgingR.reset();
+#endif
   for(int i=0;i<6;i++){ impl_->springAP_L[i].clear(); impl_->springAP_R[i].clear(); impl_->springLPF_L[i].reset(); impl_->springLPF_R[i].reset(); }
   for(int i=0;i<4;i++){ impl_->reverseAP_L[i].clear(); impl_->reverseAP_R[i].clear(); }
   impl_->tapTempo.reset();
@@ -767,6 +872,9 @@ HYDRA_DSP_IRAM void TapeCore::updateParams(const TapeParams& newParams){
     impl_->classicGapLossL.reset(); impl_->classicGapLossR.reset();
     impl_->classicDropoutL.reset(); impl_->classicDropoutR.reset();
     impl_->classicAzimuthL.reset(); impl_->classicAzimuthR.reset();
+#endif
+#if defined(HYDRA_PHASE74_REPEAT_AGING_MODE) && (HYDRA_PHASE74_REPEAT_AGING_MODE > 0)
+    impl_->repeatAgingL.reset(); impl_->repeatAgingR.reset();
 #endif
     impl_->feedbackHeadBump.reset(); impl_->feedbackHeadBumpR.reset(); impl_->feedbackHPF.reset(); impl_->feedbackHPFR.reset();
     impl_->feedbackPhase.reset(); impl_->feedbackPhaseR.reset();
@@ -836,6 +944,9 @@ HYDRA_DSP_IRAM void TapeCore::Impl::flushDenormals(){
   classicGapLossL.flushDenormals(); classicGapLossR.flushDenormals();
   classicDropoutL.flushDenormals(); classicDropoutR.flushDenormals();
   classicAzimuthL.flushDenormals(); classicAzimuthR.flushDenormals();
+#endif
+#if defined(HYDRA_PHASE74_REPEAT_AGING_MODE) && (HYDRA_PHASE74_REPEAT_AGING_MODE > 0)
+  repeatAgingL.flushDenormals(); repeatAgingR.flushDenormals();
 #endif
   if(spring){
     for(int i=0;i<6;++i){ springLPF_L[i].flushDenormals(); springLPF_R[i].flushDenormals(); }
@@ -1261,6 +1372,20 @@ HYDRA_DSP_IRAM void TapeCore::processStereoBlock(const float* inLBlock,const flo
     frameR.feedbackSource = colorTapeFeedback(frameR.feedbackSource, hissR, dropoutR,
         impl_->classicDropoutR, impl_->classicAzimuthR,
         impl_->classicRolloffR, impl_->classicReproBumpR, impl_->classicGapLossR);
+#if defined(HYDRA_PHASE74_REPEAT_AGING_MODE) && (HYDRA_PHASE74_REPEAT_AGING_MODE == 1)
+    frameL.feedbackSource = impl_->processDynamicSpectralWear(frameL.feedbackSource, impl_->repeatAgingL, 1.0f);
+    frameR.feedbackSource = impl_->processDynamicSpectralWear(frameR.feedbackSource, impl_->repeatAgingR, 1.0f);
+#elif defined(HYDRA_PHASE74_REPEAT_AGING_MODE) && (HYDRA_PHASE74_REPEAT_AGING_MODE == 2)
+    frameL.feedbackSource = impl_->processTransientSoftening(frameL.feedbackSource, impl_->repeatAgingL, 1.0f);
+    frameR.feedbackSource = impl_->processTransientSoftening(frameR.feedbackSource, impl_->repeatAgingR, 1.0f);
+#elif defined(HYDRA_PHASE74_REPEAT_AGING_MODE) && (HYDRA_PHASE74_REPEAT_AGING_MODE == 3)
+    frameL.feedbackSource = impl_->processDynamicSpectralWear(
+        impl_->processTransientSoftening(frameL.feedbackSource, impl_->repeatAgingL, 0.75f),
+        impl_->repeatAgingL, 0.75f);
+    frameR.feedbackSource = impl_->processDynamicSpectralWear(
+        impl_->processTransientSoftening(frameR.feedbackSource, impl_->repeatAgingR, 0.75f),
+        impl_->repeatAgingR, 0.75f);
+#endif
   }
 #endif
   const float fbSourceL=impl_->pingPong?frameR.feedbackSource:frameL.feedbackSource;

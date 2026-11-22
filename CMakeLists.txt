@@ -3,6 +3,7 @@ project(hydra_tape_engine LANGUAGES C CXX)
 
 option(BUILD_WEB "Build WebAssembly artifacts with Emscripten" OFF)
 option(HYDRA_WEB_LEGACY_A "Build web demo with legacy A feedback routing (manual rollback only)" OFF)
+set(HYDRA_PHASE74_REPEAT_AGING_MODE "0" CACHE STRING "Phase 7.4A repeat aging mode for web build: 0=C0, 1=C1, 2=C2, 3=C3")
 option(BUILD_TESTING "Build tests" ON)
 
 set(CMAKE_CXX_STANDARD 17)
@@ -59,6 +60,23 @@ if(BUILD_TESTING)
     HYDRA_PHASE72_CLASSIC_FEEDBACK_ROUTING=1
   )
   add_test(NAME phase72_classic_core_smoke COMMAND hydra_phase72_classic_core_smoke)
+
+  foreach(AGING_MODE IN ITEMS 1 2 3)
+    add_executable(hydra_phase74_repeat_aging_c${AGING_MODE}
+      tests/core/phase74_repeat_aging_test.cpp
+      dsp/core/tape_core.cpp
+      dsp/core/hydra_dsp_c_api.cpp
+    )
+    target_include_directories(hydra_phase74_repeat_aging_c${AGING_MODE} PRIVATE
+      ${CMAKE_CURRENT_SOURCE_DIR}/include
+      ${CMAKE_CURRENT_SOURCE_DIR}/dsp/core
+    )
+    target_compile_definitions(hydra_phase74_repeat_aging_c${AGING_MODE} PRIVATE
+      HYDRA_PHASE72_CLASSIC_FEEDBACK_ROUTING=1
+      HYDRA_PHASE74_REPEAT_AGING_MODE=${AGING_MODE}
+    )
+    add_test(NAME phase74_repeat_aging_c${AGING_MODE} COMMAND hydra_phase74_repeat_aging_c${AGING_MODE})
+  endforeach()
 
   add_executable(hydra_core_smoke tests/core/smoke_core.cpp)
   target_link_libraries(hydra_core_smoke PRIVATE hydra_dsp_core)
@@ -206,9 +224,22 @@ if(BUILD_WEB)
   if(HYDRA_WEB_LEGACY_A)
     target_compile_definitions(hydra_dsp_web PRIVATE HYDRA_PHASE72_CLASSIC_FEEDBACK_ROUTING=0)
     set(HYDRA_WEB_FEEDBACK_ROUTING "LEGACY_A")
+    set(HYDRA_WEB_REPEAT_AGING "C0_LEGACY_A")
   else()
-    target_compile_definitions(hydra_dsp_web PRIVATE HYDRA_PHASE72_CLASSIC_FEEDBACK_ROUTING=1)
+    target_compile_definitions(hydra_dsp_web PRIVATE
+      HYDRA_PHASE72_CLASSIC_FEEDBACK_ROUTING=1
+      HYDRA_PHASE74_REPEAT_AGING_MODE=${HYDRA_PHASE74_REPEAT_AGING_MODE}
+    )
     set(HYDRA_WEB_FEEDBACK_ROUTING "PHASE72_CLASSIC_C")
+    if(HYDRA_PHASE74_REPEAT_AGING_MODE STREQUAL "1")
+      set(HYDRA_WEB_REPEAT_AGING "C1_DYNAMIC_SPECTRAL_WEAR")
+    elseif(HYDRA_PHASE74_REPEAT_AGING_MODE STREQUAL "2")
+      set(HYDRA_WEB_REPEAT_AGING "C2_TRANSIENT_SOFTENING")
+    elseif(HYDRA_PHASE74_REPEAT_AGING_MODE STREQUAL "3")
+      set(HYDRA_WEB_REPEAT_AGING "C3_COMBINED_AGING")
+    else()
+      set(HYDRA_WEB_REPEAT_AGING "C0_CLASSIC_C_BASELINE")
+    endif()
   endif()
   set(HYDRA_WEB_GIT_COMMIT "unknown")
   find_package(Git QUIET)
@@ -226,7 +257,7 @@ if(BUILD_WEB)
     endif()
   endif()
   file(GENERATE OUTPUT "${CMAKE_BINARY_DIR}/web/hydra-build-info.json"
-    CONTENT "{\n  \"feedbackRouting\": \"${HYDRA_WEB_FEEDBACK_ROUTING}\",\n  \"buildTarget\": \"hydra_dsp_web\",\n  \"gitCommit\": \"${HYDRA_WEB_GIT_COMMIT}\",\n  \"emscriptenVersion\": \"${CMAKE_CXX_COMPILER_VERSION}\"\n}\n")
+    CONTENT "{\n  \"feedbackRouting\": \"${HYDRA_WEB_FEEDBACK_ROUTING}\",\n  \"repeatAgingMode\": \"${HYDRA_WEB_REPEAT_AGING}\",\n  \"buildTarget\": \"hydra_dsp_web\",\n  \"gitCommit\": \"${HYDRA_WEB_GIT_COMMIT}\",\n  \"emscriptenVersion\": \"${CMAKE_CXX_COMPILER_VERSION}\"\n}\n")
 
   set_target_properties(hydra_dsp_web PROPERTIES
     OUTPUT_NAME "hydra_dsp"

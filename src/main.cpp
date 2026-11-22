@@ -193,6 +193,42 @@ struct FineProfileState {
   volatile uint64_t cycles[hydra::dsp::profile::Count]{};
 };
 FineProfileState g_fine_prof;
+#if defined(HYDRA_PHASE72E_DEADLINE_TRACE) && HYDRA_PHASE72E_DEADLINE_TRACE
+constexpr size_t kDlTraceRingSize = 64;
+struct DeadlineTraceEvent {
+  uint32_t blockSeq = 0;
+  uint16_t preUs = 0;
+  uint16_t paramUpdUs = 0;
+  uint16_t dspUs = 0;
+  uint16_t tapeUs = 0;
+  uint16_t postUs = 0;
+  uint16_t fullWorkUs = 0;
+  uint8_t flags = 0; // 0:paramUpd 1:heapChk 2:benchRun 3:rev 4:warp 5:ppg 6:overrun 7:health
+  uint8_t heads = 0;
+  uint8_t feedback = 0;
+  uint8_t mode = 0;
+};
+struct DeadlineTraceState {
+  uint32_t totalBlocks = 0;
+  uint32_t overruns = 0;
+  uint32_t near2600 = 0;
+  uint32_t near2750 = 0;
+  uint32_t peakBlockSeq = 0;
+  uint32_t maxDspBlockSeq = 0;
+  uint32_t maxPostBlockSeq = 0;
+  uint32_t maxPreBlockSeq = 0;
+  uint16_t maxPreUs = 0;
+  uint16_t maxParamUpdUs = 0;
+  uint16_t maxDspUs = 0;
+  uint16_t maxPostUs = 0;
+  uint16_t maxPostHeapUs = 0;
+  uint16_t maxPostNoHeapUs = 0;
+  uint16_t maxFullWorkUs = 0;
+  uint32_t ringWriteCount = 0;
+  DeadlineTraceEvent ring[kDlTraceRingSize];
+};
+DeadlineTraceState g_dl_trace;
+#endif
 volatile bool g_membench_req = false;
 volatile bool g_membench_done = false;
 volatile bool p_genActive = true;
@@ -607,6 +643,11 @@ void audioTask(void *parameter) {
     // Watchdog Reset Manual - REMOVED (Invalid context)
     const int64_t iterationStartUs = esp_timer_get_time();
     // esp_task_wdt_reset();
+#if defined(HYDRA_PHASE72E_DEADLINE_TRACE) && HYDRA_PHASE72E_DEADLINE_TRACE
+    bool dlParamUpdated = false;
+    uint16_t dlParamUpdUs = 0;
+    uint32_t dlTapeCyc = 0;
+#endif
 
     if (dspParamsDirty && xSemaphoreTake(paramMutex, 0) == pdTRUE) {
       hydra_dsp_params_v1_4 localParams = globalParams;
@@ -630,6 +671,10 @@ void audioTask(void *parameter) {
       const int64_t updUs = esp_timer_get_time() - updStartUs;
       g_bench.lastParamUpdateUs = updUs;
       if (updUs > g_bench.maxParamUpdateUs) g_bench.maxParamUpdateUs = updUs;
+#if defined(HYDRA_PHASE72E_DEADLINE_TRACE) && HYDRA_PHASE72E_DEADLINE_TRACE
+      dlParamUpdated = true;
+      dlParamUpdUs = (updUs > 65535) ? 65535u : (uint16_t)updUs;
+#endif
     }
 
     if (g_membench_req) {
@@ -845,7 +890,13 @@ void audioTask(void *parameter) {
           const bool fineRun = (g_fine_prof.state == STAGE_RUNNING);
           if (fineWarmup) hydra::dsp::profile::beginBlock(false);
           else if (fineRun) hydra::dsp::profile::beginBlock(true);
+#if defined(HYDRA_PHASE72E_DEADLINE_TRACE) && HYDRA_PHASE72E_DEADLINE_TRACE
+          const uint32_t dlTapeC0 = esp_cpu_get_cycle_count();
+#endif
           tape->processStereoBlock(blockL, blockR, blockL, blockR, AUDIO_CHUNK_SIZE);
+#if defined(HYDRA_PHASE72E_DEADLINE_TRACE) && HYDRA_PHASE72E_DEADLINE_TRACE
+          dlTapeCyc = esp_cpu_get_cycle_count() - dlTapeC0;
+#endif
           if (fineWarmup) {
             hydra::dsp::profile::endBlock();
             if (--g_fine_prof.warmupRemain == 0) {
@@ -1009,6 +1060,54 @@ void audioTask(void *parameter) {
     portENTER_CRITICAL(&g_dsp_perf_mux);
     if (fullWorkUs > g_dsp_perf.fullWorkPeakUs) g_dsp_perf.fullWorkPeakUs = fullWorkUs;
     if (fullWorkUs > kDspBlockBudgetUs) ++g_dsp_perf.fullWorkOverruns;
+#if defined(HYDRA_PHASE72E_DEADLINE_TRACE) && HYDRA_PHASE72E_DEADLINE_TRACE
+    {
+      const uint32_t seq = ++g_dl_trace.totalBlocks;
+      const int64_t preRaw = block_start_us - iterationStartUs;
+      const int64_t postRaw = fullWorkUs - preRaw - durationUs;
+      const uint16_t preU = (preRaw < 0) ? 0u : (preRaw > 65535 ? 65535u : (uint16_t)preRaw);
+      const uint16_t dspU = (durationUs < 0) ? 0u : (durationUs > 65535 ? 65535u : (uint16_t)durationUs);
+      const uint16_t postU = (postRaw < 0) ? 0u : (postRaw > 65535 ? 65535u : (uint16_t)postRaw);
+      const uint16_t fwU = (fullWorkUs < 0) ? 0u : (fullWorkUs > 65535 ? 65535u : (uint16_t)fullWorkUs);
+      const uint16_t tapeU = (uint16_t)(dlTapeCyc / 240u);
+      const bool benchRun = (g_bench.state == BENCH_RUNNING);
+      const bool heapChk = benchRun && (((g_bench.collected - 1u) & 63u) == 0u);
+      const bool isOverrun = (fullWorkUs > kDspBlockBudgetUs);
+      const bool isNewPeak = (fwU > g_dl_trace.maxFullWorkUs);
+      if (isOverrun) ++g_dl_trace.overruns;
+      if (fwU >= 2600u) ++g_dl_trace.near2600;
+      if (fwU >= 2750u) ++g_dl_trace.near2750;
+      if (preU > g_dl_trace.maxPreUs) { g_dl_trace.maxPreUs = preU; g_dl_trace.maxPreBlockSeq = seq; }
+      if (dlParamUpdUs > g_dl_trace.maxParamUpdUs) g_dl_trace.maxParamUpdUs = dlParamUpdUs;
+      if (dspU > g_dl_trace.maxDspUs) { g_dl_trace.maxDspUs = dspU; g_dl_trace.maxDspBlockSeq = seq; }
+      if (postU > g_dl_trace.maxPostUs) { g_dl_trace.maxPostUs = postU; g_dl_trace.maxPostBlockSeq = seq; }
+      if (heapChk && postU > g_dl_trace.maxPostHeapUs) g_dl_trace.maxPostHeapUs = postU;
+      if (!heapChk && postU > g_dl_trace.maxPostNoHeapUs) g_dl_trace.maxPostNoHeapUs = postU;
+      if (isNewPeak) { g_dl_trace.maxFullWorkUs = fwU; g_dl_trace.peakBlockSeq = seq; }
+      if (isOverrun || isNewPeak || fwU >= 2600u || dlParamUpdated || postU >= 100u) {
+        DeadlineTraceEvent& ev = g_dl_trace.ring[g_dl_trace.ringWriteCount & (kDlTraceRingSize - 1)];
+        ev.blockSeq = seq;
+        ev.preUs = preU;
+        ev.paramUpdUs = dlParamUpdUs;
+        ev.dspUs = dspU;
+        ev.tapeUs = tapeU;
+        ev.postUs = postU;
+        ev.fullWorkUs = fwU;
+        ev.flags = (dlParamUpdated ? 1u : 0u) |
+                   (heapChk ? 2u : 0u) |
+                   (benchRun ? 4u : 0u) |
+                   (p_reverse ? 8u : 0u) |
+                   (p_warpActive ? 16u : 0u) |
+                   (p_pingPong ? 32u : 0u) |
+                   (isOverrun ? 64u : 0u) |
+                   (healthRequested ? 128u : 0u);
+        ev.heads = (uint8_t)p_activeHeads;
+        ev.feedback = (uint8_t)p_feedback;
+        ev.mode = (uint8_t)p_source;
+        ++g_dl_trace.ringWriteCount;
+      }
+    }
+#endif
     portEXIT_CRITICAL(&g_dsp_perf_mux);
     esp_err_t wErr = i2s_write(I2S_PORT, synthBuf, sizeof(synthBuf),
                                &bytesWritten, pdMS_TO_TICKS(50));
@@ -1620,6 +1719,50 @@ void executeCommand(String line) {
     if (!g_membench_done) dualPrintln("MEMBENCH TIMEOUT");
     return;
   }
+
+#if defined(HYDRA_PHASE72E_DEADLINE_TRACE) && HYDRA_PHASE72E_DEADLINE_TRACE
+  if (cmd == "dlreset") {
+    portENTER_CRITICAL(&g_dsp_perf_mux);
+    g_dl_trace = DeadlineTraceState{};
+    portEXIT_CRITICAL(&g_dsp_perf_mux);
+    dualPrintln("DLTRACE: RESET");
+    return;
+  }
+
+  if (cmd == "dltrace") {
+    DeadlineTraceState snap;
+    portENTER_CRITICAL(&g_dsp_perf_mux);
+    snap = g_dl_trace;
+    portEXIT_CRITICAL(&g_dsp_perf_mux);
+    dualPrintf("\n=== DEADLINE TRACE SUMMARY ===\n");
+    dualPrintf("TotalBlocks=%lu Overruns=%lu Near2600=%lu Near2750=%lu RingWrites=%lu\n",
+               (unsigned long)snap.totalBlocks, (unsigned long)snap.overruns,
+               (unsigned long)snap.near2600, (unsigned long)snap.near2750,
+               (unsigned long)snap.ringWriteCount);
+    dualPrintf("MaxFullWork=%u us (seq=%lu) MaxDsp=%u us (seq=%lu)\n",
+               (unsigned)snap.maxFullWorkUs, (unsigned long)snap.peakBlockSeq,
+               (unsigned)snap.maxDspUs, (unsigned long)snap.maxDspBlockSeq);
+    dualPrintf("MaxPre=%u us (seq=%lu) MaxParamUpd=%u us\n",
+               (unsigned)snap.maxPreUs, (unsigned long)snap.maxPreBlockSeq,
+               (unsigned)snap.maxParamUpdUs);
+    dualPrintf("MaxPost=%u us (seq=%lu) MaxPostHeap=%u us MaxPostNoHeap=%u us\n",
+               (unsigned)snap.maxPostUs, (unsigned long)snap.maxPostBlockSeq,
+               (unsigned)snap.maxPostHeapUs, (unsigned)snap.maxPostNoHeapUs);
+    const uint32_t count = (snap.ringWriteCount < kDlTraceRingSize) ? snap.ringWriteCount : kDlTraceRingSize;
+    const uint32_t start = (snap.ringWriteCount > kDlTraceRingSize) ? (snap.ringWriteCount - kDlTraceRingSize) : 0;
+    dualPrintln("seq,preUs,paramUpdUs,dspUs,tapeUs,postUs,fullWorkUs,flags,heads,fbk,mode");
+    for (uint32_t i = 0; i < count; ++i) {
+      const DeadlineTraceEvent& ev = snap.ring[(start + i) & (kDlTraceRingSize - 1)];
+      dualPrintf("%lu,%u,%u,%u,%u,%u,%u,0x%02X,%u,%u,%u\n",
+                 (unsigned long)ev.blockSeq, (unsigned)ev.preUs, (unsigned)ev.paramUpdUs,
+                 (unsigned)ev.dspUs, (unsigned)ev.tapeUs, (unsigned)ev.postUs,
+                 (unsigned)ev.fullWorkUs, (unsigned)ev.flags,
+                 (unsigned)ev.heads, (unsigned)ev.feedback, (unsigned)ev.mode);
+    }
+    dualPrintln("=== DLTRACE END ===");
+    return;
+  }
+#endif
 
   if (cmd == "resetperf") {
     portENTER_CRITICAL(&g_dsp_perf_mux);

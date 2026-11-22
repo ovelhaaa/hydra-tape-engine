@@ -1,0 +1,8 @@
+scenario,name,a_mean_us,c_mean_us,delta_mean_us,delta_mean_pct,a_p99_us,c_p99_us,delta_p99_us,delta_p99_pct,a_peak_us,c_peak_us,delta_peak_us,a_full_work_peak_us,c_full_work_peak_us,delta_full_work_peak_us,c_dsp_margin_us,c_full_work_margin_us,c_dsp_overruns,c_full_work_overruns,c_i2s_tx_failures,status_c
+T1,Delay convencional,1865.93,1943.26,77.33,4.14,1965,2100,135,6.87,2244,2367,123,2595,2722,127,535.49,180.49,0,0,0,PASS
+T2,Multi-Head,2149.46,2229.31,79.85,3.71,2246,2372,126,5.61,2492,2666,174,2760,2891,131,236.49,11.49,0,0,0,PASS
+T3,Reverse 1/4,1929.39,2021.95,92.56,4.8,2091,2217,126,6.03,2302,2489,187,2660,2717,57,413.49,185.49,0,0,0,PASS
+T4,Reverse feedback 95,1934.86,2013.41,78.55,4.06,2093,2178,85,4.06,2335,2471,136,2648,2918,270,431.49,-15.51,0,1,0,FAIL
+T5,Fita envelhecida,1879.87,2012.96,133.09,7.08,1967,2111,144,7.32,2228,2396,168,2651,2788,137,506.49,114.49,0,0,0,PASS
+T6,Fita rapida e brilhante,1864.92,1942.78,77.86,4.17,1964,2103,139,7.08,2213,2390,177,2590,2653,63,512.49,249.49,0,0,0,PASS
+T7,Warp (controle negativo),1731.92,1721.2,-10.72,-0.62,1831,1826,-5,-0.27,2090,2074,-16,2500,2520,20,828.49,382.49,0,0,0,PASS

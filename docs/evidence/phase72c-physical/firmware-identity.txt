@@ -1,0 +1,34 @@
+=== VARIANT C IDENTITY ===
+FirmwareCommit=ad08ca6705b5cf0eb301ec22b1ff08df3d1edc22
+SourceSHA256=7714d8a2b185832adfbdb3d65e657b062465bbb19a9dc380a24cedfd6cf80329
+ELFSHA256=28929bfc2d39d59a922db712140f19e77cb1082b8a301b3e155478c1aa8af023
+ResetReason=1 CPU=240 SampleRate=44100 BlockFrames=128 PSRAMBytes=8388608 FlashBytes=16777216 I2SInitialized=1
+FeedbackRouting=PHASE72_CLASSIC_C
+=== IDENTITY END ===
+
+=== PERF ===
+
+=== HYDRA DSP PERFORMANCE TELEMETRY ===
+Block Size          : 128 frames
+Sample Rate         : 44100 Hz
+CPU Clock           : 240 MHz
+Block Time Budget   : 2902.5 us
+Blocks Processed    : 2959
+Avg DSP Block Time  : 1590 us
+Last DSP Block Time : 1647 us
+Peak DSP Block Time : 1983 us
+DSP Budget Use (EMA): 58.0 %
+DSP Budget Overruns : 0
+I2S TX Write Failures: 0
+Full Work Peak      : 1989 us
+Full Work Overruns  : 0
+Internal Free Heap  : 124592 bytes
+SPIRAM (PSRAM) Free : 1663048 bytes
+Audio Stack Min Free: 27268 bytes
+Warp Active         : NO
+========================================
+
+
+=== AUDIOHEALTH ===
+AudioHealth NonZeroWords=256 PeakAbsPcm32=1730034 SaturatedWords=0 TxBytes=1024 TxError=0 CompletedUs=14301698 StackScanUs=0 FullWorkUs=1565
+=== AUDIOHEALTH END ===

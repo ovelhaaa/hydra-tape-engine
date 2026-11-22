@@ -1,0 +1,85 @@
+{
+  "generated_at": "2026-11-22T20:35:57.865207+00:00",
+  "platform": {
+    "mcu": "ESP32-S3 (QFN56) rev v0.2",
+    "port": "COM15",
+    "usb_vid_pid": "303A:1001",
+    "mac": "b8:f8:62:e3:e4:a4",
+    "flash_bytes": 16777216,
+    "psram_bytes": 8388608,
+    "psram_type": "OPI",
+    "cpu_mhz": 240,
+    "sample_rate_hz": 44100,
+    "block_frames": 128,
+    "budget_us": 2902.49,
+    "i2s_pins": {
+      "bclk": 15,
+      "lrck": 16,
+      "dout": 17,
+      "din": 18
+    }
+  },
+  "builds": {
+    "baseline_a": {
+      "branch": "main",
+      "commit": "24977b67e1ab8441080a29d9e5d40114c966ac50",
+      "env": "esp32-s3-devkitc-1",
+      "source_sha256": "7f9d6f5759aedf7e1f2629921d4724498190c6b2123e962197d9ec6e4279a94a",
+      "firmware_bin_sha256": "DB3EC04BEA23142585951443F24B76E4DB4259D650E502FE4B82AC26BA07A6F9",
+      "elf_sha256": "18ee6c4dcf3e3dd4ee177a7cb9895b99b4a58604681e9d5734786c3fde295cbc"
+    },
+    "classic_c": {
+      "branch": "experiment/phase7-2-feedback-routing",
+      "pr": 56,
+      "commit": "ad08ca6705b5cf0eb301ec22b1ff08df3d1edc22",
+      "env": "esp32-s3-classic-c",
+      "defines": [
+        "HYDRA_PHASE72_CLASSIC_FEEDBACK_ROUTING=1"
+      ],
+      "source_sha256": "7714d8a2b185832adfbdb3d65e657b062465bbb19a9dc380a24cedfd6cf80329",
+      "firmware_bin_sha256": "486D6C318882FC91C55E583858280CB81A9046AB7994330C27CB7561F6950410",
+      "elf_sha256": "28929bfc2d39d59a922db712140f19e77cb1082b8a301b3e155478c1aa8af023"
+    },
+    "classic_c_stageprofile": {
+      "branch": "experiment/phase7-2-feedback-routing",
+      "commit": "ad08ca6705b5cf0eb301ec22b1ff08df3d1edc22",
+      "env": "esp32-s3-classic-c-stageprofile",
+      "defines": [
+        "HYDRA_PHASE72_CLASSIC_FEEDBACK_ROUTING=1",
+        "HYDRA_DSP_STAGE_PROFILE"
+      ],
+      "elf_sha256": "d401a5c188efb6a003f0d7544ea8cc575c1491f42a6377b8d33124edfdd0cfe1"
+    }
+  },
+  "tests_executed": [
+    "classic-c: T1-T7 (bench 10000 256, perf, audiohealth)",
+    "classic-c: sustained 300s (Reverse quarter, fbk 85, tpa 80, ftd 25, wwd 25)",
+    "classic-c-stageprofile: T1, T2, T3, T4, T7 (stageprof 1000 256, prof2 1000 256)",
+    "baseline-a: T1-T7 (bench 10000 256, perf, audiohealth)"
+  ],
+  "overall_classification": "PHYSICAL_RUNTIME_FAIL",
+  "artifact_sha256": {
+    "baseline-a/identity.txt": "ccc6b545b2ec9bab81c2c8458a0f370315de19f7bb974541dd9e5159ea1e0d30",
+    "baseline-a/T1.txt": "08c8bcbe382571bc024708bea79a35b878efd582a00fbd73e358fa58a9c8f477",
+    "baseline-a/T2.txt": "1ea95897833c0b1432b817f78d8a48df620681a6203e22a6473fe2e67046606f",
+    "baseline-a/T3.txt": "67e178b26c9a1121e01ab383cbf1da0ccf91806a7e5f5beced351f6f238433a2",
+    "baseline-a/T4.txt": "9cb76f33657c8ec4c2dfb90f50ddb91f3ba91005e9bbea3d2c91bf34fa73ad4e",
+    "baseline-a/T5.txt": "9ea0c7eae889aa7375b5754f8540f032e3e9dca819157b55852a6c2fd2dd084f",
+    "baseline-a/T6.txt": "40be77e6e4acd754d5489611511aeb59f7eb692f3b341dd52f0329cfbc4791b4",
+    "baseline-a/T7.txt": "80dd7ed7957f8d8b282a36c4e682a001b86c4ad389674183dc0efd3b1c21e528",
+    "classic-c/identity.txt": "509e373a94a105701437a4f9db6d6aa030262829ca5659480bad5ba00b9986ef",
+    "classic-c/stageprofile.txt": "fdf9c7abe0d763c509d29227b60b7118d8cc5aae934e34a513854aca119ae7c3",
+    "classic-c/sustained_5min.txt": "34b917ac88e5e689502b80d58cf28937c8ec157beac2e222f9f616d03eb30305",
+    "classic-c/T1.txt": "a15f09199573b4d3a4e775a660e564726b38e7796321477da648d90f6241b8aa",
+    "classic-c/T2.txt": "8995d03ca5c6479421f403dc7cee1673ebb4da84d551ceb4b21901dfeae07a01",
+    "classic-c/T3.txt": "401a58f76514990623f577677b0283a062d4e8985c371306e1f5e9ccc754df7f",
+    "classic-c/T4.txt": "c01499de394defde17fed9e23471493f900a3684029d08f421b37efd73dab721",
+    "classic-c/T5.txt": "054fc5c65ba337bf2eb8b8fccb8ce0e08605f8279c5a5fb8d7d161e8c1073d45",
+    "classic-c/T6.txt": "af5f30396efa115579a49303e9fa7d7dbfa3706e02b737966e99bcfec786faa1",
+    "classic-c/T7.txt": "5401a2bf1554ab4f556bca5a5d994fce63f75c32e3ff9b9b4d3e0eef9750fd25",
+    "comparison.csv": "b994bd8ae781507fc3409c4280d9a1b9553165e3f0d17c878b117828c2f88a80",
+    "firmware-identity.txt": "0267b98ebdaab680951f23f8ad7f50c7661bc8c21234f70707f052716a2b9e36",
+    "physical-test-report.md": "f3502e31255febdcaa5336ac7214cbfb60be5227b7ff0714707c19ba583f87d8",
+    "summary.json": "4a2111bfb6816d4c1a1a94100e2a10701ce9769a1e630c45f8a0e0eceb75f37d"
+  }
+}

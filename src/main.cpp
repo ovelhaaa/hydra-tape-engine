@@ -1006,7 +1006,6 @@ void audioTask(void *parameter) {
     if (g_bench.state == BENCH_WARMUP) {
       if (g_bench.warmupRemain > 0) --g_bench.warmupRemain;
       if (g_bench.warmupRemain == 0 && g_bench.hist) {
-        memset(g_bench.hist, 0, kBenchHistBins * sizeof(uint32_t));
         g_bench.collected = 0;
         g_bench.sumUs = 0;
         g_bench.minUs = INT64_MAX;
@@ -1533,6 +1532,7 @@ void executeCommand(String line) {
       dualPrintln("BENCH ERR: histogram not allocated");
       return;
     }
+    memset(g_bench.hist, 0, kBenchHistBins * sizeof(uint32_t));
     g_bench.targetBlocks = blocks;
     g_bench.warmupRemain = (warmup > 0) ? warmup : 1;
     g_bench.state = BENCH_WARMUP;
@@ -1966,10 +1966,14 @@ void executeCommand(String line) {
         portENTER_CRITICAL(&g_dsp_perf_mux);
         g_dsp_perf = DspPerformance{};
         portEXIT_CRITICAL(&g_dsp_perf_mux);
+        g_bench.lastParamUpdateUs = 0;
+        g_bench.maxParamUpdateUs = 0;
         dualPrintln("DSP Performance Stats: RESET");
       } else {
         printDspPerformanceStats();
       }
+      xSemaphoreGive(paramMutex);
+      return;
     }
 
     // --- SYSTEM & TRANSPORT ---

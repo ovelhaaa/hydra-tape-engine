@@ -192,9 +192,10 @@ public:
   void setHighShelf(float fs,float freq,float Q,float gainDB){ freq=detail::boundedBiquadFrequency(fs,freq); Q=detail::boundedBiquadQ(Q); float A=std::pow(10.f,gainDB/40.f),w0=2*PI*freq/fs,cosw0=std::cos(w0),sinw0=std::sin(w0),alpha=sinw0/(2*Q),sqA=std::sqrt(A),ap1=A+1,am1=A-1,tw=2*sqA*alpha,a0=ap1-am1*cosw0+tw; b0=(A*(ap1+am1*cosw0+tw))/a0; b1=(-2*A*(am1+ap1*cosw0))/a0; b2=(A*(ap1+am1*cosw0-tw))/a0; a1=(2*(am1-ap1*cosw0))/a0; a2=(ap1-am1*cosw0-tw)/a0; }
   void setLowpass(float fs,float freq,float Q){ freq=detail::boundedBiquadFrequency(fs,freq); Q=detail::boundedBiquadQ(Q); float w0=2*PI*freq/fs,cosw0=std::cos(w0),sinw0=std::sin(w0),alpha=sinw0/(2*Q),a0=1+alpha; b0=((1-cosw0)/2)/a0; b1=(1-cosw0)/a0; b2=b0; a1=(-2*cosw0)/a0; a2=(1-alpha)/a0; }
   void setHighpass(float fs,float freq,float Q){ freq=detail::boundedBiquadFrequency(fs,freq); Q=detail::boundedBiquadQ(Q); float w0=2*PI*freq/fs,cosw0=std::cos(w0),sinw0=std::sin(w0),alpha=sinw0/(2*Q),a0=1+alpha; b0=((1+cosw0)/2)/a0; b1=-(1+cosw0)/a0; b2=b0; a1=(-2*cosw0)/a0; a2=(1-alpha)/a0; }
+  inline void copyCoeffsFrom(const BiquadFilter& other){ b0=other.b0; b1=other.b1; b2=other.b2; a1=other.a1; a2=other.a2; }
   HYDRA_AUDIO_INLINE float process(float in){ float out=b0*in+z1; z1=b1*in-a1*out+z2; z2=b2*in-a2*out; return out; }
 private: float b0=1,b1=0,b2=0,a1=0,a2=0,z1=0,z2=0; };
-class OnePoleLP { public: void reset(){z=0;} void flushDenormals(){ if(std::fabs(z)<1e-20f) z=0.0f; } void setCutoff(float fs,float fc){ fc=clampf(fc,20.f,0.45f*fs); float x=std::exp(-TWO_PI*fc/fs); a=1.f-x; } HYDRA_AUDIO_INLINE void setCutoffFast(float fs,float fc){ fc=clampf(fc,20.f,0.45f*fs); float x=TWO_PI*fc/fs; a=clampf(x/(1.f+x),0.f,1.f); } HYDRA_AUDIO_INLINE void setCutoffFastInv(float maxFc,float invFs,float fc){ fc=clampf(fc,20.f,maxFc); float x=TWO_PI*fc*invFs; a=clampf(x*fastRecip(1.f+x),0.f,1.f); } HYDRA_AUDIO_INLINE float process(float in){ z += a*(in-z); return z; } private: float a=0.1f,z=0; };
+class OnePoleLP { public: void reset(){z=0;} void flushDenormals(){ if(std::fabs(z)<1e-20f) z=0.0f; } void setCutoff(float fs,float fc){ fc=clampf(fc,20.f,0.45f*fs); float x=std::exp(-TWO_PI*fc/fs); a=1.f-x; } inline void copyCoeffFrom(const OnePoleLP& other){ a=other.a; } HYDRA_AUDIO_INLINE void setCutoffFast(float fs,float fc){ fc=clampf(fc,20.f,0.45f*fs); float x=TWO_PI*fc/fs; a=clampf(x/(1.f+x),0.f,1.f); } HYDRA_AUDIO_INLINE void setCutoffFastInv(float maxFc,float invFs,float fc){ fc=clampf(fc,20.f,maxFc); float x=TWO_PI*fc*invFs; a=clampf(x*fastRecip(1.f+x),0.f,1.f); } HYDRA_AUDIO_INLINE float process(float in){ z += a*(in-z); return z; } private: float a=0.1f,z=0; };
 class AllpassFilter { public: void setCoeff(float c){a1=clampf(c,-0.99f,0.99f);} void reset(){z1=0;} void flushDenormals(){ if(std::fabs(z1)<1e-20f) z1=0.0f; } HYDRA_AUDIO_INLINE float process(float in){ float out=a1*in+z1; z1=in-a1*out; return out;} private: float a1=0,z1=0; };
 struct DropoutFrame { float ampGain=1.0f; float hfLoss=1.0f; };
 class DropoutGenerator {
@@ -269,7 +270,7 @@ struct TapeCore::Impl {
     if (ptr) heap_caps_free(ptr);
   }
 #endif
-  explicit Impl(float fs,float maxDelayMs,float historyMs):sampleRate(fs),noiseGen(fs,123456789u),noiseGenR(fs,987654321u){ magneticsL.lut=&tanhLUT; magneticsR.lut=&tanhLUT; updateSampleRateConstants(); dropout.setSampleRate(fs); magneticsL.updateParams(fs,currentParams); magneticsR.updateParams(fs,currentParams); normalBufferSize=(int32_t)(fs*(maxDelayMs/1000.f)); bufferSize=(int32_t)(fs*(historyMs/1000.f)); bufferCapacity=bufferSize+TAPE_BUFFER_GUARD; delayLine=allocateDelayBuffer(bufferCapacity); delayLineR=allocateDelayBuffer(bufferCapacity); if(!delayLine||!delayLineR){freeDelayBuffer(delayLine);freeDelayBuffer(delayLineR);delayLine=delayLineR=nullptr;bufferSize=0;return;} static const float sc[6]={0.7f,0.65f,0.6f,0.6f,0.5f,0.5f}; static const int st[6]={223,367,491,647,821,1039}; for(int i=0;i<6;i++){springAP_L[i].init(st[i]);springAP_R[i].init(st[i]+23);springAP_L[i].setCoeff(sc[i]);springAP_R[i].setCoeff(sc[i]);springLPF_L[i].setLowpass(fs,2500,0.5f);springLPF_R[i].setLowpass(fs,2500,0.5f);} static const float rc[4]={0.6f,0.55f,0.5f,0.45f}; static const int rt[4]={151,313,569,797}; for(int i=0;i<4;i++){reverseAP_L[i].init(rt[i]);reverseAP_R[i].init(rt[i]+17);reverseAP_L[i].setCoeff(rc[i]);reverseAP_R[i].setCoeff(rc[i]);} updateFilters(); flutterLPF.setLowpass(fs,15,0.707f); flutterLPFR.setLowpass(fs,15,0.707f); warpHPF_L.setHighpass(fs,120.0f,0.707f); warpHPF_R.setHighpass(fs,120.0f,0.707f); warpLPF_L.setLowpass(fs,2200.0f,0.707f); warpLPF_R.setLowpass(fs,2200.0f,0.707f); smoothedGrainSamples=std::max(64.0f,80.0f*0.001f*fs); transportClock.prepare(fs); transportClock.setBpm(120.0f); tapTempo.prepare(fs); tapTempo.setAppliedBpm(120.0f); midiClockSync.prepare(fs); midiClockSync.setAppliedBpm(120.0f);}
+  explicit Impl(float fs,float maxDelayMs,float historyMs):sampleRate(fs),noiseGen(fs,123456789u),noiseGenR(fs,987654321u){ magneticsL.lut=&tanhLUT; magneticsR.lut=&tanhLUT; updateSampleRateConstants(); dropout.setSampleRate(fs); magneticsL.updateParams(fs,currentParams); magneticsR.updateParams(fs,currentParams); normalBufferSize=(int32_t)(fs*(maxDelayMs/1000.f)); bufferSize=(int32_t)(fs*(historyMs/1000.f)); bufferCapacity=bufferSize+TAPE_BUFFER_GUARD; delayLine=allocateDelayBuffer(bufferCapacity); delayLineR=allocateDelayBuffer(bufferCapacity); if(!delayLine||!delayLineR){freeDelayBuffer(delayLine);freeDelayBuffer(delayLineR);delayLine=delayLineR=nullptr;bufferSize=0;return;} static const float sc[6]={0.7f,0.65f,0.6f,0.6f,0.5f,0.5f}; static const int st[6]={223,367,491,647,821,1039}; for(int i=0;i<6;i++){springAP_L[i].init(st[i]);springAP_R[i].init(st[i]+23);springAP_L[i].setCoeff(sc[i]);springAP_R[i].setCoeff(sc[i]);springLPF_L[i].setLowpass(fs,2500,0.5f);springLPF_R[i].setLowpass(fs,2500,0.5f);} static const float rc[4]={0.6f,0.55f,0.5f,0.45f}; static const int rt[4]={151,313,569,797}; for(int i=0;i<4;i++){reverseAP_L[i].init(rt[i]);reverseAP_R[i].init(rt[i]+17);reverseAP_L[i].setCoeff(rc[i]);reverseAP_R[i].setCoeff(rc[i]);} updateFilters(); flutterLPF.setLowpass(fs,15,0.707f); flutterLPFR.setLowpass(fs,15,0.707f); cachedFlutterCutoff=-1.0f; warpHPF_L.setHighpass(fs,120.0f,0.707f); warpHPF_R.setHighpass(fs,120.0f,0.707f); warpLPF_L.setLowpass(fs,2200.0f,0.707f); warpLPF_R.setLowpass(fs,2200.0f,0.707f); smoothedGrainSamples=std::max(64.0f,80.0f*0.001f*fs); transportClock.prepare(fs); transportClock.setBpm(120.0f); tapTempo.prepare(fs); tapTempo.setAppliedBpm(120.0f); midiClockSync.prepare(fs); midiClockSync.setAppliedBpm(120.0f);}
   ~Impl(){freeDelayBuffer(delayLine);freeDelayBuffer(delayLineR);}
   bool valid() const {return delayLine&&delayLineR&&bufferSize>0;}
   HYDRA_DSP_IRAM HYDRA_AUDIO_INLINE float feedbackCompressor(float x){ return detail::continuousFeedbackSoftKnee(x); }
@@ -353,6 +354,8 @@ struct TapeCore::Impl {
   float pbSpeed=0,pbAge=0,pbTone=0,pbBump=0;
   float pbSpeedTarget=0,pbAgeTarget=0,pbToneTarget=0,pbBumpTarget=0;
   bool pbPrimed=false,pbTransition=false,hasProcessed=false;
+  bool filtersPrimed=false,springFiltersPrimed=false,cachedGuitarFocus=false;
+  float cachedFbBumpFreq=-1.0f,cachedFbBumpGain=-1.0f,cachedFbGapCut=-1.0f,cachedFlutterCutoff=-1.0f,cachedSpringDampFreq=-1.0f;
   float musicalHeadDelay1=0,musicalHeadDelay2=0,musicalHeadDelay3=0,springFeedbackGain=0,springWetGain=0.5f;
   int springStages=3;
   uint8_t activeHeadMask=4;
@@ -471,11 +474,27 @@ void TapeCore::Impl::updateFilters(){
   float speedMod=tapeSpeedNorm,ageMod=tapeAgeNorm,toneMod=toneNorm;
   feedbackPreEmph=1.0f+(0.06f+0.10f*(1.0f-speedMod)+0.06f*ageMod);
   feedbackDeEmph=1.0f/feedbackPreEmph;
-  if(currentParams.guitarFocus){inputHPF.setHighpass(sampleRate,150.f,0.707f);inputHPFR.setHighpass(sampleRate,150.f,0.707f);inputLPF.setLowpass(sampleRate,5000.f,0.707f);inputLPFR.setLowpass(sampleRate,5000.f,0.707f);}else{inputHPF.setHighpass(sampleRate,20.f,0.707f);inputHPFR.setHighpass(sampleRate,20.f,0.707f);inputLPF.setLowpass(sampleRate,20000.f,0.707f);inputLPFR.setLowpass(sampleRate,20000.f,0.707f);}
+  if(!filtersPrimed || cachedGuitarFocus != currentParams.guitarFocus){
+    cachedGuitarFocus = currentParams.guitarFocus;
+    if(currentParams.guitarFocus){
+      inputHPF.setHighpass(sampleRate,150.f,0.707f);
+      inputLPF.setLowpass(sampleRate,5000.f,0.707f);
+    } else {
+      inputHPF.setHighpass(sampleRate,20.f,0.707f);
+      inputLPF.setLowpass(sampleRate,20000.f,0.707f);
+    }
+    inputHPFR.copyCoeffsFrom(inputHPF);
+    inputLPFR.copyCoeffsFrom(inputLPF);
+  }
   float bumpFreq=60.f+(speedMod*140.f);
   float reproBumpGain=clampf(currentParams.headBumpAmount*0.06f,0.f,6.f);
   float feedbackBumpGain=clampf(currentParams.headBumpAmount*0.02f,0.f,2.f);
-  feedbackHeadBump.setPeak(sampleRate,bumpFreq,0.8f,feedbackBumpGain); feedbackHeadBumpR.setPeak(sampleRate,bumpFreq,0.8f,feedbackBumpGain);
+  if(!filtersPrimed || cachedFbBumpFreq != bumpFreq || cachedFbBumpGain != feedbackBumpGain){
+    cachedFbBumpFreq = bumpFreq;
+    cachedFbBumpGain = feedbackBumpGain;
+    feedbackHeadBump.setPeak(sampleRate,bumpFreq,0.8f,feedbackBumpGain);
+    feedbackHeadBumpR.copyCoeffsFrom(feedbackHeadBump);
+  }
   // The playback head bump, rolloff shelf and gap-loss lowpass are derived from
   // tape speed, age, tone and head bump. Re-deriving them in one step while the
   // biquad state is retained produced a one-sample discontinuity at the block
@@ -489,25 +508,60 @@ void TapeCore::Impl::updateFilters(){
   } else if(pbSpeed!=pbSpeedTarget||pbAge!=pbAgeTarget||pbTone!=pbToneTarget||pbBump!=pbBumpTarget){
     pbTransition=true;
   }
-  float feedbackWearAmount=ageMod; float fb=(9000+(speedMod*7000))*(1-(feedbackWearAmount*0.65f)); fb=std::max(1600.f,fb); feedbackGapLoss.setCutoff(sampleRate,fb); feedbackGapLossR.setCutoff(sampleRate,fb); feedbackHPF.setHighpass(sampleRate,300,0.5f); feedbackHPFR.setHighpass(sampleRate,300,0.5f);
-  float ap=0.3f+feedbackWearAmount*0.4f; feedbackPhase.setCoeff(ap); feedbackPhaseR.setCoeff(ap);  float flutterCutoff=clampf(currentParams.flutterRate*1.6f,4.f,12.f); flutterLPF.setLowpass(sampleRate,flutterCutoff,0.707f); flutterLPFR.setLowpass(sampleRate,flutterCutoff,0.707f);
+  float feedbackWearAmount=ageMod;
+  float fb=(9000+(speedMod*7000))*(1-(feedbackWearAmount*0.65f));
+  fb=std::max(1600.f,fb);
+  if(!filtersPrimed || cachedFbGapCut != fb){
+    cachedFbGapCut = fb;
+    feedbackGapLoss.setCutoff(sampleRate,fb);
+    feedbackGapLossR.copyCoeffFrom(feedbackGapLoss);
+  }
+  if(!filtersPrimed){
+    feedbackHPF.setHighpass(sampleRate,300,0.5f);
+    feedbackHPFR.copyCoeffsFrom(feedbackHPF);
+  }
+  float ap=0.3f+feedbackWearAmount*0.4f;
+  feedbackPhase.setCoeff(ap); feedbackPhaseR.setCoeff(ap);
+  float flutterCutoff=clampf(currentParams.flutterRate*1.6f,4.f,12.f);
+  if(!filtersPrimed || cachedFlutterCutoff != flutterCutoff){
+    cachedFlutterCutoff = flutterCutoff;
+    flutterLPF.setLowpass(sampleRate,flutterCutoff,0.707f);
+    flutterLPFR.copyCoeffsFrom(flutterLPF);
+  }
   float springDecayMod=currentParams.springDecay*0.01f,springDampMod=currentParams.springDamping*0.01f,springCoeff=0.4f+springDecayMod*0.45f,dampFreq=1500+springDampMod*3000;
-  for(int i=0;i<6;i++){springAP_L[i].setCoeff(springCoeff);springAP_R[i].setCoeff(springCoeff);springLPF_L[i].setLowpass(sampleRate,dampFreq,0.5f);springLPF_R[i].setLowpass(sampleRate,dampFreq,0.5f);}
+  if(currentParams.spring){
+    for(int i=0;i<6;i++){springAP_L[i].setCoeff(springCoeff);springAP_R[i].setCoeff(springCoeff);}
+    if(!springFiltersPrimed || cachedSpringDampFreq != dampFreq){
+      cachedSpringDampFreq = dampFreq;
+      springFiltersPrimed = true;
+      springLPF_L[0].setLowpass(sampleRate,dampFreq,0.5f);
+      springLPF_R[0].copyCoeffsFrom(springLPF_L[0]);
+      for(int i=1;i<6;i++){
+        springLPF_L[i].copyCoeffsFrom(springLPF_L[0]);
+        springLPF_R[i].copyCoeffsFrom(springLPF_L[0]);
+      }
+    }
+  }
+  filtersPrimed = true;
 }
 
 void TapeCore::Impl::updatePlaybackFilters(){
   const float bumpFreq=60.f+(pbSpeed*140.f);
-  reproHeadBump.setPeak(sampleRate,bumpFreq,0.9f,pbBump); reproHeadBumpR.setPeak(sampleRate,bumpFreq,0.9f,pbBump);
+  reproHeadBump.setPeak(sampleRate,bumpFreq,0.9f,pbBump);
+  reproHeadBumpR.copyCoeffsFrom(reproHeadBump);
   float baseFreq=6000+(pbSpeed*10000),ageFactor=1-(pbAge*0.90f),toneFactor=(pbTone-0.5f)*2; if(toneFactor>0){ageFactor+=toneFactor*0.5f;if(ageFactor>1)ageFactor=1;} else ageFactor*=1+(toneFactor*0.5f); float cut=std::max(400.f,baseFreq*ageFactor);
-  tapeRolloff.setHighShelf(sampleRate,cut*2.f,0.5f,-12.f); tapeRolloffR.setHighShelf(sampleRate,cut*2.f,0.5f,-12.f); gapLossLPF.setLowpass(sampleRate,cut,0.707f); gapLossLPFR.setLowpass(sampleRate,cut,0.707f);
+  tapeRolloff.setHighShelf(sampleRate,cut*2.f,0.5f,-12.f);
+  tapeRolloffR.copyCoeffsFrom(tapeRolloff);
+  gapLossLPF.setLowpass(sampleRate,cut,0.707f);
+  gapLossLPFR.copyCoeffsFrom(gapLossLPF);
 #if defined(HYDRA_PHASE72_CLASSIC_FEEDBACK_ROUTING) && HYDRA_PHASE72_CLASSIC_FEEDBACK_ROUTING
   // Same playback EQ coefficients and 20 ms coefficient interpolation.
-  classicReproBumpL.setPeak(sampleRate,bumpFreq,0.9f,pbBump);
-  classicReproBumpR.setPeak(sampleRate,bumpFreq,0.9f,pbBump);
-  classicRolloffL.setHighShelf(sampleRate,cut*2.f,0.5f,-12.f);
-  classicRolloffR.setHighShelf(sampleRate,cut*2.f,0.5f,-12.f);
-  classicGapLossL.setLowpass(sampleRate,cut,0.707f);
-  classicGapLossR.setLowpass(sampleRate,cut,0.707f);
+  classicReproBumpL.copyCoeffsFrom(reproHeadBump);
+  classicReproBumpR.copyCoeffsFrom(reproHeadBump);
+  classicRolloffL.copyCoeffsFrom(tapeRolloff);
+  classicRolloffR.copyCoeffsFrom(tapeRolloff);
+  classicGapLossL.copyCoeffsFrom(gapLossLPF);
+  classicGapLossR.copyCoeffsFrom(gapLossLPF);
 #endif
 }
 

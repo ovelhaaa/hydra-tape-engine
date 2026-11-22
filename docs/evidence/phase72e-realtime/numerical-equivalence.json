@@ -1,0 +1,65 @@
+{
+  "all_bit_exact": true,
+  "scenarios": {
+    "Clean repeat": {
+      "bit_exact": true,
+      "max_abs": 0.0,
+      "rmse": 0.0,
+      "nonfinite": 0
+    },
+    "Aged and dark repeats": {
+      "bit_exact": true,
+      "max_abs": 0.0,
+      "rmse": 0.0,
+      "nonfinite": 0
+    },
+    "Monitor delay level sweep": {
+      "bit_exact": true,
+      "max_abs": 0.0,
+      "rmse": 0.0,
+      "nonfinite": 0
+    },
+    "Monitor texture level sweep": {
+      "bit_exact": true,
+      "max_abs": 0.0,
+      "rmse": 0.0,
+      "nonfinite": 0
+    },
+    "Hiss after music stops": {
+      "bit_exact": true,
+      "max_abs": 0.0,
+      "rmse": 0.0,
+      "nonfinite": 0
+    },
+    "High feedback": {
+      "bit_exact": true,
+      "max_abs": 0.0,
+      "rmse": 0.0,
+      "nonfinite": 0
+    },
+    "Ping-pong Multi-Head": {
+      "bit_exact": true,
+      "max_abs": 0.0,
+      "rmse": 0.0,
+      "nonfinite": 0
+    },
+    "Reverse blend transition": {
+      "bit_exact": true,
+      "max_abs": 0.0,
+      "rmse": 0.0,
+      "nonfinite": 0
+    },
+    "Warp negative control": {
+      "bit_exact": true,
+      "max_abs": 0.0,
+      "rmse": 0.0,
+      "nonfinite": 0
+    },
+    "Long feedback residual": {
+      "bit_exact": true,
+      "max_abs": 0.0,
+      "rmse": 0.0,
+      "nonfinite": 0
+    }
+  }
+}

@@ -132,6 +132,21 @@ def output_stages(stdout):
 
 
 
+def find_current_filter_setter(core, name):
+    """Match one filter setter, with or without its ESP32 IRAM annotation.
+
+    A missing or duplicated setter remains a hard error; probes are never
+    silently omitted from the native/WASM diagnostic.
+    """
+    pattern = rf"(?m)^  (?:HYDRA_DSP_IRAM[ \t]+)?void set{name}\(.*?\}}$"
+    matches = list(re.finditer(pattern, core))
+    if len(matches) != 1:
+        raise ValueError(
+            f"missing or ambiguous current filter setter: {name} (found {len(matches)})"
+        )
+    return matches[0]
+
+
 def instrument_current_core(core):
     """Diagnostic-only probes; fail closed if a current-core anchor changes."""
     header = """
@@ -141,9 +156,7 @@ static int audit_channel = -1;
 #define AUDIT_CURRENT(key, value) std::fprintf(stderr, "%s.%d,%d,%a\\n", key, audit_channel, audit_frame, double(value))
 """
     for name in ("LowShelf", "Lowpass", "Highpass", "Peak", "HighShelf"):
-        match = re.search(rf"(?m)^  void set{name}\(.*?\}}$", core)
-        if not match:
-            raise ValueError(f"missing current filter setter: {name}")
+        match = find_current_filter_setter(core, name)
         values = ["fs", "freq", "Q", "w0"]
         if name in ("LowShelf", "HighShelf", "Peak"):
             values += ["gainDB", "A"]

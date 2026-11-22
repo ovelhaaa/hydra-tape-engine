@@ -823,10 +823,9 @@ void audioTask(void *parameter) {
     size_t bytesWritten = 0;
     // Prepare input buffer for I2S
     int32_t rxBuf[AUDIO_CHUNK_SIZE * 2];
-    // Initialize with zeros to avoid noise if read fails or is partial
-    memset(rxBuf, 0, sizeof(rxBuf));
 
     if (p_source == SOURCE_I2S_IN) {
+      memset(rxBuf, 0, sizeof(rxBuf));
       size_t bytesRead = 0;
       // Non-blocking read (short timeout) to prevent WDT issues
       i2s_read(I2S_PORT, rxBuf, sizeof(rxBuf), &bytesRead, pdMS_TO_TICKS(10));

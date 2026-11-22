@@ -1,68 +1,91 @@
-# Hydra 7.3 — testar o Classic C na demo web (antes do merge)
+# Hydra 7.3 — Testar o Classic C na Demo Web (Antes do Merge)
 
 ## O que mudou
 
-- **ESP32-S3 padrão:** `pio run -e esp32-s3-devkitc-1` compila Classic C.
-- **Rollback:** `pio run -e esp32-s3-legacy-a` compila a arquitetura A.
-- **Demo Web:** o target `hydra_dsp_web` compila a arquitetura C por padrão.
+- **ESP32-S3 padrão:** `pio run -e esp32-s3-devkitc-1` compila **Classic C** (`HYDRA_PHASE72_CLASSIC_FEEDBACK_ROUTING=1`).
+- **Rollback ESP32-S3:** `pio run -e esp32-s3-legacy-a` compila a arquitetura **Legacy A** (`HYDRA_PHASE72_CLASSIC_FEEDBACK_ROUTING=0`).
+- **Demo Web:** o target `hydra_dsp_web` compila **Classic C** por padrão e gera `hydra-build-info.json` com arquitetura, commit e versão do compilador Emscripten.
 - **Web Legacy A (apenas comparação):** configure o CMake com `-DHYDRA_WEB_LEGACY_A=ON`.
 - Os executáveis Native/WASM de regressão histórica continuam A, deliberadamente, nesta PR. Isso não afeta o WASM específico da demo web.
 
-Não faça merge nem flash automaticamente apenas porque o build passou.
+> [!IMPORTANT]
+> Não faça merge nem flash automaticamente apenas porque o build passou.
 
-## Testar a versão web de C imediatamente, pelo GitHub Actions
+## Testar a versão web de C imediatamente no Windows (via Artifact da PR)
 
-1. Abra a PR da branch `feat/phase7-3-classic-c-web-default`.
-2. Na aba **Checks**, abra o workflow **Web Demo (Build + Deploy Pages)** do HEAD da PR.
-3. Após o job `build` ficar verde, baixe o artifact **web-demo-build**.
-4. Extraia o ZIP num diretório local com `index.html`, `hydra_dsp.js`, `hydra_dsp.wasm`, `hydra-processor.js`, `hydra-build-info.json` etc.
-5. Abra um terminal na pasta com `index.html` e execute:
-   ```bash
+1. Na PR da branch `feat/phase7-3-classic-c-web-default`, abra a aba **Checks** e entre no workflow **Web Demo (Build + Deploy Pages)** do HEAD mais recente.
+2. Após o job `build` ficar verde, baixe o artifact **`web-demo-build`**.
+3. Extraia o `.zip` em uma pasta local (ex.: `C:\temp\hydra-web-c`) contendo `index.html`, `hydra_dsp.js`, `hydra_dsp.wasm`, `hydra-processor.js`, `hydra-build-info.json` e demais módulos `.js`.
+4. Abra o PowerShell nessa pasta e inicie um servidor HTTP local (sem cache):
+   ```powershell
    python -m http.server 8000
    ```
-6. Acesse `http://localhost:8000/` no Chrome/Edge. **Não** abra `index.html` diretamente via `file://` — AudioWorklet e fetch/WASM precisam de uma origem HTTP(S) adequada.
-7. Confirme no cabeçalho: **DSP: Classic C (WASM)**. O workflow também verifica o flag da unidade `tape_core.cpp` compilada para o alvo `hydra_dsp_web`.
-8. Carregue um áudio conhecido na demo, inicie o contexto de áudio, reproduza e compare o delay, feedback, tape age, reverse, multi-head, etc. A função de exportação offline usa o mesmo `hydra_dsp.wasm`.
+   *(Se `python` não estiver no PATH no Windows, use `py -3 -m http.server 8000`.)*
+5. Acesse **`http://localhost:8000/`** no Chrome ou Edge.
+   - **Nunca** abra `index.html` via `file://` — `AudioWorklet` e `fetch()` de `.wasm` exigem origem `http://` ou `https://`.
+6. Confirme no cabeçalho o badge verde: **`DSP: Classic C (WASM)`** (passe o mouse sobre o badge para ver o commit e a versão do compilador em `hydra-build-info.json`).
+7. Carregue um arquivo `.wav` ou `.mp3` em **Load Custom Audio Source**, clique em **Start Audio Context** e depois em **Play**.
+   - A cadeia DSP já inicia conectada por padrão (**Disconnect DSP Chain** permite alternar seco/molhado para A/B).
+   - Teste em tempo real: **Regen Loop (Feedback)**, **Magnetic Formulation Age (Tape Age)**, **Head Tilt Tone EQ (Tone)**, **Active Heads Number**, **Dir Reverse**, **Active Reverb Tank (Spring)** e **Envel Folwr (Guitar Focus)**.
+   - Clique em **Execute Offline BWF Render** para exportar o áudio processado pelo mesmo `hydra_dsp.wasm` (48 kHz stereo WAV).
 
-**Importante:** a PR fornece um artifact para download; o workflow atual **não publica uma URL pública de preview para PRs**. A versão hospedada no GitHub Pages só recebe a mudança após o merge da PR na `main`. Não confunda o site atual (ainda A) com o artifact C desta PR.
+### Evitar cache de arquivos WASM antigos
 
-Se o navegador mostrar estado desconhecido, confira se `hydra-build-info.json` está junto ao WASM e faça hard reload (Ctrl+Shift+R). Se não houver som, capture console e mensagens do AudioWorklet.
+- O host carrega `hydra-build-info.json` e `hydra_dsp.wasm` com `cache: 'no-store'` e query de commit (`?v=<gitCommit>`).
+- Ao trocar entre builds (ex.: Classic C vs Legacy A) na mesma porta local, faça um **Hard Reload** (`Ctrl + Shift + R`) ou use portas distintas (`8000` para C e `8001` para A).
+- **Importante:** a PR não sobrescreve o GitHub Pages de produção (`main`); o artifact `web-demo-build` é o caminho oficial de audição pré-merge.
 
-## Compilar e abrir localmente com Emscripten instalado
+## Compilar e comparar A × C localmente (Windows + Emscripten)
 
-```bash
+Com o Emscripten SDK (`emsdk`) ativo no PowerShell:
+
+```powershell
+# 1. Build Classic C (padrão)
+& "C:\emsdk\emsdk_env.ps1"
 emcmake cmake -S . -B build-web -DBUILD_WEB=ON -DBUILD_TESTING=OFF -DCMAKE_BUILD_TYPE=Release
 cmake --build build-web --target hydra_dsp_web -j
-python -m http.server 8000 --directory build-web/web
-```
 
-Abra `http://localhost:8000/`. Para comparar com A, use outro diretório de build:
-
-```bash
+# 2. Build Legacy A (comparação controlada no mesmo commit)
 emcmake cmake -S . -B build-web-legacy -DBUILD_WEB=ON -DBUILD_TESTING=OFF -DCMAKE_BUILD_TYPE=Release -DHYDRA_WEB_LEGACY_A=ON
 cmake --build build-web-legacy --target hydra_dsp_web -j
-python -m http.server 8001 --directory build-web-legacy/web
+
+# 3. Gerar pacote de escuta comparativa A x C (48 kHz WAV, sem normalização independente)
+node scripts/generate_phase73_web_listening.mjs
 ```
 
-Abra `http://localhost:8001/` para A. Os dois builds devem usar o mesmo source commit, sem mutação de estados em tempo real. Verifique os metadados de cada um antes da comparação.
+Os arquivos gerados ficam em `artifacts/phase73-web-listening/`:
+- `classic-c/*.wav`
+- `legacy-a/*.wav`
+- `comparison/*_dry.wav` e `*_diff_A_minus_C.wav`
+- `manifest.json` e `listening-report.md`
 
-## Testar e gravar na placa (etapa independente)
+Para abrir os dois servidores lado a lado no navegador:
+```powershell
+python -m http.server 8000 --directory build-web/web
+# Em outro terminal:
+python -m http.server 8001 --directory build-web-legacy/web
+```
+Confirme `DSP: Classic C (WASM)` em `http://localhost:8000/` e `DSP: Legacy A (WASM)` em `http://localhost:8001/`.
 
-Primeiro identifique a porta e preserve a possibilidade de restaurar o firmware anterior. Não use `erase_flash`.
+## Testar e gravar firmware ESP32-S3 (etapa independente)
 
-```bash
+> [!CAUTION]
+> Não execute flash sem consentimento explícito do operador e sem identificar a porta serial correta. Não use `erase_flash`.
+
+```powershell
 pio run -e esp32-s3-devkitc-1
 pio run -e esp32-s3-legacy-a
 pio device list
 ```
 
-Após flash **somente com a placa conectada e consentimento do operador**, execute `identity` e confirme `ProductionArchitecture=CLASSIC_C` no padrão e `LEGACY_A_ROLLBACK` no fallback. Repita os cenários T1-T7 e as alternâncias `src 1` ↔ `src 2`; sem ADC I2S conectado, a validação acústica da entrada é limitada.
+Após flash autorizado, execute `identity` no monitor serial e confirme `CLASSIC_C` no ambiente padrão e `LEGACY_A_ROLLBACK` no fallback.
 
 ## Gates antes do merge
 
-- [ ] Web Demo build (incluindo compilação com C=1) e navegador Chrome/AudioWorklet PASS.
-- [ ] Core Equivalence, Native/WASM histórico, Reverse, Bias e Listening Lab PASS.
-- [ ] Firmware padrão C e Legacy A compilam sem redefinição ambígua da macro.
-- [ ] Audição web humana, incluindo feedback e reverse.
-- [ ] Teste físico do firmware padrão C e rollback, ou declaração explícita de pendência.
-- [ ] Nenhuma alteração dos goldens A, da topologia DSP ou do sample rate para forçar PASS.
+- [x] Web Demo build (`HYDRA_PHASE72_CLASSIC_FEEDBACK_ROUTING=1`), testes automatizados de áudio web e Chrome/AudioWorklet PASS.
+- [x] Exportação offline usando o mesmo `hydra_dsp.wasm` Classic C validada no Chrome.
+- [x] Pacote comparativo A × C em 48 kHz gerado a partir do mesmo commit.
+- [x] Core Equivalence, Native/WASM histórico, Reverse, Bias e Listening Lab PASS.
+- [x] Firmware padrão C (`esp32-s3-devkitc-1`) e rollback A (`esp32-s3-legacy-a`) compilam sem conflito de macro.
+- [ ] Audição web humana final pelo operador antes do merge.
+- [ ] Validação física em placa ESP32-S3 conectada (quando autorizada pelo operador).

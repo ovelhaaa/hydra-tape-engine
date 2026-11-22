@@ -210,8 +210,23 @@ if(BUILD_WEB)
     target_compile_definitions(hydra_dsp_web PRIVATE HYDRA_PHASE72_CLASSIC_FEEDBACK_ROUTING=1)
     set(HYDRA_WEB_FEEDBACK_ROUTING "PHASE72_CLASSIC_C")
   endif()
+  set(HYDRA_WEB_GIT_COMMIT "unknown")
+  find_package(Git QUIET)
+  if(GIT_FOUND)
+    execute_process(
+      COMMAND "${GIT_EXECUTABLE}" rev-parse --short=12 HEAD
+      WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+      OUTPUT_VARIABLE HYDRA_WEB_GIT_COMMIT_RAW
+      OUTPUT_STRIP_TRAILING_WHITESPACE
+      ERROR_QUIET
+      RESULT_VARIABLE HYDRA_GIT_RESULT
+    )
+    if(HYDRA_GIT_RESULT EQUAL 0 AND HYDRA_WEB_GIT_COMMIT_RAW)
+      set(HYDRA_WEB_GIT_COMMIT "${HYDRA_WEB_GIT_COMMIT_RAW}")
+    endif()
+  endif()
   file(GENERATE OUTPUT "${CMAKE_BINARY_DIR}/web/hydra-build-info.json"
-    CONTENT "{\n  \"feedbackRouting\": \"${HYDRA_WEB_FEEDBACK_ROUTING}\",\n  \"buildTarget\": \"hydra_dsp_web\"\n}\n")
+    CONTENT "{\n  \"feedbackRouting\": \"${HYDRA_WEB_FEEDBACK_ROUTING}\",\n  \"buildTarget\": \"hydra_dsp_web\",\n  \"gitCommit\": \"${HYDRA_WEB_GIT_COMMIT}\",\n  \"emscriptenVersion\": \"${CMAKE_CXX_COMPILER_VERSION}\"\n}\n")
 
   set_target_properties(hydra_dsp_web PROPERTIES
     OUTPUT_NAME "hydra_dsp"

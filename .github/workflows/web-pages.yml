@@ -97,12 +97,20 @@ jobs:
           HYDRA_BROWSER_CHANNEL: chrome
         run: node tools/phase6-listening-lab/tests/resetBrowser.mjs
 
-      - name: Upload AudioWorklet reset evidence
+      - name: Verify Classic C audition & offline export in real Chrome
+        env:
+          HYDRA_WEB_BUILD: build-web/web
+          HYDRA_BROWSER_CHANNEL: chrome
+        run: node tools/phase6-listening-lab/tests/classicCBrowserAudition.mjs
+
+      - name: Upload AudioWorklet reset & audition evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: audio-worklet-reset-evidence
-          path: artifacts/reset-browser/result.json
+          path: |
+            artifacts/reset-browser/result.json
+            artifacts/classic-c-browser/result.json
 
       - name: Add .nojekyll
         run: touch build-web/web/.nojekyll

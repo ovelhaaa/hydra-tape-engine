@@ -303,7 +303,16 @@ struct TapeCore::Impl {
     return clampf(mod,-0.25f*modBaseSamples,0.25f*modBaseSamples);
   }
   HYDRA_DSP_IRAM HYDRA_AUDIO_INLINE float readTapeAt(float d,const float* __restrict__ b){ d=clampf(d,2,(float)normalBufferSize-4); return readHistory(d, b); }
-  HYDRA_DSP_IRAM HYDRA_AUDIO_INLINE float readHistory(float d,const float* __restrict__ b){ if(d>static_cast<float>(framesSinceDelayEnable))return 0.0f; float rp=(float)writeHead-d; if(rp<0)rp+=bufferSize; int32_t r=(int32_t)rp; float f=rp-r; int32_t prev=(r>0)?r-1:bufferSize-1; if(d+1.0f>static_cast<float>(framesSinceDelayEnable))prev=r; return hermite4(b[prev],b[r],b[r+1],b[r+2],f); }
+  HYDRA_DSP_IRAM HYDRA_AUDIO_INLINE float readHistory(float d,const float* __restrict__ b){
+    const uint32_t epoch = framesSinceDelayEnable;
+    const bool checkEpoch = (epoch != 0xFFFFFFFFu);
+    float epochF = 0.0f;
+    if(checkEpoch){ epochF = static_cast<float>(epoch); if(d > epochF) return 0.0f; }
+    float rp=(float)writeHead-d; if(rp<0)rp+=bufferSize; int32_t r=(int32_t)rp; float f=rp-r;
+    int32_t prev=(r>0)?r-1:bufferSize-1;
+    if(checkEpoch && d+1.0f > epochF) prev=r;
+    return hermite4(b[prev],b[r],b[r+1],b[r+2],f);
+  }
   HYDRA_DSP_IRAM HYDRA_AUDIO_INLINE float readTapeInt(float d,const float* __restrict__ b){ d=clampf(d,2,(float)normalBufferSize-4); if(d>static_cast<float>(framesSinceDelayEnable))return 0.0f; float rp=(float)writeHead-d; while(rp<0)rp+=bufferSize; while(rp>=(float)bufferSize)rp-=bufferSize; int32_t r=(int32_t)rp; return b[r]; }
   HYDRA_AUDIO_NOINLINE float readTapeReverse(float d,float* b){ if(!b||bufferSize<=0)return 0; d=clampf(d,2,(float)normalBufferSize-4); if(d>static_cast<float>(framesSinceDelayEnable))return 0.0f; int32_t di=(int32_t)d; if(std::abs(di-reverseWindowSize)>1000){reverseCounter=0;reverseWindowSize=di;} reverseCounter++; if(reverseCounter>=std::max<int32_t>(1,di))reverseCounter=0; float rp=(float)writeHead-d+(float)reverseCounter; int32_t r=((int32_t)rp%bufferSize+bufferSize)%bufferSize; float f=rp-std::floor(rp); int32_t i1=r,i0=(r>0)?r-1:bufferSize-1,i2=(r<bufferSize-1)?r+1:0,i3=(i2<bufferSize-1)?i2+1:0; float d1=b[i1],d0=b[i0],d2=b[i2],d3=b[i3]; float c0=d1,c1=0.5f*(d0-d2),c2=d2-2.5f*d1+2.f*d0-0.5f*d3,c3=0.5f*(d3-d1)+1.5f*(d1-d0); return ((c3*f+c2)*f+c1)*f+c0; }
   HYDRA_DSP_IRAM HYDRA_AUDIO_INLINE float readReverseWindow(
@@ -882,6 +891,8 @@ HYDRA_DSP_IRAM void TapeCore::processStereoBlock(const float* inLBlock,const flo
         boundarySubdiv, frames, blockBoundaries, kMaxBlockBoundaries);
   }
   uint32_t boundaryCursor = 0;
+  const float targetDelay = p->delayTimeMs * impl_->sampleRate * 0.001f;
+  const float dropoutBaseCutoff = 6000.f + p->tapeSpeed * 100.f;
   for(uint32_t frameIdx=0;frameIdx<frames;++frameIdx){
     const float inL=inLBlock[frameIdx];
     const float inR=inRBlock[frameIdx];
@@ -892,7 +903,6 @@ HYDRA_DSP_IRAM void TapeCore::processStereoBlock(const float* inLBlock,const flo
   impl_->flutterPhase += impl_->flutterInc; if(impl_->flutterPhase>TWO_PI) impl_->flutterPhase-=TWO_PI;
   impl_->wowPhase += impl_->wowInc; if(impl_->wowPhase>TWO_PI) impl_->wowPhase-=TWO_PI;
 
-  float targetDelay=p->delayTimeMs*impl_->sampleRate*0.001f;
   impl_->smoothedDelaySamples += impl_->delaySmoothAlpha*(targetDelay-impl_->smoothedDelaySamples);
 
   float scrapeL=impl_->mechNoiseL.lowRate(impl_->mechNoiseSlowAlpha,impl_->mechNoiseFastAlpha);
@@ -1139,7 +1149,7 @@ HYDRA_DSP_IRAM void TapeCore::processStereoBlock(const float* inLBlock,const flo
     float tapeSig = (textureSig * textureGain) + (delaySig * delayGain);
     // --- dropout/gap loss ---
     if(drop.hfLoss<0.9995f||drop.ampGain<0.9995f){
-      float dynamicCutoff=(6000.f+(p->tapeSpeed*100.f))*(0.35f+0.65f*drop.hfLoss);
+      float dynamicCutoff=dropoutBaseCutoff*(0.35f+0.65f*drop.hfLoss);
       dropoutFilter.setCutoffFastInv(impl_->maxDropoutFc,impl_->invSampleRate,dynamicCutoff);
       tapeSig=dropoutFilter.process(tapeSig);
       tapeSig *= drop.ampGain;
@@ -1237,8 +1247,7 @@ HYDRA_DSP_IRAM void TapeCore::processStereoBlock(const float* inLBlock,const flo
                                        BiquadFilter& gap) HYDRA_LAMBDA_INLINE HYDRA_DSP_IRAM {
       float playback = readHead;
       if (drop.hfLoss < 0.9995f || drop.ampGain < 0.9995f) {
-        const float cutoff = (6000.f + p->tapeSpeed * 100.f) *
-                             (0.35f + 0.65f * drop.hfLoss);
+        const float cutoff = dropoutBaseCutoff * (0.35f + 0.65f * drop.hfLoss);
         dropoutLP.setCutoffFastInv(impl_->maxDropoutFc, impl_->invSampleRate, cutoff);
         playback = dropoutLP.process(playback) * drop.ampGain;
       }

@@ -136,7 +136,7 @@ struct TapeMagnetics {
   float remanence = 0.985f;
   float satNorm = 1.0f;
 
-  void updateParams(float sampleRate, const TapeParams& params) {
+  HYDRA_DSP_IRAM void updateParams(float sampleRate, const TapeParams& params) {
     fs = std::max(1.0f, sampleRate);
     float driveNorm = clampf(params.drive * 0.01f, 0.0f, 1.0f);
     float ageNorm = clampf(params.tapeAge * 0.01f, 0.0f, 1.0f);
@@ -187,11 +187,11 @@ class BiquadFilter {
 public:
   void reset(){z1=z2=0;}
   void flushDenormals(){ if (std::fabs(z1)<1e-20f) z1=0.0f; if (std::fabs(z2)<1e-20f) z2=0.0f; }
-  void setLowShelf(float fs,float freq,float Q,float gainDB){ freq=detail::boundedBiquadFrequency(fs,freq); Q=detail::boundedBiquadQ(Q); float A=std::pow(10.f,gainDB/40.f),w0=2*PI*freq/fs,cosw0=std::cos(w0),sinw0=std::sin(w0),alpha=sinw0/(2*Q),sqA=std::sqrt(A),ap1=A+1,am1=A-1,tw=2*sqA*alpha,a0=ap1+am1*cosw0+tw; b0=(A*(ap1-am1*cosw0+tw))/a0; b1=(2*A*(am1-ap1*cosw0))/a0; b2=(A*(ap1-am1*cosw0-tw))/a0; a1=(-2*(am1+ap1*cosw0))/a0; a2=(ap1+am1*cosw0-tw)/a0; }
-  void setPeak(float fs,float freq,float Q,float gainDB){ freq=detail::boundedBiquadFrequency(fs,freq); Q=detail::boundedBiquadQ(Q); float A=std::pow(10.f,gainDB*0.025f),w0=TWO_PI*freq/fs,s=std::sin(w0),c=std::cos(w0),alpha=s/(2.f*Q),a0=1.f+alpha/A; b0=(1.f+alpha*A)/a0; b1=(-2.f*c)/a0; b2=(1.f-alpha*A)/a0; a1=(-2.f*c)/a0; a2=(1.f-alpha/A)/a0; }
-  void setHighShelf(float fs,float freq,float Q,float gainDB){ freq=detail::boundedBiquadFrequency(fs,freq); Q=detail::boundedBiquadQ(Q); float A=std::pow(10.f,gainDB/40.f),w0=2*PI*freq/fs,cosw0=std::cos(w0),sinw0=std::sin(w0),alpha=sinw0/(2*Q),sqA=std::sqrt(A),ap1=A+1,am1=A-1,tw=2*sqA*alpha,a0=ap1-am1*cosw0+tw; b0=(A*(ap1+am1*cosw0+tw))/a0; b1=(-2*A*(am1+ap1*cosw0))/a0; b2=(A*(ap1+am1*cosw0-tw))/a0; a1=(2*(am1-ap1*cosw0))/a0; a2=(ap1-am1*cosw0-tw)/a0; }
-  void setLowpass(float fs,float freq,float Q){ freq=detail::boundedBiquadFrequency(fs,freq); Q=detail::boundedBiquadQ(Q); float w0=2*PI*freq/fs,cosw0=std::cos(w0),sinw0=std::sin(w0),alpha=sinw0/(2*Q),a0=1+alpha; b0=((1-cosw0)/2)/a0; b1=(1-cosw0)/a0; b2=b0; a1=(-2*cosw0)/a0; a2=(1-alpha)/a0; }
-  void setHighpass(float fs,float freq,float Q){ freq=detail::boundedBiquadFrequency(fs,freq); Q=detail::boundedBiquadQ(Q); float w0=2*PI*freq/fs,cosw0=std::cos(w0),sinw0=std::sin(w0),alpha=sinw0/(2*Q),a0=1+alpha; b0=((1+cosw0)/2)/a0; b1=-(1+cosw0)/a0; b2=b0; a1=(-2*cosw0)/a0; a2=(1-alpha)/a0; }
+  HYDRA_DSP_IRAM void setLowShelf(float fs,float freq,float Q,float gainDB){ freq=detail::boundedBiquadFrequency(fs,freq); Q=detail::boundedBiquadQ(Q); float A=std::pow(10.f,gainDB/40.f),w0=2*PI*freq/fs,cosw0=std::cos(w0),sinw0=std::sin(w0),alpha=sinw0/(2*Q),sqA=std::sqrt(A),ap1=A+1,am1=A-1,tw=2*sqA*alpha,a0=ap1+am1*cosw0+tw; b0=(A*(ap1-am1*cosw0+tw))/a0; b1=(2*A*(am1-ap1*cosw0))/a0; b2=(A*(ap1-am1*cosw0-tw))/a0; a1=(-2*(am1+ap1*cosw0))/a0; a2=(ap1+am1*cosw0-tw)/a0; }
+  HYDRA_DSP_IRAM void setPeak(float fs,float freq,float Q,float gainDB){ freq=detail::boundedBiquadFrequency(fs,freq); Q=detail::boundedBiquadQ(Q); float A=std::pow(10.f,gainDB*0.025f),w0=TWO_PI*freq/fs,s=std::sin(w0),c=std::cos(w0),alpha=s/(2.f*Q),a0=1.f+alpha/A; b0=(1.f+alpha*A)/a0; b1=(-2.f*c)/a0; b2=(1.f-alpha*A)/a0; a1=(-2.f*c)/a0; a2=(1.f-alpha/A)/a0; }
+  HYDRA_DSP_IRAM void setHighShelf(float fs,float freq,float Q,float gainDB){ freq=detail::boundedBiquadFrequency(fs,freq); Q=detail::boundedBiquadQ(Q); float A=std::pow(10.f,gainDB/40.f),w0=2*PI*freq/fs,cosw0=std::cos(w0),sinw0=std::sin(w0),alpha=sinw0/(2*Q),sqA=std::sqrt(A),ap1=A+1,am1=A-1,tw=2*sqA*alpha,a0=ap1-am1*cosw0+tw; b0=(A*(ap1+am1*cosw0+tw))/a0; b1=(-2*A*(am1+ap1*cosw0))/a0; b2=(A*(ap1+am1*cosw0-tw))/a0; a1=(2*(am1-ap1*cosw0))/a0; a2=(ap1-am1*cosw0-tw)/a0; }
+  HYDRA_DSP_IRAM void setLowpass(float fs,float freq,float Q){ freq=detail::boundedBiquadFrequency(fs,freq); Q=detail::boundedBiquadQ(Q); float w0=2*PI*freq/fs,cosw0=std::cos(w0),sinw0=std::sin(w0),alpha=sinw0/(2*Q),a0=1+alpha; b0=((1-cosw0)/2)/a0; b1=(1-cosw0)/a0; b2=b0; a1=(-2*cosw0)/a0; a2=(1-alpha)/a0; }
+  HYDRA_DSP_IRAM void setHighpass(float fs,float freq,float Q){ freq=detail::boundedBiquadFrequency(fs,freq); Q=detail::boundedBiquadQ(Q); float w0=2*PI*freq/fs,cosw0=std::cos(w0),sinw0=std::sin(w0),alpha=sinw0/(2*Q),a0=1+alpha; b0=((1+cosw0)/2)/a0; b1=-(1+cosw0)/a0; b2=b0; a1=(-2*cosw0)/a0; a2=(1-alpha)/a0; }
   inline void copyCoeffsFrom(const BiquadFilter& other){ b0=other.b0; b1=other.b1; b2=other.b2; a1=other.a1; a2=other.a2; }
   HYDRA_AUDIO_INLINE float process(float in){ float out=b0*in+z1; z1=b1*in-a1*out+z2; z2=b2*in-a2*out; return out; }
 private: float b0=1,b1=0,b2=0,a1=0,a2=0,z1=0,z2=0; };
@@ -414,7 +414,7 @@ struct TapeCore::Impl {
   DelayAllpass springAP_L[6],springAP_R[6],reverseAP_L[4],reverseAP_R[4]; BiquadFilter springLPF_L[6],springLPF_R[6]; float springFB_L=0,springFB_R=0; float freezeFade=0; float delayEnableRamp=0,smoothedDelaySamples=0,smoothedAzCoeff=0; float* delayLine=nullptr; float* delayLineR=nullptr; int32_t normalBufferSize=0,bufferSize=0,bufferCapacity=0,writeHead=0,reverseCounter=0,reverseWindowSize=0; float bufferSizeF=0.0f,maxReadDelayF=2.0f;
 };
 
-void TapeCore::Impl::updateCachedParams(){
+HYDRA_DSP_IRAM void TapeCore::Impl::updateCachedParams(){
   driveGain=currentParams.drive*0.05f;
   textureWetGain=clampf(currentParams.dryWet*0.01f,0.f,1.f);
   delayWetGain=clampf(currentParams.delayWet*0.01f,0.f,1.f);
@@ -463,7 +463,7 @@ void TapeCore::Impl::updateCachedParams(){
   noiseDuckStrength=10.0f;
 }
 
-void TapeCore::Impl::updateFilters(){
+HYDRA_DSP_IRAM void TapeCore::Impl::updateFilters(){
   updateCachedParams();
   dropout.setSampleRate(sampleRate);
   magneticsL.updateParams(sampleRate,currentParams); magneticsR.updateParams(sampleRate,currentParams);
@@ -554,7 +554,7 @@ void TapeCore::Impl::updateFilters(){
   filtersPrimed = true;
 }
 
-void TapeCore::Impl::updatePlaybackFilters(){
+HYDRA_DSP_IRAM void TapeCore::Impl::updatePlaybackFilters(){
   const float bumpFreq=60.f+(pbSpeed*140.f);
   reproHeadBump.setPeak(sampleRate,bumpFreq,0.9f,pbBump);
   reproHeadBumpR.copyCoeffsFrom(reproHeadBump);
@@ -754,7 +754,7 @@ void TapeCore::reset(){
   impl_->updateFilters();
 }
 
-void TapeCore::updateParams(const TapeParams& newParams){
+HYDRA_DSP_IRAM void TapeCore::updateParams(const TapeParams& newParams){
   if(!isValid()) return;
   if(!impl_->currentParams.delayActive && newParams.delayActive){
     impl_->delayEnableRamp=0; impl_->dcBlocker.clear(); impl_->dcBlockerR.clear(); impl_->magneticsL.reset(); impl_->magneticsR.reset();

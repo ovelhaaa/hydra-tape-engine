@@ -1,0 +1,58 @@
+name: Phase 7.1 Musical A-B Review
+
+on:
+  pull_request:
+    branches: [feature/musical-validation-phase6]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: phase7-audio-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  package:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    env:
+      PYTHONUTF8: '1'
+    steps:
+      - name: Checkout PR head with full history for approved baseline
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+      - name: Python runtime
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install audio analysis requirements
+        run: python -m pip install -r scripts/listening-lab-requirements.txt
+      - name: Build native DSP and integrity test
+        run: |
+          cmake -S . -B build-native -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=ON
+          cmake --build build-native -j 2 --target hydra_phase7_integrity
+      - name: Reproduce biquad pole and knee tests
+        run: ctest --test-dir build-native -R '^phase7_dsp_integrity$' --output-on-failure
+      - name: Render A-B against exact approved Phase 6.6 commit
+        run: |
+          python scripts/package_phase7_ab.py \
+            --before-commit b3349866b3c8d6c08ccfc4b435a5d89255901686 \
+            --output artifacts/listening-lab/phase7-1-ab \
+            --archive artifacts/hydra-phase7-1-ab.zip
+      - name: Validate hashes, WAV frames and telemetry
+        run: |
+          python scripts/package_listening_lab.py \
+            artifacts/listening-lab/phase7-1-ab --validate-only
+          (cd artifacts && sha256sum -c hydra-phase7-1-ab.zip.sha256)
+      - name: Upload verified A-B package; human signoff is never automatic
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: hydra-phase7-1-audio-ab
+          path: |
+            artifacts/hydra-phase7-1-ab.zip
+            artifacts/hydra-phase7-1-ab.zip.sha256
+          retention-days: 30

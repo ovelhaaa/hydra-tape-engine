@@ -33,6 +33,11 @@ if(BUILD_TESTING)
   add_test(NAME fast_tanh_integrity
     COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/tests/core/fast_tanh_integrity.py)
 
+  # Phase 7.1: scalar transfer-curve and playback shelf pole stability.
+  add_executable(hydra_phase7_integrity tests/core/phase7_integrity_test.cpp)
+  target_include_directories(hydra_phase7_integrity PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/dsp/core)
+  add_test(NAME phase7_dsp_integrity COMMAND hydra_phase7_integrity)
+
   add_executable(hydra_core_smoke tests/core/smoke_core.cpp)
   target_link_libraries(hydra_core_smoke PRIVATE hydra_dsp_core)
   add_test(NAME core_smoke COMMAND hydra_core_smoke)

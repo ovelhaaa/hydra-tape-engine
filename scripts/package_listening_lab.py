@@ -19,7 +19,8 @@ def validate(directory):
     scenarios = manifest["scenarios"]
     expected = {"Hydra Phase 6.2 Bias A/B": 60,
                 "Hydra Phase 6.3 Reverse A/B": 10,
-                "Hydra Phase 6.4 Final A/B": 10}.get(manifest.get("suite"), 20)
+                "Hydra Phase 6.4 Final A/B": 10,
+                "Hydra Phase 7.1 DSP Integrity A/B": 10}.get(manifest.get("suite"), 20)
     if len(scenarios) != expected or [int(k[:2]) for k in scenarios] != list(range(1, expected + 1)):
         raise ValueError(f"Expected the ordered {expected} scenarios")
     if not re.fullmatch(r"[a-f0-9]{40}", manifest["reference_commit"]) or not manifest["api_version"]:
@@ -77,6 +78,8 @@ def package(directory, archive=None):
         guide = "PHASE6_REVERSE_OPTIMIZATION_LISTENING_GUIDE.md"
     if manifest.get("suite") == "Hydra Phase 6.4 Final A/B":
         guide = "PHASE6_FINAL_LISTENING_GUIDE.md"
+    if manifest.get("suite") == "Hydra Phase 7.1 DSP Integrity A/B":
+        guide = "PHASE7_1_LISTENING_GUIDE.md"
     shutil.copyfile(ROOT / "docs" / guide, directory / "listening-guide.md")
     if manifest.get("suite") == "Hydra Phase 6.3 Reverse A/B":
         report = ROOT / "docs/PHASE6_REVERSE_REALTIME_OPTIMIZATION.md"

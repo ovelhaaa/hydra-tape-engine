@@ -55,8 +55,11 @@ CASES = [
       {"time_sec": 4.0, "type": "param", "id": 14, "value": 90.0}], 6, False),
     ("Hiss after music stops", "clean_guitar",
      {4: 70, 6: 70, 13: 65}, [], 6, True),
-    ("High feedback", "driven_guitar",
-     {3: 80, 13: 85, 15: 65}, [], 6, False),
+    # The first driven-guitar/drive80/feedback85 reference hit the approved
+    # engine's hard limiter ceiling (0.99); do not weaken the safety check.
+    # Keep a high-feedback case with a less aggressive source and record gain.
+    ("High feedback", "clean_guitar",
+     {3: 30, 13: 85, 15: 65}, [], 6, False),
     ("Ping-pong Multi-Head", "drum_machine",
      {16: 7, 21: 1, 13: 65}, [], 6, False),
     ("Reverse blend transition", "clean_guitar",

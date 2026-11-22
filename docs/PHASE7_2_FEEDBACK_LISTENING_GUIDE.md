@@ -27,7 +27,7 @@ with the player's A/B control.
 | 03 | Delay monitor sweep, 90→20→90 | Does changing monitoring level distort the underlying repeat tail? |
 | 04 | Texture monitor sweep, 90→10→90 | Is the texture/feedback separation useful? |
 | 05 | Hiss after input silence | Is the noise floor pleasant or artificially recirculating? |
-| 06 | Driven guitar, feedback 85 | Is saturation compressed naturally, without harshness? |
+| 06 | Clean guitar, feedback 85 / drive 30 | Is high feedback compressed naturally without the approved reference hitting the limiter ceiling? |
 | 07 | Ping-pong Multi-Head | Does the rhythmic stereo image remain clear? |
 | 08 | Reverse blend on at 2 s, off at 4 s | Are transitions smoother, with no unexpected tail jump? |
 | 09 | Warp negative control | The two alternatives **must** sound identical and be bit-exact |

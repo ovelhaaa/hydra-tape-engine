@@ -1,0 +1,83 @@
+{
+  "reference_commit": "a7e22022f71f670e51a77e63149148c88605d9f0",
+  "manifest_sha256": "d52815ee22767fdf03d10ca4f9e51273dc514ef6119ceb51222b3a41ca0ad228",
+  "review_sha256": "efd66f14cb481758322e76e4419ea0bb91749ed62fd9c2eea79f4521260cf285",
+  "states": {
+    "01_final_01": "PASS",
+    "02_final_02": "PASS",
+    "03_final_03": "PASS",
+    "04_final_04": "PASS",
+    "05_final_05": "PASS",
+    "06_final_06": "PASS",
+    "07_final_07": "PASS",
+    "08_final_08": "PASS",
+    "09_final_09": "PASS",
+    "10_final_10": "PASS"
+  },
+  "reviews": {
+    "01_final_01": {
+      "state": "PASS",
+      "criteria": {},
+      "comments": "",
+      "notes": []
+    },
+    "02_final_02": {
+      "state": "PASS",
+      "criteria": {},
+      "comments": "",
+      "notes": []
+    },
+    "03_final_03": {
+      "state": "PASS",
+      "criteria": {},
+      "comments": "",
+      "notes": []
+    },
+    "04_final_04": {
+      "state": "PASS",
+      "criteria": {},
+      "comments": "",
+      "notes": []
+    },
+    "05_final_05": {
+      "state": "PASS",
+      "criteria": {},
+      "comments": "",
+      "notes": []
+    },
+    "06_final_06": {
+      "state": "PASS",
+      "criteria": {},
+      "comments": "",
+      "notes": []
+    },
+    "07_final_07": {
+      "state": "PASS",
+      "criteria": {},
+      "comments": "",
+      "notes": []
+    },
+    "08_final_08": {
+      "state": "PASS",
+      "criteria": {},
+      "comments": "",
+      "notes": []
+    },
+    "09_final_09": {
+      "state": "PASS",
+      "criteria": {},
+      "comments": "",
+      "notes": []
+    },
+    "10_final_10": {
+      "state": "PASS",
+      "criteria": {},
+      "comments": "",
+      "notes": []
+    }
+  },
+  "hashes_verified": true,
+  "all_scenarios_pass": true,
+  "classification": "PENDING_HUMAN_AUDITION",
+  "final_approval": "Requires explicit reviewer identification and overall human approval; export alone does not establish it"
+}

@@ -16,3 +16,9 @@ No threshold or golden was relaxed/regenerated.
 Technical numerical discrepancy resolved. Final musical approval remains
 PENDING_HUMAN_AUDITION for the final ten-pair package. Keep issue open until
 the maintainer explicitly authorizes closure; no release/merge approval inferred.
+
+
+Update after actual review: Alexandre supplied the exact final export (10/10
+PASS, all30 hashes verified) and explicit overall musical approval. See
+[evidence](evidence/phase66-human-signoff.json). The earlier pending musical
+scope above is historical. No issue-closure or merge authorization was supplied.

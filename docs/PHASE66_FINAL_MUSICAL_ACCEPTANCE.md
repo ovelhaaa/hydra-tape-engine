@@ -1,5 +1,48 @@
 # Phase 6.6 — Final musical acceptance and release audit
 
+## Human final acceptance — 2026-11-21 (supersedes pending status below)
+
+Reviewer **Alexandre** supplied the final Listening Lab export and explicitly
+confirmed in this chat: **“Aprovo musicalmente o pacote”**.
+
+**MUSICAL_ACCEPTANCE_PASS — all ten scenarios PASS.** Original export archived
+unchanged at [phase66-human-reviews-a7e2202.json](evidence/phase66-human-reviews-a7e2202.json),
+SHA-256 `efd66f14cb481758322e76e4419ea0bb91749ed62fd9c2eea79f4521260cf285`.
+[Structural/hash validation](evidence/phase66-human-review-validation.json) and
+[explicit overall signoff](evidence/phase66-human-signoff.json) are separate records.
+The validator alone deliberately keeps approval pending; Alexandre's subsequent
+explicit statement supplies the required overall human decision.
+
+All ten exact final IDs are present and explicitly PASS, including priority08
+Tape Speed Transition, Reverse quarter/eighth/high-feedback and long feedback.
+There are no comments, timestamped notes or per-criterion scores. No individual
+criterion ratings are inferred. The approval is of these ten scenarios and this
+exact package as a whole, not a new physical analog audition.
+
+The export reference remains a7e22022f71f670e51a77e63149148c88605d9f0 and
+all thirty WAV/CSV hashes match the verified published package on disk. Source
+identity to documentation HEAD84cf672 was checked with Git diff and canonical
+Git-blob SHA-256; there were no DSP/firmware/build changes. This acceptance
+commit adds only documentation and unchanged human evidence, preserving that
+identity. No fresh audio render or transfer from historical approvals is used.
+
+All five workflows passed on84cf67297ffe0174539717461e830f786240f5ce:
+[Core](https://github.com/ovelhaaa/hydra-tape-engine/actions/runs/44965436566),
+[Bias](https://github.com/ovelhaaa/hydra-tape-engine/actions/runs/44965436550),
+[Reverse](https://github.com/ovelhaaa/hydra-tape-engine/actions/runs/44965436568),
+[Listening](https://github.com/ovelhaaa/hydra-tape-engine/actions/runs/44965436607),
+[Web](https://github.com/ovelhaaa/hydra-tape-engine/actions/runs/44965436574).
+The new acceptance commit requires its own five passing workflows. Its final
+HEAD/hash and exact-head results are recorded in the live PR description after
+completion; prior runs are not represented as checks of that newer HEAD.
+
+Release recommendation: **READY FOR MERGE REVIEW once the acceptance commit's
+five required workflows pass**. Human musical approval is complete; keep the
+82.49us observed hardware margin and physical/peripheral exclusions unchanged.
+**No merge authorized or performed.** Historical pre-audition sections below
+remain as the audit trail and are superseded by this dated acceptance.
+
+
 Audit date: 2026-11-21 (America/Sao_Paulo).
 Repository: `ovelhaaa/hydra-tape-engine`; branch `feature/musical-validation-phase6`;
 [PR #54](https://github.com/ovelhaaa/hydra-tape-engine/pull/54) remains open, targeting `main`.
@@ -150,4 +193,3 @@ Do not merge. Once a valid export, explicit overall human approval and
 nonblocking assessment exist, recheck exact final-head CI and source/package
 identity before changing the record to READY FOR MERGE REVIEW.
 Integration into main still requires express authorization.
-

@@ -248,3 +248,11 @@ identical firmware inputs to measured 990e5e9. Full-work 2820us vs 2902.49us lea
 external I2S RX/MIDI Clock, LittleFS and OLED/I2C remain outside acceptance.
 Final package human audition remains PENDING_HUMAN_AUDITION; see
 [Phase 6.6 audit](PHASE66_FINAL_MUSICAL_ACCEPTANCE.md).
+
+
+### Phase 6.6 human-signoff follow-up - 2026-11-21
+
+Alexandre supplied ten final scenario PASS decisions and explicit overall musical
+approval. This is the verified offline A/B package acceptance, not physical DAC
+audition. Original Phase 6.5 firmware, measurements, observed 82.49us margin and
+analog/RX/external MIDI/LittleFS/OLED exclusions remain unchanged.

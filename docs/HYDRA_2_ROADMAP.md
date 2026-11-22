@@ -216,3 +216,10 @@ flowchart LR
 - Artifact14730235810 baixado e verificado:20 PCM24/48kHz,10 CSVs, hashes/frames íntegros; sem regeneração/DSP novo.
 - Evidência física6.5 revalidada; margem integral observada82.49us, sem aceite analógico/RX/MIDI externo/LittleFS/OLED.
 - [Sessão, auditoria e condições finais](PHASE66_FINAL_MUSICAL_ACCEPTANCE.md). JSON humano e aprovação geral explícita ainda necessários.
+
+
+### FASE 6.6 — Aceite musical explícito de Alexandre (2026-11-21)
+- **MUSICAL_ACCEPTANCE_PASS: 10/10 PASS**, JSON/commit/30 hashes verificados; aprovação geral explícita “Aprovo musicalmente o pacote”.
+- Original e declaração preservados em docs/evidence/phase66-human-*.json; critérios individuais/comentários não fornecidos, sem inferência.
+- DSP, firmware, ABI, thresholds e goldens preservados. Gate restante desta atualização: cinco workflows no novo HEAD documental.
+- READY FOR MERGE REVIEW após CI desse HEAD; merge depende de autorização separada. Limites físicos e margem82.49us preservados.

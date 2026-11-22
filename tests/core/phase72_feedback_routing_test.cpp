@@ -44,6 +44,23 @@ int main() {
       }
     }
   }
-  std::puts("Phase 7.2 routing experiment scalar contract PASS");
+  // C is a controlled share of *playback* hiss rather than the full
+  // monitor output or the clean head alone. Test sign and exact mixing.
+  using hydra::dsp::experimental::classicTapeFeedbackSource;
+  constexpr float hissGain =
+      hydra::dsp::experimental::kClassicTapeHissRecirculation;
+  check(hissGain > 0.0f && hissGain < 1.0f,
+        "C tape hiss recycling must be bounded");
+  for (float head : {-0.8f, 0.0f, 0.7f}) {
+    for (float hiss : {-0.15f, 0.0f, 0.19f}) {
+      const float expected = head + hissGain * hiss;
+      check(near(classicTapeFeedbackSource(head, hiss), expected),
+            "C playback signal and hiss coefficient contract");
+      check(near(classicTapeFeedbackSource(-head, -hiss),
+                 -classicTapeFeedbackSource(head, hiss)),
+            "C feedback source must be odd-symmetric");
+    }
+  }
+  std::puts("Phase 7.2 B/C routing scalar contract PASS");
   return 0;
 }

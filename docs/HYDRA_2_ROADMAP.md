@@ -1,5 +1,19 @@
 # HYDRA TAPE ENGINE 2.0 — DEVELOPMENT ROADMAP
 
+## Fase 6.4 / 6.4.1 — recuperação CI e decisão de release (2026-11-20)
+
+A Fase 6.4 introduziu LUT tanh canônica, smoothing de filtros e suspensão antes de reset. A aprovação Windows foi generalizada incorretamente para Linux. A Fase 6.4.1 reproduziu a falha sem cache, demonstrou entrada/LUT idênticas e isolou a causa atual: FMA habilitado pelo target x86-64-v3 padrão do Ubuntu 26.04. Com `-ffp-contract=off`, o Core Equivalence oficial passa em Ubuntu 24.04 e 26.04 com cinco cenários e max_abs=RMSE=0. O código DSP e os flags ESP32 não foram alterados.
+
+Bias recuperado, testes de feedback interno de 60 s, transições de cinco parâmetros e reset real A–E possuem workflows obrigatórios. Pacote final: 10 pares PCM24, incluindo feedback de 60 s, manifesto/hashes/player. Escuta humana `PENDING_HUMAN_AUDITION`; runtime físico `PHYSICAL_RUNTIME_PENDING`. Os cinco workflows obrigatórios passaram no HEAD `e2c9497`. O estado completo da CI e links reais constam no [Release Decision Record](PHASE6_RELEASE_DECISION.md). **Sem merge.** Os números e aprovações das fases anteriores abaixo são históricos.
+
+## Fase 6.3 — otimização de tempo real do Reverse (2026-11-19)
+
+**PASS humano 10/10 no pacote `7431a6d`; BLOCKED — REGRESSION; sem merge.** Perfil físico por estágio identificou o custo do Reverse no controle de fronteiras de subdivisão (duas avaliações em precisão dupla por amostra): 1039,8 → 78,3 µs/bloco com coleta por bloco exatamente reconciliada. O wipe de ~3 MB na ativação do delay foi substituído por época lógica O(1): `MaxParamUpdUs` 82237 → 549 µs. Benchmark físico com 10 000 blocos por cenário: zero overruns em nove cenários; sustentação de cinco minutos com zero overruns, heap/PSRAM estáveis (stack mínimo 27 284 bytes). Os três testes Native dependentes da portadora foram recuperados (Native 15/15); WASM funcional passa, restando a equivalência estrita da issue #48 com os mesmos números. Pacote A/B de 10 pares em `artifacts/listening-lab/phase6-reverse-optimization/`, bit-exact (max_abs = RMSE = 0), aprovado por escuta humana em 10/10 cenários no commit `7431a6d` com hashes verificados e sem critérios individuais fornecidos. P99 de Reverse 2095–2113 µs (72,2–72,8%), acima da meta preferencial de 70%, com zero overruns. Permanecem como bloqueios explícitos: issue #48, quatro critérios de cauda e a transição a 44,1 kHz (herdados da Fase 6.2). Ver [relatório](PHASE6_REVERSE_REALTIME_OPTIMIZATION.md) e [registro de escuta](PHASE6_REVERSE_OPTIMIZATION_HUMAN_AUDITION.md). Não realizar merge.
+
+## Fase 6.2 — candidata de anti-aliasing do bias (2026-11-19)
+
+**Regressões Native e overruns de Reverse resolvidos na Fase 6.3; restam issue #48 e os critérios de cauda/transição do motor completo.** Média de fase do bias selecionada após seis variantes isoladas; critérios espectrais/transferência 49/49, ensaio completo 22/27. Goldens preservados e aprovados; equivalência estrita Native/WASM continua falhando. O suplemento de 60 pares usa o Listening Lab existente, candidata aprovada por escuta humana em 12/12 cenários do pacote local f0c16cd (hashes verificados). Ver [relatório e pendências](PHASE6_BIAS_ANTIALIASING_REPORT.md) e [Fase 6.3](PHASE6_REVERSE_REALTIME_OPTIMIZATION.md). Não realizar merge.
+
 ## 1. Visão Geral das Fases de Desenvolvimento
 
 Este documento estabelece o roteiro técnico detalhado para a evolução do Hydra Tape Engine da versão consolidada 1.2 até a versão completa 2.0. Cada fase é autocontida, com entregáveis específicos, dependências declaradas e critérios de aceitação objetivos.
@@ -131,7 +145,18 @@ flowchart LR
 
 ---
 
-### FASE 6 — Expansão Criativa do Accidental Warp & MVP Final
+### FASE 6 / 6.1 — Validação Musical e Listening Lab
+- **Status:** READY FOR HUMAN LISTENING; pacote Linux publicado e validado; escuta humana `PENDING_HUMAN_AUDITION`.
+- **PR:** [#54](https://github.com/ovelhaaa/hydra-tape-engine/pull/54), branch `feature/musical-validation-phase6`; sem merge automático.
+- Renderizador portátil, seeds fixas, 20 cenários, 40 WAVs PCM24, 20 CSVs, parâmetros/eventos e SHA-256 no manifesto. A CI Linux repete renderização e valida arquivos antes do upload do artifact `hydra-phase6-listening-lab`.
+- Interface dedicada `tools/phase6-listening-lab/`: A/B no mesmo relógio, seek, loop, waveforms, eventos, avaliações e JSON importável/exportável. A interface histórica e a Web Demo foram preservadas.
+- **Evidência:** Native offline e WASM/Node simulando AudioWorklet são categorias distintas de Browser Real e ESP32-S3 físico. Firmware: **FIRMWARE BUILT / FLASHED — PHYSICAL RUNTIME NOT VERIFIED**; medições antigas permanecem baseline histórico.
+- **Issue #48 aberta:** CI Linux estrita no baseline: max_abs 3.6681e-05, RMSE 1.585565032192e-05, FAIL. Comparação local Windows: max_abs 5.968e-06, RMSE 2.344106e-06, FAIL. Thresholds e goldens inalterados. Não classificar a suíte estrita como aprovada.
+- **Gates:** pacote Linux publicado e íntegro, interface validada e decisão humana explícita. Ver [relatório e links reais de evidência](PHASE6_MUSICAL_VALIDATION_REPORT.md) e [guia de escuta](PHASE6_LISTENING_GUIDE.md). A conclusão musical e a revisão de merge permanecem pendentes.
+
+---
+
+### FASE 7 — Expansão Criativa do Accidental Warp & MVP Final
 - **Status:** PLANEJADO.
 - **Sub-etapas:**
   1. **Warp Head:** Habilitar uma das 3 cabeças do tape delay clássico para operar simultaneamente como leitor Warp ascendente.
@@ -164,3 +189,37 @@ flowchart LR
 | **Instabilidade / Runaway em Feedback Elevado** | Alta | Média | Incorporar filtro passa-altas de corte de offset subsônico (120 Hz/300 Hz), saturador racional soft-knee e limitador assintótico no laço de retorno. |
 | **Divergência Numérica entre Nativo e WASM** | Média | Baixa | Utilizar tabela estática `FastTanhLUT` compartilhada, evitar funções matemáticas dependentes de implementação de libc (`tan`, `sin` não padronizados) e validar com tolerâncias RMSE $< 10^{-6}$. |
 | **Cliques Transitórios no Reajuste de Tap Tempo** | Média | Alta | Implementar desacoplamento entre tempo alvo e tempo suavizado via filtro de 1 polo de 200 ms ou crossfade de buffers duplos. |
+
+
+### FASE 6.4.1 — Recuperação CI e evidência de release (2026-11-20)
+- **AUTOMATED_CI_PASS — escuta humana e runtime físico pendentes; sem merge.**
+- Builds limpos reproduziram a falha Ubuntu 26.04 por FMA; o controle e a correção CMake passam em ambos os Ubuntus. Entrada e LUT idênticas bit a bit.
+- Diagnósticos de bias recuperados (49/49 local), LUT histórica explícita, full-engine 27/27 e feedback interno de 60 s em workflow obrigatório.
+- Transições incluem drive, velocidade, idade, tone e head bump (0.01797/0.01420 local, limite 0.03).
+- Reset real A–E validado com WASM limpo; concorrência, erro e timeout tratados. Pacote final 10 pares/20 PCM24/10 CSVs com publicação e player real na CI.
+- ESP32-S3 build PASS; console identificado mas sem resposta: `PHYSICAL_RUNTIME_PENDING`. Escuta final `PENDING_HUMAN_AUDITION`.
+- Matriz e links atuais: [Release Decision Record](PHASE6_RELEASE_DECISION.md). Resultados Windows não substituem aprovação da CI oficial.
+
+### FASE 6.5 — Recuperação física e aceitação de tempo real (2026-11-21)
+- **PHYSICAL_RUNTIME_PASS — escuta humana final pendente; sem merge.** Escopo: gerador interno e I2S no nível do driver, sem escuta/captura analógica ou teste de RX externo.
+- Console e boot recuperados por reset watchdog do esptool após silêncio reproduzido no caminho RTS; identidade de commit/fontes/ELF confirmada na placa.
+- Defeito físico medido no host: varredura de stack a cada bloco custava 1143–1144us fora do antigo cronômetro. A consulta foi movida para a CLI, preservando DSP, parâmetros, prioridades e afinidade.
+- Sete cenários com 10000 blocos/256 warmup; sustentado de 300.2168s/103399 blocos. Zero overruns DSP/trabalho completo e zero falhas TX I2S observadas; heap/PSRAM estáveis e stack mínima de 27268 bytes.
+- P99 máximo2215us (76.31% do orçamento), trabalho completo máximo2820us; a meta preferencial70% não foi obtida fora de Delay. Divisões históricas 1/8 e 1/16 estavam rotuladas incorretamente e não são comparações diretas.
+- `PHYSICAL_MIDI_CLOCK_NOT_TESTED`; LittleFS/OLED apresentam limitações documentadas; aprovação humana do pacote final continua `PENDING_HUMAN_AUDITION`.
+- Evidências, reprodução e limites: [Aceitação física](PHASE65_PHYSICAL_HARDWARE_ACCEPTANCE.md). CI do HEAD atual: checks e links da PR#54, sem transferir resultados antigos.
+
+
+### FASE 6.6 — Auditoria final e sessão musical (2026-11-21)
+- **PENDING_HUMAN_AUDITION; sem merge.** Dez cenários finais NOT REVIEWED; nenhuma aprovação antiga transferida.
+- HEAD auditado a7e2202: cinco workflows PASS; Native/WASM16/16, ABI/goldens e equivalência estrita Ubuntu24/26 com erro zero.
+- Artifact14730235810 baixado e verificado:20 PCM24/48kHz,10 CSVs, hashes/frames íntegros; sem regeneração/DSP novo.
+- Evidência física6.5 revalidada; margem integral observada82.49us, sem aceite analógico/RX/MIDI externo/LittleFS/OLED.
+- [Sessão, auditoria e condições finais](PHASE66_FINAL_MUSICAL_ACCEPTANCE.md). JSON humano e aprovação geral explícita ainda necessários.
+
+
+### FASE 6.6 — Aceite musical explícito de Alexandre (2026-11-21)
+- **MUSICAL_ACCEPTANCE_PASS: 10/10 PASS**, JSON/commit/30 hashes verificados; aprovação geral explícita “Aprovo musicalmente o pacote”.
+- Original e declaração preservados em docs/evidence/phase66-human-*.json; critérios individuais/comentários não fornecidos, sem inferência.
+- DSP, firmware, ABI, thresholds e goldens preservados. Gate restante desta atualização: cinco workflows no novo HEAD documental.
+- READY FOR MERGE REVIEW após CI desse HEAD; merge depende de autorização separada. Limites físicos e margem82.49us preservados.

@@ -711,6 +711,47 @@ bool testDspPrecedenceWarpVsReverse() {
   return true;
 }
 
+// Block-collected boundaries must match the per-sample predicate exactly.
+// Reverse V2 now consumes the block form, so a mismatch would move a window
+// boundary by one sample.
+bool testBlockBoundaryEquivalence() {
+  constexpr uint32_t kBlock = 128;
+  constexpr uint32_t kBlocks = 400;
+  for (const double bpm : {60.0, 120.0, 137.0, 300.0}) {
+    for (int sub = 0; sub < static_cast<int>(MusicalSubdivision::Count); ++sub) {
+      GlobalTransportClock clock;
+      clock.prepare(48000.0);
+      clock.setBpm(bpm);
+      clock.locate(0.0, 0);
+      clock.play();
+      const auto subdiv = static_cast<MusicalSubdivision>(sub);
+      for (uint32_t block = 0; block < kBlocks; ++block) {
+        if (block == 137) clock.setBpm(91.0);  // mid-session tempo change
+        BoundaryEvent events[8];
+        const uint32_t count = clock.getSubdivisionBoundariesInBlock(subdiv, kBlock, events, 8);
+        EXPECT_TRUE(count <= 8);
+        uint32_t cursor = 0;
+        for (uint32_t i = 0; i < kBlock; ++i) {
+          const bool expected = clock.isSubdivisionBoundary(subdiv);
+          bool actual = false;
+          if (cursor < count && events[cursor].frameOffset == i) {
+            actual = true;
+            ++cursor;
+          }
+          if (expected != actual) {
+            std::cerr << "FAIL: block boundary mismatch bpm=" << bpm << " subdiv=" << sub
+                      << " block=" << block << " frame=" << i << "\n";
+            return false;
+          }
+          clock.tick();
+        }
+      }
+    }
+  }
+  std::cout << "[Block boundary equivalence] OK\n";
+  return true;
+}
+
 int main() {
   std::cout << "=== HYDRA GLOBAL TRANSPORT CLOCK TEST SUITE ===\n";
   bool ok = true;
@@ -728,6 +769,7 @@ int main() {
   ok = ok && testInvalidInputsAndNaN();
   ok = ok && testLimitedHistoryDiagnostics();
   ok = ok && testDspPrecedenceWarpVsReverse();
+  ok = ok && testBlockBoundaryEquivalence();
 
   if (ok) {
     std::cout << ">>> ALL GLOBAL TRANSPORT CLOCK TESTS PASSED <<<\n";

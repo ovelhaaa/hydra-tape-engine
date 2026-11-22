@@ -1,0 +1,60 @@
+{
+  "audited_head": "eaa233ff32e169a2ff720d4bdace3d636c10eb7a",
+  "actual_initial_head": "eaa233ff32e169a2ff720d4bdace3d636c10eb7a",
+  "remote_initial_head": "eaa233ff32e169a2ff720d4bdace3d636c10eb7a",
+  "post_audit_commits": [],
+  "untracked_preserved": [
+    "scripts/create_phase6_pr.py"
+  ],
+  "source_sha256": {
+    "CMakeLists.txt": "4fe98f8b92b7048296626e5d397f71f09408d394739ebaf9db81b66e97412b39",
+    "dsp/core/tape_core.cpp": "2ef4e6e4786276c8b8ee6681ea3ad77ff897900ebe7b17fdf68f7e3dbc7eb749",
+    "dsp/core/fast_tanh_table.inc": "0c455e0c43b1803aedfebbf1fd82668ab8c44bfc8259186e0be8388209be0676",
+    "tests/core/render_trace.cpp": "678550351a598c523c822286400e9454c51d608ed364a0abf507ebdebe05e2b6",
+    "tests/core/compare_native_wasm.py": "022e7b38770c629db48865974a28de8f203583a734b80601db6b0f411c50c35c",
+    ".github/workflows/core-equivalence.yml": "4254aa3e46eab446e0616176440cbf5e0797ed0acae09ecdfb83615309533018",
+    ".github/workflows/reverse-realtime.yml": "080b91a17b2f5779e9542d89ad375dcf85676e4d8869295ef959e59445a82482",
+    ".github/workflows/bias-antialiasing.yml": "66da2d9e3051f4a07c36870e26dad93dce61db25b15745d53a802b611f2512b1",
+    "host/web/main.js": "6939fc58bfaccefa04b214e828db39353541751b0b3d6c3d36a44b6577158e45",
+    "host/web/hydra-processor.js": "3519f05eba636641bcc953c1aeaef9716cc719277dc854dd719822d2405ced23"
+  },
+  "initial_workflows": {
+    "Core Equivalence": {
+      "run": 44678469541,
+      "status": "FAIL",
+      "failed_jobs": [
+        "test_native_vs_wasm"
+      ]
+    },
+    "Bias Anti-Aliasing": {
+      "run": 44678469445,
+      "status": "FAIL",
+      "failed_jobs": [
+        "validate_bias"
+      ]
+    },
+    "Reverse Real-Time": {
+      "run": 44678469564,
+      "status": "FAIL",
+      "failed_jobs": [
+        "validate"
+      ]
+    },
+    "Listening Lab": {
+      "run": 44678469446,
+      "status": "PASS"
+    },
+    "Web Demo": {
+      "run": 44678469628,
+      "status": "PASS"
+    }
+  },
+  "clean_reproduction_run": 44839840770,
+  "clean_results": {
+    "ubuntu-24.04": "PASS",
+    "ubuntu-26.04": "FAIL"
+  },
+  "input_sha256": "e629e0248b9833c0f280f3771a07b95047e89d9efb3e9afddc06d3209ea559dc",
+  "lut_sha256": "d1724b91fed053e18aa3674b7862e8322b9ec9efbddab337fbddc030192238e5",
+  "physical_runtime": "PHYSICAL_RUNTIME_PENDING"
+}

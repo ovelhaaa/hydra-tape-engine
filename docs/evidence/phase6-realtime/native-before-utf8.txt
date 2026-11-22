@@ -1,0 +1,74 @@
+Test project C:/Users/devx/Documents/PlatformIO/Projects/hydra/build-native
+      Start  1: core_smoke
+ 1/15 Test  #1: core_smoke .........................   Passed    0.38 sec
+      Start  2: core_regression
+ 2/15 Test  #2: core_regression ....................   Passed    0.15 sec
+      Start  3: core_audible_controls
+ 3/15 Test  #3: core_audible_controls ..............   Passed    0.34 sec
+      Start  4: core_warp_test
+ 4/15 Test  #4: core_warp_test .....................***Failed    0.63 sec
+C:/Users/devx/Documents/PlatformIO/Projects/hydra/tests/core/warp_core_test.cpp:713: check failed: peak > 1e-6f && step < 0.005f
+Running Accidental Warp V1.3 Comprehensive DSP Test Suite...
+[Warp Pitch Test] Freq Entrada: 440 Hz | Freq Medida Saida: 880 Hz
+[Warp Stereo Test] DiffSum L/R: 139.428
+[Warp Feedback 0%] Late Energy: 0
+[Warp repeat] 50% difference=0.077934
+[Warp repeat] 80% difference=0.135031
+[Warp Mode 0] Energy L: 534.835 | R: 538.499
+[Warp Mode 1] Energy L: 486.45 | R: 454.283
+[Warp Mode 2] Energy L: 486.067 | R: 454.049
+[Warp Mode 3] Energy L: 534.836 | R: 538.497
+[Bias gate] 44100 Hz peak=6.70577e-07 step=5.32471e-07
+
+      Start  5: core_reverse_test
+ 5/15 Test  #5: core_reverse_test ..................***Failed    0.43 sec
+C:/Users/devx/Documents/PlatformIO/Projects/hydra/tests/core/reverse_core_test.cpp:240: check failed: energyPpR > 0.001f
+Running Reverse Tape Echo V2 Comprehensive DSP Test Suite...
+[Test 0] ReverseWindows unit test: OK
+[Test A] Reverse Impulse Timing (rate=48000): Peak at 47973 (999.438 ms), mag=0.386016: OK
+[Test A] Reverse Impulse Timing (rate=44100): Peak at 44073 (999.388 ms), mag=0.395063: OK
+[Test B] Reverse Window Continuity (rate=48000): max step=0.0142044: OK
+[Test B] Reverse Window Continuity (rate=44100): max step=0.0144748: OK
+[Test C] BPM Accuracy across 60, 90, 120, 140, 180 BPM and 9 subdivisions: OK
+
+      Start  6: core_transport_clock_test
+ 6/15 Test  #6: core_transport_clock_test ..........   Passed    0.21 sec
+      Start  7: core_tap_tempo_test
+ 7/15 Test  #7: core_tap_tempo_test ................   Passed    0.56 sec
+      Start  8: core_midi_clock_test
+ 8/15 Test  #8: core_midi_clock_test ...............   Passed    0.19 sec
+      Start  9: web_param_ids
+ 9/15 Test  #9: web_param_ids ......................   Passed    0.46 sec
+      Start 10: core_abi_symbols
+10/15 Test #10: core_abi_symbols ...................   Passed    0.60 sec
+      Start 11: core_abi_legacy_consumer
+11/15 Test #11: core_abi_legacy_consumer ...........   Passed    0.20 sec
+      Start 12: core_transition_characterization
+12/15 Test #12: core_transition_characterization ...***Failed    2.89 sec
+Traceback (most recent call last):
+  File "C:\Users\devx\Documents\PlatformIO\Projects\hydra\tests\core\listening_review.py", line 298, in <module>
+    main()
+    ~~~~^^
+  File "C:\Users\devx\Documents\PlatformIO\Projects\hydra\tests\core\listening_review.py", line 277, in main
+    record["characterization"][name] = characterize(scene, audio[name], cmd, input_path, work)
+                                       ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\devx\Documents\PlatformIO\Projects\hydra\tests\core\listening_review.py", line 193, in characterize
+    raise ValueError("reverse marker missing")
+ValueError: reverse marker missing
+
+      Start 13: test_golden_delay_modes
+13/15 Test #13: test_golden_delay_modes ............   Passed    1.02 sec
+      Start 14: test_golden_reset_state
+14/15 Test #14: test_golden_reset_state ............   Passed    1.02 sec
+      Start 15: test_golden_param_automation
+15/15 Test #15: test_golden_param_automation .......   Passed    0.93 sec
+
+80% tests passed, 3 tests failed out of 15
+
+Total Test time (real) =  10.06 sec
+
+The following tests FAILED:
+	  4 - core_warp_test (Failed)
+	  5 - core_reverse_test (Failed)
+	 12 - core_transition_characterization (Failed)
+Errors while running CTest

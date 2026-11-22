@@ -1,0 +1,167 @@
+Processing esp32-s3-devkitc-1 (platform: espressif32; board: esp32-s3-devkitc-1; framework: arduino)
+--------------------------------------------------------------------------------
+Verbose mode can be enabled via `-v, --verbose` option
+CONFIGURATION: https://docs.platformio.org/page/boards/espressif32/esp32-s3-devkitc-1.html
+PLATFORM: Espressif 32 (55.3.36) > Espressif ESP32-S3-DevKitC-1-N8 (8 MB QD, No PSRAM)
+HARDWARE: ESP32S3 240MHz, 320KB RAM, 16MB Flash
+DEBUG: Current (esp-builtin) On-board (esp-builtin) External (cmsis-dap, esp-bridge, esp-prog, iot-bus-jtag, jlink, minimodule, olimex-arm-usb-ocd, olimex-arm-usb-ocd-h, olimex-arm-usb-tiny-h, olimex-jtag-tiny, tumpa)
+PACKAGES: 
+ - contrib-piohome @ 3.4.4 
+ - framework-arduinoespressif32 @ 3.3.6 
+ - framework-arduinoespressif32-libs @ 5.5.0+sha.f56bea3d1f 
+ - tool-esp-rom-elfs @ 2024.10.11 
+ - tool-esptoolpy @ 5.1.0 
+ - toolchain-xtensa-esp-elf @ 14.2.0+20251107
+*** Applied include path shortening for 334 framework paths ***
+*** Path length reduced from 35675 to ~14046 characters ***
+*** Estimated savings: 21042 characters ***
+LDF: Library Dependency Finder -> https://bit.ly/configure-pio-ldf
+LDF Modes: Finder ~ chain, Compatibility ~ soft
+Found 51 compatible libraries
+Scanning dependencies...
+Dependency Graph
+|-- ESP8266Audio @ 1.9.9
+|-- Adafruit SSD1306 @ 2.5.17
+|-- Adafruit GFX Library @ 1.13.0
+|-- DisplayUI
+|-- MelodyGen
+|-- TapeDelay
+|-- LittleFS @ 3.3.6
+Building in release mode
+Compiling .pio\build\esp32-s3-devkitc-1\hydra-core\tape_core.o
+Linking .pio\build\esp32-s3-devkitc-1\firmware.elf
+                            Memory Type Usage Summary                             
+┌─────────────────────┬──────────────┬──────────┬────────────────┬───────────────┐
+│ Memory Type/Section │ Used [bytes] │ Used [%] │ Remain [bytes] │ Total [bytes] │
+├─────────────────────┼──────────────┼──────────┼────────────────┼───────────────┤
+│ Flash Code          │       354164 │          │                │               │
+│    .text            │       354164 │          │                │               │
+│ Flash Data          │       156104 │          │                │               │
+│    .rodata          │       155848 │          │                │               │
+│    .appdesc         │          256 │          │                │               │
+│ DIRAM               │       101991 │    29.84 │         239769 │        341760 │
+│    .text            │        76071 │    22.26 │                │               │
+│    .data            │        15888 │     4.65 │                │               │
+│    .bss             │        10032 │     2.94 │                │               │
+│ IRAM                │        16384 │    100.0 │              0 │         16384 │
+│    .text            │        15356 │    93.73 │                │               │
+│    .vectors         │         1028 │     6.27 │                │               │
+└─────────────────────┴──────────────┴──────────┴────────────────┴───────────────┘
+Total image size: 618611 bytes (.bin may be padded larger)
+Note: The reported total sizes may be smaller than those in the technical reference manual due to reserved memory and application configuration. The total flash size available for the application is not included by default, as it cannot be reliably determined due to the presence of other data like the bootloader, partition table, and application partition size.
+Retrieving maximum program size .pio\build\esp32-s3-devkitc-1\firmware.elf
+Checking size .pio\build\esp32-s3-devkitc-1\firmware.elf
+Advanced Memory Usage is available via "PlatformIO Home > Project Inspect"
+RAM:   [=         ]   7.9% (used 25920 bytes from 327680 bytes)
+Flash: [          ]   3.7% (used 618355 bytes from 16777216 bytes)
+Building .pio\build\esp32-s3-devkitc-1\firmware.bin
+esptool v5.1.0
+Creating ESP32S3 image...
+Merged 2 ELF sections.
+Successfully created ESP32S3 image.
+Configuring upload protocol...
+AVAILABLE: cmsis-dap, esp-bridge, esp-builtin, esp-prog, espota, esptool, iot-bus-jtag, jlink, minimodule, olimex-arm-usb-ocd, olimex-arm-usb-ocd-h, olimex-arm-usb-tiny-h, olimex-jtag-tiny, tumpa
+CURRENT: upload_protocol = esptool
+Looking for upload port...
+Uploading .pio\build\esp32-s3-devkitc-1\firmware.bin
+esptool v5.1.0
+Serial port COM15:
+Connecting...
+Connected to ESP32-S3 on COM15:
+Chip type:          ESP32-S3 (QFN56) (revision v0.2)
+Features:           Wi-Fi, BT 5 (LE), Dual Core + LP Core, 240MHz, Embedded PSRAM 8MB (AP_3v3)
+Crystal frequency:  40MHz
+USB mode:           USB-Serial/JTAG
+MAC:                {device-mac}
+
+Uploading stub flasher...
+Running stub flasher...
+Stub flasher running.
+Changing baud rate to 460800...
+Changed.
+
+Configuring flash size...
+Auto-detected flash size: 16MB
+Flash will be erased from 0x00000000 to 0x00004fff...
+Flash will be erased from 0x00008000 to 0x00008fff...
+Flash will be erased from 0x0000e000 to 0x0000ffff...
+Flash will be erased from 0x00010000 to 0x000a7fff...
+SHA digest in image updated.
+Compressed 20224 bytes to 13062...
+
+Writing at 0x00000000 [░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░]   0.0% 0/13062 bytes... 
+
+Writing at 0x00004f00 [██████████████████████████████] 100.0% 13062/13062 bytes... 
+Wrote 20224 bytes (13062 compressed) at 0x00000000 in 0.5 seconds (348.5 kbit/s).
+Hash of data verified.
+Compressed 3072 bytes to 116...
+
+Writing at 0x00008000 [░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░]   0.0% 0/116 bytes... 
+
+Writing at 0x00008c00 [██████████████████████████████] 100.0% 116/116 bytes... 
+Wrote 3072 bytes (116 compressed) at 0x00008000 in 0.1 seconds (293.9 kbit/s).
+Hash of data verified.
+Compressed 8192 bytes to 47...
+
+Writing at 0x0000e000 [░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░]   0.0% 0/47 bytes... 
+
+Writing at 0x00010000 [██████████████████████████████] 100.0% 47/47 bytes... 
+Wrote 8192 bytes (47 compressed) at 0x0000e000 in 0.2 seconds (433.3 kbit/s).
+Hash of data verified.
+Compressed 618752 bytes to 348850...
+
+Writing at 0x00010000 [░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░]   0.0% 0/348850 bytes... 
+
+Writing at 0x0001aa99 [█░░░░░░░░░░░░░░░░░░░░░░░░░░░░░]   4.7% 16384/348850 bytes... 
+
+Writing at 0x000282c9 [██░░░░░░░░░░░░░░░░░░░░░░░░░░░░]   9.4% 32768/348850 bytes... 
+
+Writing at 0x0003a860 [████░░░░░░░░░░░░░░░░░░░░░░░░░░]  14.1% 49152/348850 bytes... 
+
+Writing at 0x000402ce [█████░░░░░░░░░░░░░░░░░░░░░░░░░]  18.8% 65536/348850 bytes... 
+
+Writing at 0x00045f04 [███████░░░░░░░░░░░░░░░░░░░░░░░]  23.5% 81920/348850 bytes... 
+
+Writing at 0x0004b7d2 [████████░░░░░░░░░░░░░░░░░░░░░░]  28.2% 98304/348850 bytes... 
+
+Writing at 0x0005101b [█████████░░░░░░░░░░░░░░░░░░░░░]  32.9% 114688/348850 bytes... 
+
+Writing at 0x00057a06 [███████████░░░░░░░░░░░░░░░░░░░]  37.6% 131072/348850 bytes... 
+
+Writing at 0x0005daee [████████████░░░░░░░░░░░░░░░░░░]  42.3% 147456/348850 bytes... 
+
+Writing at 0x00063c38 [██████████████░░░░░░░░░░░░░░░░]  47.0% 163840/348850 bytes... 
+
+Writing at 0x00069483 [███████████████░░░░░░░░░░░░░░░]  51.7% 180224/348850 bytes... 
+
+Writing at 0x0006eb17 [████████████████░░░░░░░░░░░░░░]  56.4% 196608/348850 bytes... 
+
+Writing at 0x000747bc [██████████████████░░░░░░░░░░░░]  61.1% 212992/348850 bytes... 
+
+Writing at 0x00079a6a [███████████████████░░░░░░░░░░░]  65.8% 229376/348850 bytes... 
+
+Writing at 0x0007f67f [█████████████████████░░░░░░░░░]  70.4% 245760/348850 bytes... 
+
+Writing at 0x00084f35 [██████████████████████░░░░░░░░]  75.1% 262144/348850 bytes... 
+
+Writing at 0x0008da16 [███████████████████████░░░░░░░]  79.8% 278528/348850 bytes... 
+
+Writing at 0x000939fc [█████████████████████████░░░░░]  84.5% 294912/348850 bytes... 
+
+Writing at 0x000995e8 [██████████████████████████░░░░]  89.2% 311296/348850 bytes... 
+
+Writing at 0x0009f096 [████████████████████████████░░]  93.9% 327680/348850 bytes... 
+
+Writing at 0x000a5187 [█████████████████████████████░]  98.6% 344064/348850 bytes... 
+
+Writing at 0x000a7100 [██████████████████████████████] 100.0% 348850/348850 bytes... 
+Wrote 618752 bytes (348850 compressed) at 0x00010000 in 5.2 seconds (957.9 kbit/s).
+Hash of data verified.
+
+Hard resetting via RTS pin...
+========================= [SUCCESS] Took 38.43 seconds =========================
+
+Environment         Status    Duration
+------------------  --------  ------------
+esp32-s3-devkitc-1  SUCCESS   00:00:38.431
+========================= 1 succeeded in 00:00:38.431 =========================

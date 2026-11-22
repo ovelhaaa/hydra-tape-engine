@@ -4,9 +4,9 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-header = (ROOT / 'include' / 'hydra_dsp.h').read_text()
-main_js = (ROOT / 'host' / 'web' / 'main.js').read_text()
-processor_js = (ROOT / 'host' / 'web' / 'hydra-processor.js').read_text()
+header = (ROOT / 'include' / 'hydra_dsp.h').read_text(encoding='utf-8')
+main_js = (ROOT / 'host' / 'web' / 'main.js').read_text(encoding='utf-8')
+processor_js = (ROOT / 'host' / 'web' / 'hydra-processor.js').read_text(encoding='utf-8')
 
 name_map = {
     'FLUTTER_DEPTH': 'flutterDepth',

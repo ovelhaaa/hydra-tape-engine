@@ -1,0 +1,38 @@
+Internal ctest changing into directory: C:/Users/devx/Documents/PlatformIO/Projects/hydra/artifacts/phase65-software/native
+Test project C:/Users/devx/Documents/PlatformIO/Projects/hydra/artifacts/phase65-software/native
+      Start  1: fast_tanh_integrity
+ 1/16 Test  #1: fast_tanh_integrity ................   Passed    0.20 sec
+      Start  2: core_smoke
+ 2/16 Test  #2: core_smoke .........................   Passed    0.05 sec
+      Start  3: core_regression
+ 3/16 Test  #3: core_regression ....................   Passed    0.07 sec
+      Start  4: core_audible_controls
+ 4/16 Test  #4: core_audible_controls ..............   Passed    0.16 sec
+      Start  5: core_warp_test
+ 5/16 Test  #5: core_warp_test .....................   Passed    0.58 sec
+      Start  6: core_reverse_test
+ 6/16 Test  #6: core_reverse_test ..................   Passed    0.73 sec
+      Start  7: core_transport_clock_test
+ 7/16 Test  #7: core_transport_clock_test ..........   Passed    0.12 sec
+      Start  8: core_tap_tempo_test
+ 8/16 Test  #8: core_tap_tempo_test ................   Passed    0.26 sec
+      Start  9: core_midi_clock_test
+ 9/16 Test  #9: core_midi_clock_test ...............   Passed    0.13 sec
+      Start 10: web_param_ids
+10/16 Test #10: web_param_ids ......................   Passed    0.13 sec
+      Start 11: core_abi_symbols
+11/16 Test #11: core_abi_symbols ...................   Passed    0.27 sec
+      Start 12: core_abi_legacy_consumer
+12/16 Test #12: core_abi_legacy_consumer ...........   Passed    0.06 sec
+      Start 13: core_transition_characterization
+13/16 Test #13: core_transition_characterization ...   Passed    2.28 sec
+      Start 14: test_golden_delay_modes
+14/16 Test #14: test_golden_delay_modes ............   Passed    0.41 sec
+      Start 15: test_golden_reset_state
+15/16 Test #15: test_golden_reset_state ............   Passed    0.64 sec
+      Start 16: test_golden_param_automation
+16/16 Test #16: test_golden_param_automation .......   Passed    0.57 sec
+
+100% tests passed, 0 tests failed out of 16
+
+Total Test time (real) =   6.69 sec

@@ -1,0 +1,2165 @@
+{
+  "started_utc": "2026-11-21T23:10:04.692057+00:00",
+  "head": "990e5e9bc0cb22e469705555c26ef1ef9c94ae06",
+  "firmware_sha256": "0a2c42cef5921a397b95576cdcb87f589bb707195c6f73e6faeeac4f2ebf13e5",
+  "port": "COM15",
+  "hwid": "USB VID:PID=303A:1001 SER=B8:F8:62:E3:E4:A4",
+  "status": "FAIL_OR_INCOMPLETE",
+  "scenarios": {
+    "delay": {
+      "mean_us": 1851.19,
+      "min_us": 1812,
+      "p50_us": 1834,
+      "p95_us": 1897,
+      "p99_us": 1921,
+      "peak_us": 2171,
+      "budget_mean_pct": 63.78,
+      "budget_p99_pct": 66.18,
+      "overruns": 0,
+      "i2s_fail_delta": 0,
+      "heap_start": 125200,
+      "heap_end": 125200,
+      "psram_start": 1663048,
+      "psram_end": 1663048,
+      "stack_min_bytes": 27268,
+      "max_parameter_update_us": 433,
+      "heap_min": 125200,
+      "saturated_histogram_bins": 0,
+      "blocks": 10000,
+      "warmup": 256,
+      "commands": [
+        "vol 10",
+        "byp 0",
+        "gen 1",
+        "src 1",
+        "mod 1",
+        "dly 500",
+        "fbk 40",
+        "hds 4",
+        "mix 50",
+        "drv 75",
+        "nlv 10",
+        "ftd 8",
+        "wwd 6",
+        "dps 0",
+        "tps 50",
+        "tpa 50",
+        "ppg 0",
+        "frz 0",
+        "frv 0",
+        "wrp 0",
+        "rev 0",
+        "spr 0",
+        "revmode 0",
+        "revdiv 0",
+        "tempo 120",
+        "transport play"
+      ],
+      "wall_ms": 29019.6,
+      "effective_frames_per_second": 44108.12002922163,
+      "pass": true
+    },
+    "reverse-quarter": {
+      "mean_us": 1916.53,
+      "min_us": 1862,
+      "p50_us": 1898,
+      "p95_us": 1964,
+      "p99_us": 2082,
+      "peak_us": 2347,
+      "budget_mean_pct": 66.03,
+      "budget_p99_pct": 71.73,
+      "overruns": 0,
+      "i2s_fail_delta": 0,
+      "heap_start": 125200,
+      "heap_end": 125200,
+      "psram_start": 1663048,
+      "psram_end": 1663048,
+      "stack_min_bytes": 27268,
+      "max_parameter_update_us": 433,
+      "heap_min": 125200,
+      "saturated_histogram_bins": 0,
+      "blocks": 10000,
+      "warmup": 256,
+      "commands": [
+        "vol 10",
+        "byp 0",
+        "gen 1",
+        "src 1",
+        "mod 1",
+        "dly 500",
+        "fbk 40",
+        "hds 4",
+        "mix 50",
+        "drv 75",
+        "nlv 10",
+        "ftd 8",
+        "wwd 6",
+        "dps 0",
+        "tps 50",
+        "tpa 50",
+        "ppg 0",
+        "frz 0",
+        "frv 0",
+        "wrp 0",
+        "rev 0",
+        "spr 0",
+        "revmode 0",
+        "revdiv 0",
+        "tempo 120",
+        "transport play",
+        "rev 1"
+      ],
+      "wall_ms": 29019.5,
+      "effective_frames_per_second": 44108.272023983875,
+      "pass": true
+    },
+    "reverse-eighth": {
+      "mean_us": 1915.21,
+      "min_us": 1854,
+      "p50_us": 1895,
+      "p95_us": 1965,
+      "p99_us": 2101,
+      "peak_us": 2397,
+      "budget_mean_pct": 65.98,
+      "budget_p99_pct": 72.39,
+      "overruns": 0,
+      "i2s_fail_delta": 0,
+      "heap_start": 125200,
+      "heap_end": 125200,
+      "psram_start": 1663048,
+      "psram_end": 1663048,
+      "stack_min_bytes": 27268,
+      "max_parameter_update_us": 433,
+      "heap_min": 125200,
+      "saturated_histogram_bins": 0,
+      "blocks": 10000,
+      "warmup": 256,
+      "commands": [
+        "vol 10",
+        "byp 0",
+        "gen 1",
+        "src 1",
+        "mod 1",
+        "dly 500",
+        "fbk 40",
+        "hds 4",
+        "mix 50",
+        "drv 75",
+        "nlv 10",
+        "ftd 8",
+        "wwd 6",
+        "dps 0",
+        "tps 50",
+        "tpa 50",
+        "ppg 0",
+        "frz 0",
+        "frv 0",
+        "wrp 0",
+        "rev 0",
+        "spr 0",
+        "revmode 0",
+        "revdiv 0",
+        "tempo 120",
+        "transport play",
+        "rev 1",
+        "revdiv 3"
+      ],
+      "wall_ms": 29025.4,
+      "effective_frames_per_second": 44099.30612498019,
+      "pass": true
+    },
+    "reverse-sixteenth": {
+      "mean_us": 1914.52,
+      "min_us": 1853,
+      "p50_us": 1891,
+      "p95_us": 2015,
+      "p99_us": 2102,
+      "peak_us": 2391,
+      "budget_mean_pct": 65.96,
+      "budget_p99_pct": 72.42,
+      "overruns": 0,
+      "i2s_fail_delta": 0,
+      "heap_start": 125200,
+      "heap_end": 125200,
+      "psram_start": 1663048,
+      "psram_end": 1663048,
+      "stack_min_bytes": 27268,
+      "max_parameter_update_us": 433,
+      "heap_min": 125200,
+      "saturated_histogram_bins": 0,
+      "blocks": 10000,
+      "warmup": 256,
+      "commands": [
+        "vol 10",
+        "byp 0",
+        "gen 1",
+        "src 1",
+        "mod 1",
+        "dly 500",
+        "fbk 40",
+        "hds 4",
+        "mix 50",
+        "drv 75",
+        "nlv 10",
+        "ftd 8",
+        "wwd 6",
+        "dps 0",
+        "tps 50",
+        "tpa 50",
+        "ppg 0",
+        "frz 0",
+        "frv 0",
+        "wrp 0",
+        "rev 0",
+        "spr 0",
+        "revmode 0",
+        "revdiv 0",
+        "tempo 120",
+        "transport play",
+        "rev 1",
+        "revdiv 4"
+      ],
+      "wall_ms": 29025.1,
+      "effective_frames_per_second": 44099.76193019146,
+      "pass": true
+    },
+    "reverse-feedback95": {
+      "mean_us": 1915.59,
+      "min_us": 1861,
+      "p50_us": 1897,
+      "p95_us": 1962,
+      "p99_us": 2080,
+      "peak_us": 2346,
+      "budget_mean_pct": 66.0,
+      "budget_p99_pct": 71.66,
+      "overruns": 0,
+      "i2s_fail_delta": 0,
+      "heap_start": 125200,
+      "heap_end": 125200,
+      "psram_start": 1663048,
+      "psram_end": 1663048,
+      "stack_min_bytes": 27268,
+      "max_parameter_update_us": 433,
+      "heap_min": 125200,
+      "saturated_histogram_bins": 0,
+      "blocks": 10000,
+      "warmup": 256,
+      "commands": [
+        "vol 10",
+        "byp 0",
+        "gen 1",
+        "src 1",
+        "mod 1",
+        "dly 500",
+        "fbk 40",
+        "hds 4",
+        "mix 50",
+        "drv 75",
+        "nlv 10",
+        "ftd 8",
+        "wwd 6",
+        "dps 0",
+        "tps 50",
+        "tpa 50",
+        "ppg 0",
+        "frz 0",
+        "frv 0",
+        "wrp 0",
+        "rev 0",
+        "spr 0",
+        "revmode 0",
+        "revdiv 0",
+        "tempo 120",
+        "transport play",
+        "rev 1",
+        "fbk 95"
+      ],
+      "wall_ms": 29019.5,
+      "effective_frames_per_second": 44108.272023983875,
+      "pass": true
+    },
+    "multihead": {
+      "mean_us": 2128.78,
+      "min_us": 2088,
+      "p50_us": 2109,
+      "p95_us": 2176,
+      "p99_us": 2215,
+      "peak_us": 2468,
+      "budget_mean_pct": 73.34,
+      "budget_p99_pct": 76.31,
+      "overruns": 0,
+      "i2s_fail_delta": 0,
+      "heap_start": 125200,
+      "heap_end": 125200,
+      "psram_start": 1663048,
+      "psram_end": 1663048,
+      "stack_min_bytes": 27268,
+      "max_parameter_update_us": 433,
+      "heap_min": 125200,
+      "saturated_histogram_bins": 0,
+      "blocks": 10000,
+      "warmup": 256,
+      "commands": [
+        "vol 10",
+        "byp 0",
+        "gen 1",
+        "src 1",
+        "mod 1",
+        "dly 500",
+        "fbk 40",
+        "hds 4",
+        "mix 50",
+        "drv 75",
+        "nlv 10",
+        "ftd 8",
+        "wwd 6",
+        "dps 0",
+        "tps 50",
+        "tpa 50",
+        "ppg 0",
+        "frz 0",
+        "frv 0",
+        "wrp 0",
+        "rev 0",
+        "spr 0",
+        "revmode 0",
+        "revdiv 0",
+        "tempo 120",
+        "transport play",
+        "hds 7",
+        "fbk 95"
+      ],
+      "wall_ms": 29020.5,
+      "effective_frames_per_second": 44106.75212349891,
+      "pass": true
+    },
+    "stress": {
+      "mean_us": 1988.36,
+      "min_us": 1919,
+      "p50_us": 1972,
+      "p95_us": 2046,
+      "p99_us": 2076,
+      "peak_us": 2320,
+      "budget_mean_pct": 68.51,
+      "budget_p99_pct": 71.52,
+      "overruns": 0,
+      "i2s_fail_delta": 0,
+      "heap_start": 125200,
+      "heap_end": 125200,
+      "psram_start": 1663048,
+      "psram_end": 1663048,
+      "stack_min_bytes": 27268,
+      "max_parameter_update_us": 433,
+      "heap_min": 125200,
+      "saturated_histogram_bins": 0,
+      "blocks": 10000,
+      "warmup": 256,
+      "commands": [
+        "vol 10",
+        "byp 0",
+        "gen 1",
+        "src 1",
+        "mod 1",
+        "dly 500",
+        "fbk 40",
+        "hds 4",
+        "mix 50",
+        "drv 75",
+        "nlv 10",
+        "ftd 8",
+        "wwd 6",
+        "dps 0",
+        "tps 50",
+        "tpa 50",
+        "ppg 0",
+        "frz 0",
+        "frv 0",
+        "wrp 0",
+        "rev 0",
+        "spr 0",
+        "revmode 0",
+        "revdiv 0",
+        "tempo 120",
+        "transport play",
+        "wrp 1",
+        "spr 1",
+        "rev 1",
+        "fbk 50"
+      ],
+      "wall_ms": 29023.4,
+      "effective_frames_per_second": 44102.34500437578,
+      "pass": true
+    }
+  },
+  "sustain": [
+    {
+      "blocks": 113449,
+      "avg_us": 1880,
+      "last_us": 1884,
+      "peak_us": 2548,
+      "budget_load": 65.2,
+      "overruns": 0,
+      "i2s_failures": 0,
+      "heap_free": 125296,
+      "psram_free": 1663048,
+      "stack_min_bytes": 27268,
+      "full_work_peak_us": 2820,
+      "full_work_overruns": 0,
+      "elapsed_seconds": 0.10347629996249452,
+      "audio_health": {
+        "NonZeroWords": 256,
+        "PeakAbsPcm32": 93903920,
+        "CompletedUs": 333591202,
+        "StackScanUs": 0,
+        "FullWorkUs": 1907
+      }
+    }
+  ],
+  "commands": [
+    {
+      "utc": "2026-11-21T23:10:05.072174+00:00",
+      "command": "?",
+      "response": "\n--- CLI COMMANDS (3-Letter Codes) ---\n [MIXER]\n  vol <0-100> : Master Volume\n  mix <0-100> : Dry/Wet Mix\n  byp <0/1>   : Bypass\n  src <0-2>   : Source (0=MP3, 1=Synth, 2=I2S)\n [TAPE ENGINE]\n  dly <ms>    : Delay Time (10-2000)\n  fbk <0-100> : Feedback\n  hds <1-7>   : Active Heads\n  mus <0/1>   : Head Mode (0=Free, 1=Musical)\n  mod <0/1>   : Engine Mode (0=Saturator, 1=Delay)\n  tps <0-100> : Tape Speed (Varispeed)\n  tpa <0-100> : Tape Age (Filter)\n  drv <0-100> : Drive / Saturation\n  nlv <0-100> : Noise Level\n  ngt <0-100> : Gate Threshold\n  red <0-100> : Gate Reduction % (0=None, 100=Mute)\n  hbp <0-100> : Head Bump\n  azm <0-100> : Azimuth (50=Center)\n [COLOR]\n  gfc <0/1>   : Guitar Focus (BPF)\n  ton <0-100> : Tone Control\n [MODULATION]\n  dps <0-100> : Dropouts\n  ftd <0-100> : Flutter Depth % (maps to 0-45 core range)\n  ftr <0.1-20>: Flutter Rate in Hz\n  wwd <0-100> : Wow Depth % (maps to 0-35 core range)\n  wwr <0.1-5> : Wow Rate in Hz\n [MELODY GEN]\n  wvf <0-3>   : Waveform (Sine, Saw, Tri, Sqr)\n  scl <0-4>   : Scale\n  ptc <midi>  : Root Key\n  moo <0-100> : Mood\n  rtm <0-100> : Rhythm Density\n [EFFECT MODES]\n  frz <0/1>   : Freeze/Hold\n  rev <0/1>   : Reverse Delay\n  revmode <0..2> : Rhythmic, Free, Legacy\n  revdiv <0..8>  : 1/4, 1/1, 1/2, 1/8, 1/16, 1/4D, 1/8D, 1/4T, 1/8T\n  rvb <0/1>   : Reverse Reverb\n  spr <0/1>   : Spring Reverb\n  spm <0-100> : Spring Mix\n  spd <0-100> : Spring Decay\n  spf <0-100> : Spring Damping\n [ACCIDENTAL WARP V1.3]\n  wrp <0/1>   : Warp Enable/Bypass\n  wsp <0-2.0> : Warp Speed Multiplier (1.0 = +1 Octave)\n  wgr <10-400>: Warp Grain Window in ms\n  wst <0-1.0> : Warp Stereo Phase Offset\n  wfb <0-95>  : Warp Feedback %\n  wmd <0-3>   : Warp Mode (0=2T-Herm, 1=1T-Herm, 2=1T-Raw, 3=2T-Raw)\n  perf        : DSP Performance & Telemetry Stats\n  identity    : Firmware commit/source/ELF identity and boot configuration\n  audiohealth : One real PCM block and I2S write result (outside benchmark)\n [GLOBAL TRANSPORT CLOCK]\n  tempo <bpm> : Set global BPM\n  transport <play|pause|stop|reset|status> : Transport controls\n  tap [status|reset] : Tap tempo input, query status, or reset estimator\n  clock <source [internal|tap|midi]|status|reset> : MIDI Clock & Tempo Source controls\n\n  load <preset> : clean, lofi, dub, broken, warp_octave, warp_cascade\n"
+    },
+    {
+      "utc": "2026-11-21T23:10:05.174889+00:00",
+      "command": "identity",
+      "response": "  list          : Show Dashboard\nFirmwareCommit=990e5e9bc0cb22e469705555c26ef1ef9c94ae06\nSourceSHA256=54c302c03f9d8ea43a22ea072d8d0e13c5318d4d8780814a09990618932f05f4\nELFSHA256=5069e445d11390370f33bd4e650830a389ee6619db48c70c6c72ce9373999f6e\nResetReason=1 CPU=240 SampleRate=44100 BlockFrames=128 PSRAMBytes=8388608 FlashBytes=16777216 I2SInitialized=1\n=== IDENTITY END ===\n"
+    },
+    {
+      "utc": "2026-11-21T23:10:05.278089+00:00",
+      "command": "perf",
+      "response": "\n=== HYDRA DSP PERFORMANCE TELEMETRY ===\nBlock Size          : 128 frames\nSample Rate         : 44100 Hz\nCPU Clock           : 240 MHz\nBlock Time Budget   : 2902.5 us\nBlocks Processed    : 12517\nAvg DSP Block Time  : 1505 us\nLast DSP Block Time : 1579 us\nPeak DSP Block Time : 1868 us\nDSP Budget Use (EMA): 52.0 %\nDSP Budget Overruns : 0\nI2S TX Write Failures: 0\nFull Work Peak      : 1876 us\nFull Work Overruns  : 0\nInternal Free Heap  : 125296 bytes\nSPIRAM (PSRAM) Free : 1663048 bytes\nAudio Stack Min Free: 27268 bytes\nWarp Active         : NO\n========================================\n\n"
+    },
+    {
+      "utc": "2026-11-21T23:10:05.584076+00:00",
+      "command": "vol 10",
+      "response": "Volume       [#-------------------] 9%\n"
+    },
+    {
+      "utc": "2026-11-21T23:10:05.887944+00:00",
+      "command": "byp 1",
+      "response": "Bypass: ON\n"
+    },
+    {
+      "utc": "2026-11-21T23:10:06.190420+00:00",
+      "command": "src 1",
+      "response": "Source: 1 (0=MP3, 1=SYNTH, 2=I2S)\n"
+    },
+    {
+      "utc": "2026-11-21T23:10:06.492700+00:00",
+      "command": "gen 0",
+      "response": "Generator: OFF\n"
+    },
+    {
+      "utc": "2026-11-21T23:10:06.596167+00:00",
+      "command": "audiohealth",
+      "response": "AudioHealth NonZeroWords=0 PeakAbsPcm32=0 SaturatedWords=0 TxBytes=1024 TxError=0 CompletedUs=41852108 StackScanUs=0 FullWorkUs=124\n=== AUDIOHEALTH END ===\n"
+    },
+    {
+      "utc": "2026-11-21T23:10:06.898902+00:00",
+      "command": "gen 1",
+      "response": "Generator: ON\n"
+    },
+    {
+      "utc": "2026-11-21T23:10:07.001640+00:00",
+      "command": "audiohealth",
+      "response": "AudioHealth NonZeroWords=256 PeakAbsPcm32=193 SaturatedWords=0 TxBytes=1024 TxError=0 CompletedUs=42258026 StackScanUs=0 FullWorkUs=482\n=== AUDIOHEALTH END ===\n"
+    },
+    {
+      "utc": "2026-11-21T23:10:07.102903+00:00",
+      "command": "audiohealth",
+      "response": "AudioHealth NonZeroWords=256 PeakAbsPcm32=147 SaturatedWords=0 TxBytes=1024 TxError=0 CompletedUs=42362298 StackScanUs=0 FullWorkUs=471\n=== AUDIOHEALTH END ===\n"
+    },
+    {
+      "utc": "2026-11-21T23:10:07.204911+00:00",
+      "command": "audiohealth",
+      "response": "AudioHealth NonZeroWords=0 PeakAbsPcm32=0 SaturatedWords=0 TxBytes=1024 TxError=0 CompletedUs=42466581 StackScanUs=0 FullWorkUs=467\n=== AUDIOHEALTH END ===\n"
+    },
+    {
+      "utc": "2026-11-21T23:10:07.307157+00:00",
+      "command": "audiohealth",
+      "response": "AudioHealth NonZeroWords=0 PeakAbsPcm32=0 SaturatedWords=0 TxBytes=1024 TxError=0 CompletedUs=42559269 StackScanUs=0 FullWorkUs=460\n=== AUDIOHEALTH END ===\n"
+    },
+    {
+      "utc": "2026-11-21T23:10:07.408856+00:00",
+      "command": "audiohealth",
+      "response": "AudioHealth NonZeroWords=0 PeakAbsPcm32=0 SaturatedWords=0 TxBytes=1024 TxError=0 CompletedUs=42663568 StackScanUs=0 FullWorkUs=466\n=== AUDIOHEALTH END ===\n"
+    },
+    {
+      "utc": "2026-11-21T23:10:07.510295+00:00",
+      "command": "audiohealth",
+      "response": "AudioHealth NonZeroWords=0 PeakAbsPcm32=0 SaturatedWords=0 TxBytes=1024 TxError=0 CompletedUs=42767837 StackScanUs=0 FullWorkUs=455\n=== AUDIOHEALTH END ===\n"
+    },
+    {
+      "utc": "2026-11-21T23:10:07.612699+00:00",
+      "command": "audiohealth",
+      "response": "AudioHealth NonZeroWords=0 PeakAbsPcm32=0 SaturatedWords=0 TxBytes=1024 TxError=0 CompletedUs=42872126 StackScanUs=0 FullWorkUs=461\n=== AUDIOHEALTH END ===\n"
+    },
+    {
+      "utc": "2026-11-21T23:10:07.715219+00:00",
+      "command": "audiohealth",
+      "response": "AudioHealth NonZeroWords=0 PeakAbsPcm32=0 SaturatedWords=0 TxBytes=1024 TxError=0 CompletedUs=42976407 StackScanUs=0 FullWorkUs=457\n=== AUDIOHEALTH END ===\n"
+    },
+    {
+      "utc": "2026-11-21T23:10:07.816948+00:00",
+      "command": "audiohealth",
+      "response": "AudioHealth NonZeroWords=0 PeakAbsPcm32=0 SaturatedWords=0 TxBytes=1024 TxError=0 CompletedUs=43069108 StackScanUs=0 FullWorkUs=458\n=== AUDIOHEALTH END ===\n"
+    },
+    {
+      "utc": "2026-11-21T23:10:07.918234+00:00",
+      "command": "audiohealth",
+      "response": "AudioHealth NonZeroWords=0 PeakAbsPcm32=0 SaturatedWords=0 TxBytes=1024 TxError=0 CompletedUs=43173393 StackScanUs=0 FullWorkUs=459\n=== AUDIOHEALTH END ===\n"
+    },
+    {
+      "utc": "2026-11-21T23:10:08.221538+00:00",
+      "command": "vol 10",
+      "response": "Volume       [#-------------------] 9%\n"
+    },
+    {
+      "utc": "2026-11-21T23:10:08.524953+00:00",
+      "command": "byp 0",
+      "response": "Bypass: OFF\n"
+    },
+    {
+      "utc": "2026-11-21T23:10:08.827720+00:00",
+      "command": "gen 1",
+      "response": "Generator: ON\n"
+    },
+    {
+      "utc": "2026-11-21T23:10:09.130621+00:00",
+      "command": "src 1",
+      "response": "Source: 1 (0=MP3, 1=SYNTH, 2=I2S)\n"
+    },
+    {
+      "utc": "2026-11-21T23:10:09.434141+00:00",
+      "command": "mod 1",
+      "response": "Engine Mode: TAPE DELAY\n> mod updated\n"
+    },
+    {
+      "utc": "2026-11-21T23:10:09.736974+00:00",
+      "command": "dly 500",
+      "response": "Delay: 500 ms\n"
+    },
+    {
+      "utc": "2026-11-21T23:10:10.038586+00:00",
+      "command": "fbk 40",
+      "response": "Feedback     [#######-------------] 39%\n"
+    },
+    {
+      "utc": "2026-11-21T23:10:10.341107+00:00",
+      "command": "hds 4",
+      "response": "> hds updated\n"
+    },
+    {
+      "utc": "2026-11-21T23:10:10.643581+00:00",
+      "command": "mix 50",
+      "response": "Mix          [##########----------] 50%\n"
+    },
+    {
+      "utc": "2026-11-21T23:10:10.947287+00:00",
+      "command": "drv 75",
+      "response": "Drive        [###############-----] 75%\n"
+    },
+    {
+      "utc": "2026-11-21T23:10:11.250015+00:00",
+      "command": "nlv 10",
+      "response": "Noise        [#-------------------] 9%\n"
+    },
+    {
+      "utc": "2026-11-21T23:10:11.554127+00:00",
+      "command": "ftd 8",
+      "response": "Flutter      [#-------------------] 8%\n"
+    },
+    {
+      "utc": "2026-11-21T23:10:11.857927+00:00",
+      "command": "wwd 6",
+      "response": "Wow          [#-------------------] 6%\n"
+    },
+    {
+      "utc": "2026-11-21T23:10:12.162369+00:00",
+      "command": "dps 0",
+      "response": "Dropouts     [--------------------] 0%\n"
+    },
+    {
+      "utc": "2026-11-21T23:10:12.464573+00:00",
+      "command": "tps 50",
+      "response": "Speed        [##########----------] 50%\n"
+    },
+    {
+      "utc": "2026-11-21T23:10:12.767668+00:00",
+      "command": "tpa 50",
+      "response": "Age          [##########----------] 50%\n"
+    },
+    {
+      "utc": "2026-11-21T23:10:13.070714+00:00",
+      "command": "ppg 0",
+      "response": "Ping-Pong: OFF\n> ppg updated\n"
+    },
+    {
+      "utc": "2026-11-21T23:10:13.373706+00:00",
+      "command": "frz 0",
+      "response": "Freeze: OFF\n> frz updated\n"
+    },
+    {
+      "utc": "2026-11-21T23:10:13.676706+00:00",
+      "command": "frv 0",
+      "response": "Freeverb: OFF\n> frv updated\n"
+    },
+    {
+      "utc": "2026-11-21T23:10:13.979621+00:00",
+      "command": "wrp 0",
+      "response": "Accidental Warp: OFF\n> wrp updated\n"
+    },
+    {
+      "utc": "2026-11-21T23:10:14.282796+00:00",
+      "command": "rev 0",
+      "response": "Reverse: OFF\n> rev updated\n"
+    },
+    {
+      "utc": "2026-11-21T23:10:14.586972+00:00",
+      "command": "spr 0",
+      "response": "Spring Reverb: OFF\n> spr updated\n"
+    },
+    {
+      "utc": "2026-11-21T23:10:14.889239+00:00",
+      "command": "revmode 0",
+      "response": "Reverse mode: 0\n> revmode updated\n"
+    },
+    {
+      "utc": "2026-11-21T23:10:15.192117+00:00",
+      "command": "revdiv 0",
+      "response": "Reverse division: 0\n> revdiv updated\n"
+    },
+    {
+      "utc": "2026-11-21T23:10:15.495207+00:00",
+      "command": "tempo 120",
+      "response": "Tempo: 120.0 BPM\n> tempo updated\n"
+    },
+    {
+      "utc": "2026-11-21T23:10:15.798202+00:00",
+      "command": "transport play",
+      "response": "Transport: PLAY\n> transport updated\n"
+    },
+    {
+      "utc": "2026-11-21T23:10:15.900737+00:00",
+      "command": "audiohealth",
+      "response": "AudioHealth NonZeroWords=256 PeakAbsPcm32=96423328 SaturatedWords=0 TxBytes=1024 TxError=0 CompletedUs=51158519 StackScanUs=0 FullWorkUs=1929\n=== AUDIOHEALTH END ===\n"
+    },
+    {
+      "utc": "2026-11-21T23:10:45.754690+00:00",
+      "command": "bench 10000 256",
+      "response": "\n=== BENCH RESULT (FW Nov 21 2026 20:07:04) ===\nCfg: src=1 gen=1 byp=0 mod=1 dly=500 fbk=40 hds=4 tps=50 tpa=50 drv=75 nlv=10 ftd=4 wwd=2 dps=0 wrp=0 wmd=0 wsp=1.00 wgr=80 wst=0.50 wfb=0 fv=0 ngt=0.0010 ppg=0 frz=0 rev=0 spr=0\nBlocks=10000 Warmup=256 WallMs=29019.6 BudgetUs=2902.49\nMeanUs=1851.19 MinUs=1812 P50Us=1834 P95Us=1897 P99Us=1921 PeakUs=2171\nBudgetMeanPct=63.78% BudgetP99Pct=66.18% Overruns=0 (0.00%) SatBins=0\nI2SFailDelta=0 HeapStart=125200 HeapEnd=125200 HeapMin=125200 PsramStart=1663048 PsramEnd=1663048 MaxParamUpdUs=433\nStackMinWords=27268\n=========================================\n"
+    },
+    {
+      "utc": "2026-11-21T23:10:45.861868+00:00",
+      "command": "perf",
+      "response": "\n=== HYDRA DSP PERFORMANCE TELEMETRY ===\nBlock Size          : 128 frames\nSample Rate         : 44100 Hz\nCPU Clock           : 240 MHz\nBlock Time Budget   : 2902.5 us\nBlocks Processed    : 26498\nAvg DSP Block Time  : 1633 us\nLast DSP Block Time : 1900 us\nPeak DSP Block Time : 2294 us\nDSP Budget Use (EMA): 65.9 %\nDSP Budget Overruns : 0\nI2S TX Write Failures: 0\nFull Work Peak      : 2653 us\nFull Work Overruns  : 0\nInternal Free Heap  : 125296 bytes\nSPIRAM (PSRAM) Free : 1663048 bytes\nAudio Stack Min Free: 27268 bytes\nWarp Active         : NO\n========================================\n\n"
+    },
+    {
+      "utc": "2026-11-21T23:10:46.165175+00:00",
+      "command": "vol 10",
+      "response": "Volume       [#-------------------] 9%\n"
+    },
+    {
+      "utc": "2026-11-21T23:10:46.467866+00:00",
+      "command": "byp 0",
+      "response": "Bypass: OFF\n"
+    },
+    {
+      "utc": "2026-11-21T23:10:46.772905+00:00",
+      "command": "gen 1",
+      "response": "Generator: ON\n"
+    },
+    {
+      "utc": "2026-11-21T23:10:47.076895+00:00",
+      "command": "src 1",
+      "response": "Source: 1 (0=MP3, 1=SYNTH, 2=I2S)\n"
+    },
+    {
+      "utc": "2026-11-21T23:10:47.380142+00:00",
+      "command": "mod 1",
+      "response": "Engine Mode: TAPE DELAY\n> mod updated\n"
+    },
+    {
+      "utc": "2026-11-21T23:10:47.683340+00:00",
+      "command": "dly 500",
+      "response": "Delay: 500 ms\n"
+    },
+    {
+      "utc": "2026-11-21T23:10:47.986487+00:00",
+      "command": "fbk 40",
+      "response": "Feedback     [#######-------------] 39%\n"
+    },
+    {
+      "utc": "2026-11-21T23:10:48.291345+00:00",
+      "command": "hds 4",
+      "response": "> hds updated\n"
+    },
+    {
+      "utc": "2026-11-21T23:10:48.594479+00:00",
+      "command": "mix 50",
+      "response": "Mix          [##########----------] 50%\n"
+    },
+    {
+      "utc": "2026-11-21T23:10:48.896807+00:00",
+      "command": "drv 75",
+      "response": "Drive        [###############-----] 75%\n"
+    },
+    {
+      "utc": "2026-11-21T23:10:49.199023+00:00",
+      "command": "nlv 10",
+      "response": "Noise        [#-------------------] 9%\n"
+    },
+    {
+      "utc": "2026-11-21T23:10:49.500831+00:00",
+      "command": "ftd 8",
+      "response": "Flutter      [#-------------------] 8%\n"
+    },
+    {
+      "utc": "2026-11-21T23:10:49.803269+00:00",
+      "command": "wwd 6",
+      "response": "Wow          [#-------------------] 6%\n"
+    },
+    {
+      "utc": "2026-11-21T23:10:50.107859+00:00",
+      "command": "dps 0",
+      "response": "Dropouts     [--------------------] 0%\n"
+    },
+    {
+      "utc": "2026-11-21T23:10:50.411695+00:00",
+      "command": "tps 50",
+      "response": "Speed        [##########----------] 50%\n"
+    },
+    {
+      "utc": "2026-11-21T23:10:50.714383+00:00",
+      "command": "tpa 50",
+      "response": "Age          [##########----------] 50%\n"
+    },
+    {
+      "utc": "2026-11-21T23:10:51.019432+00:00",
+      "command": "ppg 0",
+      "response": "Ping-Pong: OFF\n> ppg updated\n"
+    },
+    {
+      "utc": "2026-11-21T23:10:51.321118+00:00",
+      "command": "frz 0",
+      "response": "Freeze: OFF\n> frz updated\n"
+    },
+    {
+      "utc": "2026-11-21T23:10:51.623971+00:00",
+      "command": "frv 0",
+      "response": "Freeverb: OFF\n> frv updated\n"
+    },
+    {
+      "utc": "2026-11-21T23:10:51.926631+00:00",
+      "command": "wrp 0",
+      "response": "Accidental Warp: OFF\n> wrp updated\n"
+    },
+    {
+      "utc": "2026-11-21T23:10:52.229958+00:00",
+      "command": "rev 0",
+      "response": "Reverse: OFF\n> rev updated\n"
+    },
+    {
+      "utc": "2026-11-21T23:10:52.532571+00:00",
+      "command": "spr 0",
+      "response": "Spring Reverb: OFF\n> spr updated\n"
+    },
+    {
+      "utc": "2026-11-21T23:10:52.836150+00:00",
+      "command": "revmode 0",
+      "response": "Reverse mode: 0\n> revmode updated\n"
+    },
+    {
+      "utc": "2026-11-21T23:10:53.139920+00:00",
+      "command": "revdiv 0",
+      "response": "Reverse division: 0\n> revdiv updated\n"
+    },
+    {
+      "utc": "2026-11-21T23:10:53.443241+00:00",
+      "command": "tempo 120",
+      "response": "Tempo: 120.0 BPM\n> tempo updated\n"
+    },
+    {
+      "utc": "2026-11-21T23:10:53.746622+00:00",
+      "command": "transport play",
+      "response": "Transport: PLAY\n> transport updated\n"
+    },
+    {
+      "utc": "2026-11-21T23:10:54.049170+00:00",
+      "command": "rev 1",
+      "response": "Reverse: ON\n> rev updated\n"
+    },
+    {
+      "utc": "2026-11-21T23:10:54.151149+00:00",
+      "command": "audiohealth",
+      "response": "AudioHealth NonZeroWords=256 PeakAbsPcm32=364337 SaturatedWords=0 TxBytes=1024 TxError=0 CompletedUs=89408206 StackScanUs=0 FullWorkUs=1933\n=== AUDIOHEALTH END ===\n"
+    },
+    {
+      "utc": "2026-11-21T23:11:24.000569+00:00",
+      "command": "bench 10000 256",
+      "response": "\n=== BENCH RESULT (FW Nov 21 2026 20:07:04) ===\nCfg: src=1 gen=1 byp=0 mod=1 dly=500 fbk=40 hds=4 tps=50 tpa=50 drv=75 nlv=10 ftd=4 wwd=2 dps=0 wrp=0 wmd=0 wsp=1.00 wgr=80 wst=0.50 wfb=0 fv=0 ngt=0.0010 ppg=0 frz=0 rev=1 spr=0\nBlocks=10000 Warmup=256 WallMs=29019.5 BudgetUs=2902.49\nMeanUs=1916.53 MinUs=1862 P50Us=1898 P95Us=1964 P99Us=2082 PeakUs=2347\nBudgetMeanPct=66.03% BudgetP99Pct=71.73% Overruns=0 (0.00%) SatBins=0\nI2SFailDelta=0 HeapStart=125200 HeapEnd=125200 HeapMin=125200 PsramStart=1663048 PsramEnd=1663048 MaxParamUpdUs=433\nStackMinWords=27268\n=========================================\n"
+    },
+    {
+      "utc": "2026-11-21T23:11:24.105831+00:00",
+      "command": "perf",
+      "response": "\n=== HYDRA DSP PERFORMANCE TELEMETRY ===\nBlock Size          : 128 frames\nSample Rate         : 44100 Hz\nCPU Clock           : 240 MHz\nBlock Time Budget   : 2902.5 us\nBlocks Processed    : 39676\nAvg DSP Block Time  : 1723 us\nLast DSP Block Time : 1874 us\nPeak DSP Block Time : 2347 us\nDSP Budget Use (EMA): 65.9 %\nDSP Budget Overruns : 0\nI2S TX Write Failures: 0\nFull Work Peak      : 2673 us\nFull Work Overruns  : 0\nInternal Free Heap  : 125296 bytes\nSPIRAM (PSRAM) Free : 1663048 bytes\nAudio Stack Min Free: 27268 bytes\nWarp Active         : NO\n========================================\n\n"
+    },
+    {
+      "utc": "2026-11-21T23:11:24.409949+00:00",
+      "command": "vol 10",
+      "response": "Volume       [#-------------------] 9%\n"
+    },
+    {
+      "utc": "2026-11-21T23:11:24.714595+00:00",
+      "command": "byp 0",
+      "response": "Bypass: OFF\n"
+    },
+    {
+      "utc": "2026-11-21T23:11:25.018099+00:00",
+      "command": "gen 1",
+      "response": "Generator: ON\n"
+    },
+    {
+      "utc": "2026-11-21T23:11:25.320985+00:00",
+      "command": "src 1",
+      "response": "Source: 1 (0=MP3, 1=SYNTH, 2=I2S)\n"
+    },
+    {
+      "utc": "2026-11-21T23:11:25.624872+00:00",
+      "command": "mod 1",
+      "response": "Engine Mode: TAPE DELAY\n> mod updated\n"
+    },
+    {
+      "utc": "2026-11-21T23:11:25.928018+00:00",
+      "command": "dly 500",
+      "response": "Delay: 500 ms\n"
+    },
+    {
+      "utc": "2026-11-21T23:11:26.231121+00:00",
+      "command": "fbk 40",
+      "response": "Feedback     [#######-------------] 39%\n"
+    },
+    {
+      "utc": "2026-11-21T23:11:26.534897+00:00",
+      "command": "hds 4",
+      "response": "> hds updated\n"
+    },
+    {
+      "utc": "2026-11-21T23:11:26.838370+00:00",
+      "command": "mix 50",
+      "response": "Mix          [##########----------] 50%\n"
+    },
+    {
+      "utc": "2026-11-21T23:11:27.141457+00:00",
+      "command": "drv 75",
+      "response": "Drive        [###############-----] 75%\n"
+    },
+    {
+      "utc": "2026-11-21T23:11:27.444499+00:00",
+      "command": "nlv 10",
+      "response": "Noise        [#-------------------] 9%\n"
+    },
+    {
+      "utc": "2026-11-21T23:11:27.747533+00:00",
+      "command": "ftd 8",
+      "response": "Flutter      [#-------------------] 8%\n"
+    },
+    {
+      "utc": "2026-11-21T23:11:28.050988+00:00",
+      "command": "wwd 6",
+      "response": "Wow          [#-------------------] 6%\n"
+    },
+    {
+      "utc": "2026-11-21T23:11:28.354540+00:00",
+      "command": "dps 0",
+      "response": "Dropouts     [--------------------] 0%\n"
+    },
+    {
+      "utc": "2026-11-21T23:11:28.658768+00:00",
+      "command": "tps 50",
+      "response": "Speed        [##########----------] 50%\n"
+    },
+    {
+      "utc": "2026-11-21T23:11:28.960775+00:00",
+      "command": "tpa 50",
+      "response": "Age          [##########----------] 50%\n"
+    },
+    {
+      "utc": "2026-11-21T23:11:29.264069+00:00",
+      "command": "ppg 0",
+      "response": "Ping-Pong: OFF\n> ppg updated\n"
+    },
+    {
+      "utc": "2026-11-21T23:11:29.566795+00:00",
+      "command": "frz 0",
+      "response": "Freeze: OFF\n> frz updated\n"
+    },
+    {
+      "utc": "2026-11-21T23:11:29.870891+00:00",
+      "command": "frv 0",
+      "response": "Freeverb: OFF\n> frv updated\n"
+    },
+    {
+      "utc": "2026-11-21T23:11:30.172754+00:00",
+      "command": "wrp 0",
+      "response": "Accidental Warp: OFF\n> wrp updated\n"
+    },
+    {
+      "utc": "2026-11-21T23:11:30.476063+00:00",
+      "command": "rev 0",
+      "response": "Reverse: OFF\n> rev updated\n"
+    },
+    {
+      "utc": "2026-11-21T23:11:30.780201+00:00",
+      "command": "spr 0",
+      "response": "Spring Reverb: OFF\n> spr updated\n"
+    },
+    {
+      "utc": "2026-11-21T23:11:31.082397+00:00",
+      "command": "revmode 0",
+      "response": "Reverse mode: 0\n> revmode updated\n"
+    },
+    {
+      "utc": "2026-11-21T23:11:31.385819+00:00",
+      "command": "revdiv 0",
+      "response": "Reverse division: 0\n> revdiv updated\n"
+    },
+    {
+      "utc": "2026-11-21T23:11:31.689762+00:00",
+      "command": "tempo 120",
+      "response": "Tempo: 120.0 BPM\n> tempo updated\n"
+    },
+    {
+      "utc": "2026-11-21T23:11:31.992762+00:00",
+      "command": "transport play",
+      "response": "Transport: PLAY\n> transport updated\n"
+    },
+    {
+      "utc": "2026-11-21T23:11:32.297119+00:00",
+      "command": "rev 1",
+      "response": "Reverse: ON\n> rev updated\n"
+    },
+    {
+      "utc": "2026-11-21T23:11:32.600250+00:00",
+      "command": "revdiv 3",
+      "response": "Reverse division: 3\n> revdiv updated\n"
+    },
+    {
+      "utc": "2026-11-21T23:11:32.702533+00:00",
+      "command": "audiohealth",
+      "response": "AudioHealth NonZeroWords=256 PeakAbsPcm32=268854 SaturatedWords=0 TxBytes=1024 TxError=0 CompletedUs=127959151 StackScanUs=0 FullWorkUs=1927\n=== AUDIOHEALTH END ===\n"
+    },
+    {
+      "utc": "2026-11-21T23:12:02.562714+00:00",
+      "command": "bench 10000 256",
+      "response": "\n=== BENCH RESULT (FW Nov 21 2026 20:07:04) ===\nCfg: src=1 gen=1 byp=0 mod=1 dly=500 fbk=40 hds=4 tps=50 tpa=50 drv=75 nlv=10 ftd=4 wwd=2 dps=0 wrp=0 wmd=0 wsp=1.00 wgr=80 wst=0.50 wfb=0 fv=0 ngt=0.0010 ppg=0 frz=0 rev=1 spr=0\nBlocks=10000 Warmup=256 WallMs=29025.4 BudgetUs=2902.49\nMeanUs=1915.21 MinUs=1854 P50Us=1895 P95Us=1965 P99Us=2101 PeakUs=2397\nBudgetMeanPct=65.98% BudgetP99Pct=72.39% Overruns=0 (0.00%) SatBins=0\nI2SFailDelta=0 HeapStart=125200 HeapEnd=125200 HeapMin=125200 PsramStart=1663048 PsramEnd=1663048 MaxParamUpdUs=433\nStackMinWords=27268\n=========================================\n"
+    },
+    {
+      "utc": "2026-11-21T23:12:02.667752+00:00",
+      "command": "perf",
+      "response": "\n=== HYDRA DSP PERFORMANCE TELEMETRY ===\nBlock Size          : 128 frames\nSample Rate         : 44100 Hz\nCPU Clock           : 240 MHz\nBlock Time Budget   : 2902.5 us\nBlocks Processed    : 52962\nAvg DSP Block Time  : 1770 us\nLast DSP Block Time : 1874 us\nPeak DSP Block Time : 2437 us\nDSP Budget Use (EMA): 65.5 %\nDSP Budget Overruns : 0\nI2S TX Write Failures: 0\nFull Work Peak      : 2673 us\nFull Work Overruns  : 0\nInternal Free Heap  : 125296 bytes\nSPIRAM (PSRAM) Free : 1663048 bytes\nAudio Stack Min Free: 27268 bytes\nWarp Active         : NO\n========================================\n\n"
+    },
+    {
+      "utc": "2026-11-21T23:12:02.970758+00:00",
+      "command": "vol 10",
+      "response": "Volume       [#-------------------] 9%\n"
+    },
+    {
+      "utc": "2026-11-21T23:12:03.272509+00:00",
+      "command": "byp 0",
+      "response": "Bypass: OFF\n"
+    },
+    {
+      "utc": "2026-11-21T23:12:03.576584+00:00",
+      "command": "gen 1",
+      "response": "Generator: ON\n"
+    },
+    {
+      "utc": "2026-11-21T23:12:03.879955+00:00",
+      "command": "src 1",
+      "response": "Source: 1 (0=MP3, 1=SYNTH, 2=I2S)\n"
+    },
+    {
+      "utc": "2026-11-21T23:12:04.183452+00:00",
+      "command": "mod 1",
+      "response": "Engine Mode: TAPE DELAY\n> mod updated\n"
+    },
+    {
+      "utc": "2026-11-21T23:12:04.485844+00:00",
+      "command": "dly 500",
+      "response": "Delay: 500 ms\n"
+    },
+    {
+      "utc": "2026-11-21T23:12:04.790229+00:00",
+      "command": "fbk 40",
+      "response": "Feedback     [#######-------------] 39%\n"
+    },
+    {
+      "utc": "2026-11-21T23:12:05.094108+00:00",
+      "command": "hds 4",
+      "response": "> hds updated\n"
+    },
+    {
+      "utc": "2026-11-21T23:12:05.397444+00:00",
+      "command": "mix 50",
+      "response": "Mix          [##########----------] 50%\n"
+    },
+    {
+      "utc": "2026-11-21T23:12:05.700984+00:00",
+      "command": "drv 75",
+      "response": "Drive        [###############-----] 75%\n"
+    },
+    {
+      "utc": "2026-11-21T23:12:06.003314+00:00",
+      "command": "nlv 10",
+      "response": "Noise        [#-------------------] 9%\n"
+    },
+    {
+      "utc": "2026-11-21T23:12:06.305355+00:00",
+      "command": "ftd 8",
+      "response": "Flutter      [#-------------------] 8%\n"
+    },
+    {
+      "utc": "2026-11-21T23:12:06.607848+00:00",
+      "command": "wwd 6",
+      "response": "Wow          [#-------------------] 6%\n"
+    },
+    {
+      "utc": "2026-11-21T23:12:06.910376+00:00",
+      "command": "dps 0",
+      "response": "Dropouts     [--------------------] 0%\n"
+    },
+    {
+      "utc": "2026-11-21T23:12:07.214045+00:00",
+      "command": "tps 50",
+      "response": "Speed        [##########----------] 50%\n"
+    },
+    {
+      "utc": "2026-11-21T23:12:07.517085+00:00",
+      "command": "tpa 50",
+      "response": "Age          [##########----------] 50%\n"
+    },
+    {
+      "utc": "2026-11-21T23:12:07.820657+00:00",
+      "command": "ppg 0",
+      "response": "Ping-Pong: OFF\n> ppg updated\n"
+    },
+    {
+      "utc": "2026-11-21T23:12:08.125563+00:00",
+      "command": "frz 0",
+      "response": "Freeze: OFF\n> frz updated\n"
+    },
+    {
+      "utc": "2026-11-21T23:12:08.429768+00:00",
+      "command": "frv 0",
+      "response": "Freeverb: OFF\n> frv updated\n"
+    },
+    {
+      "utc": "2026-11-21T23:12:08.733498+00:00",
+      "command": "wrp 0",
+      "response": "Accidental Warp: OFF\n> wrp updated\n"
+    },
+    {
+      "utc": "2026-11-21T23:12:09.036834+00:00",
+      "command": "rev 0",
+      "response": "Reverse: OFF\n> rev updated\n"
+    },
+    {
+      "utc": "2026-11-21T23:12:09.340362+00:00",
+      "command": "spr 0",
+      "response": "Spring Reverb: OFF\n> spr updated\n"
+    },
+    {
+      "utc": "2026-11-21T23:12:09.644468+00:00",
+      "command": "revmode 0",
+      "response": "Reverse mode: 0\n> revmode updated\n"
+    },
+    {
+      "utc": "2026-11-21T23:12:09.948292+00:00",
+      "command": "revdiv 0",
+      "response": "Reverse division: 0\n> revdiv updated\n"
+    },
+    {
+      "utc": "2026-11-21T23:12:10.251626+00:00",
+      "command": "tempo 120",
+      "response": "Tempo: 120.0 BPM\n> tempo updated\n"
+    },
+    {
+      "utc": "2026-11-21T23:12:10.554455+00:00",
+      "command": "transport play",
+      "response": "Transport: PLAY\n> transport updated\n"
+    },
+    {
+      "utc": "2026-11-21T23:12:10.858148+00:00",
+      "command": "rev 1",
+      "response": "Reverse: ON\n> rev updated\n"
+    },
+    {
+      "utc": "2026-11-21T23:12:11.162357+00:00",
+      "command": "revdiv 4",
+      "response": "Reverse division: 4\n> revdiv updated\n"
+    },
+    {
+      "utc": "2026-11-21T23:12:11.264625+00:00",
+      "command": "audiohealth",
+      "response": "AudioHealth NonZeroWords=256 PeakAbsPcm32=15704107 SaturatedWords=0 TxBytes=1024 TxError=0 CompletedUs=166521699 StackScanUs=0 FullWorkUs=1936\n=== AUDIOHEALTH END ===\n"
+    },
+    {
+      "utc": "2026-11-21T23:12:41.126886+00:00",
+      "command": "bench 10000 256",
+      "response": "\n=== BENCH RESULT (FW Nov 21 2026 20:07:04) ===\nCfg: src=1 gen=1 byp=0 mod=1 dly=500 fbk=40 hds=4 tps=50 tpa=50 drv=75 nlv=10 ftd=4 wwd=2 dps=0 wrp=0 wmd=0 wsp=1.00 wgr=80 wst=0.50 wfb=0 fv=0 ngt=0.0010 ppg=0 frz=0 rev=1 spr=0\nBlocks=10000 Warmup=256 WallMs=29025.1 BudgetUs=2902.49\nMeanUs=1914.52 MinUs=1853 P50Us=1891 P95Us=2015 P99Us=2102 PeakUs=2391\nBudgetMeanPct=65.96% BudgetP99Pct=72.42% Overruns=0 (0.00%) SatBins=0\nI2SFailDelta=0 HeapStart=125200 HeapEnd=125200 HeapMin=125200 PsramStart=1663048 PsramEnd=1663048 MaxParamUpdUs=433\nStackMinWords=27268\n=========================================\n"
+    },
+    {
+      "utc": "2026-11-21T23:12:41.231934+00:00",
+      "command": "perf",
+      "response": "\n=== HYDRA DSP PERFORMANCE TELEMETRY ===\nBlock Size          : 128 frames\nSample Rate         : 44100 Hz\nCPU Clock           : 240 MHz\nBlock Time Budget   : 2902.5 us\nBlocks Processed    : 66248\nAvg DSP Block Time  : 1799 us\nLast DSP Block Time : 1860 us\nPeak DSP Block Time : 2437 us\nDSP Budget Use (EMA): 65.7 %\nDSP Budget Overruns : 0\nI2S TX Write Failures: 0\nFull Work Peak      : 2673 us\nFull Work Overruns  : 0\nInternal Free Heap  : 125296 bytes\nSPIRAM (PSRAM) Free : 1663048 bytes\nAudio Stack Min Free: 27268 bytes\nWarp Active         : NO\n========================================\n\n"
+    },
+    {
+      "utc": "2026-11-21T23:12:41.536834+00:00",
+      "command": "vol 10",
+      "response": "Volume       [#-------------------] 9%\n"
+    },
+    {
+      "utc": "2026-11-21T23:12:41.840496+00:00",
+      "command": "byp 0",
+      "response": "Bypass: OFF\n"
+    },
+    {
+      "utc": "2026-11-21T23:12:42.142910+00:00",
+      "command": "gen 1",
+      "response": "Generator: ON\n"
+    },
+    {
+      "utc": "2026-11-21T23:12:42.446992+00:00",
+      "command": "src 1",
+      "response": "Source: 1 (0=MP3, 1=SYNTH, 2=I2S)\n"
+    },
+    {
+      "utc": "2026-11-21T23:12:42.751355+00:00",
+      "command": "mod 1",
+      "response": "Engine Mode: TAPE DELAY\n> mod updated\n"
+    },
+    {
+      "utc": "2026-11-21T23:12:43.056059+00:00",
+      "command": "dly 500",
+      "response": "Delay: 500 ms\n"
+    },
+    {
+      "utc": "2026-11-21T23:12:43.359555+00:00",
+      "command": "fbk 40",
+      "response": "Feedback     [#######-------------] 39%\n"
+    },
+    {
+      "utc": "2026-11-21T23:12:43.662757+00:00",
+      "command": "hds 4",
+      "response": "> hds updated\n"
+    },
+    {
+      "utc": "2026-11-21T23:12:43.966721+00:00",
+      "command": "mix 50",
+      "response": "Mix          [##########----------] 50%\n"
+    },
+    {
+      "utc": "2026-11-21T23:12:44.269321+00:00",
+      "command": "drv 75",
+      "response": "Drive        [###############-----] 75%\n"
+    },
+    {
+      "utc": "2026-11-21T23:12:44.572232+00:00",
+      "command": "nlv 10",
+      "response": "Noise        [#-------------------] 9%\n"
+    },
+    {
+      "utc": "2026-11-21T23:12:44.876812+00:00",
+      "command": "ftd 8",
+      "response": "Flutter      [#-------------------] 8%\n"
+    },
+    {
+      "utc": "2026-11-21T23:12:45.182125+00:00",
+      "command": "wwd 6",
+      "response": "Wow          [#-------------------] 6%\n"
+    },
+    {
+      "utc": "2026-11-21T23:12:45.487069+00:00",
+      "command": "dps 0",
+      "response": "Dropouts     [--------------------] 0%\n"
+    },
+    {
+      "utc": "2026-11-21T23:12:45.791160+00:00",
+      "command": "tps 50",
+      "response": "Speed        [##########----------] 50%\n"
+    },
+    {
+      "utc": "2026-11-21T23:12:46.096096+00:00",
+      "command": "tpa 50",
+      "response": "Age          [##########----------] 50%\n"
+    },
+    {
+      "utc": "2026-11-21T23:12:46.429298+00:00",
+      "command": "ppg 0",
+      "response": "Ping-Pong: OFF\n> ppg updated\n"
+    },
+    {
+      "utc": "2026-11-21T23:12:46.732271+00:00",
+      "command": "frz 0",
+      "response": "Freeze: OFF\n> frz updated\n"
+    },
+    {
+      "utc": "2026-11-21T23:12:47.036520+00:00",
+      "command": "frv 0",
+      "response": "Freeverb: OFF\n> frv updated\n"
+    },
+    {
+      "utc": "2026-11-21T23:12:47.339461+00:00",
+      "command": "wrp 0",
+      "response": "Accidental Warp: OFF\n> wrp updated\n"
+    },
+    {
+      "utc": "2026-11-21T23:12:47.642023+00:00",
+      "command": "rev 0",
+      "response": "Reverse: OFF\n> rev updated\n"
+    },
+    {
+      "utc": "2026-11-21T23:12:47.945063+00:00",
+      "command": "spr 0",
+      "response": "Spring Reverb: OFF\n> spr updated\n"
+    },
+    {
+      "utc": "2026-11-21T23:12:48.247951+00:00",
+      "command": "revmode 0",
+      "response": "Reverse mode: 0\n> revmode updated\n"
+    },
+    {
+      "utc": "2026-11-21T23:12:48.550361+00:00",
+      "command": "revdiv 0",
+      "response": "Reverse division: 0\n> revdiv updated\n"
+    },
+    {
+      "utc": "2026-11-21T23:12:48.853024+00:00",
+      "command": "tempo 120",
+      "response": "Tempo: 120.0 BPM\n> tempo updated\n"
+    },
+    {
+      "utc": "2026-11-21T23:12:49.156752+00:00",
+      "command": "transport play",
+      "response": "Transport: PLAY\n> transport updated\n"
+    },
+    {
+      "utc": "2026-11-21T23:12:49.460245+00:00",
+      "command": "rev 1",
+      "response": "Reverse: ON\n> rev updated\n"
+    },
+    {
+      "utc": "2026-11-21T23:12:49.763932+00:00",
+      "command": "fbk 95",
+      "response": "Feedback     [###################-] 95%\n"
+    },
+    {
+      "utc": "2026-11-21T23:12:49.867266+00:00",
+      "command": "audiohealth",
+      "response": "AudioHealth NonZeroWords=256 PeakAbsPcm32=472841 SaturatedWords=0 TxBytes=1024 TxError=0 CompletedUs=205120883 StackScanUs=0 FullWorkUs=1915\n=== AUDIOHEALTH END ===\n"
+    },
+    {
+      "utc": "2026-11-21T23:13:19.718313+00:00",
+      "command": "bench 10000 256",
+      "response": "\n=== BENCH RESULT (FW Nov 21 2026 20:07:04) ===\nCfg: src=1 gen=1 byp=0 mod=1 dly=500 fbk=95 hds=4 tps=50 tpa=50 drv=75 nlv=10 ftd=4 wwd=2 dps=0 wrp=0 wmd=0 wsp=1.00 wgr=80 wst=0.50 wfb=0 fv=0 ngt=0.0010 ppg=0 frz=0 rev=1 spr=0\nBlocks=10000 Warmup=256 WallMs=29019.5 BudgetUs=2902.49\nMeanUs=1915.59 MinUs=1861 P50Us=1897 P95Us=1962 P99Us=2080 PeakUs=2346\nBudgetMeanPct=66.00% BudgetP99Pct=71.66% Overruns=0 (0.00%) SatBins=0\nI2SFailDelta=0 HeapStart=125200 HeapEnd=125200 HeapMin=125200 PsramStart=1663048 PsramEnd=1663048 MaxParamUpdUs=433\nStackMinWords=27268\n=========================================\n"
+    },
+    {
+      "utc": "2026-11-21T23:13:19.823216+00:00",
+      "command": "perf",
+      "response": "\n=== HYDRA DSP PERFORMANCE TELEMETRY ===\nBlock Size          : 128 frames\nSample Rate         : 44100 Hz\nCPU Clock           : 240 MHz\nBlock Time Budget   : 2902.5 us\nBlocks Processed    : 79544\nAvg DSP Block Time  : 1818 us\nLast DSP Block Time : 1882 us\nPeak DSP Block Time : 2437 us\nDSP Budget Use (EMA): 65.4 %\nDSP Budget Overruns : 0\nI2S TX Write Failures: 0\nFull Work Peak      : 2673 us\nFull Work Overruns  : 0\nInternal Free Heap  : 125296 bytes\nSPIRAM (PSRAM) Free : 1663048 bytes\nAudio Stack Min Free: 27268 bytes\nWarp Active         : NO\n========================================\n\n"
+    },
+    {
+      "utc": "2026-11-21T23:13:20.126436+00:00",
+      "command": "vol 10",
+      "response": "Volume       [#-------------------] 9%\n"
+    },
+    {
+      "utc": "2026-11-21T23:13:20.429608+00:00",
+      "command": "byp 0",
+      "response": "Bypass: OFF\n"
+    },
+    {
+      "utc": "2026-11-21T23:13:20.749920+00:00",
+      "command": "gen 1",
+      "response": "Generator: ON\n"
+    },
+    {
+      "utc": "2026-11-21T23:13:21.053159+00:00",
+      "command": "src 1",
+      "response": "Source: 1 (0=MP3, 1=SYNTH, 2=I2S)\n"
+    },
+    {
+      "utc": "2026-11-21T23:13:21.357022+00:00",
+      "command": "mod 1",
+      "response": "Engine Mode: TAPE DELAY\n> mod updated\n"
+    },
+    {
+      "utc": "2026-11-21T23:13:21.659880+00:00",
+      "command": "dly 500",
+      "response": "Delay: 500 ms\n"
+    },
+    {
+      "utc": "2026-11-21T23:13:21.964665+00:00",
+      "command": "fbk 40",
+      "response": "Feedback     [#######-------------] 39%\n"
+    },
+    {
+      "utc": "2026-11-21T23:13:22.268971+00:00",
+      "command": "hds 4",
+      "response": "> hds updated\n"
+    },
+    {
+      "utc": "2026-11-21T23:13:22.572414+00:00",
+      "command": "mix 50",
+      "response": "Mix          [##########----------] 50%\n"
+    },
+    {
+      "utc": "2026-11-21T23:13:22.876853+00:00",
+      "command": "drv 75",
+      "response": "Drive        [###############-----] 75%\n"
+    },
+    {
+      "utc": "2026-11-21T23:13:23.180237+00:00",
+      "command": "nlv 10",
+      "response": "Noise        [#-------------------] 9%\n"
+    },
+    {
+      "utc": "2026-11-21T23:13:23.483755+00:00",
+      "command": "ftd 8",
+      "response": "Flutter      [#-------------------] 8%\n"
+    },
+    {
+      "utc": "2026-11-21T23:13:23.787624+00:00",
+      "command": "wwd 6",
+      "response": "Wow          [#-------------------] 6%\n"
+    },
+    {
+      "utc": "2026-11-21T23:13:24.091068+00:00",
+      "command": "dps 0",
+      "response": "Dropouts     [--------------------] 0%\n"
+    },
+    {
+      "utc": "2026-11-21T23:13:24.394340+00:00",
+      "command": "tps 50",
+      "response": "Speed        [##########----------] 50%\n"
+    },
+    {
+      "utc": "2026-11-21T23:13:24.697877+00:00",
+      "command": "tpa 50",
+      "response": "Age          [##########----------] 50%\n"
+    },
+    {
+      "utc": "2026-11-21T23:13:25.001578+00:00",
+      "command": "ppg 0",
+      "response": "Ping-Pong: OFF\n> ppg updated\n"
+    },
+    {
+      "utc": "2026-11-21T23:13:25.238396+00:00",
+      "command": "frz 0",
+      "response": "Freeze: OFF\n> frz updated\n"
+    },
+    {
+      "utc": "2026-11-21T23:13:25.581693+00:00",
+      "command": "frv 0",
+      "response": "Freeverb: OFF\n> frv updated\n"
+    },
+    {
+      "utc": "2026-11-21T23:13:25.885440+00:00",
+      "command": "wrp 0",
+      "response": "Accidental Warp: OFF\n> wrp updated\n"
+    },
+    {
+      "utc": "2026-11-21T23:13:26.187645+00:00",
+      "command": "rev 0",
+      "response": "Reverse: OFF\n> rev updated\n"
+    },
+    {
+      "utc": "2026-11-21T23:13:26.490714+00:00",
+      "command": "spr 0",
+      "response": "Spring Reverb: OFF\n> spr updated\n"
+    },
+    {
+      "utc": "2026-11-21T23:13:26.794341+00:00",
+      "command": "revmode 0",
+      "response": "Reverse mode: 0\n> revmode updated\n"
+    },
+    {
+      "utc": "2026-11-21T23:13:27.097926+00:00",
+      "command": "revdiv 0",
+      "response": "Reverse division: 0\n> revdiv updated\n"
+    },
+    {
+      "utc": "2026-11-21T23:13:27.401883+00:00",
+      "command": "tempo 120",
+      "response": "Tempo: 120.0 BPM\n> tempo updated\n"
+    },
+    {
+      "utc": "2026-11-21T23:13:27.705221+00:00",
+      "command": "transport play",
+      "response": "Transport: PLAY\n> transport updated\n"
+    },
+    {
+      "utc": "2026-11-21T23:13:28.008458+00:00",
+      "command": "hds 7",
+      "response": "> hds updated\n"
+    },
+    {
+      "utc": "2026-11-21T23:13:28.312276+00:00",
+      "command": "fbk 95",
+      "response": "Feedback     [###################-] 95%\n"
+    },
+    {
+      "utc": "2026-11-21T23:13:28.415104+00:00",
+      "command": "audiohealth",
+      "response": "AudioHealth NonZeroWords=256 PeakAbsPcm32=69019144 SaturatedWords=0 TxBytes=1024 TxError=0 CompletedUs=243670220 StackScanUs=0 FullWorkUs=2203\n=== AUDIOHEALTH END ===\n"
+    },
+    {
+      "utc": "2026-11-21T23:13:58.263412+00:00",
+      "command": "bench 10000 256",
+      "response": "\n=== BENCH RESULT (FW Nov 21 2026 20:07:04) ===\nCfg: src=1 gen=1 byp=0 mod=1 dly=500 fbk=95 hds=7 tps=50 tpa=50 drv=75 nlv=10 ftd=4 wwd=2 dps=0 wrp=0 wmd=0 wsp=1.00 wgr=80 wst=0.50 wfb=0 fv=0 ngt=0.0010 ppg=0 frz=0 rev=0 spr=0\nBlocks=10000 Warmup=256 WallMs=29020.5 BudgetUs=2902.49\nMeanUs=2128.78 MinUs=2088 P50Us=2109 P95Us=2176 P99Us=2215 PeakUs=2468\nBudgetMeanPct=73.34% BudgetP99Pct=76.31% Overruns=0 (0.00%) SatBins=0\nI2SFailDelta=0 HeapStart=125200 HeapEnd=125200 HeapMin=125200 PsramStart=1663048 PsramEnd=1663048 MaxParamUpdUs=433\nStackMinWords=27268\n=========================================\n"
+    },
+    {
+      "utc": "2026-11-21T23:13:58.370348+00:00",
+      "command": "perf",
+      "response": "\n=== HYDRA DSP PERFORMANCE TELEMETRY ===\nBlock Size          : 128 frames\nSample Rate         : 44100 Hz\nCPU Clock           : 240 MHz\nBlock Time Budget   : 2902.5 us\nBlocks Processed    : 92824\nAvg DSP Block Time  : 1856 us\nLast DSP Block Time : 2153 us\nPeak DSP Block Time : 2483 us\nDSP Budget Use (EMA): 75.5 %\nDSP Budget Overruns : 0\nI2S TX Write Failures: 0\nFull Work Peak      : 2812 us\nFull Work Overruns  : 0\nInternal Free Heap  : 125296 bytes\nSPIRAM (PSRAM) Free : 1663048 bytes\nAudio Stack Min Free: 27268 bytes\nWarp Active         : NO\n========================================\n\n"
+    },
+    {
+      "utc": "2026-11-21T23:13:58.674043+00:00",
+      "command": "vol 10",
+      "response": "Volume       [#-------------------] 9%\n"
+    },
+    {
+      "utc": "2026-11-21T23:13:58.976745+00:00",
+      "command": "byp 0",
+      "response": "Bypass: OFF\n"
+    },
+    {
+      "utc": "2026-11-21T23:13:59.282125+00:00",
+      "command": "gen 1",
+      "response": "Generator: ON\n"
+    },
+    {
+      "utc": "2026-11-21T23:13:59.586239+00:00",
+      "command": "src 1",
+      "response": "Source: 1 (0=MP3, 1=SYNTH, 2=I2S)\n"
+    },
+    {
+      "utc": "2026-11-21T23:13:59.890283+00:00",
+      "command": "mod 1",
+      "response": "Engine Mode: TAPE DELAY\n> mod updated\n"
+    },
+    {
+      "utc": "2026-11-21T23:14:00.192897+00:00",
+      "command": "dly 500",
+      "response": "Delay: 500 ms\n"
+    },
+    {
+      "utc": "2026-11-21T23:14:00.496913+00:00",
+      "command": "fbk 40",
+      "response": "Feedback     [#######-------------] 39%\n"
+    },
+    {
+      "utc": "2026-11-21T23:14:00.800923+00:00",
+      "command": "hds 4",
+      "response": "> hds updated\n"
+    },
+    {
+      "utc": "2026-11-21T23:14:01.109855+00:00",
+      "command": "mix 50",
+      "response": "Mix          [##########----------] 50%\n"
+    },
+    {
+      "utc": "2026-11-21T23:14:01.413465+00:00",
+      "command": "drv 75",
+      "response": "Drive        [###############-----] 75%\n"
+    },
+    {
+      "utc": "2026-11-21T23:14:01.717713+00:00",
+      "command": "nlv 10",
+      "response": "Noise        [#-------------------] 9%\n"
+    },
+    {
+      "utc": "2026-11-21T23:14:02.020977+00:00",
+      "command": "ftd 8",
+      "response": "Flutter      [#-------------------] 8%\n"
+    },
+    {
+      "utc": "2026-11-21T23:14:02.325309+00:00",
+      "command": "wwd 6",
+      "response": "Wow          [#-------------------] 6%\n"
+    },
+    {
+      "utc": "2026-11-21T23:14:02.628973+00:00",
+      "command": "dps 0",
+      "response": "Dropouts     [--------------------] 0%\n"
+    },
+    {
+      "utc": "2026-11-21T23:14:02.931800+00:00",
+      "command": "tps 50",
+      "response": "Speed        [##########----------] 50%\n"
+    },
+    {
+      "utc": "2026-11-21T23:14:03.234985+00:00",
+      "command": "tpa 50",
+      "response": "Age          [##########----------] 50%\n"
+    },
+    {
+      "utc": "2026-11-21T23:14:03.538113+00:00",
+      "command": "ppg 0",
+      "response": "Ping-Pong: OFF\n> ppg updated\n"
+    },
+    {
+      "utc": "2026-11-21T23:14:03.842108+00:00",
+      "command": "frz 0",
+      "response": "Freeze: OFF\n> frz updated\n"
+    },
+    {
+      "utc": "2026-11-21T23:14:04.146899+00:00",
+      "command": "frv 0",
+      "response": "Freeverb: OFF\n> frv updated\n"
+    },
+    {
+      "utc": "2026-11-21T23:14:04.450761+00:00",
+      "command": "wrp 0",
+      "response": "Accidental Warp: OFF\n> wrp updated\n"
+    },
+    {
+      "utc": "2026-11-21T23:14:04.756862+00:00",
+      "command": "rev 0",
+      "response": "Reverse: OFF\n> rev updated\n"
+    },
+    {
+      "utc": "2026-11-21T23:14:05.060431+00:00",
+      "command": "spr 0",
+      "response": "Spring Reverb: OFF\n> spr updated\n"
+    },
+    {
+      "utc": "2026-11-21T23:14:05.365784+00:00",
+      "command": "revmode 0",
+      "response": "Reverse mode: 0\n> revmode updated\n"
+    },
+    {
+      "utc": "2026-11-21T23:14:05.669615+00:00",
+      "command": "revdiv 0",
+      "response": "Reverse division: 0\n> revdiv updated\n"
+    },
+    {
+      "utc": "2026-11-21T23:14:05.973417+00:00",
+      "command": "tempo 120",
+      "response": "Tempo: 120.0 BPM\n> tempo updated\n"
+    },
+    {
+      "utc": "2026-11-21T23:14:06.277314+00:00",
+      "command": "transport play",
+      "response": "Transport: PLAY\n> transport updated\n"
+    },
+    {
+      "utc": "2026-11-21T23:14:06.581046+00:00",
+      "command": "wrp 1",
+      "response": "Accidental Warp: ON\n> wrp updated\n"
+    },
+    {
+      "utc": "2026-11-21T23:14:06.885459+00:00",
+      "command": "spr 1",
+      "response": "Spring Reverb: ON\n> spr updated\n"
+    },
+    {
+      "utc": "2026-11-21T23:14:07.190145+00:00",
+      "command": "rev 1",
+      "response": "Reverse: ON\n> rev updated\n"
+    },
+    {
+      "utc": "2026-11-21T23:14:07.493597+00:00",
+      "command": "fbk 50",
+      "response": "Feedback     [##########----------] 50%\n"
+    },
+    {
+      "utc": "2026-11-21T23:14:07.596747+00:00",
+      "command": "audiohealth",
+      "response": "AudioHealth NonZeroWords=256 PeakAbsPcm32=76515088 SaturatedWords=0 TxBytes=1024 TxError=0 CompletedUs=282851105 StackScanUs=0 FullWorkUs=2280\n=== AUDIOHEALTH END ===\n"
+    },
+    {
+      "utc": "2026-11-21T23:14:37.455503+00:00",
+      "command": "bench 10000 256",
+      "response": "\n=== BENCH RESULT (FW Nov 21 2026 20:07:04) ===\nCfg: src=1 gen=1 byp=0 mod=1 dly=500 fbk=50 hds=4 tps=50 tpa=50 drv=75 nlv=10 ftd=4 wwd=2 dps=0 wrp=1 wmd=0 wsp=1.00 wgr=80 wst=0.50 wfb=0 fv=0 ngt=0.0010 ppg=0 frz=0 rev=1 spr=1\nBlocks=10000 Warmup=256 WallMs=29023.4 BudgetUs=2902.49\nMeanUs=1988.36 MinUs=1919 P50Us=1972 P95Us=2046 P99Us=2076 PeakUs=2320\nBudgetMeanPct=68.51% BudgetP99Pct=71.52% Overruns=0 (0.00%) SatBins=0\nI2SFailDelta=0 HeapStart=125200 HeapEnd=125200 HeapMin=125200 PsramStart=1663048 PsramEnd=1663048 MaxParamUpdUs=433\nStackMinWords=27268\n=========================================\n"
+    },
+    {
+      "utc": "2026-11-21T23:14:37.563457+00:00",
+      "command": "perf",
+      "response": "\n=== HYDRA DSP PERFORMANCE TELEMETRY ===\nBlock Size          : 128 frames\nSample Rate         : 44100 Hz\nCPU Clock           : 240 MHz\nBlock Time Budget   : 2902.5 us\nBlocks Processed    : 106327\nAvg DSP Block Time  : 1871 us\nLast DSP Block Time : 1959 us\nPeak DSP Block Time : 2483 us\nDSP Budget Use (EMA): 67.7 %\nDSP Budget Overruns : 0\nI2S TX Write Failures: 0\nFull Work Peak      : 2812 us\nFull Work Overruns  : 0\nInternal Free Heap  : 125296 bytes\nSPIRAM (PSRAM) Free : 1663048 bytes\nAudio Stack Min Free: 27268 bytes\nWarp Active         : YES\n  Mode              : 0\n  Speed Multiplier  : 1.00x (v_eff = 2.00x)\n  Grain Window      : 80.0 ms\n  Stereo Offset     : 0.50\n  Warp Feedback     : 0.0 %\n========================================\n\n"
+    },
+    {
+      "utc": "2026-11-21T23:14:37.867514+00:00",
+      "command": "tempo 90",
+      "response": "Tempo: 90.0 BPM\n> tempo updated\n"
+    },
+    {
+      "utc": "2026-11-21T23:14:38.171389+00:00",
+      "command": "tempo 120",
+      "response": "Tempo: 120.0 BPM\n> tempo updated\n"
+    },
+    {
+      "utc": "2026-11-21T23:14:38.474339+00:00",
+      "command": "tempo 140",
+      "response": "Tempo: 140.0 BPM\n> tempo updated\n"
+    },
+    {
+      "utc": "2026-11-21T23:14:38.777665+00:00",
+      "command": "tempo 90",
+      "response": "Tempo: 90.0 BPM\n> tempo updated\n"
+    },
+    {
+      "utc": "2026-11-21T23:14:39.081665+00:00",
+      "command": "tempo 90",
+      "response": "Tempo: 90.0 BPM\n> tempo updated\n"
+    },
+    {
+      "utc": "2026-11-21T23:14:39.385595+00:00",
+      "command": "tempo 100",
+      "response": "Tempo: 100.0 BPM\n> tempo updated\n"
+    },
+    {
+      "utc": "2026-11-21T23:14:39.689290+00:00",
+      "command": "tempo 110",
+      "response": "Tempo: 110.0 BPM\n> tempo updated\n"
+    },
+    {
+      "utc": "2026-11-21T23:14:39.993111+00:00",
+      "command": "tempo 120",
+      "response": "Tempo: 120.0 BPM\n> tempo updated\n"
+    },
+    {
+      "utc": "2026-11-21T23:14:40.296163+00:00",
+      "command": "tempo 130",
+      "response": "Tempo: 130.0 BPM\n> tempo updated\n"
+    },
+    {
+      "utc": "2026-11-21T23:14:40.599692+00:00",
+      "command": "tempo 140",
+      "response": "Tempo: 140.0 BPM\n> tempo updated\n"
+    },
+    {
+      "utc": "2026-11-21T23:14:40.905522+00:00",
+      "command": "tempo 90",
+      "response": "Tempo: 90.0 BPM\n> tempo updated\n"
+    },
+    {
+      "utc": "2026-11-21T23:14:41.209455+00:00",
+      "command": "dly 100",
+      "response": "Delay: 100 ms\n"
+    },
+    {
+      "utc": "2026-11-21T23:14:41.512661+00:00",
+      "command": "dly 1500",
+      "response": "Delay: 1500 ms\n"
+    },
+    {
+      "utc": "2026-11-21T23:14:41.815826+00:00",
+      "command": "fbk 20",
+      "response": "Feedback     [###-----------------] 19%\n"
+    },
+    {
+      "utc": "2026-11-21T23:14:42.118931+00:00",
+      "command": "fbk 95",
+      "response": "Feedback     [###################-] 95%\n"
+    },
+    {
+      "utc": "2026-11-21T23:14:42.422805+00:00",
+      "command": "tps 10",
+      "response": "Speed        [#-------------------] 9%\n"
+    },
+    {
+      "utc": "2026-11-21T23:14:42.726803+00:00",
+      "command": "tps 90",
+      "response": "Speed        [##################--] 90%\n"
+    },
+    {
+      "utc": "2026-11-21T23:14:43.031122+00:00",
+      "command": "tpa 10",
+      "response": "Age          [#-------------------] 9%\n"
+    },
+    {
+      "utc": "2026-11-21T23:14:43.335989+00:00",
+      "command": "tpa 90",
+      "response": "Age          [##################--] 90%\n"
+    },
+    {
+      "utc": "2026-11-21T23:14:43.639344+00:00",
+      "command": "ton 10",
+      "response": "Tone         [#-------------------] 9%\n"
+    },
+    {
+      "utc": "2026-11-21T23:14:43.943070+00:00",
+      "command": "ton 90",
+      "response": "Tone         [##################--] 90%\n"
+    },
+    {
+      "utc": "2026-11-21T23:14:44.246481+00:00",
+      "command": "hbp 0",
+      "response": "> hbp updated\n"
+    },
+    {
+      "utc": "2026-11-21T23:14:44.550135+00:00",
+      "command": "hbp 90",
+      "response": "> hbp updated\n"
+    },
+    {
+      "utc": "2026-11-21T23:14:44.854516+00:00",
+      "command": "mix 10",
+      "response": "Mix          [#-------------------] 9%\n"
+    },
+    {
+      "utc": "2026-11-21T23:14:45.159543+00:00",
+      "command": "mix 90",
+      "response": "Mix          [##################--] 90%\n"
+    },
+    {
+      "utc": "2026-11-21T23:14:45.463530+00:00",
+      "command": "byp 1",
+      "response": "Bypass: ON\n"
+    },
+    {
+      "utc": "2026-11-21T23:14:45.770256+00:00",
+      "command": "byp 0",
+      "response": "Bypass: OFF\n"
+    },
+    {
+      "utc": "2026-11-21T23:14:46.073810+00:00",
+      "command": "mod 0",
+      "response": "Engine Mode: TAPE SATURATOR\n> mod updated\n"
+    },
+    {
+      "utc": "2026-11-21T23:14:46.378020+00:00",
+      "command": "mod 1",
+      "response": "Engine Mode: TAPE DELAY\n> mod updated\n"
+    },
+    {
+      "utc": "2026-11-21T23:14:46.682903+00:00",
+      "command": "wrp 0",
+      "response": "Accidental Warp: OFF\n> wrp updated\n"
+    },
+    {
+      "utc": "2026-11-21T23:14:46.986624+00:00",
+      "command": "rev 1",
+      "response": "Reverse: ON\n> rev updated\n"
+    },
+    {
+      "utc": "2026-11-21T23:14:47.290071+00:00",
+      "command": "rev 0",
+      "response": "Reverse: OFF\n> rev updated\n"
+    },
+    {
+      "utc": "2026-11-21T23:14:47.593385+00:00",
+      "command": "rev 1",
+      "response": "Reverse: ON\n> rev updated\n"
+    },
+    {
+      "utc": "2026-11-21T23:14:47.896720+00:00",
+      "command": "transport pause",
+      "response": "Transport: PAUSE\n> transport updated\n"
+    },
+    {
+      "utc": "2026-11-21T23:14:48.200310+00:00",
+      "command": "transport play",
+      "response": "Transport: PLAY\n> transport updated\n"
+    },
+    {
+      "utc": "2026-11-21T23:14:48.504992+00:00",
+      "command": "transport stop",
+      "response": "Transport: STOP\n> transport updated\n"
+    },
+    {
+      "utc": "2026-11-21T23:14:48.808886+00:00",
+      "command": "transport play",
+      "response": "Transport: PLAY\n> transport updated\n"
+    },
+    {
+      "utc": "2026-11-21T23:14:49.112202+00:00",
+      "command": "transport reset",
+      "response": "Transport: RESET to 0.0\n> transport updated\n"
+    },
+    {
+      "utc": "2026-11-21T23:14:49.417736+00:00",
+      "command": "transport status",
+      "response": "=== TRANSPORT STATUS ===\n  BPM                 : 90.0\n  State               : PLAYING\n  Beat                : 0 (Phase: 0.470)\n  Bar                 : 0 (Phase: 0.118)\n  Musical Position    : 0.470 beats\n  Time Signature      : 4/4\n  Sample Rate         : 0.5 Hz\n  Absolute Samples    : 13993472\n> transport updated\n"
+    },
+    {
+      "utc": "2026-11-21T23:14:49.520767+00:00",
+      "command": "perf",
+      "response": "\n=== HYDRA DSP PERFORMANCE TELEMETRY ===\nBlock Size          : 128 frames\nSample Rate         : 44100 Hz\nCPU Clock           : 240 MHz\nBlock Time Budget   : 2902.5 us\nBlocks Processed    : 110448\nAvg DSP Block Time  : 1875 us\nLast DSP Block Time : 2139 us\nPeak DSP Block Time : 2483 us\nDSP Budget Use (EMA): 73.4 %\nDSP Budget Overruns : 0\nI2S TX Write Failures: 0\nFull Work Peak      : 2820 us\nFull Work Overruns  : 0\nInternal Free Heap  : 125296 bytes\nSPIRAM (PSRAM) Free : 1663048 bytes\nAudio Stack Min Free: 27268 bytes\nWarp Active         : NO\n========================================\n\n"
+    },
+    {
+      "utc": "2026-11-21T23:14:49.622828+00:00",
+      "command": "audiohealth",
+      "response": "AudioHealth NonZeroWords=256 PeakAbsPcm32=1047544 SaturatedWords=0 TxBytes=1024 TxError=0 CompletedUs=324885587 StackScanUs=0 FullWorkUs=2170\n=== AUDIOHEALTH END ===\n"
+    },
+    {
+      "utc": "2026-11-21T23:14:49.926391+00:00",
+      "command": "vol 10",
+      "response": "Volume       [#-------------------] 9%\n"
+    },
+    {
+      "utc": "2026-11-21T23:14:50.228692+00:00",
+      "command": "byp 0",
+      "response": "Bypass: OFF\n"
+    },
+    {
+      "utc": "2026-11-21T23:14:50.531780+00:00",
+      "command": "gen 1",
+      "response": "Generator: ON\n"
+    },
+    {
+      "utc": "2026-11-21T23:14:50.835172+00:00",
+      "command": "src 1",
+      "response": "Source: 1 (0=MP3, 1=SYNTH, 2=I2S)\n"
+    },
+    {
+      "utc": "2026-11-21T23:14:51.138982+00:00",
+      "command": "mod 1",
+      "response": "Engine Mode: TAPE DELAY\n> mod updated\n"
+    },
+    {
+      "utc": "2026-11-21T23:14:51.441567+00:00",
+      "command": "dly 500",
+      "response": "Delay: 500 ms\n"
+    },
+    {
+      "utc": "2026-11-21T23:14:51.746245+00:00",
+      "command": "fbk 40",
+      "response": "Feedback     [#######-------------] 39%\n"
+    },
+    {
+      "utc": "2026-11-21T23:14:52.050568+00:00",
+      "command": "hds 4",
+      "response": "> hds updated\n"
+    },
+    {
+      "utc": "2026-11-21T23:14:52.354926+00:00",
+      "command": "mix 50",
+      "response": "Mix          [##########----------] 50%\n"
+    },
+    {
+      "utc": "2026-11-21T23:14:52.658812+00:00",
+      "command": "drv 75",
+      "response": "Drive        [###############-----] 75%\n"
+    },
+    {
+      "utc": "2026-11-21T23:14:52.963330+00:00",
+      "command": "nlv 10",
+      "response": "Noise        [#-------------------] 9%\n"
+    },
+    {
+      "utc": "2026-11-21T23:14:53.267842+00:00",
+      "command": "ftd 8",
+      "response": "Flutter      [#-------------------] 8%\n"
+    },
+    {
+      "utc": "2026-11-21T23:14:53.571131+00:00",
+      "command": "wwd 6",
+      "response": "Wow          [#-------------------] 6%\n"
+    },
+    {
+      "utc": "2026-11-21T23:14:53.874436+00:00",
+      "command": "dps 0",
+      "response": "Dropouts     [--------------------] 0%\n"
+    },
+    {
+      "utc": "2026-11-21T23:14:54.178269+00:00",
+      "command": "tps 50",
+      "response": "Speed        [##########----------] 50%\n"
+    },
+    {
+      "utc": "2026-11-21T23:14:54.480901+00:00",
+      "command": "tpa 50",
+      "response": "Age          [##########----------] 50%\n"
+    },
+    {
+      "utc": "2026-11-21T23:14:54.786563+00:00",
+      "command": "ppg 0",
+      "response": "Ping-Pong: OFF\n> ppg updated\n"
+    },
+    {
+      "utc": "2026-11-21T23:14:55.090475+00:00",
+      "command": "frz 0",
+      "response": "Freeze: OFF\n> frz updated\n"
+    },
+    {
+      "utc": "2026-11-21T23:14:55.394234+00:00",
+      "command": "frv 0",
+      "response": "Freeverb: OFF\n> frv updated\n"
+    },
+    {
+      "utc": "2026-11-21T23:14:55.698169+00:00",
+      "command": "wrp 0",
+      "response": "Accidental Warp: OFF\n> wrp updated\n"
+    },
+    {
+      "utc": "2026-11-21T23:14:56.001631+00:00",
+      "command": "rev 0",
+      "response": "Reverse: OFF\n> rev updated\n"
+    },
+    {
+      "utc": "2026-11-21T23:14:56.305399+00:00",
+      "command": "spr 0",
+      "response": "Spring Reverb: OFF\n> spr updated\n"
+    },
+    {
+      "utc": "2026-11-21T23:14:56.609605+00:00",
+      "command": "revmode 0",
+      "response": "Reverse mode: 0\n> revmode updated\n"
+    },
+    {
+      "utc": "2026-11-21T23:14:56.913189+00:00",
+      "command": "revdiv 0",
+      "response": "Reverse division: 0\n> revdiv updated\n"
+    },
+    {
+      "utc": "2026-11-21T23:14:57.216526+00:00",
+      "command": "tempo 120",
+      "response": "Tempo: 120.0 BPM\n> tempo updated\n"
+    },
+    {
+      "utc": "2026-11-21T23:14:57.520868+00:00",
+      "command": "transport play",
+      "response": "Transport: PLAY\n> transport updated\n"
+    },
+    {
+      "utc": "2026-11-21T23:14:57.825627+00:00",
+      "command": "rev 1",
+      "response": "Reverse: ON\n> rev updated\n"
+    },
+    {
+      "utc": "2026-11-21T23:14:58.129712+00:00",
+      "command": "fbk 95",
+      "response": "Feedback     [###################-] 95%\n"
+    },
+    {
+      "utc": "2026-11-21T23:14:58.231974+00:00",
+      "command": "perf",
+      "response": "\n=== HYDRA DSP PERFORMANCE TELEMETRY ===\nBlock Size          : 128 frames\nSample Rate         : 44100 Hz\nCPU Clock           : 240 MHz\nBlock Time Budget   : 2902.5 us\nBlocks Processed    : 113449\nAvg DSP Block Time  : 1880 us\nLast DSP Block Time : 1884 us\nPeak DSP Block Time : 2548 us\nDSP Budget Use (EMA): 65.2 %\nDSP Budget Overruns : 0\nI2S TX Write Failures: 0\nFull Work Peak      : 2820 us\nFull Work Overruns  : 0\nInternal Free Heap  : 125296 bytes\nSPIRAM (PSRAM) Free : 1663048 bytes\nAudio Stack Min Free: 27268 bytes\nWarp Active         : NO\n========================================\n\n"
+    },
+    {
+      "utc": "2026-11-21T23:14:58.337314+00:00",
+      "command": "audiohealth",
+      "response": "AudioHealth NonZeroWords=256 PeakAbsPcm32=93903920 SaturatedWords=0 TxBytes=1024 TxError=0 CompletedUs=333591202 StackScanUs=0 FullWorkUs=1907\n=== AUDIOHEALTH END ===\n"
+    },
+    {
+      "utc": "2026-11-21T23:15:09.347030+00:00",
+      "command": "perf",
+      "response": "\n=== HYDRA DSP PERFORMANCE TELEMETRY ===\nBlock Size          : 128 frames\nSample Rate         : 44100 Hz\nCPU Clock           : 240 MHz\nBlock Time Budget   : 2902.5 us\nBlocks Processed    : 116968\nAvg DSP Block Time  : 1881 us\nLast DSP Block Time : 1950 us\nPeak DSP Block Time : 2548 us\nDSP Budget Use (EMA): 68.5 %\nDSP Budget Overruns : 0\nI2S TX Write Failures: 0\nFull Work Peak      : 2820 us\nFull Work Overruns  : 0\nInternal Free Heap  : 125296 bytes\nSPIRAM (PSRAM) Free : 1663048 bytes\nAudio Stack Min Free: 27268 bytes\nWarp"
+    },
+    {
+      "utc": "2026-11-21T23:15:09.671155+00:00",
+      "command": "gen 0",
+      "response": " Active         : NO\n========================================\n\nGenerator: OFF\n"
+    },
+    {
+      "utc": "2026-11-21T23:15:09.975790+00:00",
+      "command": "vol 10",
+      "response": "Volume       [#-------------------] 9%\n"
+    },
+    {
+      "utc": "2026-11-21T23:15:10.279361+00:00",
+      "command": "fbk 40",
+      "response": "Feedback     [#######-------------] 39%\n"
+    },
+    {
+      "utc": "2026-11-21T23:15:10.583775+00:00",
+      "command": "rev 0",
+      "response": "Reverse: OFF\n> rev updated\n"
+    },
+    {
+      "utc": "2026-11-21T23:15:10.888023+00:00",
+      "command": "wrp 0",
+      "response": "Accidental Warp: OFF\n> wrp updated\n"
+    },
+    {
+      "utc": "2026-11-21T23:15:11.191584+00:00",
+      "command": "spr 0",
+      "response": "Spring Reverb: OFF\n> spr updated\n"
+    }
+  ],
+  "flash_performed_by_script": false,
+  "physical_listening": "NOT_TESTED",
+  "midi": "PHYSICAL_MIDI_CLOCK_NOT_TESTED",
+  "limitations": [
+    "No external waveform capture or physical clock measurement",
+    "Timer excludes I2S blocking and parameter update",
+    "StackMinWords firmware label actually contains ESP-IDF bytes",
+    "Historical eighth/sixteenth used enum 1/2 (whole/half), current uses 3/4",
+    "Single PCM snapshots do not prove every block finite or nonsilent"
+  ],
+  "identity": "  list          : Show Dashboard\nFirmwareCommit=990e5e9bc0cb22e469705555c26ef1ef9c94ae06\nSourceSHA256=54c302c03f9d8ea43a22ea072d8d0e13c5318d4d8780814a09990618932f05f4\nELFSHA256=5069e445d11390370f33bd4e650830a389ee6619db48c70c6c72ce9373999f6e\nResetReason=1 CPU=240 SampleRate=44100 BlockFrames=128 PSRAMBytes=8388608 FlashBytes=16777216 I2SInitialized=1\n=== IDENTITY END ===\n",
+  "initial_perf": {
+    "blocks": 12517,
+    "avg_us": 1505,
+    "last_us": 1579,
+    "peak_us": 1868,
+    "budget_load": 52.0,
+    "overruns": 0,
+    "i2s_failures": 0,
+    "heap_free": 125296,
+    "psram_free": 1663048,
+    "stack_min_bytes": 27268,
+    "full_work_peak_us": 1876,
+    "full_work_overruns": 0
+  },
+  "generator_control": {
+    "off": {
+      "NonZeroWords": 0,
+      "PeakAbsPcm32": 0,
+      "CompletedUs": 41852108,
+      "StackScanUs": 0,
+      "FullWorkUs": 124
+    },
+    "on": [
+      {
+        "NonZeroWords": 256,
+        "PeakAbsPcm32": 193,
+        "CompletedUs": 42258026,
+        "StackScanUs": 0,
+        "FullWorkUs": 482
+      },
+      {
+        "NonZeroWords": 256,
+        "PeakAbsPcm32": 147,
+        "CompletedUs": 42362298,
+        "StackScanUs": 0,
+        "FullWorkUs": 471
+      },
+      {
+        "NonZeroWords": 0,
+        "PeakAbsPcm32": 0,
+        "CompletedUs": 42466581,
+        "StackScanUs": 0,
+        "FullWorkUs": 467
+      },
+      {
+        "NonZeroWords": 0,
+        "PeakAbsPcm32": 0,
+        "CompletedUs": 42559269,
+        "StackScanUs": 0,
+        "FullWorkUs": 460
+      },
+      {
+        "NonZeroWords": 0,
+        "PeakAbsPcm32": 0,
+        "CompletedUs": 42663568,
+        "StackScanUs": 0,
+        "FullWorkUs": 466
+      },
+      {
+        "NonZeroWords": 0,
+        "PeakAbsPcm32": 0,
+        "CompletedUs": 42767837,
+        "StackScanUs": 0,
+        "FullWorkUs": 455
+      },
+      {
+        "NonZeroWords": 0,
+        "PeakAbsPcm32": 0,
+        "CompletedUs": 42872126,
+        "StackScanUs": 0,
+        "FullWorkUs": 461
+      },
+      {
+        "NonZeroWords": 0,
+        "PeakAbsPcm32": 0,
+        "CompletedUs": 42976407,
+        "StackScanUs": 0,
+        "FullWorkUs": 457
+      },
+      {
+        "NonZeroWords": 0,
+        "PeakAbsPcm32": 0,
+        "CompletedUs": 43069108,
+        "StackScanUs": 0,
+        "FullWorkUs": 458
+      },
+      {
+        "NonZeroWords": 0,
+        "PeakAbsPcm32": 0,
+        "CompletedUs": 43173393,
+        "StackScanUs": 0,
+        "FullWorkUs": 459
+      }
+    ]
+  },
+  "audio_health": {
+    "delay": {
+      "NonZeroWords": 256,
+      "PeakAbsPcm32": 96423328,
+      "CompletedUs": 51158519,
+      "StackScanUs": 0,
+      "FullWorkUs": 1929
+    },
+    "reverse-quarter": {
+      "NonZeroWords": 256,
+      "PeakAbsPcm32": 364337,
+      "CompletedUs": 89408206,
+      "StackScanUs": 0,
+      "FullWorkUs": 1933
+    },
+    "reverse-eighth": {
+      "NonZeroWords": 256,
+      "PeakAbsPcm32": 268854,
+      "CompletedUs": 127959151,
+      "StackScanUs": 0,
+      "FullWorkUs": 1927
+    },
+    "reverse-sixteenth": {
+      "NonZeroWords": 256,
+      "PeakAbsPcm32": 15704107,
+      "CompletedUs": 166521699,
+      "StackScanUs": 0,
+      "FullWorkUs": 1936
+    },
+    "reverse-feedback95": {
+      "NonZeroWords": 256,
+      "PeakAbsPcm32": 472841,
+      "CompletedUs": 205120883,
+      "StackScanUs": 0,
+      "FullWorkUs": 1915
+    },
+    "multihead": {
+      "NonZeroWords": 256,
+      "PeakAbsPcm32": 69019144,
+      "CompletedUs": 243670220,
+      "StackScanUs": 0,
+      "FullWorkUs": 2203
+    },
+    "stress": {
+      "NonZeroWords": 256,
+      "PeakAbsPcm32": 76515088,
+      "CompletedUs": 282851105,
+      "StackScanUs": 0,
+      "FullWorkUs": 2280
+    }
+  },
+  "stress_perf": {
+    "blocks": 110448,
+    "avg_us": 1875,
+    "last_us": 2139,
+    "peak_us": 2483,
+    "budget_load": 73.4,
+    "overruns": 0,
+    "i2s_failures": 0,
+    "heap_free": 125296,
+    "psram_free": 1663048,
+    "stack_min_bytes": 27268,
+    "full_work_peak_us": 2820,
+    "full_work_overruns": 0
+  },
+  "stress_audio_health": {
+    "NonZeroWords": 256,
+    "PeakAbsPcm32": 1047544,
+    "CompletedUs": 324885587,
+    "StackScanUs": 0,
+    "FullWorkUs": 2170
+  },
+  "error": "RuntimeError('Incomplete response: perf')",
+  "finished_utc": "2026-11-21T23:15:11.195854+00:00"
+}

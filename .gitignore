@@ -27,3 +27,4 @@ __pycache__/
 *.pyc
 *.bak
 *.log
+/tools/phase6-listening-lab/node_modules/

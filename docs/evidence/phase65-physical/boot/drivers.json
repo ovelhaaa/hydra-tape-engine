@@ -1,0 +1,20 @@
+[
+  {
+    "DeviceName": "USB JTAG debug unit",
+    "DriverProviderName": "libwdi",
+    "DriverVersion": "6.1.7600.16386",
+    "InfName": "oem77.inf"
+  },
+  {
+    "DeviceName": "Dispositivo Serial USB",
+    "DriverProviderName": "Microsoft",
+    "DriverVersion": "10.0.19041.3636",
+    "InfName": "usbser.inf"
+  },
+  {
+    "DeviceName": "USB Composite Device",
+    "DriverProviderName": "Microsoft",
+    "DriverVersion": "10.0.19041.6456",
+    "InfName": "usb.inf"
+  }
+]

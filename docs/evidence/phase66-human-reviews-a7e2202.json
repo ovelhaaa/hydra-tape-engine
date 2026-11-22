@@ -1,0 +1,118 @@
+{
+  "schema_version": 1,
+  "reference_commit": "a7e22022f71f670e51a77e63149148c88605d9f0",
+  "package_hashes": {
+    "01_final_01": [
+      "e8e7ffa6db060bfca6a2d3a5ea98ace7b292d786337d0354808e47aa67d284e7",
+      "4e95c62ac82f7e93b3a7a9f1832e16178d9385be09aec2d788b4f8bce75264fe",
+      "e4bcc88eb416c32031c7af0ba5cac2454a7f1c31b3172a8b29679b42ac3289ee"
+    ],
+    "02_final_02": [
+      "435f804cd3e048822a1f33bc5e0c757cd3805acb76688468d3ffdfd4c40bd0b2",
+      "2cac09c49988d42db05c406e474a79250f272a69a28a9129b32b57390d391820",
+      "5f4d102d48b96a43c824815e769fb004159c46677c8a8b5ae826f32149a9026e"
+    ],
+    "03_final_03": [
+      "0c2512cd1911ece4c732ed18c63ea4db83b3dd23a819c1bb1973ea3aefebc83b",
+      "42cfdc3bdec902dd4fdfbe4f745f42993e2521df1f48162e1a5197a3997dfc69",
+      "55718e16f77428bf5c7dccc4eb18dd61638b8c0ef24fd07882156d1a7b569b9a"
+    ],
+    "04_final_04": [
+      "6f4b83a64d46a91dcb4c09b383235854a29941b24e9e06c5bd52cf50577c17d5",
+      "30f4b87e0fdf0e9b2e0a7356379ef6bf5bc949ce1b6a3256b409feae791ec664",
+      "479c3dc560e0188cd4f90b960576d94b72b1b042aceb9a1306e0231999825903"
+    ],
+    "05_final_05": [
+      "1919f6a22acd4bbb9a5e14eea9001232bf83ecf67a684581f76a275e2d8c94f7",
+      "1582cf3313774d59de92b93d58bc64f8762138500ad81622ae2ba5db33709b50",
+      "b7f04c81f67fa3e1b3d2118c7368bd1afc693950b98acb2ae2155808e82dd252"
+    ],
+    "06_final_06": [
+      "ef35af2e357dbfa9d46a3fde16e44b65216b1e9ad622d451038570aa860e300e",
+      "a00be86bafe77ccd89b3036d7178a5b35f56e1a41f575a5c5c49e68c14cb0f2e",
+      "c83074da9424e81a59921d620f9025c700067c66fdb40e61329830458c7ac74c"
+    ],
+    "07_final_07": [
+      "0ab9193d8e8487bcd01b28103623c5e00a49f1606188713174ed41a5beaf5e0c",
+      "58f10f99880d7747053337aafb7a79073ecf5975c97b221309ae8c2105878982",
+      "c2d101de5fca7963c7eaadb932f43b69826a743fa2a52ce8b4d1602458588966"
+    ],
+    "08_final_08": [
+      "77822f63d334d0f3669b27618c4a93f6523a4a0857ad059a33a1afc42922daec",
+      "6fe3c8035d54f44bdfff41d3e1382d65583e2146c665cf0b0c0ba34ad2810ebf",
+      "06ebd8c1265ac1f8f16338a8bbefc9c6cef16a7c74ad53ffc284f4b9e6622dad"
+    ],
+    "09_final_09": [
+      "c21373d126e8b0a552ad33eb58ce1bafb62e05cea63a8254eeeb37536f5e2515",
+      "44eb86a77cb096af28d66fb1c8d9746a1e2735407a5214e60269f5dbd6a158a1",
+      "a28ca8aeb9207d1824e23927548419213f941ecd841f8c4bf79ce02e55730250"
+    ],
+    "10_final_10": [
+      "c2441f66e35d5e6dbc350cad878992c3f6a55942763c03e9d9552abdf3822d96",
+      "6c98ed2bcdb83bc5b6303a8392e76524cc960f02f997789feef996da11079174",
+      "13c55b91e597427fefd3619aba49527ba86b2d85cc4b65a7714098fa81a83b23"
+    ]
+  },
+  "reviews": {
+    "01_final_01": {
+      "state": "PASS",
+      "criteria": {},
+      "comments": "",
+      "notes": []
+    },
+    "02_final_02": {
+      "state": "PASS",
+      "criteria": {},
+      "comments": "",
+      "notes": []
+    },
+    "03_final_03": {
+      "state": "PASS",
+      "criteria": {},
+      "comments": "",
+      "notes": []
+    },
+    "04_final_04": {
+      "state": "PASS",
+      "criteria": {},
+      "comments": "",
+      "notes": []
+    },
+    "05_final_05": {
+      "state": "PASS",
+      "criteria": {},
+      "comments": "",
+      "notes": []
+    },
+    "06_final_06": {
+      "state": "PASS",
+      "criteria": {},
+      "comments": "",
+      "notes": []
+    },
+    "07_final_07": {
+      "state": "PASS",
+      "criteria": {},
+      "comments": "",
+      "notes": []
+    },
+    "08_final_08": {
+      "state": "PASS",
+      "criteria": {},
+      "comments": "",
+      "notes": []
+    },
+    "09_final_09": {
+      "state": "PASS",
+      "criteria": {},
+      "comments": "",
+      "notes": []
+    },
+    "10_final_10": {
+      "state": "PASS",
+      "criteria": {},
+      "comments": "",
+      "notes": []
+    }
+  }
+}

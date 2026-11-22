@@ -6,6 +6,7 @@ import pathlib
 import subprocess
 import sys
 import wave
+from verify_numerical_inputs import capture, digest
 
 
 def run_capture(cmd):
@@ -62,8 +63,33 @@ def main():
     ap.add_argument('--render-wav-dir')
     args = ap.parse_args()
 
-    native = run_capture([args.native])
-    wasm = run_capture(['node', args.wasm_js])
+    # Input differences are harness failures, never part of the DSP tolerance.
+    for mode, expected in [('--dump-input', 4096), ('--dump-lut', 1025)]:
+        native_bits = capture([args.native], mode)
+        wasm_bits = capture(['node', args.wasm_js], mode)
+        if native_bits != wasm_bits or len(native_bits) != expected:
+            print(f'{mode} bit mismatch: native={digest(native_bits)} wasm={digest(wasm_bits)}')
+            return 2
+
+    scenarios = subprocess.check_output([args.native, '--list-scenarios'], text=True).splitlines()
+    wasm_scenarios = subprocess.check_output(['node', args.wasm_js, '--list-scenarios'], text=True).splitlines()
+    if len(scenarios) != 5 or scenarios != wasm_scenarios:
+        raise ValueError('scenario list mismatch (expected all five scenarios)')
+    native, wasm = [], []
+    scenario_reports = {}
+    for scenario in scenarios:
+        ns = run_capture([args.native, '--scenario', scenario])
+        ws = run_capture(['node', args.wasm_js, '--scenario', scenario])
+        if len(ns) != 2048 or len(ns) != len(ws):
+            raise ValueError(f'{scenario}: expected 2048 frames per runner')
+        errors = [a-b for nf, wf in zip(ns, ws) for a, b in zip(nf, wf)]
+        scenario_reports[scenario] = dict(max_abs=max(map(abs, errors)),
+                                         rmse=math.sqrt(sum(e*e for e in errors)/len(errors)))
+        row = scenario_reports[scenario]
+        row['status'] = 'PASS' if (row['max_abs'] <= args.max_abs_threshold
+                                    and row['rmse'] <= args.rmse_threshold) else 'FAIL'
+        native.extend(ns)
+        wasm.extend(ws)
 
     if len(native) != len(wasm):
         print(f'length mismatch: native={len(native)} wasm={len(wasm)}')
@@ -85,7 +111,8 @@ def main():
             diffs.append((index, dl, dr, abs_l, abs_r))
 
     rmse = math.sqrt(err_sq_sum / n) if n else 0.0
-    passed = max_abs <= args.max_abs_threshold and rmse <= args.rmse_threshold
+    passed = (max_abs <= args.max_abs_threshold and rmse <= args.rmse_threshold
+              and all(row['status'] == 'PASS' for row in scenario_reports.values()))
     status = 'PASS' if passed else 'FAIL'
 
     report = {
@@ -94,6 +121,7 @@ def main():
         'max_abs': max_abs,
         'rmse': rmse,
         'status': status,
+        'scenarios': scenario_reports,
         'thresholds': {
             'max_abs': args.max_abs_threshold,
             'rmse': args.rmse_threshold,

@@ -1,0 +1,29 @@
+{
+  "local_file": ".pio\\build\\esp32-s3-devkitc-1\\firmware.bin",
+  "sha256": "ed68bc89e0f9bf508c2a181680aca80fec99602e6605e588b023d3e2872ddabd",
+  "size": 628144,
+  "running_identity": "production image written at 0x10000, esptool hash verification, post-upload CLI alive",
+  "flash_written": true,
+  "previous_app_sha256": "fbd35b0ee4f3a4f1f103f75c0000756923602679298d83980769a5cdf5aa9e25",
+  "production_sha256": "ed68bc89e0f9bf508c2a181680aca80fec99602e6605e588b023d3e2872ddabd",
+  "app_offset": "0x10000",
+  "readback_equal_before": false,
+  "firmware_source_head": "df8b462eb70685640efdf4219eeba9ef35f3a263",
+  "source_hashes": {
+    "src/main.cpp": "991303d61d81e0685b58aa3a1082d2edd4512cda5ef62c209efb2d611a4307ba",
+    "platformio.ini": "1df1350b9556671ffc33cf19fa1d0d99d9c83ac943fffa4bc84226d379001269",
+    "dsp/core/tape_core.cpp": "f94cf01779302e7df318243c9abb437e338fbb70daa69ff291c258cf42d8e43a",
+    "dsp/core/fast_tanh_table.inc": "fcc7a4d288f3207a2f09a2cca3c708a713fabbe0289f9a49a5e5bcbc7ff8a7ad"
+  },
+  "upload_log": "boot/production-upload.txt",
+  "toolchain": "Xtensa GCC 14.2.0 esp-14.2.0_20251107",
+  "framework": "Arduino 3.3.6 / ESP-IDF 5.5.2.260116",
+  "platform": "pioarduino espressif32 55.03.36",
+  "cpu_mhz": 240,
+  "sample_rate": 44100,
+  "block_frames": 128,
+  "psram_bytes": 8388608,
+  "psram_identification": "esptool embedded 8MB; free heap telemetry is separate",
+  "flash_configured_bytes": 16777216,
+  "flash_detected_bytes": null
+}

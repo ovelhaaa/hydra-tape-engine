@@ -197,7 +197,11 @@ void test_stereo_integrity() {
   CHECK(hydra_dsp_set_params_sized(h, &p, sizeof(p)) == 0);
   CHECK(hydra_dsp_commit(h) == 0);
 
-  constexpr uint32_t N = 48000;
+  // A 120 BPM quarter window is 0.5 s. The frame-zero impulse returns
+  // at the end of its first playback window (~1 s), then the feedback
+  // recording needs another capture/playback cycle to reach the other side.
+  constexpr uint32_t hop = 24000;
+  constexpr uint32_t N = 6 * hop;
   std::vector<float> inL(N, 0.0f), inR(N, 0.0f);
   std::vector<float> outL(N, 0.0f), outR(N, 0.0f);
 
@@ -236,8 +240,39 @@ void test_stereo_integrity() {
     energyPpL += outL[i] * outL[i];
     energyPpR += outR[i] * outR[i];
   }
-  // With ping pong, energy should bleed into R channel
+
+  // Reverse V2 maps an impulse at t to 2*T - t, where T is the next reverse
+  // window boundary. With hop = 0.5 s the L echo lands at ~1 s, and the
+  // ping-pong return crosses into R one capture/playback cycle later (~2 s).
+  auto rightPeakBetween = [&](uint32_t first, uint32_t last, float& peak) {
+    uint32_t at = first;
+    peak = 0.0f;
+    for (uint32_t i = first; i < last; ++i) {
+      if (std::fabs(outR[i]) > peak) { peak = std::fabs(outR[i]); at = i; }
+    }
+    return at;
+  };
+  float leftEchoPeak = 0.0f;
+  for (uint32_t i = 3 * hop / 2; i < 5 * hop / 2; ++i)
+    leftEchoPeak = std::max(leftEchoPeak, std::fabs(outL[i]));
+  float firstCrossPeak = 0.0f, returnPeak = 0.0f;
+  const uint32_t firstCross = rightPeakBetween(3 * hop / 2, 5 * hop / 2, firstCrossPeak);
+  const uint32_t returnFrame = rightPeakBetween(7 * hop / 2, 9 * hop / 2, returnPeak);
+
+  CHECK(energyPpL > 0.01f);
   CHECK(energyPpR > 0.001f);
+  // The ping-pong path must carry real musical energy, not just a residual
+  // carrier: require the actual echo amplitude at both crossings.
+  CHECK(leftEchoPeak > 0.05f);
+  CHECK(firstCrossPeak > 0.01f);
+  CHECK(returnPeak > 0.05f);
+  CHECK(std::abs(static_cast<int64_t>(returnFrame) - static_cast<int64_t>(4 * hop)) <
+        static_cast<int64_t>(hop / 4));
+  std::cout << "[Ping-Pong] L echo peak=" << leftEchoPeak
+            << " R first crossing=" << firstCross << " (" << firstCross / kRate48
+            << " s) peak=" << firstCrossPeak
+            << " R return=" << returnFrame << " (" << returnFrame / kRate48
+            << " s) peak=" << returnPeak << '\n';
 
   hydra_dsp_destroy(h);
   std::cout << "[Test D] Stereo Integrity & Ping-Pong: OK\n";

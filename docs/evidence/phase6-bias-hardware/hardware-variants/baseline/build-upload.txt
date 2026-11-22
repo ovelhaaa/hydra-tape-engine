@@ -1,0 +1,679 @@
+Processing esp32-s3-devkitc-1 (platform: espressif32; board: esp32-s3-devkitc-1; framework: arduino)
+--------------------------------------------------------------------------------
+Library Manager: Installing earlephilhower/ESP8266Audio @ ^1.9.7
+Unpacking 0% 10% 20% 30% 40% 50% 60% 70% 80% 90% 100%
+Library Manager: ESP8266Audio@1.9.9 has been installed!
+Library Manager: Installing adafruit/Adafruit SSD1306 @ ^2.5.10
+Unpacking 0% 10% 20% 30% 40% 50% 60% 70% 80% 90% 100%
+Library Manager: Adafruit SSD1306@2.5.17 has been installed!
+Library Manager: Resolving dependencies...
+Library Manager: Installing Adafruit GFX Library
+Unpacking 0% 10% 20% 30% 40% 50% 60% 70% 80% 90% 100%
+Library Manager: Adafruit GFX Library@1.13.0 has been installed!
+Library Manager: Resolving dependencies...
+Library Manager: Installing Adafruit BusIO
+Unpacking 0% 10% 20% 30% 40% 50% 60% 70% 80% 90% 100%
+Library Manager: Adafruit BusIO@1.17.4 has been installed!
+Verbose mode can be enabled via `-v, --verbose` option
+CONFIGURATION: https://docs.platformio.org/page/boards/espressif32/esp32-s3-devkitc-1.html
+PLATFORM: Espressif 32 (55.3.36) > Espressif ESP32-S3-DevKitC-1-N8 (8 MB QD, No PSRAM)
+HARDWARE: ESP32S3 240MHz, 320KB RAM, 16MB Flash
+DEBUG: Current (esp-builtin) On-board (esp-builtin) External (cmsis-dap, esp-bridge, esp-prog, iot-bus-jtag, jlink, minimodule, olimex-arm-usb-ocd, olimex-arm-usb-ocd-h, olimex-arm-usb-tiny-h, olimex-jtag-tiny, tumpa)
+PACKAGES: 
+ - contrib-piohome @ 3.4.4 
+ - framework-arduinoespressif32 @ 3.3.6 
+ - framework-arduinoespressif32-libs @ 5.5.0+sha.f56bea3d1f 
+ - tool-esp-rom-elfs @ 2024.10.11 
+ - tool-esptoolpy @ 5.1.0 
+ - toolchain-xtensa-esp-elf @ 14.2.0+20251107
+*** Applied include path shortening for 334 framework paths ***
+*** Path length reduced from 35675 to ~14046 characters ***
+*** Estimated savings: 21042 characters ***
+LDF: Library Dependency Finder -> https://bit.ly/configure-pio-ldf
+LDF Modes: Finder ~ chain, Compatibility ~ soft
+Found 51 compatible libraries
+Scanning dependencies...
+Dependency Graph
+|-- ESP8266Audio @ 1.9.9
+|-- Adafruit SSD1306 @ 2.5.17
+|-- Adafruit GFX Library @ 1.13.0
+|-- DisplayUI
+|-- MelodyGen
+|-- TapeDelay
+|-- LittleFS @ 3.3.6
+Building in release mode
+Compiling .pio\build\esp32-s3-devkitc-1\hydra-core\hydra_dsp_c_api.o
+Compiling .pio\build\esp32-s3-devkitc-1\hydra-core\tape_core.o
+Compiling .pio\build\esp32-s3-devkitc-1\hydra-esp32\hydra_dsp_esp32_adapter.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib7fe\FS\FS.cpp.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib7fe\FS\vfs_api.cpp.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4d3\SPIFFS\SPIFFS.cpp.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib240\Network\NetworkClient.cpp.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib240\Network\NetworkEvents.cpp.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib240\Network\NetworkInterface.cpp.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib240\Network\NetworkManager.cpp.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib240\Network\NetworkServer.cpp.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib240\Network\NetworkUdp.cpp.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib3bf\NetworkClientSecure\NetworkClientSecure.cpp.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib3bf\NetworkClientSecure\ssl_client.cpp.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib92f\HTTPClient\HTTPClient.cpp.o
+Compiling .pio\build\esp32-s3-devkitc-1\libdfc\SPI\SPI.cpp.o
+In file included from {platformio}/packages/framework-arduinoespressif32/libraries/Network/src/NetworkEvents.h:8,
+                 from {platformio}/packages/framework-arduinoespressif32/libraries/Network/src/NetworkEvents.cpp:9:
+{platformio}/packages/framework-arduinoespressif32-libs/esp32s3/qio_opi/include/sdkconfig.h:1906:9: warning: "CONFIG_ESP32_ENABLE_COREDUMP_TO_FLASH" redefined
+ 1906 | #define CONFIG_ESP32_ENABLE_COREDUMP_TO_FLASH CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH
+      |         ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+<command-line>: note: this is the location of the previous definition
+In file included from {platformio}/packages/framework-arduinoespressif32/libraries/Network/src/NetworkEvents.h:8,
+                 from {platformio}/packages/framework-arduinoespressif32/libraries/Network/src/NetworkManager.h:8,
+                 from {platformio}/packages/framework-arduinoespressif32/libraries/Network/src/NetworkManager.cpp:6:
+{platformio}/packages/framework-arduinoespressif32-libs/esp32s3/qio_opi/include/sdkconfig.h:1906:9: warning: "CONFIG_ESP32_ENABLE_COREDUMP_TO_FLASH" redefined
+ 1906 | #define CONFIG_ESP32_ENABLE_COREDUMP_TO_FLASH CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH
+      |         ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+<command-line>: note: this is the location of the previous definition
+Compiling .pio\build\esp32-s3-devkitc-1\lib2eb\SD\SD.cpp.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib2eb\SD\sd_diskio.cpp.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib2eb\SD\sd_diskio_crc.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\AudioFileSourceBuffer.cpp.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\AudioFileSourceFS.cpp.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\AudioFileSourceFunction.cpp.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\AudioFileSourceHTTPStream.cpp.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\AudioFileSourceICYStream.cpp.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\AudioFileSourceID3.cpp.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\AudioFileSourcePROGMEM.cpp.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\AudioFileSourceSD.cpp.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\AudioFileSourceSPIRAMBuffer.cpp.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\AudioFileSourceSTDIO.cpp.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\AudioFileStream.cpp.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\AudioGeneratorAAC.cpp.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\AudioGeneratorFLAC.cpp.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\AudioGeneratorMIDI.cpp.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\AudioGeneratorMOD.cpp.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\AudioGeneratorMP3.cpp.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\AudioGeneratorMP3a.cpp.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\AudioGeneratorOpus.cpp.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\AudioGeneratorRTTTL.cpp.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\AudioGeneratorTalkie.cpp.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\AudioGeneratorWAV.cpp.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\AudioLogger.cpp.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\AudioOutputBuffer.cpp.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\AudioOutputFilterBiquad.cpp.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\AudioOutputFilterDecimate.cpp.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\AudioOutputI2S.cpp.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\AudioOutputI2SNoDAC.cpp.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\AudioOutputMixer.cpp.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\AudioOutputPWM.cpp.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\AudioOutputSPDIF.cpp.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\AudioOutputSPIFFSWAV.cpp.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\AudioOutputSTDIO.cpp.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\AudioOutputSerialWAV.cpp.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\AudioOutputULP.cpp.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\driver\SinglePinI2SDriver.cpp.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libflac\bitmath.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libflac\bitreader.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libflac\cpu.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libflac\crc.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libflac\fixed.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libflac\float.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libflac\format.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libflac\lpc.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libflac\md5.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libflac\memory.c.o
+.pio/libdeps/esp32-s3-devkitc-1/ESP8266Audio/src/AudioOutputI2S.cpp: In member function 'bool AudioOutputI2S::begin(bool)':
+.pio/libdeps/esp32-s3-devkitc-1/ESP8266Audio/src/AudioOutputI2S.cpp:262:23: warning: narrowing conversion of '((AudioOutputI2S*)this)->AudioOutputI2S::use_apll' from 'int' to 'bool' [-Wnarrowing]
+  262 |           .use_apll = use_apll, // Use audio PLL
+      |                       ^~~~~~~~
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libflac\stream_decoder.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libflac\window.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libhelix-aac\aacdec.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libhelix-aac\aactabs.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libhelix-aac\bitstream.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libhelix-aac\buffers.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libhelix-aac\dct4.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libhelix-aac\decelmnt.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libhelix-aac\dequant.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libhelix-aac\fft.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libhelix-aac\filefmt.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libhelix-aac\huffman.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libhelix-aac\hufftabs.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libhelix-aac\imdct.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libhelix-aac\noiseless.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libhelix-aac\pns.c.o
+.pio/libdeps/esp32-s3-devkitc-1/ESP8266Audio/src/libhelix-aac/decelmnt.c: In function 'raac_DecodeProgramConfigElement':
+.pio/libdeps/esp32-s3-devkitc-1/ESP8266Audio/src/libhelix-aac/decelmnt.c:262:29: warning: writing 1 byte into a region of size 0 [-Wstringop-overflow=]
+  262 |                 pce->lce[i] = GetBits(bsi, 4);                  /* tag select */
+      |                 ~~~~~~~~~~~~^~~~~~~~~~~~~~~~~
+In file included from .pio/libdeps/esp32-s3-devkitc-1/ESP8266Audio/src/libhelix-aac/decelmnt.c:46:
+.pio/libdeps/esp32-s3-devkitc-1/ESP8266Audio/src/libhelix-aac/coder.h:255:19: note: at offset 3 into destination object 'lce' of size 3
+  255 |     unsigned char lce[MAX_NUM_LCE];               /* instance tag for LFE elements */
+      |                   ^~~
+.pio/libdeps/esp32-s3-devkitc-1/ESP8266Audio/src/libhelix-aac/decelmnt.c:265:29: warning: writing 1 byte into a region of size 0 [-Wstringop-overflow=]
+  265 |                 pce->ade[i] = GetBits(bsi, 4);                  /* tag select */
+      |                 ~~~~~~~~~~~~^~~~~~~~~~~~~~~~~
+.pio/libdeps/esp32-s3-devkitc-1/ESP8266Audio/src/libhelix-aac/coder.h:256:19: note: at offset 7 into destination object 'ade' of size 7
+  256 |     unsigned char ade[MAX_NUM_ADE];               /* instance tag for ADE elements */
+      |                   ^~~
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libhelix-aac\sbr.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libhelix-aac\sbrfft.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libhelix-aac\sbrfreq.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libhelix-aac\sbrhfadj.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libhelix-aac\sbrhfgen.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libhelix-aac\sbrhuff.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libhelix-aac\sbrimdct.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libhelix-aac\sbrmath.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libhelix-aac\sbrqmf.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libhelix-aac\sbrside.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libhelix-aac\sbrtabs.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libhelix-aac\stproc.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libhelix-aac\tns.c.o
+In function 'DecodePulseInfo',
+    inlined from 'DecodeICS' at .pio/libdeps/esp32-s3-devkitc-1/ESP8266Audio/src/libhelix-aac/noiseless.c:422:3,
+    inlined from 'raac_DecodeNoiselessData' at .pio/libdeps/esp32-s3-devkitc-1/ESP8266Audio/src/libhelix-aac/noiseless.c:468:2:
+.pio/libdeps/esp32-s3-devkitc-1/ESP8266Audio/src/libhelix-aac/noiseless.c:257:31: warning: writing 1 byte into a region of size 0 [-Wstringop-overflow=]
+  257 |                 pi->offset[i] = GetBits(bsi, 5);
+      |                 ~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~
+In file included from .pio/libdeps/esp32-s3-devkitc-1/ESP8266Audio/src/libhelix-aac/noiseless.c:47:
+.pio/libdeps/esp32-s3-devkitc-1/ESP8266Audio/src/libhelix-aac/coder.h: In function 'raac_DecodeNoiselessData':
+.pio/libdeps/esp32-s3-devkitc-1/ESP8266Audio/src/libhelix-aac/coder.h:167:19: note: at offset 4 into destination object 'offset' of size 4
+  167 |     unsigned char offset[MAX_PULSES];
+      |                   ^~~~~~
+In function 'DecodePulseInfo',
+    inlined from 'DecodeICS' at .pio/libdeps/esp32-s3-devkitc-1/ESP8266Audio/src/libhelix-aac/noiseless.c:422:3,
+    inlined from 'raac_DecodeNoiselessData' at .pio/libdeps/esp32-s3-devkitc-1/ESP8266Audio/src/libhelix-aac/noiseless.c:468:2:
+.pio/libdeps/esp32-s3-devkitc-1/ESP8266Audio/src/libhelix-aac/noiseless.c:258:28: warning: writing 1 byte into a region of size 0 [-Wstringop-overflow=]
+  258 |                 pi->amp[i] = GetBits(bsi, 4);
+      |                 ~~~~~~~~~~~^~~~~~~~~~~~~~~~~
+.pio/libdeps/esp32-s3-devkitc-1/ESP8266Audio/src/libhelix-aac/coder.h: In function 'raac_DecodeNoiselessData':
+.pio/libdeps/esp32-s3-devkitc-1/ESP8266Audio/src/libhelix-aac/coder.h:168:19: note: at offset 4 into destination object 'amp' of size 4
+  168 |     unsigned char amp[MAX_PULSES];
+      |                   ^~~
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libhelix-aac\trigtabs.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libhelix-mp3\bitstream.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libhelix-mp3\buffers.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libhelix-mp3\dct32.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libhelix-mp3\dequant.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libhelix-mp3\dqchan.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libhelix-mp3\huffman.c.o
+.pio/libdeps/esp32-s3-devkitc-1/ESP8266Audio/src/libhelix-aac/sbrside.c: In function 'UnpackSBRGrid.isra':
+.pio/libdeps/esp32-s3-devkitc-1/ESP8266Audio/src/libhelix-aac/sbrside.c:225:40: warning: writing 1 byte into a region of size 0 [-Wstringop-overflow=]
+  225 |                         relBorder[rel] = 2*GetBits(bsi, 2) + 2;
+      |                         ~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~
+.pio/libdeps/esp32-s3-devkitc-1/ESP8266Audio/src/libhelix-aac/sbrside.c:157:53: note: at offset 3 into destination object 'relBorder' of size 3
+  157 |         unsigned char relBorder0[3], relBorder1[3], relBorder[3];
+      |                                                     ^~~~~~~~~
+.pio/libdeps/esp32-s3-devkitc-1/ESP8266Audio/src/libhelix-aac/sbrside.c:231:47: warning: writing 1 byte into a region of size 0 [-Wstringop-overflow=]
+  231 |                         sbrGrid->freqRes[env] = GetBits(bsi, 1);
+      |                         ~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~
+In file included from .pio/libdeps/esp32-s3-devkitc-1/ESP8266Audio/src/libhelix-aac/sbrside.c:46:
+.pio/libdeps/esp32-s3-devkitc-1/ESP8266Audio/src/libhelix-aac/sbr.h:216:31: note: at offset 5 into destination object 'freqRes' of size 5
+  216 |         unsigned char         freqRes[MAX_NUM_ENV];                     /* r */
+      |                               ^~~~~~~
+.pio/libdeps/esp32-s3-devkitc-1/ESP8266Audio/src/libhelix-aac/sbrside.c:257:41: warning: writing 1 byte into a region of size 0 [-Wstringop-overflow=]
+  257 |                         relBorder0[rel] = 2*GetBits(bsi, 2) + 2;
+      |                         ~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~
+.pio/libdeps/esp32-s3-devkitc-1/ESP8266Audio/src/libhelix-aac/sbrside.c:157:23: note: at offset 3 into destination object 'relBorder0' of size 3
+  157 |         unsigned char relBorder0[3], relBorder1[3], relBorder[3];
+      |                       ^~~~~~~~~~
+.pio/libdeps/esp32-s3-devkitc-1/ESP8266Audio/src/libhelix-aac/sbrside.c:260:41: warning: writing 1 byte into a region of size 0 [-Wstringop-overflow=]
+  260 |                         relBorder1[rel] = 2*GetBits(bsi, 2) + 2;
+      |                         ~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~
+.pio/libdeps/esp32-s3-devkitc-1/ESP8266Audio/src/libhelix-aac/sbrside.c:157:38: note: at offset 3 into destination object 'relBorder1' of size 3
+  157 |         unsigned char relBorder0[3], relBorder1[3], relBorder[3];
+      |                                      ^~~~~~~~~~
+.pio/libdeps/esp32-s3-devkitc-1/ESP8266Audio/src/libhelix-aac/sbrside.c:266:47: warning: writing 1 byte into a region of size 0 [-Wstringop-overflow=]
+  266 |                         sbrGrid->freqRes[env] = GetBits(bsi, 1);
+      |                         ~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~
+.pio/libdeps/esp32-s3-devkitc-1/ESP8266Audio/src/libhelix-aac/sbr.h:216:31: note: at offset 5 into destination object 'freqRes' of size 5
+  216 |         unsigned char         freqRes[MAX_NUM_ENV];                     /* r */
+      |                               ^~~~~~~
+.pio/libdeps/esp32-s3-devkitc-1/ESP8266Audio/src/libhelix-aac/sbrside.c:199:40: warning: writing 1 byte into a region of size 0 [-Wstringop-overflow=]
+  199 |                         relBorder[rel] = 2*GetBits(bsi, 2) + 2;
+      |                         ~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~
+.pio/libdeps/esp32-s3-devkitc-1/ESP8266Audio/src/libhelix-aac/sbrside.c:157:53: note: at offset 3 into destination object 'relBorder' of size 3
+  157 |         unsigned char relBorder0[3], relBorder1[3], relBorder[3];
+      |                                                     ^~~~~~~~~
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libhelix-mp3\hufftabs.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libhelix-mp3\imdct.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libhelix-mp3\mp3dec.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libhelix-mp3\mp3tabs.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libhelix-mp3\polyphase.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libhelix-mp3\scalfact.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libhelix-mp3\stproc.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libhelix-mp3\subband.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libhelix-mp3\trigtabs.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libmad\bit.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libmad\decoder.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libmad\fixed.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libmad\frame.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libmad\huffman.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libmad\layer3.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libmad\stream.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libmad\synth.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libmad\timer.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libmad\version.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libogg\bitwise.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libogg\framing.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libopus\celt\bands.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libopus\celt\celt.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libopus\celt\celt_decoder.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libopus\celt\celt_encoder.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libopus\celt\celt_lpc.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libopus\celt\cwrs.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libopus\celt\entcode.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libopus\celt\entdec.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libopus\celt\entenc.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libopus\celt\kiss_fft.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libopus\celt\laplace.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libopus\celt\mathops.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libopus\celt\mdct.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libopus\celt\modes.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libopus\celt\pitch.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libopus\celt\quant_bands.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libopus\celt\rate.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libopus\celt\vq.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libopus\mapping_matrix.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libopus\opus.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libopus\opus_decoder.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libopus\opus_encoder.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libopus\opus_multistream.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libopus\opus_multistream_decoder.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libopus\opus_multistream_encoder.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libopus\opus_projection_decoder.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libopus\opus_projection_encoder.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libopus\repacketizer.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libopus\silk\A2NLSF.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libopus\silk\CNG.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libopus\silk\HP_variable_cutoff.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libopus\silk\LPC_analysis_filter.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libopus\silk\LPC_fit.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libopus\silk\LPC_inv_pred_gain.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libopus\silk\LP_variable_cutoff.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libopus\silk\NLSF2A.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libopus\silk\NLSF_VQ.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libopus\silk\NLSF_VQ_weights_laroia.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libopus\silk\NLSF_decode.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libopus\silk\NLSF_del_dec_quant.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libopus\silk\NLSF_encode.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libopus\silk\NLSF_stabilize.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libopus\silk\NLSF_unpack.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libopus\silk\NSQ.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libopus\silk\NSQ_del_dec.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libopus\silk\PLC.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libopus\silk\VAD.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libopus\silk\VQ_WMat_EC.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libopus\silk\ana_filt_bank_1.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libopus\silk\biquad_alt.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libopus\silk\bwexpander.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libopus\silk\bwexpander_32.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libopus\silk\check_control_input.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libopus\silk\code_signs.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libopus\silk\control_SNR.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libopus\silk\control_audio_bandwidth.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libopus\silk\control_codec.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libopus\silk\debug.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libopus\silk\dec_API.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libopus\silk\decode_core.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libopus\silk\decode_frame.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libopus\silk\decode_indices.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libopus\silk\decode_parameters.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libopus\silk\decode_pitch.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libopus\silk\decode_pulses.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libopus\silk\decoder_set_fs.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libopus\silk\enc_API.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libopus\silk\encode_indices.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libopus\silk\encode_pulses.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libopus\silk\fixed\LTP_analysis_filter_FIX.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libopus\silk\fixed\LTP_scale_ctrl_FIX.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libopus\silk\fixed\apply_sine_window_FIX.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libopus\silk\fixed\autocorr_FIX.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libopus\silk\fixed\burg_modified_FIX.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libopus\silk\fixed\corrMatrix_FIX.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libopus\silk\fixed\encode_frame_FIX.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libopus\silk\fixed\find_LPC_FIX.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libopus\silk\fixed\find_LTP_FIX.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libopus\silk\fixed\find_pitch_lags_FIX.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libopus\silk\fixed\find_pred_coefs_FIX.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libopus\silk\fixed\k2a_FIX.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libopus\silk\fixed\k2a_Q16_FIX.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libopus\silk\fixed\noise_shape_analysis_FIX.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libopus\silk\fixed\pitch_analysis_core_FIX.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libopus\silk\fixed\process_gains_FIX.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libopus\silk\fixed\regularize_correlations_FIX.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libopus\silk\fixed\residual_energy16_FIX.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libopus\silk\fixed\residual_energy_FIX.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libopus\silk\fixed\schur64_FIX.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libopus\silk\fixed\schur_FIX.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libopus\silk\fixed\vector_ops_FIX.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libopus\silk\fixed\warped_autocorrelation_FIX.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libopus\silk\gain_quant.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libopus\silk\init_decoder.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libopus\silk\init_encoder.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libopus\silk\inner_prod_aligned.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libopus\silk\interpolate.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libopus\silk\lin2log.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libopus\silk\log2lin.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libopus\silk\pitch_est_tables.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libopus\silk\process_NLSFs.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libopus\silk\quant_LTP_gains.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libopus\silk\resampler.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libopus\silk\resampler_down2.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libopus\silk\resampler_down2_3.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libopus\silk\resampler_private_AR2.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libopus\silk\resampler_private_IIR_FIR.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libopus\silk\resampler_private_down_FIR.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libopus\silk\resampler_private_up2_HQ.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libopus\silk\resampler_rom.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libopus\silk\shell_coder.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libopus\silk\sigm_Q15.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libopus\silk\sort.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libopus\silk\stereo_LR_to_MS.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libopus\silk\stereo_MS_to_LR.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libopus\silk\stereo_decode_pred.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libopus\silk\stereo_encode_pred.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libopus\silk\stereo_find_predictor.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libopus\silk\stereo_quant_pred.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libopus\silk\sum_sqr_shift.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libopus\silk\table_LSF_cos.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libopus\silk\tables_LTP.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libopus\silk\tables_NLSF_CB_NB_MB.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libopus\silk\tables_NLSF_CB_WB.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libopus\silk\tables_gain.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libopus\silk\tables_other.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libopus\silk\tables_pitch_lag.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\libopus\silk\tables_pulses_per_block.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\opusfile\info.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\opusfile\internal.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\opusfile\opusfile.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib4f4\ESP8266Audio\opusfile\stream.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib811\Wire\Wire.cpp.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib1c8\Adafruit BusIO\Adafruit_BusIO_Register.cpp.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib1c8\Adafruit BusIO\Adafruit_GenericDevice.cpp.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib1c8\Adafruit BusIO\Adafruit_I2CDevice.cpp.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib1c8\Adafruit BusIO\Adafruit_SPIDevice.cpp.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib1f3\Adafruit GFX Library\Adafruit_GFX.cpp.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib1f3\Adafruit GFX Library\Adafruit_GrayOLED.cpp.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib1f3\Adafruit GFX Library\Adafruit_SPITFT.cpp.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib1f3\Adafruit GFX Library\glcdfont.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\libbc4\Adafruit SSD1306\Adafruit_SSD1306.cpp.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib5fe\TapeDelay\BubblesEngine.cpp.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib5fe\TapeDelay\FreeverbEngine.cpp.o
+Compiling .pio\build\esp32-s3-devkitc-1\lib5fe\TapeDelay\FrippEngine.cpp.o
+Compiling .pio\build\esp32-s3-devkitc-1\libdf4\DisplayUI\DisplayUI.cpp.o
+Compiling .pio\build\esp32-s3-devkitc-1\libdf4\DisplayUI\ParamDefs.cpp.o
+Compiling .pio\build\esp32-s3-devkitc-1\liba98\MelodyGen\MelodyGen.cpp.o
+Compiling .pio\build\esp32-s3-devkitc-1\libe20\LittleFS\LittleFS.cpp.o
+In file included from {platformio}/packages/framework-arduinoespressif32/libraries/LittleFS/src/LittleFS.h:17,
+                 from {platformio}/packages/framework-arduinoespressif32/libraries/LittleFS/src/LittleFS.cpp:15:
+{platformio}/packages/framework-arduinoespressif32-libs/esp32s3/qio_opi/include/sdkconfig.h:1906:9: warning: "CONFIG_ESP32_ENABLE_COREDUMP_TO_FLASH" redefined
+ 1906 | #define CONFIG_ESP32_ENABLE_COREDUMP_TO_FLASH CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH
+      |         ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+<command-line>: note: this is the location of the previous definition
+Compiling .pio\build\esp32-s3-devkitc-1\src\main.cpp.o
+Building .pio\build\esp32-s3-devkitc-1\bootloader.bin
+Generating partitions .pio\build\esp32-s3-devkitc-1\partitions.bin
+Compiling .pio\build\esp32-s3-devkitc-1\FrameworkArduino\ColorFormat.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\FrameworkArduino\Esp.cpp.o
+Compiling .pio\build\esp32-s3-devkitc-1\FrameworkArduino\FirmwareMSC.cpp.o
+Compiling .pio\build\esp32-s3-devkitc-1\FrameworkArduino\FunctionalInterrupt.cpp.o
+Compiling .pio\build\esp32-s3-devkitc-1\FrameworkArduino\HEXBuilder.cpp.o
+Compiling .pio\build\esp32-s3-devkitc-1\FrameworkArduino\HWCDC.cpp.o
+Compiling .pio\build\esp32-s3-devkitc-1\FrameworkArduino\HardwareSerial.cpp.o
+In file included from {platformio}/packages/framework-arduinoespressif32/cores/esp32/USBMSC.h:22,
+                 from {platformio}/packages/framework-arduinoespressif32/cores/esp32/FirmwareMSC.h:17,
+                 from {platformio}/packages/framework-arduinoespressif32/cores/esp32/FirmwareMSC.cpp:14:
+{platformio}/packages/framework-arduinoespressif32-libs/esp32s3/qio_opi/include/sdkconfig.h:1906:9: warning: "CONFIG_ESP32_ENABLE_COREDUMP_TO_FLASH" redefined
+ 1906 | #define CONFIG_ESP32_ENABLE_COREDUMP_TO_FLASH CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH
+      |         ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+<command-line>: note: this is the location of the previous definition
+Compiling .pio\build\esp32-s3-devkitc-1\FrameworkArduino\HashBuilder.cpp.o
+esptool v5.1.0
+Creating ESP32S3 image...
+Merged 2 ELF sections.
+Successfully created ESP32S3 image.
+Compiling .pio\build\esp32-s3-devkitc-1\FrameworkArduino\IPAddress.cpp.o
+In file included from {platformio}/packages/framework-arduinoespressif32/cores/esp32/USB.h:19,
+                 from {platformio}/packages/framework-arduinoespressif32/cores/esp32/HWCDC.cpp:14:
+{platformio}/packages/framework-arduinoespressif32-libs/esp32s3/qio_opi/include/sdkconfig.h:1906:9: warning: "CONFIG_ESP32_ENABLE_COREDUMP_TO_FLASH" redefined
+ 1906 | #define CONFIG_ESP32_ENABLE_COREDUMP_TO_FLASH CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH
+      |         ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+<command-line>: note: this is the location of the previous definition
+Compiling .pio\build\esp32-s3-devkitc-1\FrameworkArduino\MD5Builder.cpp.o
+Compiling .pio\build\esp32-s3-devkitc-1\FrameworkArduino\MacAddress.cpp.o
+Compiling .pio\build\esp32-s3-devkitc-1\FrameworkArduino\Print.cpp.o
+Compiling .pio\build\esp32-s3-devkitc-1\FrameworkArduino\Stream.cpp.o
+Compiling .pio\build\esp32-s3-devkitc-1\FrameworkArduino\StreamString.cpp.o
+Compiling .pio\build\esp32-s3-devkitc-1\FrameworkArduino\Tone.cpp.o
+Compiling .pio\build\esp32-s3-devkitc-1\FrameworkArduino\USB.cpp.o
+Compiling .pio\build\esp32-s3-devkitc-1\FrameworkArduino\USBCDC.cpp.o
+In file included from {platformio}/packages/framework-arduinoespressif32/cores/esp32/USB.h:19,
+                 from {platformio}/packages/framework-arduinoespressif32/cores/esp32/USB.cpp:15:
+{platformio}/packages/framework-arduinoespressif32-libs/esp32s3/qio_opi/include/sdkconfig.h:1906:9: warning: "CONFIG_ESP32_ENABLE_COREDUMP_TO_FLASH" redefined
+ 1906 | #define CONFIG_ESP32_ENABLE_COREDUMP_TO_FLASH CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH
+      |         ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+<command-line>: note: this is the location of the previous definition
+Compiling .pio\build\esp32-s3-devkitc-1\FrameworkArduino\USBMSC.cpp.o
+In file included from {platformio}/packages/framework-arduinoespressif32/cores/esp32/USBCDC.h:19,
+                 from {platformio}/packages/framework-arduinoespressif32/cores/esp32/USBCDC.cpp:15:
+{platformio}/packages/framework-arduinoespressif32-libs/esp32s3/qio_opi/include/sdkconfig.h:1906:9: warning: "CONFIG_ESP32_ENABLE_COREDUMP_TO_FLASH" redefined
+ 1906 | #define CONFIG_ESP32_ENABLE_COREDUMP_TO_FLASH CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH
+      |         ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+<command-line>: note: this is the location of the previous definition
+Compiling .pio\build\esp32-s3-devkitc-1\FrameworkArduino\WMath.cpp.o
+Compiling .pio\build\esp32-s3-devkitc-1\FrameworkArduino\WString.cpp.o
+Compiling .pio\build\esp32-s3-devkitc-1\FrameworkArduino\base64.cpp.o
+In file included from {platformio}/packages/framework-arduinoespressif32/cores/esp32/USBMSC.h:22,
+                 from {platformio}/packages/framework-arduinoespressif32/cores/esp32/USBMSC.cpp:15:
+{platformio}/packages/framework-arduinoespressif32-libs/esp32s3/qio_opi/include/sdkconfig.h:1906:9: warning: "CONFIG_ESP32_ENABLE_COREDUMP_TO_FLASH" redefined
+ 1906 | #define CONFIG_ESP32_ENABLE_COREDUMP_TO_FLASH CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH
+      |         ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+<command-line>: note: this is the location of the previous definition
+Compiling .pio\build\esp32-s3-devkitc-1\FrameworkArduino\cbuf.cpp.o
+Compiling .pio\build\esp32-s3-devkitc-1\FrameworkArduino\chip-debug-report.cpp.o
+Compiling .pio\build\esp32-s3-devkitc-1\FrameworkArduino\esp32-hal-adc.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\FrameworkArduino\esp32-hal-bt.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\FrameworkArduino\esp32-hal-cpu.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\FrameworkArduino\esp32-hal-dac.c.o
+In file included from {platformio}/packages/framework-arduinoespressif32/cores/esp32/esp32-hal-cpu.c:15:
+{platformio}/packages/framework-arduinoespressif32-libs/esp32s3/qio_opi/include/sdkconfig.h:1906:9: warning: "CONFIG_ESP32_ENABLE_COREDUMP_TO_FLASH" redefined
+ 1906 | #define CONFIG_ESP32_ENABLE_COREDUMP_TO_FLASH CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH
+      |         ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+<command-line>: note: this is the location of the previous definition
+Compiling .pio\build\esp32-s3-devkitc-1\FrameworkArduino\esp32-hal-gpio.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\FrameworkArduino\esp32-hal-hosted.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\FrameworkArduino\esp32-hal-i2c-ng.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\FrameworkArduino\esp32-hal-i2c-slave.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\FrameworkArduino\esp32-hal-i2c.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\FrameworkArduino\esp32-hal-ledc.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\FrameworkArduino\esp32-hal-log-wrapper.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\FrameworkArduino\esp32-hal-matrix.c.o
+In file included from {platformio}/packages/framework-arduinoespressif32/cores/esp32/esp32-hal-hosted.c:15:
+{platformio}/packages/framework-arduinoespressif32-libs/esp32s3/qio_opi/include/sdkconfig.h:1906:9: warning: "CONFIG_ESP32_ENABLE_COREDUMP_TO_FLASH" redefined
+ 1906 | #define CONFIG_ESP32_ENABLE_COREDUMP_TO_FLASH CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH
+      |         ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+<command-line>: note: this is the location of the previous definition
+Compiling .pio\build\esp32-s3-devkitc-1\FrameworkArduino\esp32-hal-misc.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\FrameworkArduino\esp32-hal-periman.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\FrameworkArduino\esp32-hal-psram.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\FrameworkArduino\esp32-hal-rgb-led.c.o
+In file included from {platformio}/packages/framework-arduinoespressif32/cores/esp32/esp32-hal-log-wrapper.c:7:
+{platformio}/packages/framework-arduinoespressif32-libs/esp32s3/qio_opi/include/sdkconfig.h:1906:9: warning: "CONFIG_ESP32_ENABLE_COREDUMP_TO_FLASH" redefined
+ 1906 | #define CONFIG_ESP32_ENABLE_COREDUMP_TO_FLASH CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH
+      |         ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+<command-line>: note: this is the location of the previous definition
+In file included from {platformio}/packages/framework-arduinoespressif32/cores/esp32/esp32-hal-misc.c:15:
+{platformio}/packages/framework-arduinoespressif32-libs/esp32s3/qio_opi/include/sdkconfig.h:1906:9: warning: "CONFIG_ESP32_ENABLE_COREDUMP_TO_FLASH" redefined
+ 1906 | #define CONFIG_ESP32_ENABLE_COREDUMP_TO_FLASH CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH
+      |         ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+<command-line>: note: this is the location of the previous definition
+Compiling .pio\build\esp32-s3-devkitc-1\FrameworkArduino\esp32-hal-rmt.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\FrameworkArduino\esp32-hal-sigmadelta.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\FrameworkArduino\esp32-hal-spi.c.o
+In file included from {platformio}/packages/framework-arduinoespressif32/cores/esp32/esp32-hal-log.h:21,
+                 from {platformio}/packages/framework-arduinoespressif32/cores/esp32/esp32-hal-periman.c:7:
+{platformio}/packages/framework-arduinoespressif32-libs/esp32s3/qio_opi/include/sdkconfig.h:1906:9: warning: "CONFIG_ESP32_ENABLE_COREDUMP_TO_FLASH" redefined
+ 1906 | #define CONFIG_ESP32_ENABLE_COREDUMP_TO_FLASH CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH
+      |         ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+<command-line>: note: this is the location of the previous definition
+Compiling .pio\build\esp32-s3-devkitc-1\FrameworkArduino\esp32-hal-time.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\FrameworkArduino\esp32-hal-timer.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\FrameworkArduino\esp32-hal-tinyusb.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\FrameworkArduino\esp32-hal-touch-ng.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\FrameworkArduino\esp32-hal-touch.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\FrameworkArduino\esp32-hal-uart.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\FrameworkArduino\firmware_msc_fat.c.o
+In file included from {platformio}/packages/framework-arduinoespressif32/cores/esp32/esp32-hal-spi.h:25,
+                 from {platformio}/packages/framework-arduinoespressif32/cores/esp32/esp32-hal-spi.c:15:
+{platformio}/packages/framework-arduinoespressif32-libs/esp32s3/qio_opi/include/sdkconfig.h:1906:9: warning: "CONFIG_ESP32_ENABLE_COREDUMP_TO_FLASH" redefined
+ 1906 | #define CONFIG_ESP32_ENABLE_COREDUMP_TO_FLASH CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH
+      |         ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+<command-line>: note: this is the location of the previous definition
+Compiling .pio\build\esp32-s3-devkitc-1\FrameworkArduino\freertos_stats.cpp.o
+Compiling .pio\build\esp32-s3-devkitc-1\FrameworkArduino\libb64\cdecode.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\FrameworkArduino\libb64\cencode.c.o
+In file included from {platformio}/packages/framework-arduinoespressif32/cores/esp32/esp32-hal-tinyusb.c:4:
+{platformio}/packages/framework-arduinoespressif32-libs/esp32s3/qio_opi/include/sdkconfig.h:1906:9: warning: "CONFIG_ESP32_ENABLE_COREDUMP_TO_FLASH" redefined
+ 1906 | #define CONFIG_ESP32_ENABLE_COREDUMP_TO_FLASH CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH
+      |         ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+<command-line>: note: this is the location of the previous definition
+Compiling .pio\build\esp32-s3-devkitc-1\FrameworkArduino\main.cpp.o
+Compiling .pio\build\esp32-s3-devkitc-1\FrameworkArduino\stdlib_noniso.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\FrameworkArduino\wiring_pulse.c.o
+Compiling .pio\build\esp32-s3-devkitc-1\FrameworkArduino\wiring_shift.c.o
+Archiving .pio\build\esp32-s3-devkitc-1\libFrameworkArduino.a
+Indexing .pio\build\esp32-s3-devkitc-1\libFrameworkArduino.a
+Linking .pio\build\esp32-s3-devkitc-1\firmware.elf
+                            Memory Type Usage Summary                             
+┌─────────────────────┬──────────────┬──────────┬────────────────┬───────────────┐
+│ Memory Type/Section │ Used [bytes] │ Used [%] │ Remain [bytes] │ Total [bytes] │
+├─────────────────────┼──────────────┼──────────┼────────────────┼───────────────┤
+│ Flash Code          │       354164 │          │                │               │
+│    .text            │       354164 │          │                │               │
+│ Flash Data          │       156104 │          │                │               │
+│    .rodata          │       155848 │          │                │               │
+│    .appdesc         │          256 │          │                │               │
+│ DIRAM               │       102043 │    29.86 │         239717 │        341760 │
+│    .text            │        76123 │    22.27 │                │               │
+│    .data            │        15888 │     4.65 │                │               │
+│    .bss             │        10032 │     2.94 │                │               │
+│ IRAM                │        16384 │    100.0 │              0 │         16384 │
+│    .text            │        15356 │    93.73 │                │               │
+│    .vectors         │         1028 │     6.27 │                │               │
+└─────────────────────┴──────────────┴──────────┴────────────────┴───────────────┘
+Total image size: 618663 bytes (.bin may be padded larger)
+Note: The reported total sizes may be smaller than those in the technical reference manual due to reserved memory and application configuration. The total flash size available for the application is not included by default, as it cannot be reliably determined due to the presence of other data like the bootloader, partition table, and application partition size.
+Retrieving maximum program size .pio\build\esp32-s3-devkitc-1\firmware.elf
+Checking size .pio\build\esp32-s3-devkitc-1\firmware.elf
+Advanced Memory Usage is available via "PlatformIO Home > Project Inspect"
+RAM:   [=         ]   7.9% (used 25920 bytes from 327680 bytes)
+Flash: [          ]   3.7% (used 618407 bytes from 16777216 bytes)
+Building .pio\build\esp32-s3-devkitc-1\firmware.bin
+esptool v5.1.0
+Creating ESP32S3 image...
+Merged 2 ELF sections.
+Successfully created ESP32S3 image.
+Configuring upload protocol...
+AVAILABLE: cmsis-dap, esp-bridge, esp-builtin, esp-prog, espota, esptool, iot-bus-jtag, jlink, minimodule, olimex-arm-usb-ocd, olimex-arm-usb-ocd-h, olimex-arm-usb-tiny-h, olimex-jtag-tiny, tumpa
+CURRENT: upload_protocol = esptool
+Looking for upload port...
+Uploading .pio\build\esp32-s3-devkitc-1\firmware.bin
+esptool v5.1.0
+Serial port COM15:
+Connecting...
+Connected to ESP32-S3 on COM15:
+Chip type:          ESP32-S3 (QFN56) (revision v0.2)
+Features:           Wi-Fi, BT 5 (LE), Dual Core + LP Core, 240MHz, Embedded PSRAM 8MB (AP_3v3)
+Crystal frequency:  40MHz
+USB mode:           USB-Serial/JTAG
+MAC:                {device-mac}
+
+Uploading stub flasher...
+Running stub flasher...
+Stub flasher running.
+Changing baud rate to 460800...
+Changed.
+
+Configuring flash size...
+Auto-detected flash size: 16MB
+Flash will be erased from 0x00000000 to 0x00004fff...
+Flash will be erased from 0x00008000 to 0x00008fff...
+Flash will be erased from 0x0000e000 to 0x0000ffff...
+Flash will be erased from 0x00010000 to 0x000a7fff...
+SHA digest in image updated.
+Compressed 20224 bytes to 13062...
+
+Writing at 0x00000000 [░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░]   0.0% 0/13062 bytes... 
+
+Writing at 0x00004f00 [██████████████████████████████] 100.0% 13062/13062 bytes... 
+Wrote 20224 bytes (13062 compressed) at 0x00000000 in 0.5 seconds (352.3 kbit/s).
+Hash of data verified.
+Compressed 3072 bytes to 116...
+
+Writing at 0x00008000 [░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░]   0.0% 0/116 bytes... 
+
+Writing at 0x00008c00 [██████████████████████████████] 100.0% 116/116 bytes... 
+Wrote 3072 bytes (116 compressed) at 0x00008000 in 0.1 seconds (293.7 kbit/s).
+Hash of data verified.
+Compressed 8192 bytes to 47...
+
+Writing at 0x0000e000 [░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░]   0.0% 0/47 bytes... 
+
+Writing at 0x00010000 [██████████████████████████████] 100.0% 47/47 bytes... 
+Wrote 8192 bytes (47 compressed) at 0x0000e000 in 0.2 seconds (432.3 kbit/s).
+Hash of data verified.
+Compressed 618816 bytes to 348904...
+
+Writing at 0x00010000 [░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░]   0.0% 0/348904 bytes... 
+
+Writing at 0x0001aa8c [█░░░░░░░░░░░░░░░░░░░░░░░░░░░░░]   4.7% 16384/348904 bytes... 
+
+Writing at 0x000282e1 [██░░░░░░░░░░░░░░░░░░░░░░░░░░░░]   9.4% 32768/348904 bytes... 
+
+Writing at 0x0003a86d [████░░░░░░░░░░░░░░░░░░░░░░░░░░]  14.1% 49152/348904 bytes... 
+
+Writing at 0x000402e3 [█████░░░░░░░░░░░░░░░░░░░░░░░░░]  18.8% 65536/348904 bytes... 
+
+Writing at 0x00045f1a [███████░░░░░░░░░░░░░░░░░░░░░░░]  23.5% 81920/348904 bytes... 
+
+Writing at 0x0004b7e4 [████████░░░░░░░░░░░░░░░░░░░░░░]  28.2% 98304/348904 bytes... 
+
+Writing at 0x00051035 [█████████░░░░░░░░░░░░░░░░░░░░░]  32.9% 114688/348904 bytes... 
+
+Writing at 0x00057a22 [███████████░░░░░░░░░░░░░░░░░░░]  37.6% 131072/348904 bytes... 
+
+Writing at 0x0005db0f [████████████░░░░░░░░░░░░░░░░░░]  42.3% 147456/348904 bytes... 
+
+Writing at 0x00063c4c [██████████████░░░░░░░░░░░░░░░░]  47.0% 163840/348904 bytes... 
+
+Writing at 0x000694a6 [███████████████░░░░░░░░░░░░░░░]  51.7% 180224/348904 bytes... 
+
+Writing at 0x0006eb35 [████████████████░░░░░░░░░░░░░░]  56.4% 196608/348904 bytes... 
+
+Writing at 0x000747cb [██████████████████░░░░░░░░░░░░]  61.0% 212992/348904 bytes... 
+
+Writing at 0x00079a7c [███████████████████░░░░░░░░░░░]  65.7% 229376/348904 bytes... 
+
+Writing at 0x0007f690 [█████████████████████░░░░░░░░░]  70.4% 245760/348904 bytes... 
+
+Writing at 0x00084f47 [██████████████████████░░░░░░░░]  75.1% 262144/348904 bytes... 
+
+Writing at 0x0008da27 [███████████████████████░░░░░░░]  79.8% 278528/348904 bytes... 
+
+Writing at 0x00093a0e [█████████████████████████░░░░░]  84.5% 294912/348904 bytes... 
+
+Writing at 0x000995e9 [██████████████████████████░░░░]  89.2% 311296/348904 bytes... 
+
+Writing at 0x0009f077 [████████████████████████████░░]  93.9% 327680/348904 bytes... 
+
+Writing at 0x000a5172 [█████████████████████████████░]  98.6% 344064/348904 bytes... 
+
+Writing at 0x000a7140 [██████████████████████████████] 100.0% 348904/348904 bytes... 
+Wrote 618816 bytes (348904 compressed) at 0x00010000 in 5.1 seconds (965.8 kbit/s).
+Hash of data verified.
+
+Hard resetting via RTS pin...
+======================== [SUCCESS] Took 159.55 seconds ========================
+
+Environment         Status    Duration
+------------------  --------  ------------
+esp32-s3-devkitc-1  SUCCESS   00:02:39.545
+========================= 1 succeeded in 00:02:39.545 =========================

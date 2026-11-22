@@ -1,0 +1,610 @@
+{
+  "physical": true,
+  "port": "COM15",
+  "blocks": 1000,
+  "warmup": 256,
+  "scenarios": {
+    "delay": {
+      "commands": [],
+      "stages": {
+        "modulation_noise": {
+          "us_per_block": 742.6,
+          "percent_core": 42.0,
+          "percent_budget": 25.6
+        },
+        "warp": {
+          "us_per_block": 9.1,
+          "percent_core": 0.5,
+          "percent_budget": 0.3
+        },
+        "reverse_control": {
+          "us_per_block": 25.73,
+          "percent_core": 1.5,
+          "percent_budget": 0.9
+        },
+        "record_filters": {
+          "us_per_block": 44.43,
+          "percent_core": 2.5,
+          "percent_budget": 1.5
+        },
+        "conventional_reads": {
+          "us_per_block": 284.1,
+          "percent_core": 16.1,
+          "percent_budget": 9.8
+        },
+        "reverse_reads": {
+          "us_per_block": 13.96,
+          "percent_core": 0.8,
+          "percent_budget": 0.5
+        },
+        "crossfade": {
+          "us_per_block": 0.0,
+          "percent_core": 0.0,
+          "percent_budget": 0.0
+        },
+        "playback_filters": {
+          "us_per_block": 112.5,
+          "percent_core": 6.4,
+          "percent_budget": 3.9
+        },
+        "feedback": {
+          "us_per_block": 254.04,
+          "percent_core": 14.4,
+          "percent_budget": 8.8
+        },
+        "record_amplifier": {
+          "us_per_block": 16.58,
+          "percent_core": 0.9,
+          "percent_budget": 0.6
+        },
+        "magnetic_write": {
+          "us_per_block": 175.72,
+          "percent_core": 9.9,
+          "percent_budget": 6.1
+        },
+        "limiter": {
+          "us_per_block": 53.67,
+          "percent_core": 3.0,
+          "percent_budget": 1.8
+        },
+        "auxiliary": {
+          "us_per_block": 14.47,
+          "percent_core": 0.8,
+          "percent_budget": 0.5
+        },
+        "transport": {
+          "us_per_block": 21.98,
+          "percent_core": 1.2,
+          "percent_budget": 0.8
+        },
+        "interpolation": {
+          "us_per_block": 0.0,
+          "percent_core": 0.0,
+          "percent_budget": 0.0
+        },
+        "parameter_clear": {
+          "us_per_block": 0.0,
+          "percent_core": 0.0,
+          "percent_budget": 0.0
+        },
+        "parameter_filters": {
+          "us_per_block": 0.0,
+          "percent_core": 0.0,
+          "percent_budget": 0.0
+        },
+        "parameter_apply": {
+          "us_per_block": 0.0,
+          "percent_core": 0.0,
+          "percent_budget": 0.0
+        }
+      },
+      "perf_before": "\n=== HYDRA DSP PERFORMANCE TELEMETRY ===\r\nBlock Size          : 128 frames\nSample Rate         : 44100 Hz\nCPU Clock           : 240 MHz\nBlock Time Budget   : 2902.5 us\nBlocks Processed    : 3110\nAvg DSP Block Time  : 1948 us\nLast DSP Block Time : 1923 us\nPeak DSP Block Time : 2357 us\nDSP Budget Use (EMA): 66.6 %\nDSP Budget Overruns : 0\nI2S TX Write Failures: 0\nInternal Free Heap  : 120236 bytes\nSPIRAM (PSRAM) Free : 1663048 bytes\nWarp",
+      "perf_after": "\n=== HYDRA DSP PERFORMANCE TELEMETRY ===\r\nBlock Size          : 128 frames\nSample Rate         : 44100 Hz\nCPU Clock           : 240 MHz\nBlock Time Budget   : 2902.5 us\nBlocks Processed    : 4632\nAvg DSP Block Time  : 1984 us\nLast DSP Block Time : 1966 us\nPeak DSP Block Time : 2357 us\nDSP Budget Use (EMA): 69.6 %\nDSP Budget Overruns : 0\nI2S TX Write Failures: 0\nInternal Free Heap  : 120236 bytes\nSPIRAM (PSRAM) Free : 1663048 bytes\nWarp Active         : NO\n========================================\n\r\n",
+      "raw": " Active         : NO\n========================================\n\r\n\n=== TAPECORE STAGE PROFILE (1000 blocks, warmup 256) ===\nstage                    us/blk    %core  %budget\nmodulation_noise         742.60    42.0%    25.6%\nwarp                       9.10     0.5%     0.3%\nreverse_control           25.73     1.5%     0.9%\nrecord_filters            44.43     2.5%     1.5%\nconventional_reads       284.10    16.1%     9.8%\nreverse_reads             13.96     0.8%     0.5%\ncrossfade                  0.00     0.0%     0.0%\nplayback_filters         112.50     6.4%     3.9%\nfeedback                 254.04    14.4%     8.8%\nrecord_amplifier          16.58     0.9%     0.6%\nmagnetic_write           175.72     9.9%     6.1%\nlimiter                   53.67     3.0%     1.8%\nauxiliary                 14.47     0.8%     0.5%\ntransport                 21.98     1.2%     0.8%\ninterpolation              0.00     0.0%     0.0%\nparameter_clear            0.00     0.0%     0.0%\nparameter_filters          0.00     0.0%     0.0%\nparameter_apply            0.00     0.0%     0.0%\nTOTAL STAGES            1768.87   100.0%    60.9%\n=====================================================\r\n"
+    },
+    "reverse_quarter": {
+      "commands": [
+        "rev 1",
+        "revmode 0",
+        "revdiv 0"
+      ],
+      "stages": {
+        "modulation_noise": {
+          "us_per_block": 742.19,
+          "percent_core": 26.7,
+          "percent_budget": 25.6
+        },
+        "warp": {
+          "us_per_block": 9.11,
+          "percent_core": 0.3,
+          "percent_budget": 0.3
+        },
+        "reverse_control": {
+          "us_per_block": 1039.75,
+          "percent_core": 37.4,
+          "percent_budget": 35.8
+        },
+        "record_filters": {
+          "us_per_block": 44.47,
+          "percent_core": 1.6,
+          "percent_budget": 1.5
+        },
+        "conventional_reads": {
+          "us_per_block": 135.13,
+          "percent_core": 4.9,
+          "percent_budget": 4.7
+        },
+        "reverse_reads": {
+          "us_per_block": 163.15,
+          "percent_core": 5.9,
+          "percent_budget": 5.6
+        },
+        "crossfade": {
+          "us_per_block": 0.0,
+          "percent_core": 0.0,
+          "percent_budget": 0.0
+        },
+        "playback_filters": {
+          "us_per_block": 112.51,
+          "percent_core": 4.0,
+          "percent_budget": 3.9
+        },
+        "feedback": {
+          "us_per_block": 254.05,
+          "percent_core": 9.1,
+          "percent_budget": 8.8
+        },
+        "record_amplifier": {
+          "us_per_block": 16.61,
+          "percent_core": 0.6,
+          "percent_budget": 0.6
+        },
+        "magnetic_write": {
+          "us_per_block": 174.87,
+          "percent_core": 6.3,
+          "percent_budget": 6.0
+        },
+        "limiter": {
+          "us_per_block": 54.38,
+          "percent_core": 2.0,
+          "percent_budget": 1.9
+        },
+        "auxiliary": {
+          "us_per_block": 14.46,
+          "percent_core": 0.5,
+          "percent_budget": 0.5
+        },
+        "transport": {
+          "us_per_block": 21.99,
+          "percent_core": 0.8,
+          "percent_budget": 0.8
+        },
+        "interpolation": {
+          "us_per_block": 0.0,
+          "percent_core": 0.0,
+          "percent_budget": 0.0
+        },
+        "parameter_clear": {
+          "us_per_block": 0.0,
+          "percent_core": 0.0,
+          "percent_budget": 0.0
+        },
+        "parameter_filters": {
+          "us_per_block": 0.0,
+          "percent_core": 0.0,
+          "percent_budget": 0.0
+        },
+        "parameter_apply": {
+          "us_per_block": 0.0,
+          "percent_core": 0.0,
+          "percent_budget": 0.0
+        }
+      },
+      "perf_before": "\n=== HYDRA DSP PERFORMANCE TELEMETRY ===\r\nBlock Size          : 128 frames\nSample Rate         : 44100 Hz\nCPU Clock           : 240 MHz\nBlock Time Budget   : 2902.5 us\nBlocks Processed    : 5512\nAvg DSP Block Time  : 2098 us\nLast DSP Block Time : 2915 us\nPeak DSP Block Time : 3279 us\nDSP Budget Use (EMA): 100.9 %\nDSP Budget Overruns : 647\nI2S TX Write Failures: 0\nInternal Free Heap  : 120236 bytes\nSPIRAM (PSRAM) Free : 1663048 bytes\nWarp Active         : NO\n========================================\n\r\n",
+      "perf_after": "\n=== HYDRA DSP PERFORMANCE TELEMETRY ===\r\nBlock Size          : 128 frames\nSample Rate         : 44100 Hz\nCPU Clock           : 240 MHz\nBlock Time Budget   : 2902.5 us\nBlocks Processed    : 7027\nAvg DSP Block Time  : 2312 us\nLast DSP Block Time : 2922 us\nPeak DSP Block Time : 3392 us\nDSP Budget Use (EMA): 102.7 %\nDSP Budget Overruns : 2161\nI2S TX Write Failures: 0\nInternal Free Heap  : 120236 bytes\nSPIRAM (PSRAM) Free : 1663048 bytes\nWarp Active         : NO\n========================================\n\r\n",
+      "raw": "\n=== TAPECORE STAGE PROFILE (1000 blocks, warmup 256) ===\nstage                    us/blk    %core  %budget\nmodulation_noise         742.19    26.7%    25.6%\nwarp                       9.11     0.3%     0.3%\nreverse_control         1039.75    37.4%    35.8%\nrecord_filters            44.47     1.6%     1.5%\nconventional_reads       135.13     4.9%     4.7%\nreverse_reads            163.15     5.9%     5.6%\ncrossfade                  0.00     0.0%     0.0%\nplayback_filters         112.51     4.0%     3.9%\nfeedback                 254.05     9.1%     8.8%\nrecord_amplifier          16.61     0.6%     0.6%\nmagnetic_write           174.87     6.3%     6.0%\nlimiter                   54.38     2.0%     1.9%\nauxiliary                 14.46     0.5%     0.5%\ntransport                 21.99     0.8%     0.8%\ninterpolation              0.00     0.0%     0.0%\nparameter_clear            0.00     0.0%     0.0%\nparameter_filters          0.00     0.0%     0.0%\nparameter_apply            0.00     0.0%     0.0%\nTOTAL STAGES            2782.67   100.0%    95.9%\n=====================================================\r\n"
+    },
+    "reverse_eighth": {
+      "commands": [
+        "revdiv 1"
+      ],
+      "stages": {
+        "modulation_noise": {
+          "us_per_block": 742.63,
+          "percent_core": 26.7,
+          "percent_budget": 25.6
+        },
+        "warp": {
+          "us_per_block": 9.11,
+          "percent_core": 0.3,
+          "percent_budget": 0.3
+        },
+        "reverse_control": {
+          "us_per_block": 1040.48,
+          "percent_core": 37.4,
+          "percent_budget": 35.8
+        },
+        "record_filters": {
+          "us_per_block": 44.42,
+          "percent_core": 1.6,
+          "percent_budget": 1.5
+        },
+        "conventional_reads": {
+          "us_per_block": 135.01,
+          "percent_core": 4.8,
+          "percent_budget": 4.7
+        },
+        "reverse_reads": {
+          "us_per_block": 165.62,
+          "percent_core": 5.9,
+          "percent_budget": 5.7
+        },
+        "crossfade": {
+          "us_per_block": 0.0,
+          "percent_core": 0.0,
+          "percent_budget": 0.0
+        },
+        "playback_filters": {
+          "us_per_block": 112.57,
+          "percent_core": 4.0,
+          "percent_budget": 3.9
+        },
+        "feedback": {
+          "us_per_block": 253.86,
+          "percent_core": 9.1,
+          "percent_budget": 8.7
+        },
+        "record_amplifier": {
+          "us_per_block": 16.62,
+          "percent_core": 0.6,
+          "percent_budget": 0.6
+        },
+        "magnetic_write": {
+          "us_per_block": 173.99,
+          "percent_core": 6.2,
+          "percent_budget": 6.0
+        },
+        "limiter": {
+          "us_per_block": 54.18,
+          "percent_core": 1.9,
+          "percent_budget": 1.9
+        },
+        "auxiliary": {
+          "us_per_block": 14.47,
+          "percent_core": 0.5,
+          "percent_budget": 0.5
+        },
+        "transport": {
+          "us_per_block": 21.99,
+          "percent_core": 0.8,
+          "percent_budget": 0.8
+        },
+        "interpolation": {
+          "us_per_block": 0.0,
+          "percent_core": 0.0,
+          "percent_budget": 0.0
+        },
+        "parameter_clear": {
+          "us_per_block": 0.0,
+          "percent_core": 0.0,
+          "percent_budget": 0.0
+        },
+        "parameter_filters": {
+          "us_per_block": 0.0,
+          "percent_core": 0.0,
+          "percent_budget": 0.0
+        },
+        "parameter_apply": {
+          "us_per_block": 0.0,
+          "percent_core": 0.0,
+          "percent_budget": 0.0
+        }
+      },
+      "perf_before": "\n=== HYDRA DSP PERFORMANCE TELEMETRY ===\r\nBlock Size          : 128 frames\nSample Rate         : 44100 Hz\nCPU Clock           : 240 MHz\nBlock Time Budget   : 2902.5 us\nBlocks Processed    : 7596\nAvg DSP Block Time  : 2360 us\nLast DSP Block Time : 2979 us\nPeak DSP Block Time : 3392 us\nDSP Budget Use (EMA): 103.2 %\nDSP Budget Overruns : 2730\nI2S TX Write Failures: 0\nInternal Free Heap  : 120236 bytes\nSPIRAM (PSRAM) Free : 1663048 bytes\nWarp Active         : NO\n========================================\n\r\n",
+      "perf_after": "\n=== HYDRA DSP PERFORMANCE TELEMETRY ===\r\nBlock Size          : 128 frames\nSample Rate         : 44100 Hz\nCPU Clock           : 240 MHz\nBlock Time Budget   : 2902.5 us\nBlocks Processed    : 9135\nAvg DSP Block Time  : 2481 us\nLast DSP Block Time : 2997 us\nPeak DSP Block Time : 3392 us\nDSP Budget Use (EMA): 102.7 %\nDSP Budget Overruns : 4269\nI2S TX Write Failures: 0\nInternal Free Heap  : 120236 bytes\nSPIRAM (PSRAM) Free : 1663048 bytes\nWarp Active         : NO\n========================================\n\r\n",
+      "raw": "\n=== TAPECORE STAGE PROFILE (1000 blocks, warmup 256) ===\nstage                    us/blk    %core  %budget\nmodulation_noise         742.63    26.7%    25.6%\nwarp                       9.11     0.3%     0.3%\nreverse_control         1040.48    37.4%    35.8%\nrecord_filters            44.42     1.6%     1.5%\nconventional_reads       135.01     4.8%     4.7%\nreverse_reads            165.62     5.9%     5.7%\ncrossfade                  0.00     0.0%     0.0%\nplayback_filters         112.57     4.0%     3.9%\nfeedback                 253.86     9.1%     8.7%\nrecord_amplifier          16.62     0.6%     0.6%\nmagnetic_write           173.99     6.2%     6.0%\nlimiter                   54.18     1.9%     1.9%\nauxiliary                 14.47     0.5%     0.5%\ntransport                 21.99     0.8%     0.8%\ninterpolation              0.00     0.0%     0.0%\nparameter_clear            0.00     0.0%     0.0%\nparameter_filters          0.00     0.0%     0.0%\nparameter_apply            0.00     0.0%     0.0%\nTOTAL STAGES            2784.94   100.0%    95.9%\n=====================================================\r\n"
+    },
+    "reverse_sixteenth": {
+      "commands": [
+        "revdiv 2"
+      ],
+      "stages": {
+        "modulation_noise": {
+          "us_per_block": 742.68,
+          "percent_core": 26.7,
+          "percent_budget": 25.6
+        },
+        "warp": {
+          "us_per_block": 9.09,
+          "percent_core": 0.3,
+          "percent_budget": 0.3
+        },
+        "reverse_control": {
+          "us_per_block": 1039.52,
+          "percent_core": 37.4,
+          "percent_budget": 35.8
+        },
+        "record_filters": {
+          "us_per_block": 44.53,
+          "percent_core": 1.6,
+          "percent_budget": 1.5
+        },
+        "conventional_reads": {
+          "us_per_block": 134.9,
+          "percent_core": 4.9,
+          "percent_budget": 4.6
+        },
+        "reverse_reads": {
+          "us_per_block": 162.38,
+          "percent_core": 5.8,
+          "percent_budget": 5.6
+        },
+        "crossfade": {
+          "us_per_block": 0.0,
+          "percent_core": 0.0,
+          "percent_budget": 0.0
+        },
+        "playback_filters": {
+          "us_per_block": 112.62,
+          "percent_core": 4.0,
+          "percent_budget": 3.9
+        },
+        "feedback": {
+          "us_per_block": 254.08,
+          "percent_core": 9.1,
+          "percent_budget": 8.8
+        },
+        "record_amplifier": {
+          "us_per_block": 16.62,
+          "percent_core": 0.6,
+          "percent_budget": 0.6
+        },
+        "magnetic_write": {
+          "us_per_block": 174.67,
+          "percent_core": 6.3,
+          "percent_budget": 6.0
+        },
+        "limiter": {
+          "us_per_block": 53.56,
+          "percent_core": 1.9,
+          "percent_budget": 1.8
+        },
+        "auxiliary": {
+          "us_per_block": 14.47,
+          "percent_core": 0.5,
+          "percent_budget": 0.5
+        },
+        "transport": {
+          "us_per_block": 21.97,
+          "percent_core": 0.8,
+          "percent_budget": 0.8
+        },
+        "interpolation": {
+          "us_per_block": 0.0,
+          "percent_core": 0.0,
+          "percent_budget": 0.0
+        },
+        "parameter_clear": {
+          "us_per_block": 0.0,
+          "percent_core": 0.0,
+          "percent_budget": 0.0
+        },
+        "parameter_filters": {
+          "us_per_block": 0.0,
+          "percent_core": 0.0,
+          "percent_budget": 0.0
+        },
+        "parameter_apply": {
+          "us_per_block": 0.0,
+          "percent_core": 0.0,
+          "percent_budget": 0.0
+        }
+      },
+      "perf_before": "\n=== HYDRA DSP PERFORMANCE TELEMETRY ===\r\nBlock Size          : 128 frames\nSample Rate         : 44100 Hz\nCPU Clock           : 240 MHz\nBlock Time Budget   : 2902.5 us\nBlocks Processed    : 9703\nAvg DSP Block Time  : 2510 us\nLast DSP Block Time : 2910 us\nPeak DSP Block Time : 3392 us\nDSP Budget Use (EMA): 101.2 %\nDSP Budget Overruns : 4837\nI2S TX Write Failures: 0\nInternal Free Heap  : 120236 bytes\nSPIRAM (PSRAM) Free : 1663048 bytes\nWarp Active         : NO\n========================================\n\r\n",
+      "perf_after": "\n=== HYDRA DSP PERFORMANCE TELEMETRY ===\r\nBlock Size          : 128 frames\nSample Rate         : 44100 Hz\nCPU Clock           : 240 MHz\nBlock Time Budget   : 2902.5 us\nBlocks Processed    : 11237\nAvg DSP Block Time  : 2587 us\nLast DSP Block Time : 2924 us\nPeak DSP Block Time : 3402 us\nDSP Budget Use (EMA): 101.8 %\nDSP Budget Overruns : 6371\nI2S TX Write Failures: 0\nInternal Free Heap  : 120236 bytes\nSPIRAM (PSRAM) Free : 1663048 bytes\nWarp Active         : NO\n========================================\n\r\n",
+      "raw": "\n=== TAPECORE STAGE PROFILE (1000 blocks, warmup 256) ===\nstage                    us/blk    %core  %budget\nmodulation_noise         742.68    26.7%    25.6%\nwarp                       9.09     0.3%     0.3%\nreverse_control         1039.52    37.4%    35.8%\nrecord_filters            44.53     1.6%     1.5%\nconventional_reads       134.90     4.9%     4.6%\nreverse_reads            162.38     5.8%     5.6%\ncrossfade                  0.00     0.0%     0.0%\nplayback_filters         112.62     4.0%     3.9%\nfeedback                 254.08     9.1%     8.8%\nrecord_amplifier          16.62     0.6%     0.6%\nmagnetic_write           174.67     6.3%     6.0%\nlimiter                   53.56     1.9%     1.8%\nauxiliary                 14.47     0.5%     0.5%\ntransport                 21.97     0.8%     0.8%\ninterpolation              0.00     0.0%     0.0%\nparameter_clear            0.00     0.0%     0.0%\nparameter_filters          0.00     0.0%     0.0%\nparameter_apply            0.00     0.0%     0.0%\nTOTAL STAGES            2781.07   100.0%    95.8%\n=====================================================\r\n"
+    },
+    "reverse_feedback95": {
+      "commands": [
+        "revdiv 0",
+        "fbk 95"
+      ],
+      "stages": {
+        "modulation_noise": {
+          "us_per_block": 743.0,
+          "percent_core": 26.7,
+          "percent_budget": 25.6
+        },
+        "warp": {
+          "us_per_block": 9.13,
+          "percent_core": 0.3,
+          "percent_budget": 0.3
+        },
+        "reverse_control": {
+          "us_per_block": 1039.53,
+          "percent_core": 37.4,
+          "percent_budget": 35.8
+        },
+        "record_filters": {
+          "us_per_block": 44.48,
+          "percent_core": 1.6,
+          "percent_budget": 1.5
+        },
+        "conventional_reads": {
+          "us_per_block": 134.98,
+          "percent_core": 4.9,
+          "percent_budget": 4.7
+        },
+        "reverse_reads": {
+          "us_per_block": 162.89,
+          "percent_core": 5.9,
+          "percent_budget": 5.6
+        },
+        "crossfade": {
+          "us_per_block": 0.0,
+          "percent_core": 0.0,
+          "percent_budget": 0.0
+        },
+        "playback_filters": {
+          "us_per_block": 112.64,
+          "percent_core": 4.1,
+          "percent_budget": 3.9
+        },
+        "feedback": {
+          "us_per_block": 254.07,
+          "percent_core": 9.1,
+          "percent_budget": 8.8
+        },
+        "record_amplifier": {
+          "us_per_block": 16.57,
+          "percent_core": 0.6,
+          "percent_budget": 0.6
+        },
+        "magnetic_write": {
+          "us_per_block": 173.19,
+          "percent_core": 6.2,
+          "percent_budget": 6.0
+        },
+        "limiter": {
+          "us_per_block": 53.58,
+          "percent_core": 1.9,
+          "percent_budget": 1.8
+        },
+        "auxiliary": {
+          "us_per_block": 14.49,
+          "percent_core": 0.5,
+          "percent_budget": 0.5
+        },
+        "transport": {
+          "us_per_block": 21.97,
+          "percent_core": 0.8,
+          "percent_budget": 0.8
+        },
+        "interpolation": {
+          "us_per_block": 0.0,
+          "percent_core": 0.0,
+          "percent_budget": 0.0
+        },
+        "parameter_clear": {
+          "us_per_block": 0.0,
+          "percent_core": 0.0,
+          "percent_budget": 0.0
+        },
+        "parameter_filters": {
+          "us_per_block": 0.0,
+          "percent_core": 0.0,
+          "percent_budget": 0.0
+        },
+        "parameter_apply": {
+          "us_per_block": 0.0,
+          "percent_core": 0.0,
+          "percent_budget": 0.0
+        }
+      },
+      "perf_before": "\n=== HYDRA DSP PERFORMANCE TELEMETRY ===\r\nBlock Size          : 128 frames\nSample Rate         : 44100 Hz\nCPU Clock           : 240 MHz\nBlock Time Budget   : 2902.5 us\nBlocks Processed    : 11957\nAvg DSP Block Time  : 2608 us\nLast DSP Block Time : 2920 us\nPeak DSP Block Time : 3402 us\nDSP Budget Use (EMA): 101.0 %\nDSP Budget Overruns : 7091\nI2S TX Write Failures: 0\nInternal Free Heap  : 120236 bytes\nSPIRAM (PSRAM) Free : 1663048 bytes\nWarp Active         : NO\n========================================\n\r\n",
+      "perf_after": "\n=== HYDRA DSP PERFORMANCE TELEMETRY ===\r\nBlock Size          : 128 frames\nSample Rate         : 44100 Hz\nCPU Clock           : 240 MHz\nBlock Time Budget   : 2902.5 us\nBlocks Processed    : 13496\nAvg DSP Block Time  : 2661 us\nLast DSP Block Time : 2931 us\nPeak DSP Block Time : 3402 us\nDSP Budget Use (EMA): 101.8 %\nDSP Budget Overruns : 8625\nI2S TX Write Failures: 0\nInternal Free Heap  : 120236 bytes\nSPIRAM (PSRAM) Free : 1663048 bytes\nWarp Active         : NO\n========================================\n\r\n",
+      "raw": "\n=== TAPECORE STAGE PROFILE (1000 blocks, warmup 256) ===\nstage                    us/blk    %core  %budget\nmodulation_noise         743.00    26.7%    25.6%\nwarp                       9.13     0.3%     0.3%\nreverse_control         1039.53    37.4%    35.8%\nrecord_filters            44.48     1.6%     1.5%\nconventional_reads       134.98     4.9%     4.7%\nreverse_reads            162.89     5.9%     5.6%\ncrossfade                  0.00     0.0%     0.0%\nplayback_filters         112.64     4.1%     3.9%\nfeedback                 254.07     9.1%     8.8%\nrecord_amplifier          16.57     0.6%     0.6%\nmagnetic_write           173.19     6.2%     6.0%\nlimiter                   53.58     1.9%     1.8%\nauxiliary                 14.49     0.5%     0.5%\ntransport                 21.97     0.8%     0.8%\ninterpolation              0.00     0.0%     0.0%\nparameter_clear            0.00     0.0%     0.0%\nparameter_filters          0.00     0.0%     0.0%\nparameter_apply            0.00     0.0%     0.0%\nTOTAL STAGES            2780.52   100.0%    95.8%\n=====================================================\r\n"
+    },
+    "multihead": {
+      "commands": [
+        "rev 0",
+        "hds 7"
+      ],
+      "stages": {
+        "modulation_noise": {
+          "us_per_block": 742.8,
+          "percent_core": 36.9,
+          "percent_budget": 25.6
+        },
+        "warp": {
+          "us_per_block": 9.11,
+          "percent_core": 0.5,
+          "percent_budget": 0.3
+        },
+        "reverse_control": {
+          "us_per_block": 25.72,
+          "percent_core": 1.3,
+          "percent_budget": 0.9
+        },
+        "record_filters": {
+          "us_per_block": 44.47,
+          "percent_core": 2.2,
+          "percent_budget": 1.5
+        },
+        "conventional_reads": {
+          "us_per_block": 529.08,
+          "percent_core": 26.3,
+          "percent_budget": 18.2
+        },
+        "reverse_reads": {
+          "us_per_block": 13.93,
+          "percent_core": 0.7,
+          "percent_budget": 0.5
+        },
+        "crossfade": {
+          "us_per_block": 0.0,
+          "percent_core": 0.0,
+          "percent_budget": 0.0
+        },
+        "playback_filters": {
+          "us_per_block": 112.47,
+          "percent_core": 5.6,
+          "percent_budget": 3.9
+        },
+        "feedback": {
+          "us_per_block": 254.09,
+          "percent_core": 12.6,
+          "percent_budget": 8.8
+        },
+        "record_amplifier": {
+          "us_per_block": 16.61,
+          "percent_core": 0.8,
+          "percent_budget": 0.6
+        },
+        "magnetic_write": {
+          "us_per_block": 175.73,
+          "percent_core": 8.7,
+          "percent_budget": 6.1
+        },
+        "limiter": {
+          "us_per_block": 53.6,
+          "percent_core": 2.7,
+          "percent_budget": 1.8
+        },
+        "auxiliary": {
+          "us_per_block": 14.47,
+          "percent_core": 0.7,
+          "percent_budget": 0.5
+        },
+        "transport": {
+          "us_per_block": 21.96,
+          "percent_core": 1.1,
+          "percent_budget": 0.8
+        },
+        "interpolation": {
+          "us_per_block": 0.0,
+          "percent_core": 0.0,
+          "percent_budget": 0.0
+        },
+        "parameter_clear": {
+          "us_per_block": 0.0,
+          "percent_core": 0.0,
+          "percent_budget": 0.0
+        },
+        "parameter_filters": {
+          "us_per_block": 0.0,
+          "percent_core": 0.0,
+          "percent_budget": 0.0
+        },
+        "parameter_apply": {
+          "us_per_block": 0.0,
+          "percent_core": 0.0,
+          "percent_budget": 0.0
+        }
+      },
+      "perf_before": "\n=== HYDRA DSP PERFORMANCE TELEMETRY ===\r\nBlock Size          : 128 frames\nSample Rate         : 44100 Hz\nCPU Clock           : 240 MHz\nBlock Time Budget   : 2902.5 us\nBlocks Processed    : 14247\nAvg DSP Block Time  : 2645 us\nLast DSP Block Time : 2171 us\nPeak DSP Block Time : 3402 us\nDSP Budget Use (EMA): 75.8 %\nDSP Budget Overruns : 8850\nI2S TX Write Failures: 0\nInternal Free Heap  : 120236 bytes\nSPIRAM (PSRAM) Free : 1663048 bytes\nWarp Active         : NO\n========================================\n\r\n",
+      "perf_after": "\n=== HYDRA DSP PERFORMANCE TELEMETRY ===\r\nBlock Size          : 128 frames\nSample Rate         : 44100 Hz\nCPU Clock           : 240 MHz\nBlock Time Budget   : 2902.5 us\nBlocks Processed    : 15779\nAvg DSP Block Time  : 2613 us\nLast DSP Block Time : 2164 us\nPeak DSP Block Time : 3402 us\nDSP Budget Use (EMA): 75.8 %\nDSP Budget Overruns : 8850\nI2S TX Write Failures: 0\nInternal Free Heap  : 120236 bytes\nSPIRAM (PSRAM) Free : 1663048 bytes\nWarp Active         : NO\n========================================\n\r\n",
+      "raw": "\n=== TAPECORE STAGE PROFILE (1000 blocks, warmup 256) ===\nstage                    us/blk    %core  %budget\nmodulation_noise         742.80    36.9%    25.6%\nwarp                       9.11     0.5%     0.3%\nreverse_control           25.72     1.3%     0.9%\nrecord_filters            44.47     2.2%     1.5%\nconventional_reads       529.08    26.3%    18.2%\nreverse_reads             13.93     0.7%     0.5%\ncrossfade                  0.00     0.0%     0.0%\nplayback_filters         112.47     5.6%     3.9%\nfeedback                 254.09    12.6%     8.8%\nrecord_amplifier          16.61     0.8%     0.6%\nmagnetic_write           175.73     8.7%     6.1%\nlimiter                   53.60     2.7%     1.8%\nauxiliary                 14.47     0.7%     0.5%\ntransport                 21.96     1.1%     0.8%\ninterpolation              0.00     0.0%     0.0%\nparameter_clear            0.00     0.0%     0.0%\nparameter_filters          0.00     0.0%     0.0%\nparameter_apply            0.00     0.0%     0.0%\nTOTAL STAGES            2014.04   100.0%    69.4%\n=====================================================\r\n"
+    }
+  }
+}

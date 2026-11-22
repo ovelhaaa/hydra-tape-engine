@@ -8,6 +8,14 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+# Keep multiply/add rounding identical to scalar WASM. Ubuntu 26.04's default
+# x86-64-v3 target enables FMA even without -ffast-math; contracting a*b+c
+# changes filter/state bits and breaks the strict Native/WASM release gate.
+# PlatformIO's separately validated ESP32 build is unaffected by this setting.
+if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+  add_compile_options("$<$<COMPILE_LANGUAGE:CXX>:-ffp-contract=off>")
+endif()
+
 add_library(hydra_dsp_core STATIC
   dsp/core/tape_core.cpp
   dsp/core/hydra_dsp_c_api.cpp
@@ -22,6 +30,8 @@ target_include_directories(hydra_dsp_core
 if(BUILD_TESTING)
   include(CTest)
   find_package(Python3 COMPONENTS Interpreter REQUIRED)
+  add_test(NAME fast_tanh_integrity
+    COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/tests/core/fast_tanh_integrity.py)
 
   add_executable(hydra_core_smoke tests/core/smoke_core.cpp)
   target_link_libraries(hydra_core_smoke PRIVATE hydra_dsp_core)
@@ -196,6 +206,7 @@ if(BUILD_WEB)
       "${CMAKE_CURRENT_SOURCE_DIR}/host/web/transportController.js"
       "${CMAKE_CURRENT_SOURCE_DIR}/host/web/presetSerialization.js"
       "${CMAKE_CURRENT_SOURCE_DIR}/host/web/runtimeDiagnostics.js"
+      "${CMAKE_CURRENT_SOURCE_DIR}/host/web/resetController.js"
       "${CMAKE_CURRENT_SOURCE_DIR}/host/web/webMidiTime.js"
       "${HYDRA_WEB_DIR}"
     VERBATIM

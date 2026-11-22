@@ -4,12 +4,21 @@
 #include <array>
 #include <cmath>
 #include <cstdint>
+#include <cstring>
 #include <iomanip>
 #include <iostream>
 #include <string>
 #include <vector>
 
 namespace {
+
+#include "fast_tanh_table.inc"
+
+void print_bits(float value) {
+  uint32_t bits;
+  std::memcpy(&bits, &value, sizeof(bits));
+  std::cout << std::hex << std::setw(8) << std::setfill('0') << bits;
+}
 
 struct Scenario {
   std::string name;
@@ -51,9 +60,15 @@ void print_usage(const char* argv0) {
 
 int main(int argc, char** argv) {
   std::string scenario_name = "baseline_glue";
+  bool dump_input = false;
 
   for (int i = 1; i < argc; ++i) {
     const std::string arg = argv[i];
+    if (arg == "--dump-input") { dump_input = true; continue; }
+    if (arg == "--dump-lut") {
+      for (float value : kFastTanhTable) { print_bits(value); std::cout << '\n'; }
+      return 0;
+    }
     if (arg == "--scenario") {
       if (i + 1 >= argc) {
         print_usage(argv[0]);
@@ -120,10 +135,25 @@ int main(int argc, char** argv) {
   CHECK(hydra_dsp_commit(h) == 0);
 
   std::vector<float> inL(totalFrames), inR(totalFrames), outL(totalFrames), outR(totalFrames);
+  // The stimulus must be bit-identical on every host. std::sin is a platform
+  // libm call, so a float evaluation differs by up to 1 ULP between glibc and
+  // the Windows UCRT; three of these 2048 samples did, and the first divergent
+  // output sample was exactly one of them (issue #48). Evaluate in double and
+  // quantise once to float so both runners are fed the same bits.
   for (uint32_t i = 0; i < totalFrames; ++i) {
-    const float t = static_cast<float>(i) / sampleRate;
-    inL[i] = 0.45f * std::sin(2.0f * 3.1415926535f * 220.0f * t) + 0.2f * std::sin(2.0f * 3.1415926535f * 330.0f * t);
+    const double t = static_cast<double>(i) / 48000.0;
+    constexpr double kTwoPi = 6.283185307179586476925286766559;
+    const double l = 0.45 * std::sin(kTwoPi * 220.0 * t) + 0.2 * std::sin(kTwoPi * 330.0 * t);
+    inL[i] = static_cast<float>(l);
     inR[i] = 0.9f * inL[i];
+  }
+
+  if (dump_input) {
+    for (uint32_t i = 0; i < totalFrames; ++i) {
+      print_bits(inL[i]); std::cout << ','; print_bits(inR[i]); std::cout << '\n';
+    }
+    hydra_dsp_destroy(h);
+    return 0;
   }
 
   for (uint32_t start = 0; start < totalFrames; start += block) {

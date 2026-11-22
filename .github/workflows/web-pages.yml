@@ -24,6 +24,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - name: Setup Emscripten
         uses: mymindstorm/setup-emsdk@v14
@@ -63,6 +65,25 @@ jobs:
         env:
           HYDRA_WEB_BUILD: build-web/web
         run: node --test host/web/tests/*.test.mjs
+
+      - name: Install browser test dependencies
+        working-directory: tools/phase6-listening-lab
+        run: |
+          npm ci
+          google-chrome --version
+
+      - name: Verify reset in real Chrome AudioWorklet
+        env:
+          HYDRA_WEB_BUILD: build-web/web
+          HYDRA_BROWSER_CHANNEL: chrome
+        run: node tools/phase6-listening-lab/tests/resetBrowser.mjs
+
+      - name: Upload AudioWorklet reset evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: audio-worklet-reset-evidence
+          path: artifacts/reset-browser/result.json
 
       - name: Add .nojekyll
         run: touch build-web/web/.nojekyll

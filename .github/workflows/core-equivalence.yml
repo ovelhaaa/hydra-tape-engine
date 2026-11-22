@@ -24,19 +24,11 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Cache CMake/ccache (native)
-        uses: actions/cache@v4
         with:
-          path: |
-            ~/.ccache
-            build-native
-          key: native-${{ runner.os }}-${{ hashFiles('CMakeLists.txt', 'dsp/core/**', 'tests/core/**', 'include/**') }}
-          restore-keys: |
-            native-${{ runner.os }}-
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - name: Configure native core
-        run: cmake -S . -B build-native -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} -DBUILD_TESTING=ON
+        run: cmake -S . -B build-native -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} -DBUILD_TESTING=ON -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
 
       - name: Build native core targets
         run: >-
@@ -58,19 +50,11 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Cache CMake/ccache (native)
-        uses: actions/cache@v4
         with:
-          path: |
-            ~/.ccache
-            build-native
-          key: native-${{ runner.os }}-${{ hashFiles('CMakeLists.txt', 'dsp/core/**', 'tests/core/**', 'include/**') }}
-          restore-keys: |
-            native-${{ runner.os }}-
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - name: Configure native core
-        run: cmake -S . -B build-native -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} -DBUILD_TESTING=ON
+        run: cmake -S . -B build-native -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} -DBUILD_TESTING=ON -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
 
       - name: Build native tests
         run: cmake --build build-native --config ${CMAKE_BUILD_TYPE} -j
@@ -104,7 +88,7 @@ jobs:
         run: python -m pip install numpy scipy
       - name: Build native runner
         run: |
-          cmake -S . -B build-native -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=ON
+          cmake -S . -B build-native -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=ON -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
           cmake --build build-native -j --target hydra_listen_native
       - name: Check persistent Python state
         run: python scripts/test_validate_warp_prototype.py
@@ -122,7 +106,7 @@ jobs:
       - name: Verify ABI against frozen C 1.2 consumer with AddressSanitizer
         if: ${{ !cancelled() }}
         run: |
-          cmake -S . -B build/abi-asan -DCMAKE_BUILD_TYPE=RelWithDebInfo -DBUILD_TESTING=ON \
+          cmake -S . -B build/abi-asan -DCMAKE_BUILD_TYPE=RelWithDebInfo -DBUILD_TESTING=ON -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
             -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ \
             -DCMAKE_C_FLAGS="-fsanitize=address -fno-omit-frame-pointer" \
             -DCMAKE_CXX_FLAGS="-fsanitize=address -fno-omit-frame-pointer"
@@ -134,6 +118,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - name: Setup Emscripten
         uses: mymindstorm/setup-emsdk@v14
@@ -153,7 +139,7 @@ jobs:
       - name: Configure wasm core
         run: |
           rm -rf build-wasm
-          emcmake cmake -S . -B build-wasm -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} -DBUILD_WEB=ON -DBUILD_TESTING=ON
+          emcmake cmake -S . -B build-wasm -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} -DBUILD_WEB=ON -DBUILD_TESTING=ON -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
 
       - name: Build wasm core targets
         run: >-
@@ -176,47 +162,48 @@ jobs:
             build-wasm/wasm-tests/hydra_golden_regression.wasm
 
   test_native_vs_wasm:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, ubuntu-26.04]
     needs: [build_native_core, build_wasm_core]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - name: Setup Emscripten
         uses: mymindstorm/setup-emsdk@v14
         with:
           version: 3.1.62
 
-      - name: Cache CMake/ccache (native)
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.ccache
-            build-native
-          key: native-${{ runner.os }}-${{ hashFiles('CMakeLists.txt', 'dsp/core/**', 'tests/core/**', 'include/**') }}
-          restore-keys: |
-            native-${{ runner.os }}-
-
-      - name: Cache Emscripten/CMake (wasm)
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.emscripten_cache
-            ~/.cache/emscripten
-          key: wasm-${{ runner.os }}-${{ hashFiles('CMakeLists.txt', 'dsp/core/**', 'tests/core/**', 'include/**') }}
-          restore-keys: |
-            wasm-${{ runner.os }}-
-
       - name: Configure and build native trace runner
         run: |
-          cmake -S . -B build-native -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} -DBUILD_TESTING=ON
+          rm -rf build-native
+          cmake -S . -B build-native -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} -DBUILD_TESTING=ON -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
           cmake --build build-native --config ${CMAKE_BUILD_TYPE} -j --target hydra_render_trace_native
 
       - name: Configure and build wasm trace runner
         run: |
           rm -rf build-wasm
-          emcmake cmake -S . -B build-wasm -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} -DBUILD_WEB=ON -DBUILD_TESTING=ON
+          emcmake cmake -S . -B build-wasm -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} -DBUILD_WEB=ON -DBUILD_TESTING=ON -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
           cmake --build build-wasm --config ${CMAKE_BUILD_TYPE} -j --target hydra_render_trace_wasm
+
+      - name: Capture input and LUT bits before DSP comparison
+        run: |
+          mkdir -p ci-reports/native-vs-wasm
+          python3 tests/core/verify_numerical_inputs.py --native build-native/hydra_render_trace_native --wasm-js build-wasm/wasm-tests/hydra_render_trace.js --output ci-reports/native-vs-wasm/inputs.json
+          git rev-parse HEAD > ci-reports/native-vs-wasm/checkout.txt
+          g++ --version > ci-reports/native-vs-wasm/compiler.txt
+          ldd --version > ci-reports/native-vs-wasm/libc.txt
+          emcc --version > ci-reports/native-vs-wasm/emscripten.txt
+          sha256sum dsp/core/tape_core.cpp dsp/core/fast_tanh_table.inc tests/core/render_trace.cpp build-native/hydra_render_trace_native build-wasm/wasm-tests/hydra_render_trace.* > ci-reports/native-vs-wasm/sha256.txt
+          cp build-native/CMakeCache.txt ci-reports/native-vs-wasm/native-cache.txt
+          cp build-wasm/CMakeCache.txt ci-reports/native-vs-wasm/wasm-cache.txt
+          cp build-native/compile_commands.json ci-reports/native-vs-wasm/native-commands.json
+          cp build-wasm/compile_commands.json ci-reports/native-vs-wasm/wasm-commands.json
 
       - name: Run native vs wasm equivalence
         run: |
@@ -232,18 +219,28 @@ jobs:
             --diff-csv ci-reports/native-vs-wasm/diff.csv \
             --render-wav-dir ci-reports/native-vs-wasm/audio
 
-      - name: Diagnose Release equivalence
-        if: ${{ always() && github.event_name == 'workflow_dispatch' }}
+      - name: Verify current stages and preserve contraction control evidence
+        if: ${{ !cancelled() && matrix.os == 'ubuntu-26.04' }}
         run: |
-          git fetch --no-tags --depth=1 origin 528ebb87281d29331f7df19b0a375f7892d7fd2d
-          python3 tests/core/diagnose_equivalence.py \
-            --base 528ebb87281d29331f7df19b0a375f7892d7fd2d \
-            --output ci-reports/native-vs-wasm/operations.json
+          python3 tests/core/diagnose_equivalence.py --current --output ci-reports/native-vs-wasm/stages-gcc15.json
+          python3 tests/core/diagnose_equivalence.py --current --extra-flags=-ffp-contract=off --output ci-reports/native-vs-wasm/stages-no-contract.json
+          g++ -dM -E -x c++ /dev/null > ci-reports/native-vs-wasm/native-macros.txt
+          g++ -Q --help=target > ci-reports/native-vs-wasm/native-target.txt
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          report = json.loads(Path('ci-reports/native-vs-wasm/stages-no-contract.json').read_text())
+          assert len(report['scenarios']) == 5
+          for name, row in report['scenarios'].items():
+              assert row['instrumentation_preserves_output_per_backend'], name
+              assert row['release']['max_abs'] == row['release']['rmse'] == 0, name
+              assert not row['instrumented']['operations'], name
+          PY
 
       - name: Summarize equivalence results
         if: ${{ always() && hashFiles('ci-reports/native-vs-wasm/equivalence_report.json') != '' }}
         run: |
-          echo "### Native ↔ WASM Equivalence" >> "$GITHUB_STEP_SUMMARY"
+          echo "### Native â†” WASM Equivalence" >> "$GITHUB_STEP_SUMMARY"
           python3 - <<'PY'
           import json
           from pathlib import Path
@@ -264,7 +261,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: native-vs-wasm-equivalence-reports
+          name: native-vs-wasm-equivalence-reports-${{ matrix.os }}
           path: ci-reports/native-vs-wasm
 
 
@@ -274,6 +271,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
       - name: Download native runners
         uses: actions/download-artifact@v4
         with:
@@ -348,6 +347,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -356,3 +357,12 @@ jobs:
         run: pip install platformio
       - name: Build ESP32-S3 Firmware
         run: pio run -e esp32-s3-devkitc-1
+      - name: Validate archived Phase 6.5 physical evidence (not a hardware rerun)
+        run: python scripts/validate_phase65_evidence.py docs/evidence/phase65-physical
+      - name: Publish verified physical acquisition evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: hydra-phase65-physical-evidence
+          path: docs/evidence/phase65-physical/
+          if-no-files-found: error
+          retention-days: 90

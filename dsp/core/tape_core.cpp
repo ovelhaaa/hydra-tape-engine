@@ -13,6 +13,9 @@
 #include "hydra_mech_noise.hpp"
 #include "tape_integrity.hpp"
 #include "realtime_profile.hpp"
+#if defined(HYDRA_PHASE72_EXPERIMENTAL_FEEDBACK_ROUTING) && HYDRA_PHASE72_EXPERIMENTAL_FEEDBACK_ROUTING
+#include "feedback_routing_experiment.hpp"
+#endif
 #include "reverse_windows.hpp"
 
 #include <algorithm>
@@ -1046,8 +1049,16 @@ HYDRA_DSP_IRAM void TapeCore::processStereoBlock(const float* inLBlock,const flo
     if (impl_->warpActive) {
       frame.feedbackSource = warpFb;
     } else {
-      // Decouple the V2 repeat level from monitoring mix and tape hiss.
+#if defined(HYDRA_PHASE72_EXPERIMENTAL_FEEDBACK_ROUTING) && HYDRA_PHASE72_EXPERIMENTAL_FEEDBACK_ROUTING
+      // Phase 7.2A experiment ONLY. The forward/reverse blend is already
+      // applied to delaySig. Avoid a second reverse blend and keep monitoring
+      // gains, injected hiss and playback-only texture outside the repeat loop.
+      frame.feedbackSource = experimental::independentTapeFeedbackSource(delaySig);
+#else
+      // Approved Phase 7.1 / Phase 6.6 sound: preserve this expression
+      // byte-for-byte when the experiment is not explicitly compiled in.
       frame.feedbackSource = tapeSig + reverseBlend * (reverseSig - tapeSig);
+#endif
     }
     frame.tapeOutput=outputGapLossFilter.process(reproHeadBumpFilter.process(tr.process(tapeSig)));
     HYDRA_PROFILE_END(PlaybackFilters, tPlayF);

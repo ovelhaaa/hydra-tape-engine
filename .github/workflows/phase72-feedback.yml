@@ -1,4 +1,4 @@
-name: Phase 7.2 Feedback Routing A-B Experiment
+name: Phase 7.2 Feedback Routing A-B-C Experiment
 
 on:
   pull_request:
@@ -26,33 +26,63 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - name: Install numeric and audio requirements
+      - name: Install numerical and audio requirements
         run: python -m pip install -r scripts/listening-lab-requirements.txt
-      - name: Confirm approved Phase 7.1 baseline exists
+      - name: Verify frozen Phase 7.1 source
         run: git cat-file -e 24977b67e1ab8441080a29d9e5d40114c966ac50^{commit}
-      - name: Build CMake contract test
+      - name: Build both isolated scalar contract and full C-DSP smoke
         run: |
           cmake -S . -B build-native -DBUILD_TESTING=ON -DCMAKE_BUILD_TYPE=Release
-          cmake --build build-native --target hydra_phase72_feedback_routing_test -j 2
-      - name: Check routing contract without changing production audio
-        run: ctest --test-dir build-native -R '^phase72_feedback_routing_contract$' --output-on-failure
-      - name: Build approved, default and isolated DSPs and render the A-B
+          cmake --build build-native --target hydra_phase72_feedback_routing_test hydra_phase72_classic_core_smoke -j 2
+      - name: Test both routing variants
+        run: ctest --test-dir build-native -R '^phase72_(feedback_routing_contract|classic_core_smoke)$' --output-on-failure
+      - name: Render independent B with approved A and experiment-off A0
         run: |
           python scripts/package_phase72_feedback_ab.py \
+            --variant isolated \
             --before-commit 24977b67e1ab8441080a29d9e5d40114c966ac50 \
+            --work artifacts/tmp/phase72-feedback-b \
             --output artifacts/listening-lab/phase7-2-feedback \
-            --archive artifacts/hydra-phase7-2-feedback.zip
-      - name: Verify physical PCM24 stereo files, SHA-256 and ZIP
+            --archive artifacts/hydra-phase7-2-feedback-ab.zip
+      - name: Render classic-style C with approved A and experiment-off A0
+        run: |
+          python scripts/package_phase72_feedback_ab.py \
+            --variant classic \
+            --before-commit 24977b67e1ab8441080a29d9e5d40114c966ac50 \
+            --work artifacts/tmp/phase72-feedback-c \
+            --output artifacts/listening-lab/phase7-2-classic \
+            --archive artifacts/hydra-phase7-2-feedback-ac.zip
+      - name: Validate PCM24, telemetry, WAV hashes and both ZIP checksums
         run: |
           python scripts/package_listening_lab.py \
             artifacts/listening-lab/phase7-2-feedback --validate-only
-          (cd artifacts && sha256sum -c hydra-phase7-2-feedback.zip.sha256)
-      - name: Upload listening comparisons, not a human signoff
+          python scripts/package_listening_lab.py \
+            artifacts/listening-lab/phase7-2-classic --validate-only
+          (cd artifacts && sha256sum -c hydra-phase7-2-feedback-ab.zip.sha256)
+          (cd artifacts && sha256sum -c hydra-phase7-2-feedback-ac.zip.sha256)
+      - name: Verify common approved A WAVs are bit-exact across packages
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          a = json.loads(Path('artifacts/listening-lab/phase7-2-feedback/manifest.json').read_text())
+          c = json.loads(Path('artifacts/listening-lab/phase7-2-classic/manifest.json').read_text())
+          assert a['reference_commit'] == c['reference_commit']
+          assert a['before_commit'] == c['before_commit']
+          assert list(a['scenarios']) == list(c['scenarios'])
+          for k in a['scenarios']:
+              assert a['scenarios'][k]['original_wav_sha256'] == c['scenarios'][k]['original_wav_sha256'], k
+              assert a['scenarios'][k]['stimulus_sha256'] == c['scenarios'][k]['stimulus_sha256'], k
+          print('Approved A WAVs and input signals: bit-exact')
+          PY
+      - name: Upload listening evidence (never a human approval)
         uses: actions/upload-artifact@v4
         if: success()
         with:
-          name: hydra-phase7-2-feedback-audio-ab
+          name: hydra-phase7-2-feedback-audio-abc
           path: |
-            artifacts/hydra-phase7-2-feedback.zip
-            artifacts/hydra-phase7-2-feedback.zip.sha256
+            artifacts/hydra-phase7-2-feedback-ab.zip
+            artifacts/hydra-phase7-2-feedback-ab.zip.sha256
+            artifacts/hydra-phase7-2-feedback-ac.zip
+            artifacts/hydra-phase7-2-feedback-ac.zip.sha256
           retention-days: 30

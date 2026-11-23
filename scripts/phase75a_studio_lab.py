@@ -6,7 +6,7 @@ import shutil
 import argparse, ctypes as C, hashlib, io, json, math, os, subprocess, tarfile, time
 import numpy as np
 from scipy.io import wavfile
-from scipy.signal import resample_poly
+from scipy.signal import resample_poly, correlate
 ROOT=Path(__file__).resolve().parents[1]
 BASE='c1f996b'
 DLL_SEARCH = os.add_dll_directory(str(Path(shutil.which('g++')).parent)) if os.name=='nt' else None
@@ -63,6 +63,12 @@ def stats(x,y,sr,hz=None):
  rms=lambda a:float(np.sqrt(np.mean(a*a)))
  peak=float(np.max(np.abs(y)));inpeak=float(np.max(np.abs(x)));xr=rms(x);yr=rms(y)
  result={'rms':yr,'rms_difference':rms(y-x),'rms_gain_db':20*math.log10(max(yr,1e-30)/max(xr,1e-30)), 'sample_peak':peak,'peak_gain_db':20*math.log10(max(peak,1e-30)/max(inpeak,1e-30)), 'full_scale_samples':int(np.sum(np.abs(y)>=1)), 'uncontrolled_overs':int(np.sum(np.abs(y)>1)), 'non_finite':int(np.sum(~np.isfinite(y))), 'dc_mean':float(np.mean(y)), 'introduced_dc':float(np.mean(y-x)), 'max_abs_error':float(np.max(np.abs(y-x))), 'true_peak_4x':float(np.max(np.abs(resample_poly(y,4,1,axis=0))))}
+ spectrum_x=np.abs(np.fft.rfft(x[:,0]));spectrum_y=np.abs(np.fft.rfft(y[:,0]));mask=spectrum_x>max(spectrum_x)*1e-5
+ result.update(mono_fold_down_rms=rms(.5*(y[:,0]+y[:,1])),stereo_difference_rms=rms(y[:,0]-y[:,1]),
+  stereo_correlation=float(np.sum(y[:,0]*y[:,1])/max(float(np.sqrt(np.sum(y[:,0]**2)*np.sum(y[:,1]**2))),1e-30)),
+  spectral_magnitude_max_delta_db=float(np.max(np.abs(20*np.log10(np.maximum(spectrum_y[mask],1e-30)/spectrum_x[mask])))) if mask.any() else 0.,
+  relative_latency_samples=0 if np.array_equal(x,y) else int(np.argmax(correlate(y[:,0],x[:,0],method='fft'))-(len(x)-1)),
+  thd=None,phase_shift_radians=None)
  if hz:
   t=np.arange(len(y))/sr
   a=np.sum(x[:,0]*np.exp(-2j*np.pi*hz*t));b=np.sum(y[:,0]*np.exp(-2j*np.pi*hz*t))
@@ -121,6 +127,7 @@ def main():
   for suffix,data in [('classic',a),('studio',b),('input',x)]:wavfile.write(out/'audio'/f'{name}-{suffix}.wav',sr,data.astype(np.float32))
   # Raw interleaved buffers permit independent WASM verification with identical inputs.
   x.astype('<f4').tofile(out/'audio'/f'{name}-input.f32');b.astype('<f4').tofile(out/'audio'/f'{name}-studio.f32')
+  item['tail_gain_studio_vs_classic_db']=20*math.log10(max(item['tail_rms_b'],1e-30)/max(item['tail_rms_a'],1e-30))
   report['scenarios'].append(item)
  # Static mix-law audition: identical stem, fixed coefficients, no per-file loudness matching.
  dry=np.column_stack([src['guitar_clean']*.2]*2);wet=engine.render(dry,sr,{**DEFAULT,47:1})-dry
@@ -136,7 +143,7 @@ def main():
 const report=await fetch('metrics.json').then(r=>r.json());const scenes=report.scenarios;const scene=document.querySelector('#scene');for(const [i,s] of scenes.entries())scene.add(new Option(s.id,i));let ctx,nodes=[],gains=[],started=0,offset=0,blind=false,swap=false,selected=0;const state=document.querySelector('#state');
 function stop(){for(const n of nodes){try{n.stop()}catch{}}nodes=[]}
 function select(i){selected=i;for(let j=0;j<gains.length;j++){const p=gains[j].gain;p.cancelScheduledValues(ctx.currentTime);p.setValueAtTime(p.value,ctx.currentTime);p.linearRampToValueAtTime(j===(i^(swap?1:0))?1:0,ctx.currentTime+.01)}state.textContent=blind?`Blind ${i?'B':'A'} — identity hidden`:`${i?'B':'A'}: ${(i^(swap?1:0))?'Studio':'Classic'}`}
-async function play(){stop();ctx??=new AudioContext();await ctx.resume();const s=scenes[scene.value];const buffers=await Promise.all([s.a,s.b].map(async url=>ctx.decodeAudioData(await (await fetch(url)).arrayBuffer())));offset=Number(document.querySelector('#seek').value);started=ctx.currentTime+.08;gains=[];for(const buffer of buffers){const n=ctx.createBufferSource(),g=ctx.createGain();n.buffer=buffer;g.gain.value=0;n.connect(g).connect(ctx.destination);n.start(started,Math.min(offset,buffer.duration-.01));nodes.push(n);gains.push(g)}select(selected);document.querySelector('#metrics').textContent=JSON.stringify({motion:s.motion,classic:s.metrics_a,studio:s.metrics_b,tail_classic:s.tail_rms_a,tail_studio:s.tail_rms_b},null,2)}
+async function play(){stop();ctx??=new AudioContext();await ctx.resume();const s=scenes[scene.value];const buffers=await Promise.all([s.a,s.b].map(async url=>ctx.decodeAudioData(await (await fetch(url)).arrayBuffer())));offset=Number(document.querySelector('#seek').value);started=ctx.currentTime+.08;gains=[];for(const buffer of buffers){const n=ctx.createBufferSource(),g=ctx.createGain();n.buffer=buffer;g.gain.value=0;n.connect(g).connect(ctx.destination);n.start(started,Math.min(offset,buffer.duration-.01));nodes.push(n);gains.push(g)}select(selected);document.querySelector('#metrics').textContent=JSON.stringify({scenario:s.id,motion:s.motion,classic:s.metrics_a,studio:s.metrics_b,tail_classic:s.tail_rms_a,tail_studio:s.tail_rms_b},null,2)}
 document.querySelector('#play').onclick=play;document.querySelector('#stop').onclick=stop;document.querySelector('#a').onclick=()=>select(0);document.querySelector('#b').onclick=()=>select(1);document.querySelector('#blind').onclick=()=>{document.querySelector('#metrics').hidden=true;blind=true;swap=crypto.getRandomValues(new Uint8Array(1))[0]%2===1;select(selected)};document.querySelector('#reveal').onclick=()=>{document.querySelector('#metrics').hidden=false;blind=false;select(selected)};scene.onchange=()=>{stop();document.querySelector('#seek').value=0};document.querySelector('#seek').onchange=play;
 </script>'''
  (out/'index.html').write_text(html,encoding='utf-8')

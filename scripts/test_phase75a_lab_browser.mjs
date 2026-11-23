@@ -21,6 +21,6 @@ try{
  await page.locator('#a').click();assert.match(await page.locator('#state').textContent(),/hidden/);
  await page.locator('#seek').fill('2');await page.locator('#seek').dispatchEvent('change');
  await page.locator('#reveal').click();assert.equal(await page.locator('#metrics').isVisible(),true);
- for(let i=0;i<10;i++){await page.locator('#scene').selectOption(String(i));await page.locator('#play').click();await page.waitForTimeout(40);await page.locator('#stop').click()}
+ for(let i=0;i<10;i++){await page.locator('#scene').selectOption(String(i));const id=await page.locator('#scene option:checked').textContent();await page.locator('#play').click();await page.waitForFunction(id=>document.querySelector('#metrics').textContent.includes(id),id);await page.locator('#stop').click()}
  assert.deepEqual(errors,[]);console.log('Synchronized A/B, blind state, seek, ten WAV scenarios: PASS');
 }finally{await browser.close();await new Promise(r=>server.close(r))}

@@ -25,8 +25,14 @@ Measured in `phase74b_organic_motion_test` (2,000 blocks):
 
 *Note:* M1 and M2 replace M0's two per-channel `BiquadFilter` calls (`flutterLPF`, `flutterLPFR`) and dual `mechanicalMod()` calls with a single shared common-mode + differential step, resulting in slightly lower host CPU cost than M0. M3 adds only a lightweight cooldown/event check and a 2nd-order damped oscillator (+3.3% on host).
 
-## 4. Physical ESP32-S3 Hardware Benchmark (`COM15`, 240 MHz, 44.1 kHz, 128 frames, 1,000 blocks + 100 warmup)
-Measured via `scripts/bench_phase74b_esp32.py` on `env:esp32-s3-devkitc-1` (`HYDRA_PHASE72_CLASSIC_FEEDBACK_ROUTING=1`):
+## 4. Historical ESP32-S3 Benchmark — Preliminary (Build Flags Not Verified)
+
+The following values were reported from the earlier hardware run on COM15 (240 MHz, 44.1 kHz, 128 frames, 1,000 measured blocks plus 100 warm-up). They remain useful historical observations but **are not qualified comparisons of M0–M3**. The original `scripts/bench_phase74b_esp32.py` set `PLATFORMIO_BUILD_FLAGS` for each mode, which may replace the inherited production flags. The old result has no checked-in verbose build logs or serial evidence to establish the effective `HYDRA_PHASE72_CLASSIC_FEEDBACK_ROUTING=1`, optimization, and PSRAM flags for each binary.
+
+The script has now been corrected to select dedicated `esp32-s3-phase74b-m0` through `m3` environments, inheriting production `build_flags` from `platformio.ini`. It validates effective compiler flags against clean verbose build logs, captures firmware hashes and raw serial logs, and defaults to a **non-flashing configuration check**. A new physical run is required for performance qualification; the workflow/CI does not execute a physical benchmark.
+
+To inspect configuration without touching hardware: `python scripts/bench_phase74b_esp32.py`.
+To run a new, explicitly authorized physical test on the attached ESP32-S3: `python scripts/bench_phase74b_esp32.py --flash --port COM15`. This performs multiple uploads and restores M0 at the end only if the full experiment completes successfully.
 
 ### Scenario 1: Standard Single-Head (`hds=4`, `dly=340 ms`, `fbk=50%`, `spr=0`, `rev=0`)
 | Variant | Mean (µs) | Budget Mean (%) | P99 (µs) | Budget P99 (%) | Peak (µs) | Overruns |
@@ -52,8 +58,9 @@ Measured via `scripts/bench_phase74b_esp32.py` on `env:esp32-s3-devkitc-1` (`HYD
 | **M2 (Capstan Flutter)** | 1759.95 | 60.64% | 1860 | 64.08% | 2007 | 0 |
 | **M3 (Unstable Transport)** | 1886.79 | 65.01% | 1994 | 68.70% | 2144 | 0 |
 
-## 5. Qualification Summary
-- **All four variants** run comfortably inside the `2,902.49 µs` ESP32-S3 hard deadline with **0 overruns** even under Multi-Head + Reverse + Spring load.
-- **M1** (`-5.0%` mean vs M0) and **M2** (`-2.1%` mean vs M0) are **faster** than Classic C on physical ESP32-S3 hardware because they replace M0's dual per-channel biquads with a shared common/differential motion step.
-- **M3** adds `~85–95 µs` (`+4.6%` to `+6.1%` vs M0) and remains well within budget (`<= 70.66%` P99, `<= 2,312 µs` peak).
-- **Firmware status:** M0 remains flashed as production default on the board; M1/M2/M3 remain isolated in PR #60 pending promotion decision.
+## 5. Qualification Status — Rebenchmark Required
+
+- **DSP architecture / Native / WASM:** M0 bit-exact and the experimental M1/M2/M3 safety and audio checks passed on their respective pipelines. These results are independent of the physical benchmark issue.
+- **Historical physical measurements:** three scenarios reportedly produced zero overruns, but effective firmware build flags were not independently archived and must not be used as a release gate or proof that the new modes are faster than M0.
+- **Physical rerun:** `NOT_EXECUTED_SINCE_BENCHMARK_FIX`. Requires user-authorized flashing and fresh `artifacts/phase7-4b/esp32_s3_benchmark_verified.json`, verbose compiler logs, firmware SHA-256 hashes, and raw serial logs.
+- **Production firmware:** M0 / Classic C is still the production default. All M1/M2/M3 variants remain experimental, and no experimental mode has been promoted.

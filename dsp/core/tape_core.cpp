@@ -24,6 +24,16 @@
 #endif
 #include "reverse_windows.hpp"
 
+#ifndef HYDRA_PHASE74B_MOTION_MODE
+#define HYDRA_PHASE74B_MOTION_MODE 0
+#endif
+#if HYDRA_PHASE74B_MOTION_MODE < 0 || HYDRA_PHASE74B_MOTION_MODE > 3
+#error "HYDRA_PHASE74B_MOTION_MODE must be 0, 1, 2, or 3"
+#endif
+#if HYDRA_PHASE74B_MOTION_MODE != 0
+#include "organic_motion_experiment.hpp"
+#endif
+
 #include <algorithm>
 #include <cmath>
 #include <cstring>
@@ -354,6 +364,10 @@ struct TapeCore::Impl {
   float wowLeakCoeff=0.9996f,wowStepCoeff=0.00003f,wowLpAlpha=0.00008f;
   float flutterHpAlpha=0.0025f,flutterLpAlpha=0.015f;
   float wowDepthScale=0,flutterDepthScale=0,scrapeDepthScale=0;
+#if HYDRA_PHASE74B_MOTION_MODE != 0
+  phase74b::OrganicMotionCoeffs organicMotionCoeffs;
+  phase74b::OrganicMotionState organicMotionState;
+#endif
   float inEnvL=0,inEnvR=0,duckAttackCoeff=0,duckReleaseCoeff=0,noiseBaseGain=0,noiseMinDuckGain=kHissNoiseMinDuckGain,noiseDuckStrength=10.0f;
   float tapeSpeedNorm=0.5f,tapeAgeNorm=0.4f,toneNorm=0.5f,azimuthErrorNorm=0;
   float feedbackPreEmph=1.12f,feedbackDeEmph=1.0f/1.12f;
@@ -480,6 +494,19 @@ HYDRA_DSP_IRAM void TapeCore::Impl::updateFilters(){
   wowDepthScale=0.00025f*clampf(currentParams.wowDepth,0.0f,100.0f);
   flutterDepthScale=0.00010f*clampf(currentParams.flutterDepth,0.0f,100.0f);
   scrapeDepthScale=kScrapeModAmount*0.18f;
+#if HYDRA_PHASE74B_MOTION_MODE != 0
+  {
+    phase74b::OrganicMotionParams mp;
+    mp.sampleRate = sampleRate;
+    mp.wowRate = currentParams.wowRate;
+    mp.wowDepth = currentParams.wowDepth;
+    mp.flutterRate = currentParams.flutterRate;
+    mp.flutterDepth = currentParams.flutterDepth;
+    mp.tapeAge = currentParams.tapeAge;
+    mp.scrapeAmount = scrapeDepthScale;
+    organicMotionCoeffs.update(mp);
+  }
+#endif
   float speedMod=tapeSpeedNorm,ageMod=tapeAgeNorm,toneMod=toneNorm;
   feedbackPreEmph=1.0f+(0.06f+0.10f*(1.0f-speedMod)+0.06f*ageMod);
   feedbackDeEmph=1.0f/feedbackPreEmph;
@@ -727,6 +754,9 @@ void TapeCore::reset(){
   impl_->flutterPhase=impl_->wowPhase=impl_->azimuthPhase=0;
   impl_->mechStateL=Impl::MechanicalState{};
   impl_->mechStateR=Impl::MechanicalState{0,0,0,0,0x2468ACE1u,0x56473829u};
+#if HYDRA_PHASE74B_MOTION_MODE != 0
+  impl_->organicMotionState.reset();
+#endif
   impl_->freezeFade=0; impl_->delayEnableRamp=0; impl_->smoothedDelaySamples=0; impl_->smoothedAzCoeff=0; impl_->springFB_L=impl_->springFB_R=0;
   impl_->dcBlocker.clear(); impl_->dcBlockerR.clear(); impl_->magneticsL.reset(); impl_->magneticsR.reset(); impl_->dropout.reset(); impl_->dropout.setSampleRate(impl_->sampleRate); impl_->noiseGen.reset(impl_->sampleRate, 123456789u); impl_->noiseGenR.reset(impl_->sampleRate, 987654321u); impl_->mechNoiseL.reset(); impl_->mechNoiseR.reset();
   impl_->flutterLPF.reset(); impl_->flutterLPFR.reset(); impl_->warpHPF_L.reset(); impl_->warpHPF_R.reset(); impl_->warpLPF_L.reset(); impl_->warpLPF_R.reset(); impl_->reproHeadBump.reset(); impl_->reproHeadBumpR.reset(); impl_->tapeRolloff.reset(); impl_->tapeRolloffR.reset(); impl_->gapLossLPF.reset(); impl_->gapLossLPFR.reset(); impl_->dropoutLPF.reset(); impl_->dropoutLPFR.reset();
@@ -907,9 +937,19 @@ HYDRA_DSP_IRAM void TapeCore::processStereoBlock(const float* inLBlock,const flo
 
   float scrapeL=impl_->mechNoiseL.lowRate(impl_->mechNoiseSlowAlpha,impl_->mechNoiseFastAlpha);
   float scrapeR=impl_->mechNoiseR.lowRate(impl_->mechNoiseSlowAlpha,impl_->mechNoiseFastAlpha);
+#if HYDRA_PHASE74B_MOTION_MODE == 0
   float residual=0.03f*fast_sin(impl_->wowPhase)+0.01f*fast_sin(impl_->flutterPhase+0.31f);
   float modL=impl_->mechanicalMod(scrapeL,impl_->flutterLPF,impl_->mechStateL,residual);
   float modR=impl_->mechanicalMod(scrapeR,impl_->flutterLPFR,impl_->mechStateR,residual);
+#else
+  const float textureBaseSamples = impl_->sampleRate * 0.012f;
+  const float modBaseSamples = impl_->delayActive ? impl_->smoothedDelaySamples
+                                                  : std::max(impl_->smoothedDelaySamples, textureBaseSamples);
+  float modL = 0.0f, modR = 0.0f;
+  impl_->organicMotionState.computeStereoMod(
+      HYDRA_PHASE74B_MOTION_MODE, impl_->organicMotionCoeffs, modBaseSamples,
+      scrapeL, scrapeR, modL, modR);
+#endif
 
   const bool useAzimuth=impl_->useAzimuth;
   if(useAzimuth){

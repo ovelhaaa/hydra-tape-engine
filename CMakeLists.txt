@@ -4,6 +4,7 @@ project(hydra_tape_engine LANGUAGES C CXX)
 option(BUILD_WEB "Build WebAssembly artifacts with Emscripten" OFF)
 option(HYDRA_WEB_LEGACY_A "Build web demo with legacy A feedback routing (manual rollback only)" OFF)
 option(BUILD_TESTING "Build tests" ON)
+set(HYDRA_PHASE74B_MOTION_MODE "0" CACHE STRING "Phase 7.4B organic motion mode (0=M0 Classic, 1=M1 Motor Drift, 2=M2 Capstan Flutter, 3=M3 Unstable Transport)")
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -59,6 +60,24 @@ if(BUILD_TESTING)
     HYDRA_PHASE72_CLASSIC_FEEDBACK_ROUTING=1
   )
   add_test(NAME phase72_classic_core_smoke COMMAND hydra_phase72_classic_core_smoke)
+
+  # Phase 7.4B: Organic Tape Motion variants M0..M3 (built independently on top of Classic C).
+  foreach(_m IN ITEMS 0 1 2 3)
+    add_executable(hydra_phase74b_motion_m${_m}
+      tests/core/phase74b_organic_motion_test.cpp
+      dsp/core/tape_core.cpp
+      dsp/core/hydra_dsp_c_api.cpp
+    )
+    target_include_directories(hydra_phase74b_motion_m${_m} PRIVATE
+      ${CMAKE_CURRENT_SOURCE_DIR}/include
+      ${CMAKE_CURRENT_SOURCE_DIR}/dsp/core
+    )
+    target_compile_definitions(hydra_phase74b_motion_m${_m} PRIVATE
+      HYDRA_PHASE72_CLASSIC_FEEDBACK_ROUTING=1
+      HYDRA_PHASE74B_MOTION_MODE=${_m}
+    )
+    add_test(NAME phase74b_organic_motion_m${_m} COMMAND hydra_phase74b_motion_m${_m})
+  endforeach()
 
   add_executable(hydra_core_smoke tests/core/smoke_core.cpp)
   target_link_libraries(hydra_core_smoke PRIVATE hydra_dsp_core)
@@ -210,6 +229,16 @@ if(BUILD_WEB)
     target_compile_definitions(hydra_dsp_web PRIVATE HYDRA_PHASE72_CLASSIC_FEEDBACK_ROUTING=1)
     set(HYDRA_WEB_FEEDBACK_ROUTING "PHASE72_CLASSIC_C")
   endif()
+  target_compile_definitions(hydra_dsp_web PRIVATE HYDRA_PHASE74B_MOTION_MODE=${HYDRA_PHASE74B_MOTION_MODE})
+  if(HYDRA_PHASE74B_MOTION_MODE EQUAL 1)
+    set(HYDRA_WEB_MOTION_MODE "M1_MOTOR_DRIFT")
+  elseif(HYDRA_PHASE74B_MOTION_MODE EQUAL 2)
+    set(HYDRA_WEB_MOTION_MODE "M2_CAPSTAN_FLUTTER")
+  elseif(HYDRA_PHASE74B_MOTION_MODE EQUAL 3)
+    set(HYDRA_WEB_MOTION_MODE "M3_UNSTABLE_TRANSPORT")
+  else()
+    set(HYDRA_WEB_MOTION_MODE "M0_CLASSIC_C_BASELINE")
+  endif()
   set(HYDRA_WEB_GIT_COMMIT "unknown")
   find_package(Git QUIET)
   if(GIT_FOUND)
@@ -226,7 +255,7 @@ if(BUILD_WEB)
     endif()
   endif()
   file(GENERATE OUTPUT "${CMAKE_BINARY_DIR}/hydra-build-info.pending.json"
-    CONTENT "{\n  \"feedbackRouting\": \"${HYDRA_WEB_FEEDBACK_ROUTING}\",\n  \"buildTarget\": \"hydra_dsp_web\",\n  \"gitCommit\": \"${HYDRA_WEB_GIT_COMMIT}\",\n  \"emscriptenVersion\": \"${CMAKE_CXX_COMPILER_VERSION}\"\n}\n")
+    CONTENT "{\n  \"feedbackRouting\": \"${HYDRA_WEB_FEEDBACK_ROUTING}\",\n  \"motionMode\": \"${HYDRA_WEB_MOTION_MODE}\",\n  \"buildTarget\": \"hydra_dsp_web\",\n  \"gitCommit\": \"${HYDRA_WEB_GIT_COMMIT}\",\n  \"emscriptenVersion\": \"${CMAKE_CXX_COMPILER_VERSION}\"\n}\n")
 
   set_target_properties(hydra_dsp_web PROPERTIES
     OUTPUT_NAME "hydra_dsp"

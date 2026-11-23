@@ -1,0 +1,207 @@
+name: Phase 7.4B Organic Tape Motion Listening & Validation
+
+on:
+  push:
+    branches: [experiment/phase7-4b-organic-motion]
+    paths:
+      - '.github/workflows/phase74b-organic-motion.yml'
+      - 'dsp/core/**'
+      - 'include/**'
+      - 'CMakeLists.txt'
+      - 'scripts/generate_phase74b_listening.mjs'
+      - 'scripts/phase74b_demodulator.mjs'
+      - 'scripts/test_phase74b_wasm_api.mjs'
+      - 'scripts/test_phase74b_demodulator.mjs'
+      - 'scripts/test_phase74b_player.mjs'
+      - 'scripts/test_phase74b_control_semantics.mjs'
+      - 'tests/core/phase74b_organic_motion_test.cpp'
+      - 'tests/core/m0_equivalence_runner.cpp'
+      - 'tests/core/verify_m0_bit_exact.py'
+      - 'platformio.ini'
+      - 'scripts/bench_phase74b_esp32.py'
+  pull_request:
+    branches: [feat/phase7-3-classic-c-web-default]
+    paths:
+      - '.github/workflows/phase74b-organic-motion.yml'
+      - 'dsp/core/**'
+      - 'include/**'
+      - 'CMakeLists.txt'
+      - 'scripts/generate_phase74b_listening.mjs'
+      - 'scripts/phase74b_demodulator.mjs'
+      - 'scripts/test_phase74b_wasm_api.mjs'
+      - 'scripts/test_phase74b_demodulator.mjs'
+      - 'scripts/test_phase74b_player.mjs'
+      - 'scripts/test_phase74b_control_semantics.mjs'
+      - 'tests/core/phase74b_organic_motion_test.cpp'
+      - 'tests/core/m0_equivalence_runner.cpp'
+      - 'tests/core/verify_m0_bit_exact.py'
+      - 'platformio.ini'
+      - 'scripts/bench_phase74b_esp32.py'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: phase74b-organic-motion-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate-and-package:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      CMAKE_BUILD_TYPE: Release
+      PYTHONUTF8: '1'
+    steps:
+      - name: Checkout full history for PR #58 M0 reference
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Setup Emscripten
+        uses: mymindstorm/setup-emsdk@v14
+        with:
+          version: 3.1.62
+
+      - name: Validate ESP32-S3 Benchmark Configuration (No Flash)
+        id: physical_config_check
+        run: |
+          python3 -m py_compile scripts/bench_phase74b_esp32.py
+          python3 scripts/bench_phase74b_esp32.py
+
+      - name: Build Native DSP & Tests
+        run: |
+          cmake -S . -B build-native -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} -DBUILD_TESTING=ON
+          cmake --build build-native -j
+
+      - name: Run Native M0/M1/M2/M3 & Safety Tests
+        id: native_tests
+        run: |
+          ctest --test-dir build-native --output-on-failure -R "^(phase7_dsp_integrity|phase72_feedback_routing_contract|phase72_classic_core_smoke|phase74b_organic_motion_m0|phase74b_organic_motion_m1|phase74b_organic_motion_m2|phase74b_organic_motion_m3|core_smoke|core_regression|core_audible_controls|core_warp_test|core_reverse_test)$"
+
+      - name: Verify M0 Bit-Exact Equivalence vs PR #58
+        id: m0_bit_exact
+        run: |
+          mkdir -p artifacts/phase7-4b
+          python3 tests/core/verify_m0_bit_exact.py \
+            --ref-sha d2d36dd \
+            --report-json artifacts/phase7-4b/m0_bit_exact_report.json
+
+      - name: Build 4 WASM Variants (M0, M1, M2, M3)
+        id: wasm_build
+        run: |
+          for m in 0 1 2 3; do
+            emcmake cmake -S . -B build/web-m${m} -DBUILD_WEB=ON -DBUILD_TESTING=OFF -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} -DHYDRA_PHASE74B_MOTION_MODE=${m}
+            cmake --build build/web-m${m} --target hydra_dsp_web -j
+            test -f build/web-m${m}/web/hydra_dsp.wasm
+            test -f build/web-m${m}/web/hydra_dsp.js
+            test -f build/web-m${m}/web/hydra-build-info.json
+          done
+
+      - name: Verify Compiled WASM Identities
+        id: wasm_identity
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          expected = {
+              0: "M0_CLASSIC_C_BASELINE",
+              1: "M1_MOTOR_DRIFT",
+              2: "M2_CAPSTAN_FLUTTER",
+              3: "M3_UNSTABLE_TRANSPORT",
+          }
+          for m, mode in expected.items():
+              info = json.loads(Path(f"build/web-m{m}/web/hydra-build-info.json").read_text(encoding="utf-8"))
+              assert info["motionMode"] == mode, f"M{m}: expected {mode}, got {info.get('motionMode')}"
+              assert info["feedbackRouting"] == "PHASE72_CLASSIC_C", f"M{m}: unexpected feedbackRouting {info.get('feedbackRouting')}"
+              print(f"Verified M{m} identity: {info}")
+          PY
+
+      - name: Test WASM C API Contract (Gate)
+        id: wasm_api_test
+        run: node scripts/test_phase74b_wasm_api.mjs
+
+      - name: Test Modulation Demodulator Calibration
+        id: demod_cal
+        run: node scripts/test_phase74b_demodulator.mjs
+
+      - name: Audit Motion Control Semantics
+        id: control_audit
+        run: node scripts/test_phase74b_control_semantics.mjs
+
+      - name: Generate 10 Comparative Listening Scenarios & Modulation Analysis
+        id: generate_wavs
+        run: node scripts/generate_phase74b_listening.mjs
+
+      - name: Validate manifest.json, WAVs & SHA-256 Integrity
+        id: manifest_check
+        run: |
+          python3 - <<'PY'
+          import hashlib, json
+          from pathlib import Path
+
+          root = Path("artifacts/phase7-4b")
+          manifest = json.loads((root / "manifest.json").read_text(encoding="utf-8"))
+          assert len(manifest["scenarios"]) == 10, f"Expected 10 scenarios, got {len(manifest['scenarios'])}"
+          for required in ("comparisons/index.html", "listening-report.md", "modulation-analysis.json"):
+              assert (root / required).is_file(), f"Missing {required}"
+
+          checked = 0
+          for sc in manifest["scenarios"]:
+              for key, rel in sc["files"].items():
+                  p = root / rel
+                  assert p.is_file(), f"Missing WAV: {p}"
+                  digest = hashlib.sha256(p.read_bytes()).hexdigest()
+                  expected = sc["sha256"][key]
+                  assert digest == expected, f"SHA-256 mismatch for {rel}: {digest} != {expected}"
+                  checked += 1
+              for v in ("m0", "m1", "m2", "m3"):
+                  assert sc["metrics"][v]["nonFinite"] == 0, f"Non-finite in {sc['id']} {v}"
+          print(f"Verified {checked} WAV files and manifest.json integrity.")
+          PY
+
+      - name: Test Blind A/B Player
+        id: player_test
+        run: node scripts/test_phase74b_player.mjs
+
+      - name: Write Execution Summary
+        if: always()
+        run: |
+          {
+            echo "## Phase 7.4B.1 — Organic Tape Motion Validation Summary"
+            echo ""
+            echo "| Check | Outcome |"
+            echo "|---|---|"
+            echo "| Native M0/M1/M2/M3 + Safety Tests | \`${{ steps.native_tests.outcome }}\` |"
+            echo "| M0 Bit-Exact vs PR #58 (\`d2d36dd\`) | \`${{ steps.m0_bit_exact.outcome }}\` |"
+            echo "| WASM Variants Build & Identity | \`${{ steps.wasm_build.outcome }}\` / \`${{ steps.wasm_identity.outcome }}\` |"
+            echo "| WASM C API Contract Gate | \`${{ steps.wasm_api_test.outcome }}\` |"
+            echo "| Demodulator Calibration | \`${{ steps.demod_cal.outcome }}\` |"
+            echo "| Control Semantics Audit | \`${{ steps.control_audit.outcome }}\` |"
+            echo "| WAV Package & Manifest SHA-256 | \`${{ steps.generate_wavs.outcome }}\` / \`${{ steps.manifest_check.outcome }}\` |"
+            echo "| Blind A/B Player | \`${{ steps.player_test.outcome }}\` |"
+            echo "| ESP32-S3 Benchmark Config (No Flash) | \`${{ steps.physical_config_check.outcome }}\` |"
+            echo "| ESP32-S3 Physical (After Flag Fix) | \`NOT_EXECUTED\` |"
+            echo "| Human Listening | \`PENDING\` |"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Publish Listening Package Artifact (No Auto-Deploy / No Merge)
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: hydra-phase74b-organic-motion-listening
+          path: artifacts/phase7-4b
+          retention-days: 30

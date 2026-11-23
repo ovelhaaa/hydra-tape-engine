@@ -256,7 +256,7 @@ if(BUILD_WEB)
       set(HYDRA_WEB_GIT_COMMIT "${HYDRA_WEB_GIT_COMMIT_RAW}")
     endif()
   endif()
-  file(GENERATE OUTPUT "${CMAKE_BINARY_DIR}/web/hydra-build-info.json"
+  file(GENERATE OUTPUT "${CMAKE_BINARY_DIR}/hydra-build-info.pending.json"
     CONTENT "{\n  \"feedbackRouting\": \"${HYDRA_WEB_FEEDBACK_ROUTING}\",\n  \"repeatAgingMode\": \"${HYDRA_WEB_REPEAT_AGING}\",\n  \"buildTarget\": \"hydra_dsp_web\",\n  \"gitCommit\": \"${HYDRA_WEB_GIT_COMMIT}\",\n  \"emscriptenVersion\": \"${CMAKE_CXX_COMPILER_VERSION}\"\n}\n")
 
   set_target_properties(hydra_dsp_web PROPERTIES
@@ -295,6 +295,10 @@ if(BUILD_WEB)
       "${CMAKE_CURRENT_SOURCE_DIR}/host/web/resetController.js"
       "${CMAKE_CURRENT_SOURCE_DIR}/host/web/webMidiTime.js"
       "${HYDRA_WEB_DIR}"
+    # Publish only once the selected WASM target compiled successfully.
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+      "${CMAKE_BINARY_DIR}/hydra-build-info.pending.json"
+      "${HYDRA_WEB_DIR}/hydra-build-info.json"
     VERBATIM
   )
 

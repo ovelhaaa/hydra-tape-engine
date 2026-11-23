@@ -5,9 +5,10 @@
 - `DSP_REFINEMENT_PASS`
 - `C0_BIT_EXACT_PASS`
 - `WEB_LISTENING_READY`
+- `HUMAN_LISTENING_APPROVED` (C1, C2, and C3 approved across all 10 scenarios on 2026-11-22)
 - `ESP32_PHYSICAL_NOT_EXECUTED`
 
-Per Phase 7.4A decision rules, **no winner is declared from objective metrics alone**. Final selection depends on human listening of the regenerated WAVs.
+Human A/B listening completed on the regenerated Web Audio lab (`artifacts/phase7-4a/comparisons/index.html`): **all 3 experimental candidates (C1, C2, C3) are approved across all 10 scenarios**, with C0 preserved bit-exact. Promotion to production firmware/web default remains gated on on-device ESP32-S3 profiling and explicit phase promotion.
 
 ---
 

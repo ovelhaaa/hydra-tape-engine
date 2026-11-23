@@ -7,7 +7,7 @@ environment. Local compile PASS with PlatformIO's supported bundled Python:
 C:\.platformio\penv\Scripts\python.exe -m platformio run -e esp32-s3-phase75a1-studio
 ```
 
-RAM static: 27,152 / 327,680 bytes (8.3%). Flash: 650,343 / 16,777,216 (3.9%).
+RAM static: 27,152 / 327,680 bytes (8.3%). Flash: 650,355 / 16,777,216 (3.9%).
 Local framework Arduino 3.3.6, Xtensa toolchain 14.2.0. No upload/flash command
 was run. The machine's default Python 3.14 is unsupported by its PlatformIO
 installation; use the bundled environment or supported Python 3.11-3.13.

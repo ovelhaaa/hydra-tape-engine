@@ -343,13 +343,14 @@ struct TapeCore::Impl {
   float maxHistoryMs() const {
     return (sampleRate > 0.f) ? (static_cast<float>(bufferSize) / sampleRate * 1000.f) : 0.f;
   }
-  void updateSampleRateConstants(){ const float fs=std::max(1.0f,sampleRate); invSampleRate=1.0f/fs; reverseFadeStep=1.f/std::max(1.f,0.010f*fs); reverseControlAlpha=1.f-std::exp(-1.f/(0.015f*fs)); maxDropoutFc=0.45f*fs; delaySmoothAlpha=1.f-std::exp(-1.f/(0.200f*fs)); delayRampInc=1.f/(0.250f*fs); azimuthInc=0.2f*invSampleRate; mechNoiseSlowAlpha=mechNoiseOnePoleAlpha(fs,kMechNoiseSlowTimeSeconds); mechNoiseFastAlpha=mechNoiseOnePoleAlpha(fs,kMechNoiseFastTimeSeconds); duckAttackCoeff=1.f-std::exp(-1.f/(kHissDuckAttackTimeSeconds*fs)); duckReleaseCoeff=1.f-std::exp(-1.f/(kHissDuckReleaseTimeSeconds*fs)); }
+  void updateSampleRateConstants(){ const float fs=std::max(1.0f,sampleRate); invSampleRate=1.0f/fs; signalPathFadeStep=1.f/std::max(1.f,.030f*fs); reverseFadeStep=1.f/std::max(1.f,0.010f*fs); reverseControlAlpha=1.f-std::exp(-1.f/(0.015f*fs)); maxDropoutFc=0.45f*fs; delaySmoothAlpha=1.f-std::exp(-1.f/(0.200f*fs)); delayRampInc=1.f/(0.250f*fs); azimuthInc=0.2f*invSampleRate; mechNoiseSlowAlpha=mechNoiseOnePoleAlpha(fs,kMechNoiseSlowTimeSeconds); mechNoiseFastAlpha=mechNoiseOnePoleAlpha(fs,kMechNoiseFastTimeSeconds); duckAttackCoeff=1.f-std::exp(-1.f/(kHissDuckAttackTimeSeconds*fs)); duckReleaseCoeff=1.f-std::exp(-1.f/(kHissDuckReleaseTimeSeconds*fs)); }
   void updateCachedParams();
   void updateFilters();
   void updatePlaybackFilters();
   void flushDenormals();
   FastTanhLUT tanhLUT; TapeMagnetics magneticsL,magneticsR; float sampleRate; float invSampleRate=1.0f/48000.0f,maxDropoutFc=21600.0f,invHeadGainSum=1.0f; TapeParams currentParams{}; float flutterPhase=0,wowPhase=0,azimuthPhase=0; float flutterInc=0,wowInc=0,azimuthInc=0,delaySmoothAlpha=0,delayRampInc=0,mechNoiseSlowAlpha=0,mechNoiseFastAlpha=0;
   float signalPathBlend=0.f, studioWetCurrent=1.f;
+  float signalPathFadeStep=1.f/1440.f, studioWetTarget=1.f;
   BiquadFilter studioBump[2], studioRolloff[2], studioGap[2];
   OnePoleLP studioDropout[2];
   AllpassFilter studioAzimuth[2];
@@ -523,6 +524,7 @@ struct TapeCore::Impl {
 };
 
 HYDRA_DSP_IRAM void TapeCore::Impl::updateCachedParams(){
+  studioWetTarget=clampf(currentParams.studioWetLevel*.01f,0.f,2.f);
   driveGain=currentParams.drive*0.05f;
   textureWetGain=clampf(currentParams.dryWet*0.01f,0.f,1.f);
   delayWetGain=clampf(currentParams.delayWet*0.01f,0.f,1.f);
@@ -1439,10 +1441,10 @@ HYDRA_DSP_IRAM void TapeCore::processStereoBlock(const float* inLBlock,const flo
   // One shared auxiliary chain. Morph its input, then restore transparent dry
   // after all wet processing. No delay reset, re-read, or extra engine instance.
   const float pathTarget=p->signalPathMode == 1 ? 1.f : 0.f;
-  const float pathStep=1.f/std::max(1.f,.030f*impl_->sampleRate);
+  const float pathStep=impl_->signalPathFadeStep;
   float& pathBlend=impl_->signalPathBlend;
   pathBlend += clampf(pathTarget-pathBlend,-pathStep,pathStep);
-  const float wetTarget=clampf(p->studioWetLevel*.01f,0.f,2.f);
+  const float wetTarget=impl_->studioWetTarget;
   impl_->studioWetCurrent += clampf(wetTarget-impl_->studioWetCurrent,-2.f*pathStep,2.f*pathStep);
   if(pathBlend>0.f){
     *outL += pathBlend*(frameL.studioOutput-*outL);

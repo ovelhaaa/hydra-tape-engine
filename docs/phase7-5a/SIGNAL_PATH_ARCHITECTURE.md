@@ -79,7 +79,9 @@ The old dryWet meaning remains Classic Texture Blend; it is hidden in Studio.
 delayWet still means the historical head playback gain, while Studio Wet Level
 is a final trim including Spring/Smear and hiss. Neither new control touches
 feedback. Firmware's existing bulk parameter structure remains unchanged; the
-new IDs are available through its existing queued parameter adapter.
+new IDs are available through its existing queued parameter adapter. Loading a
+built-in firmware preset explicitly restores Classic and Wet Level=100 via that
+handoff, without resetting history.
 
 Historical A/B packagers now reject major ABI differences rather than additive
 minor versions. Existing frozen-header consumer and symbol tests still run.

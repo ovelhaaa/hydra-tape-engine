@@ -1342,6 +1342,12 @@ void loadPreset(String name) {
     dualPrintln("Unknown preset. Try: clean, lofi, dub, broken, warp_octave, warp_cascade");
     return;
   }
+  // Built-in presets predate Signal Path Mode. Restore their Classic policy
+  // through the existing audio-thread handoff, without resetting tape history.
+  if (tape) {
+    tape->postSetParameter(HYDRA_DSP_PARAM_SIGNAL_PATH_MODE, 0.f);
+    tape->postSetParameter(HYDRA_DSP_PARAM_STUDIO_WET_LEVEL, 100.f);
+  }
 }
 
 void printHelp() {

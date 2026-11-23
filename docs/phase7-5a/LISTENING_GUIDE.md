@@ -16,7 +16,7 @@ python -m http.server 8075 --bind 127.0.0.1 --directory <extracted-directory>
 ```
 
 Open http://127.0.0.1:8075 for A/B, or /web-ui/ for real-time WASM controls.
-Use the real UI's input/microphone selection for guitar, or load a WAV, initialize
+Use Load Custom Audio Source to load a WAV recording of your guitar, initialize
 DSP, then Play. Select SIGNAL PATH CLASSIC/STUDIO; Wet Level is visible in Studio.
 The badge confirms the C-API state; no WASM rebuild is needed while switching.
 Classic Texture Blend remains a historical control and is hidden in Studio.

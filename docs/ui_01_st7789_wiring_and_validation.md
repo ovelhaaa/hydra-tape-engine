@@ -81,3 +81,38 @@
   - `st7789_driver_esp32.h/.cpp`: driver `esp_lcd` SPI 40 MHz, framebuffer 115.200 B em PSRAM, janela DMA 7.680 B (16 linhas) em RAM interna, ~15 FPS.
   - `encoder_pcnt_esp32.h/.cpp`: quadratura PCNT + debounce 35 ms + detecção longa 800 ms sem duplicação de eventos.
   - `hydra_ui_esp32_bridge.h/.cpp`: ponte segura entre `UiModel`, `paramMutex`/`syncGlobalParams()` e filas SPSC `HydraDspEsp32Adapter`.
+
+---
+
+## 5. Validação na Placa (COM15 — ESP32-S3 N16R8)
+
+Gravação executada via `pio run -e esp32-s3-st7789 -t upload --upload-port COM15` (`631.936` bytes gravados, hash verificado).
+
+### Boot e Inicialização Capturados na Serial
+
+- `PSRAM Size: 8388608 bytes`
+- `ST7789 Display initialized OK (240x240 PSRAM+DMA)`
+- `ST7789 UI Task started on Core 0`
+- `Audio Task: Hydra DSP adapter allocated` (+ `FrippEngine`, `BubblesEngine`, `FreeverbEngine`, `MelodyGen` alocados em PSRAM/RAM sem falhas)
+
+### Telemetria DSP (`perf`) com ST7789 Ativo em Repouso
+
+| Métrica | Valor Medido (`COM15`) |
+| --- | --- |
+| `Block Size` / `Sample Rate` | `128 frames` / `44100 Hz` |
+| `Block Time Budget` | `2902.5 us` |
+| `Blocks Processed` | `1174` |
+| `Avg DSP Block Time` | `1606 us` |
+| `Peak DSP Block Time` | `1969 us` |
+| `DSP Budget Use (EMA)` | `53.8 %` |
+| `DSP Budget Overruns` | `0` |
+| `I2S TX Write Failures` | `0` |
+| `Full Work Overruns` | `0` |
+| `Internal Free Heap` | `112168 bytes` |
+| `SPIRAM (PSRAM) Free` | `1543468 bytes` |
+| `Audio Stack Min Free` | `27260 bytes` |
+
+### Itens Pendentes de Inspeção Física Humana
+
+- Confirmação visual no painel ST7789 (orientação, cores, ausência de tearing e brilho do backlight).
+- Teste manual prolongado (5 min) com giro intenso do encoder físico, cliques de Tap Tempo, troca de modos, presets e SW Bypass.

@@ -43,7 +43,16 @@ const PARAM = {
   warpFeedback: 34,
   warpMode: 35,
   reverseMode: 36,
-  reverseDivision: 37
+  reverseDivision: 37,
+  motionMode: 38,
+  motionAmount: 39,
+  stereoMotion: 40,
+  motionInertia: 41,
+  motionDriftChar: 42,
+  motionTexture: 43,
+  motionIrregularity: 44,
+  motionInstability: 45,
+  motionTensionRec: 46
 };
 
 const ALL_PARAM_IDS = Object.keys(PARAM).filter(id => id !== 'reset');
@@ -53,7 +62,9 @@ const CONTINUOUS_PARAM_IDS = new Set([
   'tapeSpeed', 'tapeAge', 'headBumpAmount', 'azimuthError',
   'flutterRate', 'wowRate', 'delayTimeMs', 'feedback', 'dryWet', 'delayWet',
   'bpm', 'tone', 'springDecay', 'springDamping', 'springMix',
-  'warpSpeed', 'warpGrainMs', 'warpStereo', 'warpFeedback'
+  'warpSpeed', 'warpGrainMs', 'warpStereo', 'warpFeedback',
+  'motionAmount', 'stereoMotion', 'motionInertia', 'motionDriftChar',
+  'motionTexture', 'motionIrregularity', 'motionInstability', 'motionTensionRec'
 ]);
 
 const PARAM_METADATA = {
@@ -93,7 +104,16 @@ const PARAM_METADATA = {
   warpFeedback: { group: 'Warp Feedback', engineParamId: PARAM.warpFeedback, layer: 'AudioParam (Smooth)' },
   warpMode: { group: 'Warp Mode', engineParamId: PARAM.warpMode, layer: 'MessagePort (Int Enum)' },
   reverseMode: { group: 'Playback Direction', engineParamId: PARAM.reverseMode, layer: 'MessagePort (Int Enum)' },
-  reverseDivision: { group: 'Tempo Sync', engineParamId: PARAM.reverseDivision, layer: 'MessagePort (Int Enum)' }
+  reverseDivision: { group: 'Tempo Sync', engineParamId: PARAM.reverseDivision, layer: 'MessagePort (Int Enum)' },
+  motionMode: { group: 'Tape Motion', engineParamId: PARAM.motionMode, layer: 'MessagePort (Int Enum)' },
+  motionAmount: { group: 'Tape Motion', engineParamId: PARAM.motionAmount, layer: 'AudioParam (Smooth)' },
+  stereoMotion: { group: 'Tape Motion', engineParamId: PARAM.stereoMotion, layer: 'AudioParam (Smooth)' },
+  motionInertia: { group: 'Tape Motion (M1)', engineParamId: PARAM.motionInertia, layer: 'AudioParam (Smooth)' },
+  motionDriftChar: { group: 'Tape Motion (M1)', engineParamId: PARAM.motionDriftChar, layer: 'AudioParam (Smooth)' },
+  motionTexture: { group: 'Tape Motion (M2)', engineParamId: PARAM.motionTexture, layer: 'AudioParam (Smooth)' },
+  motionIrregularity: { group: 'Tape Motion (M2)', engineParamId: PARAM.motionIrregularity, layer: 'AudioParam (Smooth)' },
+  motionInstability: { group: 'Tape Motion (M3)', engineParamId: PARAM.motionInstability, layer: 'AudioParam (Smooth)' },
+  motionTensionRec: { group: 'Tape Motion (M3)', engineParamId: PARAM.motionTensionRec, layer: 'AudioParam (Smooth)' }
 };
 
 const DEBUG_ROUNDTRIP = false;
@@ -117,6 +137,10 @@ const importPresetInput = document.getElementById('importPresetInput');
 const downloadLink = document.getElementById('downloadLink');
 const previewBadge = document.getElementById('previewBadge');
 const architectureBadge = document.getElementById('architectureBadge');
+const dspParamCountSummary = document.getElementById('dspParamCountSummary');
+if (dspParamCountSummary) {
+  dspParamCountSummary.textContent = `DSP Node Variables (${Object.keys(PARAM).length} Parameters Mapped)`;
+}
 
 let cachedBuildInfo = null;
 
@@ -144,7 +168,8 @@ async function displayCompiledArchitecture() {
     ].filter(Boolean).join(' | ');
     if (details) architectureBadge.title = details;
     if (build.feedbackRouting === 'PHASE72_CLASSIC_C') {
-      architectureBadge.textContent = 'DSP: Classic C (WASM)';
+      const motionLabel = build.motionEngine === 'UNIFIED_7_4C' ? ' + Unified Motion' : '';
+      architectureBadge.textContent = `DSP: Classic C${motionLabel} (WASM)`;
       architectureBadge.dataset.state = 'success';
     } else if (build.feedbackRouting === 'LEGACY_A') {
       architectureBadge.textContent = 'DSP: Legacy A (WASM)';
@@ -317,6 +342,9 @@ async function ensureAudioGraph() {
       setActionFeedback('Worklet execution failed', 'error');
     } else if (event.data?.type === 'stateAck') {
       engineState[event.data.key] = event.data.value;
+      if (event.data.key === 'motionMode') {
+        updateMotionModeStatus(uiState.motionMode ?? event.data.value);
+      }
     } else if (event.data?.type === 'transportTelemetry') {
       updateTransportUI(event.data);
     }
@@ -360,8 +388,64 @@ function getControlStateFromUI() {
   return { ...DEFAULT_CONTROL_STATE, ...snapshot };
 }
 
+const MOTION_MODE_META = [
+  { name: 'Classic', short: 'CLASSIC', desc: 'Classic — Original Hydra mechanical wow & flutter' },
+  { name: 'Motor Drift', short: 'MOTOR DRIFT', desc: 'Motor Drift — Slow, organic motor torque & flywheel drift' },
+  { name: 'Capstan Flutter', short: 'CAPSTAN FLUTTER', desc: 'Capstan Flutter — Structured capstan periodicity & mechanical texture' },
+  { name: 'Worn Transport', short: 'WORN TRANSPORT', desc: 'Worn Transport — Expressive transport sag, tension snaps & wear' }
+];
+
+function updateMotionModeStatus(requestedRaw) {
+  const statusBadge = document.getElementById('motionModeStatus');
+  if (!statusBadge) return;
+  const requested = Math.max(0, Math.min(3, Math.round(Number(requestedRaw) || 0)));
+  const hasConfirmed = Object.prototype.hasOwnProperty.call(engineState, 'motionMode');
+  const confirmed = hasConfirmed ? Math.max(0, Math.min(3, Math.round(Number(engineState.motionMode) || 0))) : null;
+  if (!fxNode) {
+    statusBadge.textContent = `Selected: ${MOTION_MODE_META[requested].short} (DSP idle)`;
+  } else if (confirmed === null || confirmed !== requested) {
+    statusBadge.textContent = `Requested: ${MOTION_MODE_META[requested].short} (syncing...)`;
+  } else {
+    statusBadge.textContent = `DSP: ${MOTION_MODE_META[confirmed].short}`;
+  }
+}
+
+function updateMotionModeUI(rawMode) {
+  const mode = Math.max(0, Math.min(3, Math.round(Number(rawMode) || 0)));
+  const hiddenInput = document.getElementById('motionMode');
+  if (hiddenInput) hiddenInput.value = String(mode);
+
+  const buttons = document.querySelectorAll('.motion-mode-btn[data-motion-mode]');
+  buttons.forEach((btn) => {
+    const btnMode = Number(btn.getAttribute('data-motion-mode'));
+    const isActive = btnMode === mode;
+    btn.setAttribute('aria-checked', isActive ? 'true' : 'false');
+    btn.tabIndex = isActive ? 0 : -1;
+  });
+
+  const descEl = document.getElementById('motionModeDesc');
+  if (descEl) descEl.textContent = MOTION_MODE_META[mode].desc;
+
+  const summaryEl = document.getElementById('motionAdvancedSummary');
+  if (summaryEl) summaryEl.textContent = `Advanced — ${MOTION_MODE_META[mode].name}`;
+
+  const advPanels = document.querySelectorAll('.motion-advanced-panel[data-motion-adv]');
+  advPanels.forEach((panel) => {
+    const panelMode = Number(panel.getAttribute('data-motion-adv'));
+    panel.hidden = panelMode !== mode;
+  });
+
+  updateMotionModeStatus(mode);
+}
+
 function applyControlStateToUI(controlState) {
-  Object.entries(controlState).forEach(([id, value]) => {
+  const normalizedState = {
+    ...controlState,
+    motionMode: Object.prototype.hasOwnProperty.call(controlState, 'motionMode')
+      ? controlState.motionMode
+      : DEFAULT_CONTROL_STATE.motionMode
+  };
+  Object.entries(normalizedState).forEach(([id, value]) => {
     const el = document.getElementById(id);
     if (!el) return;
     if (el.type === 'checkbox') {
@@ -370,6 +454,7 @@ function applyControlStateToUI(controlState) {
       el.value = String(value);
     }
   });
+  updateMotionModeUI(normalizedState.motionMode);
   syncAllParams();
 }
 
@@ -584,6 +669,23 @@ function updateTransportUI(data) {
       syncBadgeEl.textContent = 'PAUSED';
       syncBadgeEl.setAttribute('data-state', 'warning');
     }
+  }
+
+  const motionThumbLEl = document.getElementById('motionTelemetryThumbL');
+  const motionThumbREl = document.getElementById('motionTelemetryThumbR');
+  const motionValLEl = document.getElementById('motionTelemetryValueL');
+  const motionValREl = document.getElementById('motionTelemetryValueR');
+  if (motionThumbLEl && motionThumbREl && motionValLEl && motionValREl &&
+      Number.isFinite(data.motionModL) && Number.isFinite(data.motionModR)) {
+    const scaleSamples = 24.0;
+    const normL = Math.max(-1, Math.min(1, data.motionModL / scaleSamples));
+    const normR = Math.max(-1, Math.min(1, data.motionModR / scaleSamples));
+    const pctL = 50 + normL * 44;
+    const pctR = 50 + normR * 44;
+    motionThumbLEl.style.left = `calc(${pctL.toFixed(1)}% - 3px)`;
+    motionThumbREl.style.left = `calc(${pctR.toFixed(1)}% - 3px)`;
+    motionValLEl.textContent = `${data.motionModL >= 0 ? '+' : ''}${data.motionModL.toFixed(1)} smp`;
+    motionValREl.textContent = `${data.motionModR >= 0 ? '+' : ''}${data.motionModR.toFixed(1)} smp`;
   }
 
   const reverseWarnEl = document.getElementById('reverseClampedWarning');
@@ -910,6 +1012,44 @@ ALL_PARAM_IDS.forEach((id) => {
   el.addEventListener('input', onInput);
   el.addEventListener('change', onInput);
 });
+
+// Tape Motion 4-mode segmented selector (click + arrow-key radiogroup navigation)
+const motionModeButtons = Array.from(document.querySelectorAll('.motion-mode-btn[data-motion-mode]'));
+const selectMotionMode = (mode) => {
+  const clamped = Math.max(0, Math.min(3, Math.round(Number(mode) || 0)));
+  updateMotionModeUI(clamped);
+  uiState.motionMode = clamped;
+  post({ type: 'command', command: 'motionMode', value: clamped });
+  requestUIFlush();
+};
+motionModeButtons.forEach((btn, idx) => {
+  btn.addEventListener('click', () => {
+    selectMotionMode(btn.getAttribute('data-motion-mode'));
+  });
+  btn.addEventListener('keydown', (event) => {
+    if (event.key === 'ArrowRight' || event.key === 'ArrowDown') {
+      event.preventDefault();
+      const next = motionModeButtons[(idx + 1) % motionModeButtons.length];
+      next.focus();
+      selectMotionMode(next.getAttribute('data-motion-mode'));
+    } else if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') {
+      event.preventDefault();
+      const prev = motionModeButtons[(idx - 1 + motionModeButtons.length) % motionModeButtons.length];
+      prev.focus();
+      selectMotionMode(prev.getAttribute('data-motion-mode'));
+    } else if (event.key === 'Home') {
+      event.preventDefault();
+      motionModeButtons[0].focus();
+      selectMotionMode(motionModeButtons[0].getAttribute('data-motion-mode'));
+    } else if (event.key === 'End') {
+      event.preventDefault();
+      const last = motionModeButtons[motionModeButtons.length - 1];
+      last.focus();
+      selectMotionMode(last.getAttribute('data-motion-mode'));
+    }
+  });
+});
+updateMotionModeUI(document.getElementById('motionMode')?.value || 0);
 
 exportPresetBtn.addEventListener('click', () => {
   try {

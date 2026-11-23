@@ -2,6 +2,7 @@ import { chromium } from 'playwright';
 import { createServer } from 'node:http';
 import { readFile, mkdir, writeFile } from 'node:fs/promises';
 import { resolve, extname } from 'node:path';
+import { pathToFileURL } from 'node:url';
 import { createHash } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
 import assert from 'node:assert/strict';
@@ -93,6 +94,30 @@ const server = createServer(async (req, res) => {
   }
 });
 
+const buildInfo = JSON.parse(await readFile(resolve(build, 'hydra-build-info.json'), 'utf8'));
+assert.equal(buildInfo.feedbackRouting, 'PHASE72_CLASSIC_C', 'Active feedback routing must be Classic C');
+assert.equal(buildInfo.buildTarget, 'hydra_dsp_web', 'Unexpected build target in hydra-build-info.json');
+
+const wasmBinary = await readFile(resolve(build, 'hydra_dsp.wasm'));
+const { default: createHydraModule } = await import(pathToFileURL(resolve(build, 'hydra_dsp.js')).href);
+const wasmModule = await createHydraModule({ wasmBinary });
+const wasmApiVersion = wasmModule._hydra_dsp_get_api_version();
+const wasmParamCount = wasmModule._hydra_dsp_get_param_count();
+const hasUnifiedMotionExport = typeof wasmModule._hydra_dsp_get_motion_telemetry === 'function';
+const isUnifiedMotion = buildInfo.motionEngine === 'UNIFIED_7_4C';
+assert.equal(
+  hasUnifiedMotionExport,
+  isUnifiedMotion,
+  `WASM binary exports (hydra_dsp_get_motion_telemetry=${hasUnifiedMotionExport}) must match hydra-build-info.json motionEngine=${buildInfo.motionEngine}`
+);
+if (isUnifiedMotion) {
+  assert.ok(wasmApiVersion >= ((1 << 16) | (8 << 8)), `Unified Motion WASM requires API >= 1.8.0, got ${wasmApiVersion}`);
+  assert.ok(wasmParamCount >= 47, `Unified Motion WASM requires >= 47 params, got ${wasmParamCount}`);
+}
+const expectedArchBadge = isUnifiedMotion
+  ? 'DSP: Classic C + Unified Motion (WASM)'
+  : 'DSP: Classic C (WASM)';
+
 await new Promise((r) => server.listen(0, '127.0.0.1', r));
 const browser = await chromium.launch({
   headless: true,
@@ -112,13 +137,19 @@ try {
 
   await page.goto(`http://127.0.0.1:${server.address().port}/`, { waitUntil: 'networkidle' });
 
-  // 1. Verify architecture badge
+  // 1. Verify architecture badge matches verified build metadata & WASM binary identity
   await page.waitForFunction(() => {
     const el = document.getElementById('architectureBadge');
     return el && el.textContent && !el.textContent.includes('checking build');
   });
   const archText = await page.textContent('#architectureBadge');
-  assert.equal(archText?.trim(), 'DSP: Classic C (WASM)');
+  const archState = await page.getAttribute('#architectureBadge', 'data-state');
+  assert.equal(archText?.trim(), expectedArchBadge);
+  assert.equal(archState, 'success');
+  if (isUnifiedMotion) {
+    const paramSummaryText = await page.textContent('#dspParamCountSummary');
+    assert.match(paramSummaryText || '', /47 Parameters Mapped/);
+  }
 
   // 2. Upload test WAV file
   const wavBuf = encodeTestWav(48000, 1.5);
@@ -200,6 +231,10 @@ try {
     checkoutSha: execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim(),
     browser: browser.version(),
     architectureBadge: archText?.trim(),
+    expectedArchitectureBadge: expectedArchBadge,
+    feedbackRouting: buildInfo.feedbackRouting,
+    motionEngine: buildInfo.motionEngine || null,
+    wasmExportsUnifiedMotion: hasUnifiedMotionExport,
     wasmSha256: await hash(resolve(build, 'hydra_dsp.wasm')),
     dryTailRms: dryStats.tailRms,
     offlineWetTailRms: Number(wetStats.tailRms.toFixed(6)),

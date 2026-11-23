@@ -47,6 +47,15 @@ name_map = {
     'WARP_MODE': 'warpMode',
     'REVERSE_MODE': 'reverseMode',
     'REVERSE_DIVISION': 'reverseDivision',
+    'MOTION_MODE': 'motionMode',
+    'MOTION_AMOUNT': 'motionAmount',
+    'STEREO_MOTION': 'stereoMotion',
+    'MOTION_INERTIA': 'motionInertia',
+    'MOTION_DRIFT_CHAR': 'motionDriftChar',
+    'MOTION_TEXTURE': 'motionTexture',
+    'MOTION_IRREGULARITY': 'motionIrregularity',
+    'MOTION_INSTABILITY': 'motionInstability',
+    'MOTION_TENSION_REC': 'motionTensionRec',
 }
 
 enum_pairs = re.findall(r'HYDRA_DSP_PARAM_([A-Z_]+)\s*=\s*(\d+)', header)
@@ -60,7 +69,7 @@ errors = []
 for name, value in sorted(expected.items(), key=lambda item: item[1]):
     if actual.get(name) != value:
         errors.append(f'{name}: header={value} host/web/main.js={actual.get(name)}')
-    if name != 'reset' and f'p_{value}' not in processor_js and name not in ('activeHeads', 'delayActive', 'headsMusical', 'guitarFocus', 'pingPong', 'freeze', 'reverse', 'reverseSmear', 'spring', 'warpActive', 'warpMode', 'reverseMode', 'reverseDivision'):
+    if name != 'reset' and f'p_{value}' not in processor_js and name not in ('activeHeads', 'delayActive', 'headsMusical', 'guitarFocus', 'pingPong', 'freeze', 'reverse', 'reverseSmear', 'spring', 'warpActive', 'warpMode', 'reverseMode', 'reverseDivision', 'motionMode'):
         errors.append(f'{name}: p_{value} missing from hydra-processor.js AudioParam descriptors')
 
 if errors:

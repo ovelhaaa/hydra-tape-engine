@@ -59,6 +59,15 @@ static const hydra_dsp_param_spec kParamSpecs[HYDRA_DSP_PARAM_COUNT] = {
     {HYDRA_DSP_PARAM_WARP_MODE, "warpMode", 0.0f, 3.0f, 0.0f, HYDRA_DSP_SMOOTHING_NONE, HYDRA_DSP_PARAM_SPEC_FLAG_NONE},
     {HYDRA_DSP_PARAM_REVERSE_MODE, "reverseMode", 0.0f, 2.0f, 0.0f, HYDRA_DSP_SMOOTHING_NONE, HYDRA_DSP_PARAM_SPEC_FLAG_NONE},
     {HYDRA_DSP_PARAM_REVERSE_DIVISION, "reverseDivision", 0.0f, 8.0f, 0.0f, HYDRA_DSP_SMOOTHING_NONE, HYDRA_DSP_PARAM_SPEC_FLAG_NONE},
+    {HYDRA_DSP_PARAM_MOTION_MODE, "motionMode", 0.0f, 3.0f, 0.0f, HYDRA_DSP_SMOOTHING_NONE, HYDRA_DSP_PARAM_SPEC_FLAG_NONE},
+    {HYDRA_DSP_PARAM_MOTION_AMOUNT, "motionAmount", 0.0f, 100.0f, 100.0f, HYDRA_DSP_SMOOTHING_BLOCK_EDGE, HYDRA_DSP_PARAM_SPEC_FLAG_NONE},
+    {HYDRA_DSP_PARAM_STEREO_MOTION, "stereoMotion", 0.0f, 100.0f, 100.0f, HYDRA_DSP_SMOOTHING_BLOCK_EDGE, HYDRA_DSP_PARAM_SPEC_FLAG_NONE},
+    {HYDRA_DSP_PARAM_MOTION_INERTIA, "motionInertia", 0.0f, 100.0f, 50.0f, HYDRA_DSP_SMOOTHING_BLOCK_EDGE, HYDRA_DSP_PARAM_SPEC_FLAG_NONE},
+    {HYDRA_DSP_PARAM_MOTION_DRIFT_CHAR, "motionDriftChar", 0.0f, 100.0f, 50.0f, HYDRA_DSP_SMOOTHING_BLOCK_EDGE, HYDRA_DSP_PARAM_SPEC_FLAG_NONE},
+    {HYDRA_DSP_PARAM_MOTION_TEXTURE, "motionTexture", 0.0f, 100.0f, 50.0f, HYDRA_DSP_SMOOTHING_BLOCK_EDGE, HYDRA_DSP_PARAM_SPEC_FLAG_NONE},
+    {HYDRA_DSP_PARAM_MOTION_IRREGULARITY, "motionIrregularity", 0.0f, 100.0f, 50.0f, HYDRA_DSP_SMOOTHING_BLOCK_EDGE, HYDRA_DSP_PARAM_SPEC_FLAG_NONE},
+    {HYDRA_DSP_PARAM_MOTION_INSTABILITY, "motionInstability", 0.0f, 100.0f, 50.0f, HYDRA_DSP_SMOOTHING_BLOCK_EDGE, HYDRA_DSP_PARAM_SPEC_FLAG_NONE},
+    {HYDRA_DSP_PARAM_MOTION_TENSION_REC, "motionTensionRec", 0.0f, 100.0f, 50.0f, HYDRA_DSP_SMOOTHING_BLOCK_EDGE, HYDRA_DSP_PARAM_SPEC_FLAG_NONE},
 };
 
 static hydra_dsp_param_spec resolve_runtime_spec(const hydra_dsp_handle* handle, hydra_dsp_param_id param_id) {
@@ -152,6 +161,18 @@ static int set_param(hydra_dsp_handle* h, hydra_dsp_param_id id, float v) {
     case HYDRA_DSP_PARAM_WARP_MODE: h->params.warpMode = (int)v; break;
     case HYDRA_DSP_PARAM_REVERSE_MODE: h->params.reverseMode = (int)v; break;
     case HYDRA_DSP_PARAM_REVERSE_DIVISION: h->params.reverseDivision = (int)v; break;
+    case HYDRA_DSP_PARAM_MOTION_MODE:
+      if (!std::isfinite(v)) return -1;
+      h->params.motionMode = std::clamp((int)std::lround(v), 0, 3);
+      break;
+    case HYDRA_DSP_PARAM_MOTION_AMOUNT: h->params.motionAmount = std::clamp(v, 0.0f, 100.0f); break;
+    case HYDRA_DSP_PARAM_STEREO_MOTION: h->params.stereoMotion = std::clamp(v, 0.0f, 100.0f); break;
+    case HYDRA_DSP_PARAM_MOTION_INERTIA: h->params.motionInertia = std::clamp(v, 0.0f, 100.0f); break;
+    case HYDRA_DSP_PARAM_MOTION_DRIFT_CHAR: h->params.motionDriftChar = std::clamp(v, 0.0f, 100.0f); break;
+    case HYDRA_DSP_PARAM_MOTION_TEXTURE: h->params.motionTexture = std::clamp(v, 0.0f, 100.0f); break;
+    case HYDRA_DSP_PARAM_MOTION_IRREGULARITY: h->params.motionIrregularity = std::clamp(v, 0.0f, 100.0f); break;
+    case HYDRA_DSP_PARAM_MOTION_INSTABILITY: h->params.motionInstability = std::clamp(v, 0.0f, 100.0f); break;
+    case HYDRA_DSP_PARAM_MOTION_TENSION_REC: h->params.motionTensionRec = std::clamp(v, 0.0f, 100.0f); break;
     default: return -2;
   }
   h->dirty = true;
@@ -270,6 +291,15 @@ int hydra_dsp_get_parameter(hydra_dsp_handle* handle, hydra_dsp_param_id param_i
     case HYDRA_DSP_PARAM_WARP_MODE: *out_value = (float)handle->params.warpMode; break;
     case HYDRA_DSP_PARAM_REVERSE_MODE: *out_value = (float)handle->params.reverseMode; break;
     case HYDRA_DSP_PARAM_REVERSE_DIVISION: *out_value = (float)handle->params.reverseDivision; break;
+    case HYDRA_DSP_PARAM_MOTION_MODE: *out_value = (float)handle->params.motionMode; break;
+    case HYDRA_DSP_PARAM_MOTION_AMOUNT: *out_value = handle->params.motionAmount; break;
+    case HYDRA_DSP_PARAM_STEREO_MOTION: *out_value = handle->params.stereoMotion; break;
+    case HYDRA_DSP_PARAM_MOTION_INERTIA: *out_value = handle->params.motionInertia; break;
+    case HYDRA_DSP_PARAM_MOTION_DRIFT_CHAR: *out_value = handle->params.motionDriftChar; break;
+    case HYDRA_DSP_PARAM_MOTION_TEXTURE: *out_value = handle->params.motionTexture; break;
+    case HYDRA_DSP_PARAM_MOTION_IRREGULARITY: *out_value = handle->params.motionIrregularity; break;
+    case HYDRA_DSP_PARAM_MOTION_INSTABILITY: *out_value = handle->params.motionInstability; break;
+    case HYDRA_DSP_PARAM_MOTION_TENSION_REC: *out_value = handle->params.motionTensionRec; break;
     default: return -2;
   }
   return 0;
@@ -534,6 +564,14 @@ int hydra_dsp_set_tempo_source(hydra_dsp_handle* handle, uint32_t source) {
 int hydra_dsp_get_tempo_source(const hydra_dsp_handle* handle, uint32_t* out_source) {
   if (!handle || !handle->core || !out_source) return -1;
   *out_source = static_cast<uint32_t>(handle->core->tempoSource());
+  return 0;
+}
+
+int hydra_dsp_get_motion_telemetry(const hydra_dsp_handle* handle,
+                                   float* out_mod_l,
+                                   float* out_mod_r) {
+  if (!handle || !handle->core) return -1;
+  handle->core->getMotionTelemetry(out_mod_l, out_mod_r);
   return 0;
 }
 

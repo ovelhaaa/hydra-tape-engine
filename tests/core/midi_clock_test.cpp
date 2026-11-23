@@ -545,10 +545,14 @@ bool testAbiCompatibility() {
   EXPECT_EQ(hydra_dsp_create(44100.0f, 2000.0f, &handle), 0);
   EXPECT_TRUE(handle != nullptr);
 
-  // Version 1.7.0
+  // C API 1.7+ backward-compatible ABI contract (current: 1.8.0)
   const uint32_t ver = hydra_dsp_get_api_version();
+  EXPECT_EQ(ver, static_cast<uint32_t>(HYDRA_DSP_API_VERSION));
   EXPECT_EQ((ver >> 16) & 0xFF, 1u);
-  EXPECT_EQ((ver >> 8) & 0xFF, 7u);
+  EXPECT_TRUE(((ver >> 8) & 0xFF) >= 7u);
+  EXPECT_EQ(sizeof(hydra_dsp_params_v1_2), HYDRA_DSP_PARAMS_SIZE_V1_2);
+  EXPECT_EQ(sizeof(hydra_dsp_params), HYDRA_DSP_PARAMS_SIZE_V1_3);
+  EXPECT_EQ(sizeof(hydra_dsp_params_v1_4), HYDRA_DSP_PARAMS_SIZE_V1_4);
 
   // Legacy V1.2 (116 bytes)
   hydra_dsp_params_v1_2 p12{};

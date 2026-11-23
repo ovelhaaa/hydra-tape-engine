@@ -30,12 +30,12 @@ def main():
     after_hash, after_cmd = common.build_library(ROOT, build / 'after.dll')
     before = render.HydraEngineRunner(build / 'before.dll')
     after = render.HydraEngineRunner(build / 'after.dll')
-    if before.api_version != after.api_version:
-        raise RuntimeError('API mismatch')
+    abi_compat = render.verify_runner_abi_compatibility(before, after, required_param_ids=range(38))
     args.output.mkdir(parents=True, exist_ok=True)
     commit = subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=ROOT, text=True).strip()
     manifest = dict(schema_version=1, suite='Hydra Phase 6.4 Final A/B',
         reference_commit=commit, before_commit=delta.BEFORE_COMMIT, api_version=after.api_version,
+        before_api_version=before.api_version, abi_compatibility=abi_compat,
         source_sha256=render.sha256_file(ROOT / 'dsp/core/tape_core.cpp'),
         before_library_sha256=before_hash, after_library_sha256=after_hash,
         native_library_sha256=after_hash, sample_rate_hz=render.RATE,

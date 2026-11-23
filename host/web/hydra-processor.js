@@ -85,7 +85,15 @@ const CONTINUOUS_PARAM_SPECS = [
   { name: 'p_31', defaultValue: 1.0, minValue: 0, maxValue: 2.0 },  // warpSpeed
   { name: 'p_32', defaultValue: 80, minValue: 20, maxValue: 400 },  // warpGrainMs
   { name: 'p_33', defaultValue: 0.5, minValue: 0, maxValue: 1.0 },  // warpStereo
-  { name: 'p_34', defaultValue: 0, minValue: 0, maxValue: 100 }     // warpFeedback
+  { name: 'p_34', defaultValue: 0, minValue: 0, maxValue: 100 },    // warpFeedback
+  { name: 'p_39', defaultValue: 100, minValue: 0, maxValue: 100 },  // motionAmount
+  { name: 'p_40', defaultValue: 100, minValue: 0, maxValue: 100 },  // stereoMotion
+  { name: 'p_41', defaultValue: 50, minValue: 0, maxValue: 100 },   // motionInertia
+  { name: 'p_42', defaultValue: 50, minValue: 0, maxValue: 100 },   // motionDriftChar
+  { name: 'p_43', defaultValue: 50, minValue: 0, maxValue: 100 },   // motionTexture
+  { name: 'p_44', defaultValue: 50, minValue: 0, maxValue: 100 },   // motionIrregularity
+  { name: 'p_45', defaultValue: 50, minValue: 0, maxValue: 100 },   // motionInstability
+  { name: 'p_46', defaultValue: 50, minValue: 0, maxValue: 100 }    // motionTensionRec
 ];
 
 class HydraProcessor extends AudioWorkletProcessor {
@@ -138,21 +146,29 @@ class HydraProcessor extends AudioWorkletProcessor {
     this.outL = this.module._malloc(this.capacity * 4);
     this.outR = this.module._malloc(this.capacity * 4);
 
-    this.api.prepare(this.handle, this.capacity, 2);
+    const prepRes = this.api.prepare(this.handle, this.capacity, 2);
+    if (prepRes !== 0) {
+      throw new Error(`DSP prepare failed: ${prepRes}`);
+    }
   }
 
   async initWasm(wasmBinary) {
     try {
       this.module = await loadHydraRuntime(wasmBinary);
       this.api = {
+        getParamCount: this.module.cwrap('hydra_dsp_get_param_count', 'number', []),
         create: this.module.cwrap('hydra_dsp_create_v1_4', 'number', ['number', 'number', 'number', 'number']),
         destroy: this.module.cwrap('hydra_dsp_destroy', null, ['number']),
         prepare: this.module.cwrap('hydra_dsp_prepare', 'number', ['number', 'number', 'number']),
         reset: this.module.cwrap('hydra_dsp_reset', null, ['number']),
         setParameter: this.module.cwrap('hydra_dsp_set_parameter', 'number', ['number', 'number', 'number']),
+        getParameter: this.module.cwrap('hydra_dsp_get_parameter', 'number', ['number', 'number', 'number']),
         commit: this.module.cwrap('hydra_dsp_commit', 'number', ['number']),
         process: this.module.cwrap('hydra_dsp_process', 'number', ['number', 'number', 'number', 'number', 'number', 'number']),
         getReverseDiagnostics: this.module.cwrap('hydra_dsp_get_reverse_diagnostics', 'number', ['number', 'number', 'number', 'number', 'number']),
+        getMotionTelemetry: this.module._hydra_dsp_get_motion_telemetry
+          ? this.module.cwrap('hydra_dsp_get_motion_telemetry', 'number', ['number', 'number', 'number'])
+          : null,
         transportPlay: this.module.cwrap('hydra_dsp_transport_play', 'number', ['number']),
         transportPause: this.module.cwrap('hydra_dsp_transport_pause', 'number', ['number']),
         transportStop: this.module.cwrap('hydra_dsp_transport_stop', 'number', ['number']),
@@ -175,14 +191,19 @@ class HydraProcessor extends AudioWorkletProcessor {
       this.tapTempoStatePtr = this.module._malloc(32);
       this.midiClockStatePtr = this.module._malloc(48);
       this.tempoSourcePtr = this.module._malloc(4);
+      this.motionTelemetryPtr = this.module._malloc(8);
+      this.paramReadPtr = this.module._malloc(4);
+      if (!this.api.getParamCount || this.api.getParamCount() < 47) {
+        throw new Error(`Incompatible WASM binary: expected >= 47 params, got ${this.api.getParamCount ? this.api.getParamCount() : 'unknown'}`);
+      }
 
       const handlePtr = this.module._malloc(4);
       const res = this.api.create(sampleRate, 4000.0, 16100.0, handlePtr);
-      if (res !== 0) throw new Error(`DSP instantiation error: ${res}`);
-
-      this.handle = this.module.HEAP32[handlePtr >> 2];
+      this.handle = res === 0 ? this.module.HEAP32[handlePtr >> 2] : 0;
       this.module._free(handlePtr);
-      if (res !== 0) throw new Error(`DSP instantiation error: ${res}`);
+      if (res !== 0 || !this.handle) {
+        throw new Error(`DSP instantiation error: ${res}`);
+      }
 
       this.ensureBuffers(128);
 
@@ -236,7 +257,9 @@ class HydraProcessor extends AudioWorkletProcessor {
       if (this.outR) this.module._free(this.outR);
       if (this.transportStatePtr) this.module._free(this.transportStatePtr);
       if (this.reverseDiagPtr) this.module._free(this.reverseDiagPtr);
-      this.inL = this.inR = this.outL = this.outR = this.transportStatePtr = this.reverseDiagPtr = 0;
+      if (this.motionTelemetryPtr) this.module._free(this.motionTelemetryPtr);
+      if (this.paramReadPtr) this.module._free(this.paramReadPtr);
+      this.inL = this.inR = this.outL = this.outR = this.transportStatePtr = this.reverseDiagPtr = this.motionTelemetryPtr = this.paramReadPtr = 0;
     }
   }
 
@@ -287,14 +310,31 @@ class HydraProcessor extends AudioWorkletProcessor {
         warpActive: 30,
         warpMode: 35,
         reverseMode: 36,
-        reverseDivision: 37
+        reverseDivision: 37,
+        motionMode: 38
       };
 
       const paramId = commandMap[command];
       if (paramId !== undefined) {
-        this.api.setParameter(this.handle, paramId, Number(value));
-        this.api.commit(this.handle);
-        this.port.postMessage({ type: 'stateAck', key: command, value });
+        const setRes = this.api.setParameter(this.handle, paramId, Number(value));
+        const commitRes = setRes === 0 ? this.api.commit(this.handle) : setRes;
+        if (commitRes !== 0) {
+          this.port.postMessage({ type: 'error', message: `DSP command ${command} failed (${commitRes})` });
+          return;
+        }
+        let confirmedValue = Number(value);
+        if (command === 'motionMode' && this.api.getParameter && this.paramReadPtr) {
+          if (this.api.getParameter(this.handle, paramId, this.paramReadPtr) === 0) {
+            const view = new DataView((this.module.HEAPU8 || this.module.HEAP32).buffer, this.paramReadPtr, 4);
+            confirmedValue = Math.round(view.getFloat32(0, true));
+          }
+        }
+        this.port.postMessage({
+          type: 'stateAck',
+          key: command,
+          value: confirmedValue,
+          requestedValue: Number(value)
+        });
       }
     } else if (msg.type === 'transportPlay') {
       if (this.api.transportPlay) this.api.transportPlay(this.handle);
@@ -458,6 +498,16 @@ class HydraProcessor extends AudioWorkletProcessor {
           }
         }
 
+        let motionModL = 0;
+        let motionModR = 0;
+        if (this.motionTelemetryPtr && this.api.getMotionTelemetry) {
+          if (this.api.getMotionTelemetry(this.handle, this.motionTelemetryPtr, this.motionTelemetryPtr + 4) === 0) {
+            const moView = new DataView((this.module.HEAPU8 || this.module.HEAP32).buffer, this.motionTelemetryPtr, 8);
+            motionModL = moView.getFloat32(0, true);
+            motionModR = moView.getFloat32(4, true);
+          }
+        }
+
         this.port.postMessage({
           type: 'transportTelemetry',
           bpm,
@@ -474,6 +524,8 @@ class HydraProcessor extends AudioWorkletProcessor {
           reverseRequestedMs,
           reverseEffectiveMs,
           reverseMaxHistoryMs,
+          motionModL,
+          motionModR,
           tapTempo: tapTempo,
           midiClock: midiClock
         });

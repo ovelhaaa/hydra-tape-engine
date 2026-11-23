@@ -13,7 +13,7 @@ enum { HYDRA_DSP_CHANNELS_STEREO = 2 };
 
 enum {
   HYDRA_DSP_API_VERSION_MAJOR = 1,
-  HYDRA_DSP_API_VERSION_MINOR = 7,
+  HYDRA_DSP_API_VERSION_MINOR = 8,
   HYDRA_DSP_API_VERSION_PATCH = 0,
   HYDRA_DSP_API_VERSION =
       (HYDRA_DSP_API_VERSION_MAJOR << 16) |
@@ -51,6 +51,13 @@ typedef enum hydra_dsp_reverse_mode {
   HYDRA_DSP_REVERSE_FREE = 1,
   HYDRA_DSP_REVERSE_LEGACY = 2
 } hydra_dsp_reverse_mode;
+
+typedef enum hydra_dsp_motion_mode {
+  HYDRA_DSP_MOTION_CLASSIC = 0,
+  HYDRA_DSP_MOTION_MOTOR_DRIFT = 1,
+  HYDRA_DSP_MOTION_CAPSTAN_FLUTTER = 2,
+  HYDRA_DSP_MOTION_WORN_TRANSPORT = 3
+} hydra_dsp_motion_mode;
 
 typedef enum hydra_dsp_reverse_division {
   HYDRA_DSP_REVERSE_QUARTER = 0,
@@ -195,7 +202,16 @@ typedef enum hydra_dsp_param_id {
   HYDRA_DSP_PARAM_WARP_MODE = 35,
   HYDRA_DSP_PARAM_REVERSE_MODE = 36,
   HYDRA_DSP_PARAM_REVERSE_DIVISION = 37,
-  HYDRA_DSP_PARAM_COUNT = 38
+  HYDRA_DSP_PARAM_MOTION_MODE = 38,
+  HYDRA_DSP_PARAM_MOTION_AMOUNT = 39,
+  HYDRA_DSP_PARAM_STEREO_MOTION = 40,
+  HYDRA_DSP_PARAM_MOTION_INERTIA = 41,
+  HYDRA_DSP_PARAM_MOTION_DRIFT_CHAR = 42,
+  HYDRA_DSP_PARAM_MOTION_TEXTURE = 43,
+  HYDRA_DSP_PARAM_MOTION_IRREGULARITY = 44,
+  HYDRA_DSP_PARAM_MOTION_INSTABILITY = 45,
+  HYDRA_DSP_PARAM_MOTION_TENSION_REC = 46,
+  HYDRA_DSP_PARAM_COUNT = 47
 } hydra_dsp_param_id;
 
 typedef enum hydra_dsp_smoothing_policy {
@@ -291,6 +307,18 @@ int hydra_dsp_get_reverse_diagnostics(const hydra_dsp_handle* handle,
                                       float* out_effective_ms,
                                       int* out_is_clamped,
                                       float* out_max_history_ms);
+
+/**
+ * @brief Retrieves current tape motion modulation displacement in samples (L/R) for real-time telemetry.
+ *
+ * @param handle Handle to DSP instance
+ * @param out_mod_l Output pointer for left-channel modulation displacement in samples (may be NULL)
+ * @param out_mod_r Output pointer for right-channel modulation displacement in samples (may be NULL)
+ * @return 0 on success, -1 on null handle
+ */
+int hydra_dsp_get_motion_telemetry(const hydra_dsp_handle* handle,
+                                   float* out_mod_l,
+                                   float* out_mod_r);
 
 int hydra_dsp_transport_play(hydra_dsp_handle* handle);
 int hydra_dsp_transport_pause(hydra_dsp_handle* handle);

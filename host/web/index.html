@@ -385,6 +385,179 @@
         background-color: rgba(255, 255, 255, 0.015);
         color: var(--text-hi);
       }
+
+      /* Tape Motion Selector & Telemetry (Phase 7.4C) */
+      .motion-header-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.5rem;
+      }
+
+      .motion-meter {
+        display: inline-flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 0.2rem;
+        font-family: var(--font-mono);
+        font-size: 0.62rem;
+        color: var(--text-lo);
+      }
+
+      .motion-meter-rows {
+        display: flex;
+        flex-direction: column;
+        gap: 0.16rem;
+      }
+
+      .motion-meter-ch {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+      }
+
+      .motion-meter-ch-label {
+        width: 0.7rem;
+        text-align: right;
+        color: var(--text-mid);
+        font-weight: 600;
+      }
+
+      .motion-meter-track {
+        position: relative;
+        width: 68px;
+        height: 5px;
+        background: rgba(255, 255, 255, 0.08);
+        border-radius: 999px;
+        overflow: hidden;
+      }
+
+      .motion-meter-center {
+        position: absolute;
+        left: 50%;
+        top: 0;
+        bottom: 0;
+        width: 1px;
+        background: rgba(255, 255, 255, 0.25);
+      }
+
+      .motion-meter-thumb {
+        position: absolute;
+        top: 0.5px;
+        width: 6px;
+        height: 4px;
+        border-radius: 999px;
+        background: var(--accent-hover);
+        left: calc(50% - 3px);
+        transition: left 45ms linear;
+      }
+
+      .motion-meter-thumb.is-right {
+        background: #38bdf8;
+      }
+
+      .motion-meter-val {
+        min-width: 3.1rem;
+        text-align: right;
+        font-variant-numeric: tabular-nums;
+      }
+
+      .motion-mode-status-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+      }
+
+      .motion-mode-status {
+        font-family: var(--font-mono);
+        font-size: 0.64rem;
+        color: var(--text-mid);
+      }
+
+      .motion-mode-group {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 0.35rem;
+      }
+
+      @media (max-width: 520px) {
+        .motion-mode-group {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+        #tapeMotionCard .grid-2col {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      #tapeMotionCard,
+      #tapeMotionCard .param-group,
+      #tapeMotionCard .control-row {
+        min-width: 0;
+        max-width: 100%;
+      }
+
+      .motion-mode-btn {
+        appearance: none;
+        background: var(--bg-panel-elevated);
+        color: var(--text-mid);
+        border: 1px solid var(--border-panel);
+        border-radius: 4px;
+        padding: 0.4rem 0.3rem;
+        font-family: var(--font-mono);
+        font-size: 0.7rem;
+        font-weight: 600;
+        letter-spacing: 0.04em;
+        cursor: pointer;
+        text-align: center;
+        transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease;
+      }
+
+      .motion-mode-btn:hover {
+        color: var(--text-hi);
+        border-color: rgba(96, 165, 250, 0.5);
+      }
+
+      .motion-mode-btn:focus-visible {
+        outline: 2px solid var(--accent-hover);
+        outline-offset: 1px;
+      }
+
+      .motion-mode-btn[aria-checked="true"] {
+        background: rgba(59, 130, 246, 0.22);
+        border-color: var(--accent);
+        color: var(--text-hi);
+      }
+
+      .motion-mode-desc {
+        font-size: 0.72rem;
+        color: var(--text-lo);
+        min-height: 1.05rem;
+      }
+
+      .motion-advanced {
+        border-top: 1px solid rgba(255, 255, 255, 0.06);
+        padding-top: 0.5rem;
+      }
+
+      .motion-advanced summary {
+        cursor: pointer;
+        font-size: 0.72rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--text-mid);
+        user-select: none;
+      }
+
+      .motion-advanced-panel {
+        margin-top: 0.55rem;
+      }
+
+      .motion-advanced-panel[hidden] {
+        display: none !important;
+      }
     </style>
   </head>
   <body>
@@ -525,7 +698,7 @@
       <!-- RIGHT COLUMN: DSP ENGINE MAPPINGS -->
       <div class="panel">
         <div class="panel-title">
-          <span>DSP Node Variables (34 Parameters Mapped)</span>
+          <span id="dspParamCountSummary">DSP Node Variables</span>
           <div style="display: flex; gap: 0.5rem;">
             <span id="latencyReport" style="font-size: 0.7rem; font-family: var(--font-mono); color: var(--text-mid); margin-right: 0.5rem; display: flex; align-items: center;"></span>
             <button class="btn" id="latencyCheckBtn" style="font-size: 0.65rem; padding: 0.25rem 0.5rem;">Run Stress Test</button>
@@ -603,11 +776,62 @@
               </div>
             </div>
 
-            <!-- Card: Wow & Flutter Modulators -->
-            <div class="param-card">
-              <div class="param-card-header">2. Pitch Modulators & Vibrato</div>
+            <!-- Card: Tape Motion & Modulators -->
+            <div class="param-card" id="tapeMotionCard">
+              <div class="param-card-header motion-header-row">
+                <span>2. Tape Motion</span>
+                <span class="motion-meter" id="motionTelemetryMeter" title="Real-time DSP read-head displacement L/R (normalized to +/-24.0 samples)">
+                  <span class="motion-meter-rows">
+                    <span class="motion-meter-ch">
+                      <span class="motion-meter-ch-label">L</span>
+                      <span class="motion-meter-track">
+                        <span class="motion-meter-center"></span>
+                        <span class="motion-meter-thumb" id="motionTelemetryThumbL"></span>
+                      </span>
+                      <span class="motion-meter-val" id="motionTelemetryValueL">+0.0 smp</span>
+                    </span>
+                    <span class="motion-meter-ch">
+                      <span class="motion-meter-ch-label">R</span>
+                      <span class="motion-meter-track">
+                        <span class="motion-meter-center"></span>
+                        <span class="motion-meter-thumb is-right" id="motionTelemetryThumbR"></span>
+                      </span>
+                      <span class="motion-meter-val" id="motionTelemetryValueR">+0.0 smp</span>
+                    </span>
+                  </span>
+                </span>
+              </div>
               <div class="param-group">
-                
+
+                <input type="hidden" id="motionMode" value="0" />
+                <div class="motion-mode-group" id="motionModeGroup" role="radiogroup" aria-label="Tape Motion Mode">
+                  <button type="button" class="motion-mode-btn" role="radio" aria-checked="true" data-motion-mode="0">CLASSIC</button>
+                  <button type="button" class="motion-mode-btn" role="radio" aria-checked="false" data-motion-mode="1">MOTOR</button>
+                  <button type="button" class="motion-mode-btn" role="radio" aria-checked="false" data-motion-mode="2">CAPSTAN</button>
+                  <button type="button" class="motion-mode-btn" role="radio" aria-checked="false" data-motion-mode="3">WORN</button>
+                </div>
+                <div class="motion-mode-status-row">
+                  <div class="motion-mode-desc" id="motionModeDesc">Classic — Original Hydra mechanical wow &amp; flutter</div>
+                  <span class="motion-mode-status" id="motionModeStatus">Motion: CLASSIC (idle)</span>
+                </div>
+
+                <div class="grid-2col" style="border-bottom: 1px solid rgba(255,255,255,0.02); padding-bottom: 0.5rem;">
+                  <div class="control-row">
+                    <div class="control-row-header">
+                      <label for="motionAmount">Motion Amount</label>
+                      <span class="control-val" data-value-for="motionAmount">-</span>
+                    </div>
+                    <input type="range" id="motionAmount" min="0" max="100" step="1" value="100" />
+                  </div>
+                  <div class="control-row">
+                    <div class="control-row-header">
+                      <label for="stereoMotion">Stereo Motion</label>
+                      <span class="control-val" data-value-for="stereoMotion">-</span>
+                    </div>
+                    <input type="range" id="stereoMotion" min="0" max="100" step="1" value="100" />
+                  </div>
+                </div>
+
                 <div class="grid-2col" style="border-bottom: 1px solid rgba(255,255,255,0.02); padding-bottom: 0.5rem;">
                   <div class="control-row">
                     <div class="control-row-header">
@@ -641,6 +865,61 @@
                     <input type="range" id="flutterRate" min="0.1" max="20.0" step="0.1" value="6.0" />
                   </div>
                 </div>
+
+                <details class="motion-advanced" id="motionAdvancedSection">
+                  <summary id="motionAdvancedSummary">Advanced — Classic</summary>
+                  <div class="motion-advanced-panel" data-motion-adv="0">
+                    <div class="motion-mode-desc">Classic C preserves the original fixed mechanical wow &amp; flutter topology.</div>
+                  </div>
+                  <div class="motion-advanced-panel grid-2col" data-motion-adv="1" hidden>
+                    <div class="control-row">
+                      <div class="control-row-header">
+                        <label for="motionInertia">Inertia</label>
+                        <span class="control-val" data-value-for="motionInertia">-</span>
+                      </div>
+                      <input type="range" id="motionInertia" min="0" max="100" step="1" value="50" />
+                    </div>
+                    <div class="control-row">
+                      <div class="control-row-header">
+                        <label for="motionDriftChar">Drift Character</label>
+                        <span class="control-val" data-value-for="motionDriftChar">-</span>
+                      </div>
+                      <input type="range" id="motionDriftChar" min="0" max="100" step="1" value="50" />
+                    </div>
+                  </div>
+                  <div class="motion-advanced-panel grid-2col" data-motion-adv="2" hidden>
+                    <div class="control-row">
+                      <div class="control-row-header">
+                        <label for="motionTexture">Capstan Texture</label>
+                        <span class="control-val" data-value-for="motionTexture">-</span>
+                      </div>
+                      <input type="range" id="motionTexture" min="0" max="100" step="1" value="50" />
+                    </div>
+                    <div class="control-row">
+                      <div class="control-row-header">
+                        <label for="motionIrregularity">Irregularity</label>
+                        <span class="control-val" data-value-for="motionIrregularity">-</span>
+                      </div>
+                      <input type="range" id="motionIrregularity" min="0" max="100" step="1" value="50" />
+                    </div>
+                  </div>
+                  <div class="motion-advanced-panel grid-2col" data-motion-adv="3" hidden>
+                    <div class="control-row">
+                      <div class="control-row-header">
+                        <label for="motionInstability">Instability</label>
+                        <span class="control-val" data-value-for="motionInstability">-</span>
+                      </div>
+                      <input type="range" id="motionInstability" min="0" max="100" step="1" value="50" />
+                    </div>
+                    <div class="control-row">
+                      <div class="control-row-header">
+                        <label for="motionTensionRec">Tension Recovery</label>
+                        <span class="control-val" data-value-for="motionTensionRec">-</span>
+                      </div>
+                      <input type="range" id="motionTensionRec" min="0" max="100" step="1" value="50" />
+                    </div>
+                  </div>
+                </details>
 
               </div>
             </div>

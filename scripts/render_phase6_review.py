@@ -22,7 +22,7 @@ import subprocess
 import ctypes
 from ctypes import (
     c_float, c_uint32, c_int, c_void_p, c_uint64, c_double, c_int64,
-    c_uint8, POINTER, Structure, byref
+    c_uint8, c_char_p, POINTER, Structure, byref
 )
 import hashlib
 import json
@@ -81,6 +81,25 @@ class HydraDspMidiClockState(Structure):
         ("is_transport_running", c_int),
         ("missed_pulses", c_uint32),
     ]
+
+class HydraDspParamSpec(Structure):
+    _fields_ = [
+        ("id", c_int),
+        ("name", c_char_p),
+        ("min_value", c_float),
+        ("max_value", c_float),
+        ("default_value", c_float),
+        ("smoothing", c_int),
+        ("flags", c_uint32),
+    ]
+
+
+MIN_COMPATIBLE_API_VERSION = (1, 7, 0)
+
+
+def decode_api_version(version: int) -> tuple[int, int, int]:
+    return ((version >> 16) & 0xFF, (version >> 8) & 0xFF, version & 0xFF)
+
 
 # Parameter IDs
 PARAM_FLUTTER_DEPTH = 0
@@ -164,15 +183,22 @@ def write_wav_24bit(path: Path, data: np.ndarray, sample_rate: int = RATE):
 
 class HydraEngineRunner:
     def __init__(self, lib_path: Path):
+        lib_path = Path(lib_path).resolve()
         self.dll_directories = []
         if sys.platform == "win32":
             gcc_path = shutil.which("gcc")
-            for directory in [lib_path.parent] + ([Path(gcc_path).parent] if gcc_path else []):
+            for directory in [lib_path.parent] + ([Path(gcc_path).resolve().parent] if gcc_path else []):
                 self.dll_directories.append(os.add_dll_directory(str(directory)))
         self.lib = ctypes.CDLL(str(lib_path))
         self.library_sha256 = sha256_file(lib_path)
         self.lib.hydra_dsp_get_api_version.restype = c_uint32
         self.api_version = int(self.lib.hydra_dsp_get_api_version())
+
+        self.lib.hydra_dsp_get_param_count.restype = c_uint32
+        self.param_count = int(self.lib.hydra_dsp_get_param_count())
+
+        self.lib.hydra_dsp_get_param_spec.argtypes = [c_int, POINTER(HydraDspParamSpec)]
+        self.lib.hydra_dsp_get_param_spec.restype = c_int
 
         # Signatures
         self.lib.hydra_dsp_create_v1_4.argtypes = [c_float, c_float, c_float, POINTER(c_void_p)]
@@ -245,6 +271,51 @@ class HydraEngineRunner:
     def destroy_instance(self, handle):
         if handle:
             self.lib.hydra_dsp_destroy(handle)
+
+
+def verify_runner_abi_compatibility(
+    before: HydraEngineRunner,
+    after: HydraEngineRunner,
+    required_param_ids=range(38),
+    min_version: tuple[int, int, int] = MIN_COMPATIBLE_API_VERSION,
+) -> dict:
+    """Verify two HydraEngineRunner libraries share a compatible Phase 6 C ABI."""
+    before_ver = decode_api_version(before.api_version)
+    after_ver = decode_api_version(after.api_version)
+    if before_ver[0] != min_version[0] or after_ver[0] != min_version[0]:
+        raise RuntimeError(
+            f"Incompatible major API version: before={before_ver}, after={after_ver}, expected major={min_version[0]}"
+        )
+    if before_ver < min_version or after_ver < min_version:
+        raise RuntimeError(
+            f"API version below minimum {min_version}: before={before_ver}, after={after_ver}"
+        )
+    req_ids = list(required_param_ids)
+    min_params = (max(req_ids) + 1) if req_ids else 0
+    if before.param_count < min_params or after.param_count < min_params:
+        raise RuntimeError(
+            f"Insufficient parameter count (need >= {min_params}): before={before.param_count}, after={after.param_count}"
+        )
+    for pid in req_ids:
+        b_spec = HydraDspParamSpec()
+        a_spec = HydraDspParamSpec()
+        if before.lib.hydra_dsp_get_param_spec(pid, byref(b_spec)) != 0:
+            raise RuntimeError(f"before library missing param spec for id {pid}")
+        if after.lib.hydra_dsp_get_param_spec(pid, byref(a_spec)) != 0:
+            raise RuntimeError(f"after library missing param spec for id {pid}")
+        if (b_spec.id, b_spec.min_value, b_spec.max_value, b_spec.default_value, b_spec.smoothing, b_spec.flags) != (
+            a_spec.id, a_spec.min_value, a_spec.max_value, a_spec.default_value, a_spec.smoothing, a_spec.flags
+        ):
+            raise RuntimeError(f"Parameter ABI mismatch on param id {pid}")
+    return {
+        "before_api_version": before.api_version,
+        "after_api_version": after.api_version,
+        "before_api_semver": list(before_ver),
+        "after_api_semver": list(after_ver),
+        "before_param_count": before.param_count,
+        "after_param_count": after.param_count,
+        "verified_param_count": len(req_ids),
+    }
 
 def run_simulation(runner: HydraEngineRunner, config: dict) -> dict:
     handle = runner.create_instance(sample_rate=config.get("sample_rate", RATE))

@@ -9,6 +9,11 @@ on:
       - 'include/**'
       - 'CMakeLists.txt'
       - 'scripts/generate_phase74b_listening.mjs'
+      - 'scripts/phase74b_demodulator.mjs'
+      - 'scripts/test_phase74b_wasm_api.mjs'
+      - 'scripts/test_phase74b_demodulator.mjs'
+      - 'scripts/test_phase74b_player.mjs'
+      - 'scripts/test_phase74b_control_semantics.mjs'
       - 'tests/core/phase74b_organic_motion_test.cpp'
       - 'tests/core/m0_equivalence_runner.cpp'
       - 'tests/core/verify_m0_bit_exact.py'
@@ -20,6 +25,11 @@ on:
       - 'include/**'
       - 'CMakeLists.txt'
       - 'scripts/generate_phase74b_listening.mjs'
+      - 'scripts/phase74b_demodulator.mjs'
+      - 'scripts/test_phase74b_wasm_api.mjs'
+      - 'scripts/test_phase74b_demodulator.mjs'
+      - 'scripts/test_phase74b_player.mjs'
+      - 'scripts/test_phase74b_control_semantics.mjs'
       - 'tests/core/phase74b_organic_motion_test.cpp'
       - 'tests/core/m0_equivalence_runner.cpp'
       - 'tests/core/verify_m0_bit_exact.py'
@@ -67,10 +77,12 @@ jobs:
           cmake --build build-native -j
 
       - name: Run Native M0/M1/M2/M3 & Safety Tests
+        id: native_tests
         run: |
           ctest --test-dir build-native --output-on-failure -R "^(phase7_dsp_integrity|phase72_feedback_routing_contract|phase72_classic_core_smoke|phase74b_organic_motion_m0|phase74b_organic_motion_m1|phase74b_organic_motion_m2|phase74b_organic_motion_m3|core_smoke|core_regression|core_audible_controls|core_warp_test|core_reverse_test)$"
 
       - name: Verify M0 Bit-Exact Equivalence vs PR #58
+        id: m0_bit_exact
         run: |
           mkdir -p artifacts/phase7-4b
           python3 tests/core/verify_m0_bit_exact.py \
@@ -78,6 +90,7 @@ jobs:
             --report-json artifacts/phase7-4b/m0_bit_exact_report.json
 
       - name: Build 4 WASM Variants (M0, M1, M2, M3)
+        id: wasm_build
         run: |
           for m in 0 1 2 3; do
             emcmake cmake -S . -B build/web-m${m} -DBUILD_WEB=ON -DBUILD_TESTING=OFF -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} -DHYDRA_PHASE74B_MOTION_MODE=${m}
@@ -88,6 +101,7 @@ jobs:
           done
 
       - name: Verify Compiled WASM Identities
+        id: wasm_identity
         run: |
           python3 - <<'PY'
           import json
@@ -106,10 +120,24 @@ jobs:
               print(f"Verified M{m} identity: {info}")
           PY
 
+      - name: Test WASM C API Contract (Gate)
+        id: wasm_api_test
+        run: node scripts/test_phase74b_wasm_api.mjs
+
+      - name: Test Modulation Demodulator Calibration
+        id: demod_cal
+        run: node scripts/test_phase74b_demodulator.mjs
+
+      - name: Audit Motion Control Semantics
+        id: control_audit
+        run: node scripts/test_phase74b_control_semantics.mjs
+
       - name: Generate 10 Comparative Listening Scenarios & Modulation Analysis
+        id: generate_wavs
         run: node scripts/generate_phase74b_listening.mjs
 
       - name: Validate manifest.json, WAVs & SHA-256 Integrity
+        id: manifest_check
         run: |
           python3 - <<'PY'
           import hashlib, json
@@ -135,16 +163,28 @@ jobs:
           print(f"Verified {checked} WAV files and manifest.json integrity.")
           PY
 
+      - name: Test Blind A/B Player
+        id: player_test
+        run: node scripts/test_phase74b_player.mjs
+
       - name: Write Execution Summary
         if: always()
         run: |
           {
-            echo "## Phase 7.4B — Organic Tape Motion Validation Summary"
+            echo "## Phase 7.4B.1 — Organic Tape Motion Validation Summary"
             echo ""
-            echo "- **M0 Bit-Exact vs PR #58 (\`d2d36dd\`):** PASS"
-            echo "- **Native M0/M1/M2/M3 + Safety Tests:** PASS"
-            echo "- **WASM Variants Built:** M0, M1, M2, M3"
-            echo "- **Listening Package:** \`hydra-phase74b-organic-motion-listening\` (10 scenarios + Blind A/B Web Audio player)"
+            echo "| Check | Outcome |"
+            echo "|---|---|"
+            echo "| Native M0/M1/M2/M3 + Safety Tests | \`${{ steps.native_tests.outcome }}\` |"
+            echo "| M0 Bit-Exact vs PR #58 (\`d2d36dd\`) | \`${{ steps.m0_bit_exact.outcome }}\` |"
+            echo "| WASM Variants Build & Identity | \`${{ steps.wasm_build.outcome }}\` / \`${{ steps.wasm_identity.outcome }}\` |"
+            echo "| WASM C API Contract Gate | \`${{ steps.wasm_api_test.outcome }}\` |"
+            echo "| Demodulator Calibration | \`${{ steps.demod_cal.outcome }}\` |"
+            echo "| Control Semantics Audit | \`${{ steps.control_audit.outcome }}\` |"
+            echo "| WAV Package & Manifest SHA-256 | \`${{ steps.generate_wavs.outcome }}\` / \`${{ steps.manifest_check.outcome }}\` |"
+            echo "| Blind A/B Player | \`${{ steps.player_test.outcome }}\` |"
+            echo "| ESP32-S3 Physical | \`NOT_EXECUTED\` |"
+            echo "| Human Listening | \`PENDING\` |"
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Publish Listening Package Artifact (No Auto-Deploy / No Merge)

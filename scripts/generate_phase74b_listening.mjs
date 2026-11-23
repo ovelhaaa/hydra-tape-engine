@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
+import { analyzeModulation } from './phase74b_demodulator.mjs';
 
 const root = resolve(import.meta.dirname, '..');
 const outRoot = resolve(root, process.env.HYDRA_PHASE74B_OUT || 'artifacts/phase7-4b');
@@ -47,14 +48,15 @@ const PARAM = {
   SPRING_DECAY: 26,
   SPRING_DAMPING: 27,
   SPRING_MIX: 28,
-  WARP_ACTIVE: 29,
-  WARP_SPEED: 30,
-  WARP_GRAIN_MS: 31,
-  WARP_STEREO: 32,
-  WARP_FEEDBACK: 33,
-  WARP_MODE: 34,
-  REVERSE_MODE: 35,
-  REVERSE_DIVISION: 36
+  RESET: 29,
+  WARP_ACTIVE: 30,
+  WARP_SPEED: 31,
+  WARP_GRAIN_MS: 32,
+  WARP_STEREO: 33,
+  WARP_FEEDBACK: 34,
+  WARP_MODE: 35,
+  REVERSE_MODE: 36,
+  REVERSE_DIVISION: 37
 };
 
 function encodeStereoWav(left, right, sampleRate = SAMPLE_RATE) {
@@ -281,62 +283,108 @@ async function loadWasmVariant(variant) {
   return { Module, buildInfo };
 }
 
-function renderWithWasm(Module, inputL, inputR, params) {
+function renderWithWasm(Module, inputL, inputR, params, sampleRate = SAMPLE_RATE) {
   const frames = inputL.length;
-  const handle = Module._hydra_dsp_create(SAMPLE_RATE, 1600.0);
-  if (!handle) throw new Error('hydra_dsp_create failed');
-  Module._hydra_dsp_prepare(handle, SAMPLE_RATE, BLOCK);
+  let handle = 0;
+  let inLPtr = 0;
+  let inRPtr = 0;
+  let outLPtr = 0;
+  let outRPtr = 0;
 
-  const setP = (id, val) => Module._hydra_dsp_set_parameter(handle, id, val);
-  setP(PARAM.DELAY_ACTIVE, params.delayActive ?? 1);
-  setP(PARAM.DELAY_TIME_MS, params.delayTimeMs ?? 340);
-  setP(PARAM.FEEDBACK, params.feedback ?? 50);
-  setP(PARAM.DELAY_WET, params.delayWet ?? 55);
-  setP(PARAM.DRY_WET, params.dryWet ?? 45);
-  setP(PARAM.WOW_RATE, params.wowRate ?? 0.8);
-  setP(PARAM.WOW_DEPTH, params.wowDepth ?? 20);
-  setP(PARAM.FLUTTER_RATE, params.flutterRate ?? 6.0);
-  setP(PARAM.FLUTTER_DEPTH, params.flutterDepth ?? 20);
-  setP(PARAM.TAPE_AGE, params.tapeAge ?? 40);
-  setP(PARAM.ACTIVE_HEADS, params.activeHeads ?? 4);
-  setP(PARAM.PING_PONG, params.pingPong ?? 0);
-  setP(PARAM.REVERSE, params.reverse ?? 0);
-  setP(PARAM.NOISE, 8.0);
-  setP(PARAM.DROPOUT_SEV, 2.0);
-  Module._hydra_dsp_commit(handle);
-  Module._hydra_dsp_reset(handle);
+  try {
+    const outHandlePtr = Module._malloc(4);
+    if (!outHandlePtr) throw new Error('Module._malloc(4) failed for outHandlePtr');
+    try {
+      Module.HEAP32[outHandlePtr >> 2] = 0;
+      const createStatus = Module._hydra_dsp_create(sampleRate, 1600.0, outHandlePtr);
+      handle = Module.HEAP32[outHandlePtr >> 2] >>> 0;
+      if (createStatus !== 0 || handle === 0) {
+        handle = 0;
+        throw new Error(`hydra_dsp_create failed: status=${createStatus}, handle=${handle}`);
+      }
+    } finally {
+      Module._free(outHandlePtr);
+    }
 
-  const inLPtr = Module._malloc(BLOCK * 4);
-  const inRPtr = Module._malloc(BLOCK * 4);
-  const outLPtr = Module._malloc(BLOCK * 4);
-  const outRPtr = Module._malloc(BLOCK * 4);
+    const prepStatus = Module._hydra_dsp_prepare(handle, sampleRate, 2);
+    if (prepStatus !== 0) {
+      throw new Error(`hydra_dsp_prepare failed: status=${prepStatus}`);
+    }
 
-  const outL = new Float32Array(frames);
-  const outR = new Float32Array(frames);
+    const setP = (id, val) => {
+      const st = Module._hydra_dsp_set_parameter(handle, id, val);
+      if (st !== 0) {
+        throw new Error(`hydra_dsp_set_parameter(${id}, ${val}) failed: status=${st}`);
+      }
+    };
+    setP(PARAM.DELAY_ACTIVE, params.delayActive ?? 1);
+    setP(PARAM.DELAY_TIME_MS, params.delayTimeMs ?? 340);
+    setP(PARAM.FEEDBACK, params.feedback ?? 50);
+    setP(PARAM.DELAY_WET, params.delayWet ?? 55);
+    setP(PARAM.DRY_WET, params.dryWet ?? 45);
+    setP(PARAM.WOW_RATE, params.wowRate ?? 0.8);
+    setP(PARAM.WOW_DEPTH, params.wowDepth ?? 20);
+    setP(PARAM.FLUTTER_RATE, params.flutterRate ?? 6.0);
+    setP(PARAM.FLUTTER_DEPTH, params.flutterDepth ?? 20);
+    setP(PARAM.TAPE_AGE, params.tapeAge ?? 40);
+    setP(PARAM.ACTIVE_HEADS, params.activeHeads ?? 4);
+    setP(PARAM.PING_PONG, params.pingPong ?? 0);
+    setP(PARAM.REVERSE, params.reverse ?? 0);
+    setP(PARAM.NOISE, params.noise ?? 8.0);
+    setP(PARAM.DROPOUT_SEV, params.dropoutSeverity ?? 2.0);
+    if (params.drive !== undefined) setP(PARAM.DRIVE, params.drive);
+    if (params.headBumpAmount !== undefined) setP(PARAM.HEAD_BUMP, params.headBumpAmount);
+    if (params.azimuthError !== undefined) setP(PARAM.AZIMUTH, params.azimuthError);
+    if (params.tone !== undefined) setP(PARAM.TONE, params.tone);
 
-  for (let off = 0; off < frames; off += BLOCK) {
-    const n = Math.min(BLOCK, frames - off);
-    const heapInL = Module.HEAPF32.subarray(inLPtr >> 2, (inLPtr >> 2) + BLOCK);
-    const heapInR = Module.HEAPF32.subarray(inRPtr >> 2, (inRPtr >> 2) + BLOCK);
-    heapInL.fill(0);
-    heapInR.fill(0);
-    heapInL.set(inputL.subarray(off, off + n));
-    heapInR.set(inputR.subarray(off, off + n));
+    const commitStatus = Module._hydra_dsp_commit(handle);
+    if (commitStatus !== 0) {
+      throw new Error(`hydra_dsp_commit failed: status=${commitStatus}`);
+    }
+    Module._hydra_dsp_reset(handle);
 
-    Module._hydra_dsp_process(handle, inLPtr, inRPtr, outLPtr, outRPtr, BLOCK);
+    inLPtr = Module._malloc(BLOCK * 4);
+    inRPtr = Module._malloc(BLOCK * 4);
+    outLPtr = Module._malloc(BLOCK * 4);
+    outRPtr = Module._malloc(BLOCK * 4);
+    if (!inLPtr || !inRPtr || !outLPtr || !outRPtr) {
+      throw new Error('Module._malloc failed for audio block buffers');
+    }
 
-    const heapOutL = Module.HEAPF32.subarray(outLPtr >> 2, (outLPtr >> 2) + n);
-    const heapOutR = Module.HEAPF32.subarray(outRPtr >> 2, (outRPtr >> 2) + n);
-    outL.set(heapOutL, off);
-    outR.set(heapOutR, off);
+    const outL = new Float32Array(frames);
+    const outR = new Float32Array(frames);
+
+    for (let off = 0; off < frames; off += BLOCK) {
+      const n = Math.min(BLOCK, frames - off);
+      const heapInL = Module.HEAPF32.subarray(inLPtr >> 2, (inLPtr >> 2) + BLOCK);
+      const heapInR = Module.HEAPF32.subarray(inRPtr >> 2, (inRPtr >> 2) + BLOCK);
+      heapInL.fill(0);
+      heapInR.fill(0);
+      heapInL.set(inputL.subarray(off, off + n));
+      heapInR.set(inputR.subarray(off, off + n));
+
+      const procStatus = Module._hydra_dsp_process(handle, inLPtr, inRPtr, outLPtr, outRPtr, BLOCK);
+      if (procStatus !== 0) {
+        throw new Error(`hydra_dsp_process failed at offset ${off}: status=${procStatus}`);
+      }
+
+      const heapOutL = Module.HEAPF32.subarray(outLPtr >> 2, (outLPtr >> 2) + n);
+      const heapOutR = Module.HEAPF32.subarray(outRPtr >> 2, (outRPtr >> 2) + n);
+      outL.set(heapOutL, off);
+      outR.set(heapOutR, off);
+    }
+
+    return { left: outL, right: outR };
+  } finally {
+    if (inLPtr) Module._free(inLPtr);
+    if (inRPtr) Module._free(inRPtr);
+    if (outLPtr) Module._free(outLPtr);
+    if (outRPtr) Module._free(outRPtr);
+    if (handle) {
+      Module._hydra_dsp_destroy(handle);
+      handle = 0;
+    }
   }
-
-  Module._free(inLPtr);
-  Module._free(inRPtr);
-  Module._free(outLPtr);
-  Module._free(outRPtr);
-  Module._hydra_dsp_destroy(handle);
-  return { left: outL, right: outR };
 }
 
 function analyzeAudioMetrics(left, right) {
@@ -375,16 +423,15 @@ function analyzeAudioMetrics(left, right) {
   };
 }
 
-// Quadrature demodulation of a 1000 Hz sine carrier to measure exact pitch deviation (cents),
-// wow/flutter modulation spectrum, excursions, transients, and L/R modulation correlation.
-function runModulationProbe(Module, settingLabel, wowDepth, flutterDepth, tapeAge) {
-  const durationSec = 8.0;
-  const frames = Math.floor(durationSec * SAMPLE_RATE);
+// Quadrature demodulation of an isolated 1000 Hz sine carrier (dryWet=100 -> dryGain=0, delayWet=0 -> single delayed tap)
+function runModulationProbe(Module, settingLabel, wowDepth, flutterDepth, tapeAge, sampleRate = SAMPLE_RATE) {
+  const durationSec = 9.2;
+  const frames = Math.floor(durationSec * sampleRate);
   const carrierHz = 1000.0;
   const inL = new Float32Array(frames);
   const inR = new Float32Array(frames);
   for (let i = 0; i < frames; i++) {
-    const s = 0.35 * Math.sin((2 * Math.PI * carrierHz * i) / SAMPLE_RATE);
+    const s = 0.35 * Math.sin((2 * Math.PI * carrierHz * i) / sampleRate);
     inL[i] = s;
     inR[i] = s;
   }
@@ -393,126 +440,33 @@ function runModulationProbe(Module, settingLabel, wowDepth, flutterDepth, tapeAg
     delayActive: 1,
     delayTimeMs: 300,
     feedback: 0,
-    delayWet: 100,
-    dryWet: 0,
+    delayWet: 0,
+    dryWet: 100,
     wowRate: 0.8,
     wowDepth,
     flutterRate: 6.0,
     flutterDepth,
     tapeAge,
-    activeHeads: 4
+    activeHeads: 4,
+    noise: 0,
+    dropoutSeverity: 0,
+    drive: 20,
+    headBumpAmount: 0,
+    azimuthError: 0,
+    tone: 50
+  }, sampleRate);
+
+  const metrics = analyzeModulation(left, right, {
+    sampleRate,
+    carrierHz,
+    settleSec: 0.60,
+    filterWarmupSec: 0.25,
+    lpfCutoffHz: 35.0
   });
-
-  // Demodulate after delay settles (skip first 0.6s)
-  const startIdx = Math.floor(0.6 * SAMPLE_RATE);
-  const decimate = 48; // 1000 Hz control rate (1 ms per sample)
-  const demodRate = SAMPLE_RATE / decimate;
-  const alpha = 1 - Math.exp((-2 * Math.PI * 35.0) / SAMPLE_RATE);
-
-  function extractCents(sig) {
-    let iLP = 0, qLP = 0;
-    const phases = [];
-    for (let i = startIdx; i < frames; i++) {
-      const arg = (2 * Math.PI * carrierHz * i) / SAMPLE_RATE;
-      const iMix = sig[i] * Math.cos(arg);
-      const qMix = -sig[i] * Math.sin(arg);
-      iLP += alpha * (iMix - iLP);
-      qLP += alpha * (qMix - qLP);
-      if ((i - startIdx) % decimate === 0) {
-        phases.push(Math.atan2(qLP, iLP));
-      }
-    }
-    // Unwrap phase and convert d(phase)/dt to cents
-    const cents = new Float64Array(phases.length - 1);
-    const phaseUnwrapped = new Float64Array(phases.length);
-    let acc = phases[0];
-    phaseUnwrapped[0] = acc;
-    for (let k = 1; k < phases.length; k++) {
-      let dp = phases[k] - phases[k - 1];
-      while (dp > Math.PI) dp -= 2 * Math.PI;
-      while (dp < -Math.PI) dp += 2 * Math.PI;
-      acc += dp;
-      phaseUnwrapped[k] = acc;
-      const dfHz = (dp * demodRate) / (2 * Math.PI);
-      cents[k - 1] = (1200.0 / Math.LN2) * (dfHz / carrierHz);
-    }
-    return { cents, phaseUnwrapped };
-  }
-
-  const L = extractCents(left);
-  const R = extractCents(right);
-  const cL = L.cents;
-  const cR = R.cents;
-  const n = cL.length;
-
-  let sumSq = 0, maxAbs = 0, sumLR = 0, sumL2 = 0, sumR2 = 0;
-  const absSorted = new Float64Array(n);
-  for (let i = 0; i < n; i++) {
-    const v = cL[i];
-    sumSq += v * v;
-    maxAbs = Math.max(maxAbs, Math.abs(v));
-    absSorted[i] = Math.abs(v);
-    sumLR += cL[i] * cR[i];
-    sumL2 += cL[i] * cL[i];
-    sumR2 += cR[i] * cR[i];
-  }
-  absSorted.sort();
-  const rmsCents = Math.sqrt(sumSq / n);
-  const p50Cents = absSorted[Math.floor(n * 0.50)];
-  const p90Cents = absSorted[Math.floor(n * 0.90)];
-  const p99Cents = absSorted[Math.floor(n * 0.99)];
-  const modCorrelationLR = (sumL2 > 1e-12 && sumR2 > 1e-12) ? sumLR / Math.sqrt(sumL2 * sumR2) : 1.0;
-
-  // Max phase excursion in ms
-  let minP = Infinity, maxP = -Infinity;
-  for (let i = 0; i < L.phaseUnwrapped.length; i++) {
-    minP = Math.min(minP, L.phaseUnwrapped[i]);
-    maxP = Math.max(maxP, L.phaseUnwrapped[i]);
-  }
-  const maxExcursionMs = ((maxP - minP) * 0.5 / (2 * Math.PI * carrierHz)) * 1000.0;
-
-  // Perturbation events (> 2.5 * rmsCents)
-  const thresh = Math.max(2.0, 2.5 * rmsCents);
-  let eventCount = 0, inEvent = false, curDur = 0, maxDurMs = 0;
-  for (let i = 0; i < n; i++) {
-    if (Math.abs(cL[i]) > thresh) {
-      if (!inEvent) { eventCount++; inEvent = true; curDur = 1; }
-      else curDur++;
-    } else if (inEvent) {
-      maxDurMs = Math.max(maxDurMs, curDur);
-      inEvent = false;
-    }
-  }
-
-  // Modulation spectrum (DFT bins at 0.1..3 Hz for wow, 3..25 Hz for flutter)
-  let wowEnergy = 0, flutterEnergy = 0;
-  const fftN = Math.min(n, 4096);
-  for (let k = 1; k <= Math.floor((25.0 * fftN) / demodRate); k++) {
-    const freq = (k * demodRate) / fftN;
-    let re = 0, im = 0;
-    for (let t = 0; t < fftN; t++) {
-      const ang = (2 * Math.PI * k * t) / fftN;
-      re += cL[t] * Math.cos(ang);
-      im -= cL[t] * Math.sin(ang);
-    }
-    const pow = (re * re + im * im) / (fftN * fftN);
-    if (freq >= 0.1 && freq < 3.0) wowEnergy += pow;
-    else if (freq >= 3.0 && freq <= 25.0) flutterEnergy += pow;
-  }
 
   return {
     setting: settingLabel,
-    rmsCents,
-    maxAbsCents: maxAbs,
-    p50Cents,
-    p90Cents,
-    p99Cents,
-    maxExcursionMs,
-    wowBandRmsCents: Math.sqrt(wowEnergy),
-    flutterBandRmsCents: Math.sqrt(flutterEnergy),
-    transientEventCount: eventCount,
-    maxEventDurationMs: maxDurMs,
-    modCorrelationLR
+    ...metrics
   };
 }
 
@@ -599,6 +553,25 @@ MANIFEST.scenarios.forEach((sc, idx) => {
   scenarioSelect.appendChild(opt);
 });
 
+function shuffleSlots(arr) {
+  const copy = [...arr];
+  for (let i = copy.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [copy[i], copy[j]] = [copy[j], copy[i]];
+  }
+  return copy;
+}
+
+function applySlotGains() {
+  if (!audioCtx) return;
+  const now = audioCtx.currentTime;
+  slotOrder.forEach((k, i) => {
+    if (gains[k]) {
+      gains[k].gain.setTargetAtTime(i === activeSlot ? 1.0 : 0.0, now, 0.015);
+    }
+  });
+}
+
 function renderVariantButtons() {
   variantBtnsDiv.innerHTML = '';
   const labels = ['Slot A', 'Slot B', 'Slot C', 'Slot D'];
@@ -606,6 +579,8 @@ function renderVariantButtons() {
     const vInfo = MANIFEST.variants.find(v => v.key === vKey);
     const btn = document.createElement('button');
     btn.textContent = (blindMode && !revealed) ? labels[idx] : vInfo.label;
+    btn.dataset.slotIndex = String(idx);
+    if (!blindMode || revealed) btn.dataset.variant = vKey;
     if (idx === activeSlot) btn.classList.add('active');
     btn.onclick = () => switchSlot(idx);
     variantBtnsDiv.appendChild(btn);
@@ -614,12 +589,7 @@ function renderVariantButtons() {
 
 function switchSlot(idx) {
   activeSlot = idx;
-  if (audioCtx) {
-    const now = audioCtx.currentTime;
-    slotOrder.forEach((k, i) => {
-      if (gains[k]) gains[k].gain.setTargetAtTime(i === activeSlot ? 1.0 : 0.0, now, 0.015);
-    });
-  }
+  applySlotGains();
   renderVariantButtons();
 }
 
@@ -672,12 +642,15 @@ playBtn.onclick = async () => {
   startAudio();
 };
 stopBtn.onclick = stopAudio;
+loopChk.onchange = () => {
+  sources.forEach(s => { s.loop = loopChk.checked; });
+};
 scenarioSelect.onchange = () => loadScenario(Number(scenarioSelect.value));
 blindBtn.onclick = () => {
   blindMode = !blindMode;
   revealed = false;
   if (blindMode) {
-    slotOrder = [...slotOrder].sort(() => Math.random() - 0.5);
+    slotOrder = shuffleSlots(['m0', 'm1', 'm2', 'm3']);
     blindBtn.classList.add('blind-on');
     blindBtn.textContent = 'Blind A/B Active (Click to Exit)';
     revealBtn.style.display = 'inline-block';
@@ -687,9 +660,20 @@ blindBtn.onclick = () => {
     blindBtn.textContent = 'Enable Blind A/B Mode';
     revealBtn.style.display = 'none';
   }
+  applySlotGains();
   renderVariantButtons();
 };
 revealBtn.onclick = () => { revealed = true; renderVariantButtons(); };
+
+window.__hydraLabState = () => ({
+  activeSlot,
+  activeVariant: slotOrder[activeSlot],
+  slotOrder: [...slotOrder],
+  blindMode,
+  revealed,
+  isPlaying,
+  gainTargets: Object.fromEntries(slotOrder.map(k => [k, gains[k] ? gains[k].gain.value : null]))
+});
 
 // Render modulation probe summary
 let html = '<table><tr><th>Variant</th><th>Setting</th><th>RMS Pitch (cents)</th><th>Max (cents)</th><th>Max Excursion (ms)</th><th>Wow Band (cents)</th><th>Flutter Band (cents)</th><th>L/R Mod Corr</th></tr>';
@@ -722,11 +706,19 @@ async function main() {
   for (const v of VARIANTS) {
     modulationProbes.push({
       variant: v.key,
-      ...runModulationProbe(loaded[v.key].Module, 'subtle (wow=15, flt=15, age=40)', 15, 15, 40)
+      ...runModulationProbe(loaded[v.key].Module, 'minimal (wow=0, flt=0, age=0) @ 48k', 0, 0, 0, 48000)
     });
     modulationProbes.push({
       variant: v.key,
-      ...runModulationProbe(loaded[v.key].Module, 'expressive (wow=50, flt=45, age=70)', 50, 45, 70)
+      ...runModulationProbe(loaded[v.key].Module, 'subtle (wow=15, flt=15, age=40) @ 48k', 15, 15, 40, 48000)
+    });
+    modulationProbes.push({
+      variant: v.key,
+      ...runModulationProbe(loaded[v.key].Module, 'expressive (wow=50, flt=45, age=70) @ 48k', 50, 45, 70, 48000)
+    });
+    modulationProbes.push({
+      variant: v.key,
+      ...runModulationProbe(loaded[v.key].Module, 'expressive (wow=50, flt=45, age=70) @ 44.1k', 50, 45, 70, 44100)
     });
   }
 

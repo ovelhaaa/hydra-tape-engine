@@ -159,6 +159,16 @@ struct BlockBenchState {
   int64_t lastParamUpdateUs = 0;
   int64_t maxParamUpdateUs = 0;
   uint32_t* hist = nullptr;
+  static constexpr size_t kMaxAutoEvents = 64;
+  struct AutoEvent {
+    uint32_t block;
+    uint16_t paramId;
+    float value;
+  };
+  AutoEvent autoEvents[kMaxAutoEvents]{};
+  uint32_t autoCount = 0;
+  uint32_t autoNextIdx = 0;
+  uint32_t autoApplied = 0;
 };
 BlockBenchState g_bench;
 // ESP-IDF returns bytes. Scan the retained watermark from the CLI, not once per
@@ -894,6 +904,19 @@ void audioTask(void *parameter) {
             fripp->processStereo(blockL[i], blockR[i], &blockL[i], &blockR[i]);
           }
         } else if (tape) {
+          if (g_bench.state == BENCH_RUNNING && g_bench.autoNextIdx < g_bench.autoCount) {
+            while (g_bench.autoNextIdx < g_bench.autoCount &&
+                   g_bench.collected >= g_bench.autoEvents[g_bench.autoNextIdx].block) {
+              const auto& ev = g_bench.autoEvents[g_bench.autoNextIdx];
+              const int64_t p0 = esp_timer_get_time();
+              tape->postSetParameter(static_cast<hydra_dsp_param_id>(ev.paramId), ev.value);
+              const int64_t pDt = esp_timer_get_time() - p0;
+              g_bench.lastParamUpdateUs = pDt;
+              if (pDt > g_bench.maxParamUpdateUs) g_bench.maxParamUpdateUs = pDt;
+              ++g_bench.autoApplied;
+              ++g_bench.autoNextIdx;
+            }
+          }
           const bool fineWarmup = (g_fine_prof.state == STAGE_WARMUP);
           const bool fineRun = (g_fine_prof.state == STAGE_RUNNING);
           if (fineWarmup) hydra::dsp::profile::beginBlock(false);
@@ -1539,6 +1562,45 @@ void executeCommand(String line) {
 
   float val = valStr.toFloat();
 
+  if (cmd == "bench_sched") {
+    if (valStr == "clear") {
+      g_bench.autoCount = 0;
+      g_bench.autoNextIdx = 0;
+      g_bench.autoApplied = 0;
+      dualPrintln("BENCH_SCHED CLEARED");
+      return;
+    }
+    if (valStr.startsWith("add ")) {
+      String rest = valStr.substring(4);
+      int sp1 = rest.indexOf(' ');
+      int sp2 = (sp1 > 0) ? rest.indexOf(' ', sp1 + 1) : -1;
+      if (sp1 <= 0 || sp2 <= sp1) {
+        dualPrintln("BENCH_SCHED ERR: usage: bench_sched add <block> <paramId> <value>");
+        return;
+      }
+      if (g_bench.autoCount >= BlockBenchState::kMaxAutoEvents) {
+        dualPrintln("BENCH_SCHED ERR: queue full");
+        return;
+      }
+      long blk = rest.substring(0, sp1).toInt();
+      long pid = rest.substring(sp1 + 1, sp2).toInt();
+      float pval = rest.substring(sp2 + 1).toFloat();
+      if (blk < 0 || pid < 0 || pid >= HYDRA_DSP_PARAM_COUNT) {
+        dualPrintln("BENCH_SCHED ERR: invalid block or paramId");
+        return;
+      }
+      auto& ev = g_bench.autoEvents[g_bench.autoCount++];
+      ev.block = static_cast<uint32_t>(blk);
+      ev.paramId = static_cast<uint16_t>(pid);
+      ev.value = pval;
+      dualPrintf("BENCH_SCHED OK count=%lu block=%ld param=%ld val=%.3f\n",
+                 (unsigned long)g_bench.autoCount, blk, pid, (double)pval);
+      return;
+    }
+    dualPrintf("BENCH_SCHED count=%lu\n", (unsigned long)g_bench.autoCount);
+    return;
+  }
+
   if (cmd == "bench") {
     uint32_t blocks = 1024;
     uint32_t warmup = 256;
@@ -1561,6 +1623,9 @@ void executeCommand(String line) {
     memset(g_bench.hist, 0, kBenchHistBins * sizeof(uint32_t));
     g_bench.targetBlocks = blocks;
     g_bench.warmupRemain = (warmup > 0) ? warmup : 1;
+    g_bench.autoNextIdx = 0;
+    g_bench.autoApplied = 0;
+    g_bench.maxParamUpdateUs = 0;
     g_bench.state = BENCH_WARMUP;
     const int64_t deadlineUs = esp_timer_get_time() + ((int64_t)(blocks + warmup) * 15000LL) + 10000000LL;
     while (g_bench.state != BENCH_DONE && esp_timer_get_time() < deadlineUs) {
@@ -1613,6 +1678,8 @@ void executeCommand(String line) {
                (unsigned long)g_bench.startHeap, (unsigned long)g_bench.endHeap,
                (unsigned long)g_bench.minFreeHeap, (unsigned long)g_bench.startPsram,
                (unsigned long)g_bench.endPsram, (long long)g_bench.maxParamUpdateUs);
+    dualPrintf("AutoScheduled=%lu AutoApplied=%lu\n",
+               (unsigned long)g_bench.autoCount, (unsigned long)g_bench.autoApplied);
     sampleAudioStackWatermark();
     dualPrintf("StackMinWords=%u\n", (unsigned)g_audio_stack_min); // Legacy key; ESP-IDF units are bytes.
     dualPrintln("=========================================");

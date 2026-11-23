@@ -368,19 +368,25 @@ struct TapeCore::Impl {
     const float textureBaseSamples = sampleRate * 0.012f;
     const float modBaseSamples = delayActive ? smoothedDelaySamples
                                              : std::max(smoothedDelaySamples, textureBaseSamples);
+    const float maxModOut = 0.25f * modBaseSamples;
     const int active = motionState.activeMode;
 
+    motionState.stepControlSmoothing(motionCoeffs);
+
     if (!motionState.transitioning) {
+      float rawL = 0.0f, rawR = 0.0f;
       if (active == 0) {
         const float residual = 0.03f * fast_sin(wowPhase) + 0.01f * fast_sin(flutterPhase + 0.31f);
-        const float cL = mechanicalMod(scrapeL, flutterLPF, mechStateL, residual);
-        const float cR = mechanicalMod(scrapeR, flutterLPFR, mechStateR, residual);
-        motionState.scaleClassicMode(cL, cR, modBaseSamples, motionCoeffs, outModL, outModR);
+        rawL = mechanicalMod(scrapeL, flutterLPF, mechStateL, residual);
+        rawR = mechanicalMod(scrapeR, flutterLPFR, mechStateR, residual);
       } else {
-        motionState.evalOrganicMode(active, motionCoeffs, modBaseSamples,
-                                    scrapeL, scrapeR, true, true, true,
-                                    outModL, outModR);
+        motionState.evalOrganicModeRaw(active, motionCoeffs, modBaseSamples,
+                                       scrapeL, scrapeR, true, true, true,
+                                       rawL, rawR);
       }
+      motionState.lastRawOutL = rawL;
+      motionState.lastRawOutR = rawR;
+      motionState.applyTrajectoryControls(rawL, rawR, maxModOut, outModL, outModR);
       motionState.lastOutL = outModL;
       motionState.lastOutR = outModR;
       return;
@@ -396,45 +402,49 @@ struct TapeCore::Impl {
     float m0L = 0.0f, m0R = 0.0f;
     if (needM0) {
       const float residual = 0.03f * fast_sin(wowPhase) + 0.01f * fast_sin(flutterPhase + 0.31f);
-      const float cL = mechanicalMod(scrapeL, flutterLPF, mechStateL, residual);
-      const float cR = mechanicalMod(scrapeR, flutterLPFR, mechStateR, residual);
-      motionState.scaleClassicMode(cL, cR, modBaseSamples, motionCoeffs, m0L, m0R);
+      m0L = mechanicalMod(scrapeL, flutterLPF, mechStateL, residual);
+      m0R = mechanicalMod(scrapeR, flutterLPFR, mechStateR, residual);
     }
     if (needM1) motionState.stepM1(motionCoeffs);
     if (needM2) motionState.stepM2(motionCoeffs);
     if (needM3) motionState.stepM3(motionCoeffs, false);
 
-    float modPrevL = 0.0f, modPrevR = 0.0f;
+    float rawPrevL = 0.0f, rawPrevR = 0.0f;
     if (prev == 0) {
-      modPrevL = m0L;
-      modPrevR = m0R;
+      rawPrevL = m0L;
+      rawPrevR = m0R;
     } else {
-      motionState.evalOrganicMode(prev, motionCoeffs, modBaseSamples,
-                                  scrapeL, scrapeR, false, false, false,
-                                  modPrevL, modPrevR);
+      motionState.evalOrganicModeRaw(prev, motionCoeffs, modBaseSamples,
+                                     scrapeL, scrapeR, false, false, false,
+                                     rawPrevL, rawPrevR);
     }
 
-    float modNextL = 0.0f, modNextR = 0.0f;
+    float rawNextL = 0.0f, rawNextR = 0.0f;
     if (active == 0) {
-      modNextL = m0L;
-      modNextR = m0R;
+      rawNextL = m0L;
+      rawNextR = m0R;
     } else {
-      motionState.evalOrganicMode(active, motionCoeffs, modBaseSamples,
-                                  scrapeL, scrapeR, false, false, false,
-                                  modNextL, modNextR);
+      motionState.evalOrganicModeRaw(active, motionCoeffs, modBaseSamples,
+                                     scrapeL, scrapeR, false, false, false,
+                                     rawNextL, rawNextR);
     }
 
     if (motionState.pendingSnapHold) {
-      const float maxHold = 0.25f * modBaseSamples;
-      motionState.holdOffsetL = clampf(motionState.lastOutL - modPrevL, -maxHold, maxHold);
-      motionState.holdOffsetR = clampf(motionState.lastOutR - modPrevR, -maxHold, maxHold);
+      motionState.holdOffsetL = motionState.lastRawOutL - rawPrevL;
+      motionState.holdOffsetR = motionState.lastRawOutR - rawPrevR;
       motionState.pendingSnapHold = false;
     }
 
     const float t = motionState.transitionPos;
     const float s = t * t * (3.0f - 2.0f * t);
-    outModL = (1.0f - s) * (modPrevL + motionState.holdOffsetL) + s * modNextL;
-    outModR = (1.0f - s) * (modPrevR + motionState.holdOffsetR) + s * modNextR;
+    const float rawOutL = clampf((1.0f - s) * (rawPrevL + motionState.holdOffsetL) + s * rawNextL,
+                                 -maxModOut, maxModOut);
+    const float rawOutR = clampf((1.0f - s) * (rawPrevR + motionState.holdOffsetR) + s * rawNextR,
+                                 -maxModOut, maxModOut);
+
+    motionState.lastRawOutL = rawOutL;
+    motionState.lastRawOutR = rawOutR;
+    motionState.applyTrajectoryControls(rawOutL, rawOutR, maxModOut, outModL, outModR);
 
     motionState.transitionPos += motionCoeffs.transitionStep;
     if (motionState.transitionPos >= 1.0f) {
@@ -601,6 +611,8 @@ HYDRA_DSP_IRAM void TapeCore::Impl::updateFilters(){
       motionState.transitionPos = 1.0f;
       motionState.holdOffsetL = 0.0f;
       motionState.holdOffsetR = 0.0f;
+      motionState.smoothedAmount = motionCoeffs.amountNorm;
+      motionState.smoothedStereo = motionCoeffs.stereoNorm;
     } else {
       motionState.setTargetMode(currentParams.motionMode);
     }

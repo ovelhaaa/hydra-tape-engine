@@ -8,7 +8,7 @@ from unittest.mock import patch
 import wave
 import numpy as np
 from package_listening_lab import validate
-from render_phase6_review import resolve_library
+from render_phase6_review import resolve_library, decode_api_version, verify_runner_abi_compatibility
 import musical_sources
 
 class ListeningDeliveryTests(unittest.TestCase):
@@ -106,6 +106,59 @@ class ListeningDeliveryTests(unittest.TestCase):
             np.random.seed(6101)
             second = musical_sources.get_musical_source(kind, 1, 48000)
             np.testing.assert_array_equal(first, second)
+
+    def test_abi_compatibility_checks(self):
+        class FakeLib:
+            def __init__(self, specs):
+                self._specs = specs
+
+            def hydra_dsp_get_param_spec(self, pid, out_ptr):
+                import ctypes
+                if pid not in self._specs:
+                    return -1
+                spec = ctypes.cast(out_ptr, ctypes.POINTER(self._specs[pid].__class__)).contents
+                src = self._specs[pid]
+                spec.id = src.id
+                spec.min_value = src.min_value
+                spec.max_value = src.max_value
+                spec.default_value = src.default_value
+                spec.smoothing = src.smoothing
+                spec.flags = src.flags
+                return 0
+
+        from render_phase6_review import HydraDspParamSpec
+        class FakeRunner:
+            def __init__(self, api_ver, param_count, specs):
+                self.api_version = api_ver
+                self.param_count = param_count
+                self.lib = FakeLib(specs)
+
+        specs_v17 = {
+            i: HydraDspParamSpec(id=i, name=b"p", min_value=0.0, max_value=100.0, default_value=50.0, smoothing=1, flags=0)
+            for i in range(38)
+        }
+        specs_v18 = dict(specs_v17)
+        specs_v18[38] = HydraDspParamSpec(id=38, name=b"m", min_value=0.0, max_value=3.0, default_value=0.0, smoothing=0, flags=0)
+
+        v17 = (1 << 16) | (7 << 8)
+        v18 = (1 << 16) | (8 << 8)
+        v16 = (1 << 16) | (6 << 8)
+        v20 = (2 << 16) | (0 << 8)
+        self.assertEqual(decode_api_version(v18), (1, 8, 0))
+        res = verify_runner_abi_compatibility(FakeRunner(v17, 38, specs_v17), FakeRunner(v18, 47, specs_v18))
+        self.assertEqual(res["before_api_semver"], [1, 7, 0])
+        self.assertEqual(res["after_api_semver"], [1, 8, 0])
+
+        with self.assertRaisesRegex(RuntimeError, "major"):
+            verify_runner_abi_compatibility(FakeRunner(v17, 38, specs_v17), FakeRunner(v20, 47, specs_v18))
+        with self.assertRaisesRegex(RuntimeError, "minimum"):
+            verify_runner_abi_compatibility(FakeRunner(v16, 38, specs_v17), FakeRunner(v18, 47, specs_v18))
+        with self.assertRaisesRegex(RuntimeError, "Insufficient"):
+            verify_runner_abi_compatibility(FakeRunner(v17, 37, specs_v17), FakeRunner(v18, 47, specs_v18))
+        bad_specs = dict(specs_v18)
+        bad_specs[12] = HydraDspParamSpec(id=12, name=b"d", min_value=1.0, max_value=100.0, default_value=50.0, smoothing=1, flags=0)
+        with self.assertRaisesRegex(RuntimeError, "ABI mismatch"):
+            verify_runner_abi_compatibility(FakeRunner(v17, 38, specs_v17), FakeRunner(v18, 47, bad_specs))
 
 if __name__ == "__main__":
     unittest.main()

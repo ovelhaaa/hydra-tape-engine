@@ -127,6 +127,7 @@ struct TapeMotionCoeffs {
 
   float scrapeDepthScale = 0.00015f * 0.18f;
   float transitionStep = 1.0f / 7200.0f;
+  float controlSlewStep = 1.0f / 1440.0f;
 
   void update(const TapeMotionParams& p) {
     using namespace detail;
@@ -140,6 +141,8 @@ struct TapeMotionCoeffs {
 
     // 150 ms smooth transition window for clickless/chirp-free mode switching
     transitionStep = 1.0f / std::max(1.0f, 0.150f * sampleRate);
+    // 30 ms linear slew for Motion Amount and Stereo Motion changes (finite-time exact convergence)
+    controlSlewStep = 1.0f / std::max(1.0f, 0.030f * sampleRate);
 
     const float wowRate = clampf(p.wowRate, 0.1f, 5.0f);
     const float wowRateNorm = (wowRate - 0.1f) / (5.0f - 0.1f);
@@ -298,8 +301,12 @@ struct TapeMotionState {
   float transitionPos = 1.0f;
   float holdOffsetL = 0.0f;
   float holdOffsetR = 0.0f;
+  float lastRawOutL = 0.0f;
+  float lastRawOutR = 0.0f;
   float lastOutL = 0.0f;
   float lastOutR = 0.0f;
+  float smoothedAmount = 1.0f;
+  float smoothedStereo = 1.0f;
 
   void reset() {
     seedA = 0x13579BDFu;
@@ -340,8 +347,12 @@ struct TapeMotionState {
     transitionPos = 1.0f;
     holdOffsetL = 0.0f;
     holdOffsetR = 0.0f;
+    lastRawOutL = 0.0f;
+    lastRawOutR = 0.0f;
     lastOutL = 0.0f;
     lastOutR = 0.0f;
+    smoothedAmount = 1.0f;
+    smoothedStereo = 1.0f;
   }
 
   void setTargetMode(int newMode) {
@@ -466,6 +477,83 @@ struct TapeMotionState {
 
     const float epsEventDiff = 0.16f * c.eventVelScale * tensionPos;
     eventDispDiff = c.eventDispLeak * eventDispDiff + epsEventDiff;
+  }
+
+  inline void stepControlSmoothing(const TapeMotionCoeffs& c) {
+    const float step = c.controlSlewStep;
+    if (smoothedAmount < c.amountNorm) {
+      smoothedAmount = std::min(c.amountNorm, smoothedAmount + step);
+    } else if (smoothedAmount > c.amountNorm) {
+      smoothedAmount = std::max(c.amountNorm, smoothedAmount - step);
+    }
+    if (smoothedStereo < c.stereoNorm) {
+      smoothedStereo = std::min(c.stereoNorm, smoothedStereo + step);
+    } else if (smoothedStereo > c.stereoNorm) {
+      smoothedStereo = std::max(c.stereoNorm, smoothedStereo - step);
+    }
+  }
+
+  inline void applyTrajectoryControls(float rawL,
+                                      float rawR,
+                                      float maxModOut,
+                                      float& outL,
+                                      float& outR) const {
+    if (smoothedAmount == 1.0f && smoothedStereo == 1.0f) {
+      outL = rawL;
+      outR = rawR;
+    } else if (smoothedAmount == 0.0f) {
+      outL = 0.0f;
+      outR = 0.0f;
+    } else {
+      const float common = 0.5f * (rawL + rawR);
+      const float diff = 0.5f * (rawL - rawR) * smoothedStereo;
+      outL = detail::clampf(smoothedAmount * (common + diff), -maxModOut, maxModOut);
+      outR = detail::clampf(smoothedAmount * (common - diff), -maxModOut, maxModOut);
+    }
+  }
+
+  inline void evalOrganicModeRaw(int mode,
+                                 const TapeMotionCoeffs& c,
+                                 float modBaseSamples,
+                                 float scrapeL,
+                                 float scrapeR,
+                                 bool advanceM1,
+                                 bool advanceM2,
+                                 bool advanceM3,
+                                 float& outRawL,
+                                 float& outRawR) {
+    const float maxMod = 0.22f * modBaseSamples;
+    const float softLim = 0.18f * modBaseSamples;
+    const float scrapeTermL = (c.scrapeDepthScale * modBaseSamples) * scrapeL;
+    const float scrapeTermR = (c.scrapeDepthScale * modBaseSamples) * scrapeR;
+
+    float common = 0.0f;
+    float diff = 0.0f;
+
+    if (mode == 1) {
+      if (advanceM1) stepM1(c);
+      if (std::fabs(motorDisp) > softLim && softLim > 1.0f) {
+        motorDisp *= 0.9995f;
+      }
+      common = motorDisp;
+      diff = diffDisp;
+    } else if (mode == 2) {
+      if (advanceM2) stepM2(c);
+      common = flutterDisp + m2WowDisp;
+      diff = flutterDispDiff;
+    } else {
+      if (advanceM1) stepM1(c);
+      if (advanceM2) stepM2(c);
+      if (advanceM3) stepM3(c, false);
+      if (std::fabs(motorDisp) > softLim && softLim > 1.0f) {
+        motorDisp *= 0.9995f;
+      }
+      common = 0.85f * motorDisp + 0.80f * flutterDisp + eventDisp;
+      diff = 0.85f * diffDisp + 0.75f * flutterDispDiff + eventDispDiff;
+    }
+
+    outRawL = detail::clampf(common + diff + scrapeTermL, -maxMod, maxMod);
+    outRawR = detail::clampf(common - diff + scrapeTermR, -maxMod, maxMod);
   }
 
   inline void applyScaleAndClamp(float common,

@@ -2,7 +2,10 @@
 #include "check.h"
 
 #include <algorithm>
+#include <chrono>
 #include <cmath>
+#include <cstdio>
+#include <cstdint>
 #include <vector>
 
 namespace {
@@ -304,6 +307,273 @@ void testRapidTransitionDerivativeAndContinuity() {
   hydra_dsp_destroy(h);
 }
 
+struct TransitionMetrics {
+  float maxPosJumpSamples = 0.0f;
+  float maxVelJumpSamplesPerSample = 0.0f;
+  float maxPitchCents = 0.0f;
+  float audioPeak = 0.0f;
+  float audioRms = 0.0f;
+  int nonFiniteCount = 0;
+  float maxDisplacementSamples = 0.0f;
+  int settlingSamples = 0;
+};
+
+TransitionMetrics runTransitionSequence(const int* modes,
+                                        const uint32_t* switchSamples,
+                                        size_t numEvents,
+                                        uint32_t totalSamples,
+                                        float sampleRate,
+                                        float delayMs,
+                                        float feedback,
+                                        bool reverse,
+                                        float activeHeads) {
+  hydra_dsp_handle* h = nullptr;
+  CHECK(hydra_dsp_create_v1_4(sampleRate, 2000.0f, 4000.0f, &h) == 0);
+  CHECK(hydra_dsp_prepare(h, 128, HYDRA_DSP_CHANNELS_STEREO) == 0);
+
+  CHECK(hydra_dsp_set_parameter(h, HYDRA_DSP_PARAM_DELAY_ACTIVE, 1.0f) == 0);
+  CHECK(hydra_dsp_set_parameter(h, HYDRA_DSP_PARAM_DELAY_MS, delayMs) == 0);
+  CHECK(hydra_dsp_set_parameter(h, HYDRA_DSP_PARAM_FEEDBACK, feedback) == 0);
+  CHECK(hydra_dsp_set_parameter(h, HYDRA_DSP_PARAM_ACTIVE_HEADS, activeHeads) == 0);
+  CHECK(hydra_dsp_set_parameter(h, HYDRA_DSP_PARAM_REVERSE, reverse ? 1.0f : 0.0f) == 0);
+  CHECK(hydra_dsp_set_parameter(h, HYDRA_DSP_PARAM_SPRING, 1.0f) == 0);
+  CHECK(hydra_dsp_set_parameter(h, HYDRA_DSP_PARAM_DRY_WET, 80.0f) == 0);
+  CHECK(hydra_dsp_set_parameter(h, HYDRA_DSP_PARAM_DELAY_WET, 80.0f) == 0);
+  CHECK(hydra_dsp_set_parameter(h, HYDRA_DSP_PARAM_WOW_DEPTH, 45.0f) == 0);
+  CHECK(hydra_dsp_set_parameter(h, HYDRA_DSP_PARAM_FLUTTER_DEPTH, 45.0f) == 0);
+  CHECK(hydra_dsp_set_parameter(h, HYDRA_DSP_PARAM_TAPE_AGE, 75.0f) == 0);
+  CHECK(hydra_dsp_set_parameter(h, HYDRA_DSP_PARAM_MOTION_AMOUNT, 100.0f) == 0);
+  CHECK(hydra_dsp_set_parameter(h, HYDRA_DSP_PARAM_STEREO_MOTION, 100.0f) == 0);
+  CHECK(hydra_dsp_commit(h) == 0);
+
+  TransitionMetrics m{};
+  float prevModL = 0.0f, prevModR = 0.0f;
+  float prevVelL = 0.0f, prevVelR = 0.0f;
+  double sumSq = 0.0;
+  size_t evIdx = 0;
+  uint32_t lastSwitchSample = 0;
+
+  for (uint32_t n = 0; n < totalSamples; ++n) {
+    if (evIdx < numEvents && n == switchSamples[evIdx]) {
+      CHECK(hydra_dsp_set_parameter(h, HYDRA_DSP_PARAM_MOTION_MODE, static_cast<float>(modes[evIdx])) == 0);
+      CHECK(hydra_dsp_commit(h) == 0);
+      lastSwitchSample = n;
+      ++evIdx;
+    }
+    const float s = (n < static_cast<uint32_t>(sampleRate * 0.8f))
+                        ? 0.30f * std::sin(kTwoPi * 220.0f * static_cast<float>(n) / sampleRate)
+                        : 0.0f;
+    float outL = 0.0f, outR = 0.0f;
+    CHECK(hydra_dsp_process(h, &s, &s, &outL, &outR, 1) == 0);
+    if (!std::isfinite(outL) || !std::isfinite(outR)) ++m.nonFiniteCount;
+    m.audioPeak = std::max(m.audioPeak, std::max(std::fabs(outL), std::fabs(outR)));
+    sumSq += static_cast<double>(outL) * outL + static_cast<double>(outR) * outR;
+
+    float modL = 0.0f, modR = 0.0f;
+    CHECK(hydra_dsp_get_motion_telemetry(h, &modL, &modR) == 0);
+    if (!std::isfinite(modL) || !std::isfinite(modR)) ++m.nonFiniteCount;
+    m.maxDisplacementSamples = std::max(m.maxDisplacementSamples, std::max(std::fabs(modL), std::fabs(modR)));
+
+    if (n > 0) {
+      const float velL = modL - prevModL;
+      const float velR = modR - prevModR;
+      const float posJump = std::max(std::fabs(velL), std::fabs(velR));
+      m.maxPosJumpSamples = std::max(m.maxPosJumpSamples, posJump);
+      // Instantaneous pitch change in cents: 1200 * log2(1 - d(mod)/dn)
+      const float rateRatio = std::max(0.5f, 1.0f - posJump);
+      const float cents = std::fabs(1200.0f * std::log2(rateRatio));
+      m.maxPitchCents = std::max(m.maxPitchCents, cents);
+      if (n > 1) {
+        const float acc = std::max(std::fabs(velL - prevVelL), std::fabs(velR - prevVelR));
+        m.maxVelJumpSamplesPerSample = std::max(m.maxVelJumpSamplesPerSample, acc);
+      }
+      prevVelL = velL;
+      prevVelR = velR;
+    }
+    prevModL = modL;
+    prevModR = modR;
+  }
+  m.settlingSamples = static_cast<int>(totalSamples - lastSwitchSample);
+  m.audioRms = static_cast<float>(std::sqrt(sumSq / (2.0 * totalSamples)));
+  hydra_dsp_destroy(h);
+  return m;
+}
+
+void testTransitionContinuityMatrix() {
+  // M0->M1->M3, M1->M2->M1, M3->M0->M2, 10ms switches, <half crossfade, high feedback, reverse, multi-head
+  const uint32_t sw1[] = { 4800, 5280, 5760, 8160, 8640, 12000, 12480, 12960 }; // 10ms (480 samples) & 50ms
+  const int md1[]      = {    1,    3,    1,    2,    1,     3,     0,     2 };
+  auto m = runTransitionSequence(md1, sw1, 8, 28800, 48000.0f, 220.0f, 90.0f, true, 7.0f);
+  std::printf("[TransitionMatrix] maxPosJump=%.5f samp, maxVelJump=%.5f samp/samp, maxPitch=%.2f cents, peak=%.4f, rms=%.4f, maxDisp=%.2f samp, nonFinite=%d\n",
+              m.maxPosJumpSamples, m.maxVelJumpSamplesPerSample, m.maxPitchCents,
+              m.audioPeak, m.audioRms, m.maxDisplacementSamples, m.nonFiniteCount);
+  CHECK(m.nonFiniteCount == 0);
+  CHECK(m.maxPosJumpSamples < 0.25f);
+  CHECK(m.maxVelJumpSamplesPerSample < 0.15f);
+  CHECK(m.maxDisplacementSamples <= 0.25f * (220.0f * 48.0f) + 1e-3f);
+  CHECK(m.audioPeak <= 2.0f);
+}
+
+void testMotionAmountAndStereoMotionDuringTransitions() {
+  constexpr float kSampleRate = 48000.0f;
+  hydra_dsp_handle* h = nullptr;
+  CHECK(hydra_dsp_create_v1_4(kSampleRate, 2000.0f, 4000.0f, &h) == 0);
+  CHECK(hydra_dsp_prepare(h, 128, HYDRA_DSP_CHANNELS_STEREO) == 0);
+
+  CHECK(hydra_dsp_set_parameter(h, HYDRA_DSP_PARAM_DELAY_ACTIVE, 1.0f) == 0);
+  CHECK(hydra_dsp_set_parameter(h, HYDRA_DSP_PARAM_DELAY_MS, 200.0f) == 0);
+  CHECK(hydra_dsp_set_parameter(h, HYDRA_DSP_PARAM_FEEDBACK, 50.0f) == 0);
+  CHECK(hydra_dsp_set_parameter(h, HYDRA_DSP_PARAM_WOW_DEPTH, 40.0f) == 0);
+  CHECK(hydra_dsp_set_parameter(h, HYDRA_DSP_PARAM_FLUTTER_DEPTH, 40.0f) == 0);
+  CHECK(hydra_dsp_set_parameter(h, HYDRA_DSP_PARAM_TAPE_AGE, 70.0f) == 0);
+  CHECK(hydra_dsp_set_parameter(h, HYDRA_DSP_PARAM_MOTION_MODE, 3.0f) == 0);
+  CHECK(hydra_dsp_set_parameter(h, HYDRA_DSP_PARAM_MOTION_AMOUNT, 100.0f) == 0);
+  CHECK(hydra_dsp_set_parameter(h, HYDRA_DSP_PARAM_STEREO_MOTION, 100.0f) == 0);
+  CHECK(hydra_dsp_commit(h) == 0);
+
+  auto stepSamples = [&](uint32_t count, float& maxJump) {
+    float prevModL = 0.0f, prevModR = 0.0f;
+    CHECK(hydra_dsp_get_motion_telemetry(h, &prevModL, &prevModR) == 0);
+    for (uint32_t n = 0; n < count; ++n) {
+      const float s = 0.25f * std::sin(kTwoPi * 330.0f * static_cast<float>(n) / kSampleRate);
+      float oL = 0.0f, oR = 0.0f;
+      CHECK(hydra_dsp_process(h, &s, &s, &oL, &oR, 1) == 0);
+      CHECK(std::isfinite(oL) && std::isfinite(oR));
+      float mL = 0.0f, mR = 0.0f;
+      CHECK(hydra_dsp_get_motion_telemetry(h, &mL, &mR) == 0);
+      maxJump = std::max(maxJump, std::max(std::fabs(mL - prevModL), std::fabs(mR - prevModR)));
+      prevModL = mL;
+      prevModR = mR;
+    }
+  };
+
+  float maxJump = 0.0f;
+  // Warm up M3 so displacement and L/R difference are active
+  stepSamples(9600, maxJump);
+
+  // Trigger rapid mode switch M3 -> M1 -> M2 AND simultaneously drop Motion Amount 100 -> 0
+  CHECK(hydra_dsp_set_parameter(h, HYDRA_DSP_PARAM_MOTION_MODE, 1.0f) == 0);
+  CHECK(hydra_dsp_commit(h) == 0);
+  stepSamples(480, maxJump); // 10ms
+  CHECK(hydra_dsp_set_parameter(h, HYDRA_DSP_PARAM_MOTION_MODE, 2.0f) == 0);
+  CHECK(hydra_dsp_set_parameter(h, HYDRA_DSP_PARAM_MOTION_AMOUNT, 0.0f) == 0);
+  CHECK(hydra_dsp_commit(h) == 0);
+
+  // Within 35 ms (1680 samples, 30 ms slew), mechanical motion must converge to exact 0.0f even mid-transition!
+  stepSamples(1680, maxJump);
+  float modL = 99.0f, modR = 99.0f;
+  CHECK(hydra_dsp_get_motion_telemetry(h, &modL, &modR) == 0);
+  CHECK(modL == 0.0f && modR == 0.0f);
+
+  // Ramp Motion Amount 0 -> 100 and drop Stereo Motion 100 -> 0 during mode switch M2 -> M3
+  CHECK(hydra_dsp_set_parameter(h, HYDRA_DSP_PARAM_MOTION_MODE, 3.0f) == 0);
+  CHECK(hydra_dsp_set_parameter(h, HYDRA_DSP_PARAM_MOTION_AMOUNT, 100.0f) == 0);
+  CHECK(hydra_dsp_set_parameter(h, HYDRA_DSP_PARAM_STEREO_MOTION, 0.0f) == 0);
+  CHECK(hydra_dsp_commit(h) == 0);
+  stepSamples(1680, maxJump);
+  CHECK(hydra_dsp_get_motion_telemetry(h, &modL, &modR) == 0);
+  CHECK(std::fabs(modL - modR) < 1e-6f);
+
+  // Restore Stereo Motion 0 -> 100 and return to Classic M0
+  CHECK(hydra_dsp_set_parameter(h, HYDRA_DSP_PARAM_STEREO_MOTION, 100.0f) == 0);
+  CHECK(hydra_dsp_set_parameter(h, HYDRA_DSP_PARAM_MOTION_MODE, 0.0f) == 0);
+  CHECK(hydra_dsp_commit(h) == 0);
+  stepSamples(9600, maxJump);
+
+  std::printf("[AmountStereoContract] maxPosJumpAcrossAutomation=%.5f samp\n", maxJump);
+  CHECK(maxJump < 0.35f);
+  hydra_dsp_destroy(h);
+}
+
+void testUnifiedMotionRuntimeStabilityStress() {
+  // Gate: UNIFIED_MOTION_RUNTIME_STABILITY_PASS
+  const float rates[] = { 44100.0f, 48000.0f };
+  const float feedbacks[] = { 85.0f, 95.0f };
+  constexpr uint32_t kBlock = 128;
+  constexpr uint32_t kBlocksPerRun = 1500; // ~4 seconds per run
+
+  float worstAudioPeak = 0.0f;
+  float worstModDisp = 0.0f;
+  double worstBlockUs = 0.0;
+
+  for (float sr : rates) {
+    for (float fbk : feedbacks) {
+      hydra_dsp_handle* h = nullptr;
+      CHECK(hydra_dsp_create_v1_4(sr, 2000.0f, 4000.0f, &h) == 0);
+      CHECK(hydra_dsp_prepare(h, kBlock, HYDRA_DSP_CHANNELS_STEREO) == 0);
+
+      CHECK(hydra_dsp_set_parameter(h, HYDRA_DSP_PARAM_DELAY_ACTIVE, 1.0f) == 0);
+      CHECK(hydra_dsp_set_parameter(h, HYDRA_DSP_PARAM_DELAY_MS, 260.0f) == 0);
+      CHECK(hydra_dsp_set_parameter(h, HYDRA_DSP_PARAM_FEEDBACK, fbk) == 0);
+      CHECK(hydra_dsp_set_parameter(h, HYDRA_DSP_PARAM_ACTIVE_HEADS, 7.0f) == 0);
+      CHECK(hydra_dsp_set_parameter(h, HYDRA_DSP_PARAM_REVERSE, 1.0f) == 0);
+      CHECK(hydra_dsp_set_parameter(h, HYDRA_DSP_PARAM_SPRING, 1.0f) == 0);
+      CHECK(hydra_dsp_set_parameter(h, HYDRA_DSP_PARAM_DRY_WET, 85.0f) == 0);
+      CHECK(hydra_dsp_set_parameter(h, HYDRA_DSP_PARAM_DELAY_WET, 80.0f) == 0);
+      CHECK(hydra_dsp_set_parameter(h, HYDRA_DSP_PARAM_WOW_DEPTH, 85.0f) == 0);
+      CHECK(hydra_dsp_set_parameter(h, HYDRA_DSP_PARAM_FLUTTER_DEPTH, 85.0f) == 0);
+      CHECK(hydra_dsp_set_parameter(h, HYDRA_DSP_PARAM_TAPE_AGE, 80.0f) == 0);
+      CHECK(hydra_dsp_commit(h) == 0);
+
+      std::vector<float> inL(kBlock), inR(kBlock), outL(kBlock), outR(kBlock);
+      uint32_t rng = 0xCAFEBABEu;
+      auto nextRand = [&]() -> float {
+        rng = rng * 1664525u + 1013904223u;
+        return static_cast<float>((rng >> 8) & 0xFFFFu) / 65535.0f;
+      };
+
+      uint32_t sampleIdx = 0;
+      for (uint32_t b = 0; b < kBlocksPerRun; ++b) {
+        // Intense deterministic automation every 3 blocks (~8 ms)
+        if ((b % 3u) == 0u) {
+          const int mode = static_cast<int>(nextRand() * 4.0f) % 4;
+          const float amt = (b % 15u == 0u) ? 0.0f : (20.0f + 80.0f * nextRand());
+          const float st = (b % 18u == 0u) ? 0.0f : (100.0f * nextRand());
+          const float dly = 140.0f + 240.0f * nextRand();
+          const float dynFbk = fbk - 10.0f * nextRand();
+          CHECK(hydra_dsp_set_parameter(h, HYDRA_DSP_PARAM_MOTION_MODE, static_cast<float>(mode)) == 0);
+          CHECK(hydra_dsp_set_parameter(h, HYDRA_DSP_PARAM_MOTION_AMOUNT, amt) == 0);
+          CHECK(hydra_dsp_set_parameter(h, HYDRA_DSP_PARAM_STEREO_MOTION, st) == 0);
+          CHECK(hydra_dsp_set_parameter(h, HYDRA_DSP_PARAM_DELAY_MS, dly) == 0);
+          CHECK(hydra_dsp_set_parameter(h, HYDRA_DSP_PARAM_FEEDBACK, dynFbk) == 0);
+          CHECK(hydra_dsp_commit(h) == 0);
+        }
+
+        for (uint32_t i = 0; i < kBlock; ++i) {
+          const float env = (b < 400) ? 0.30f : 0.0f;
+          const float s = env * std::sin(kTwoPi * 261.63f * static_cast<float>(sampleIdx++) / sr);
+          inL[i] = s;
+          inR[i] = s;
+        }
+
+        const auto t0 = std::chrono::steady_clock::now();
+        CHECK(hydra_dsp_process(h, inL.data(), inR.data(), outL.data(), outR.data(), kBlock) == 0);
+        const auto t1 = std::chrono::steady_clock::now();
+        const double us = std::chrono::duration<double, std::micro>(t1 - t0).count();
+        worstBlockUs = std::max(worstBlockUs, us);
+
+        for (uint32_t i = 0; i < kBlock; ++i) {
+          CHECK(std::isfinite(outL[i]) && std::isfinite(outR[i]));
+          CHECK(std::fabs(outL[i]) <= 2.5f && std::fabs(outR[i]) <= 2.5f);
+          worstAudioPeak = std::max(worstAudioPeak, std::max(std::fabs(outL[i]), std::fabs(outR[i])));
+        }
+        float modL = 0.0f, modR = 0.0f;
+        CHECK(hydra_dsp_get_motion_telemetry(h, &modL, &modR) == 0);
+        CHECK(std::isfinite(modL) && std::isfinite(modR));
+        worstModDisp = std::max(worstModDisp, std::max(std::fabs(modL), std::fabs(modR)));
+      }
+
+      // Confirm delay tail survived intense automation
+      double tailEnergy = 0.0;
+      for (uint32_t i = 0; i < kBlock; ++i) tailEnergy += outL[i] * outL[i];
+      CHECK(tailEnergy > 1e-6);
+      hydra_dsp_destroy(h);
+    }
+  }
+  std::printf("[UNIFIED_MOTION_RUNTIME_STABILITY_PASS] worstPeak=%.4f, worstDisp=%.2f samp, worstBlockUs=%.2f us\n",
+              worstAudioPeak, worstModDisp, worstBlockUs);
+}
+
 } // namespace
 
 int main() {
@@ -311,5 +581,8 @@ int main() {
   testModesAndControlsDistinct();
   testClicklessSwitchingHighFeedbackMultiHeadReverseSpring();
   testRapidTransitionDerivativeAndContinuity();
+  testTransitionContinuityMatrix();
+  testMotionAmountAndStereoMotionDuringTransitions();
+  testUnifiedMotionRuntimeStabilityStress();
   return 0;
 }

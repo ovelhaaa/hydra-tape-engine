@@ -58,18 +58,17 @@ def send_cmd(ser, cmd, wait_s=0.18):
     return drain_lines(ser, 0.08)
 
 
-def run_bench(ser, blocks=1024, warmup=256, concurrent_cmds=None):
+def run_bench(ser, blocks=1024, warmup=256, scheduled_events=None):
+    send_cmd(ser, "bench_sched clear", 0.08)
+    if scheduled_events:
+        for block, param_id, value in scheduled_events:
+            ack = send_cmd(ser, f"bench_sched add {block} {param_id} {value}", 0.05)
+            if not any("BENCH_SCHED OK" in line for line in ack):
+                raise RuntimeError(f"Failed to schedule bench event {(block, param_id, value)}: {ack}")
+
     ser.reset_input_buffer()
     ser.write(f"bench {blocks} {warmup}\n".encode("ascii"))
     ser.flush()
-
-    if concurrent_cmds:
-        # Inject runtime mode switches / parameter automation during active bench
-        time.sleep(0.4)
-        for c in concurrent_cmds:
-            ser.write((c + "\n").encode("ascii"))
-            ser.flush()
-            time.sleep(0.18)
 
     captured = []
     deadline = time.monotonic() + 30.0
@@ -82,7 +81,7 @@ def run_bench(ser, blocks=1024, warmup=256, concurrent_cmds=None):
             continue
         line = raw.decode("utf-8", errors="replace").rstrip("\r\n")
         captured.append(line)
-        if "I2SFailDelta=" in line:
+        if "=========================================" in line:
             got_result = True
             deadline = time.monotonic() + 0.3
 
@@ -93,8 +92,15 @@ def run_bench(ser, blocks=1024, warmup=256, concurrent_cmds=None):
     )
     m_ov = re.search(r"BudgetMeanPct=([0-9.]+)%\s+BudgetP99Pct=([0-9.]+)%\s+Overruns=(\d+)", text)
     m_mem = re.search(r"I2SFailDelta=(\d+)\s+HeapStart=(\d+)\s+HeapEnd=(\d+)\s+HeapMin=(\d+)\s+PsramStart=(\d+)\s+PsramEnd=(\d+)\s+MaxParamUpdUs=(\d+)", text)
+    m_auto = re.search(r"AutoScheduled=(\d+)\s+AutoApplied=(\d+)", text)
     if not (m_mean and m_ov):
         raise RuntimeError(f"Failed to parse bench output:\n{text}")
+    auto_scheduled = int(m_auto.group(1)) if m_auto else 0
+    auto_applied = int(m_auto.group(2)) if m_auto else 0
+    if scheduled_events and auto_applied != len(scheduled_events):
+        raise RuntimeError(
+            f"Expected {len(scheduled_events)} scheduled automation events applied during bench, got {auto_applied}/{auto_scheduled}"
+        )
     return {
         "mean_us": float(m_mean.group(1)),
         "min_us": int(m_mean.group(2)),
@@ -109,6 +115,8 @@ def run_bench(ser, blocks=1024, warmup=256, concurrent_cmds=None):
         "heap_min": int(m_mem.group(4)) if m_mem else None,
         "psram_end": int(m_mem.group(6)) if m_mem else None,
         "max_param_upd_us": int(m_mem.group(7)) if m_mem else None,
+        "auto_scheduled": auto_scheduled,
+        "auto_applied": auto_applied,
         "raw": text,
     }
 
@@ -161,17 +169,26 @@ def main():
                 )
 
         # Transition cost + simultaneous automation under Multi-Head + Reverse + Spring
+        # Scheduled directly in firmware on measured block indices so updates run inside BENCH_RUNNING.
         for c in SCENARIOS[2][1]:
             send_cmd(ser, c, 0.05)
         trans_res = run_bench(
             ser,
             blocks=1024,
             warmup=128,
-            concurrent_cmds=[
-                "motion 1", "motion amt 80", "motion stereo 60",
-                "motion 2", "wwd 28", "ftd 32",
-                "motion 3", "fbk 80", "dly 420",
-                "motion 0", "motion amt 100", "motion stereo 100",
+            scheduled_events=[
+                (64, 38, 1),     # motion 1
+                (64, 39, 80),    # motion amt 80
+                (64, 40, 60),    # motion stereo 60
+                (256, 38, 2),    # motion 2
+                (256, 1, 28),    # wowDepth 28
+                (256, 0, 32),    # flutterDepth 32
+                (512, 38, 3),    # motion 3
+                (512, 13, 80),   # feedback 80
+                (512, 12, 420),  # delayTimeMs 420
+                (768, 38, 0),    # motion 0
+                (768, 39, 100),  # motion amt 100
+                (768, 40, 100),  # motion stereo 100
             ],
         )
         raw_log.append(f"[runtime_transitions_and_automation]\n{trans_res['raw']}")

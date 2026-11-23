@@ -97,11 +97,11 @@ def main():
     after_hash, after_cmd = build_library(ROOT, after_lib)
     before = render.HydraEngineRunner(before_lib)
     after = render.HydraEngineRunner(after_lib)
-    if before.api_version != after.api_version:
-        raise RuntimeError("API version mismatch")
+    abi_compat = render.verify_runner_abi_compatibility(before, after, required_param_ids=range(38))
 
     args.output.mkdir(parents=True, exist_ok=True)
     report = {"before_commit": args.before_commit,
+              "abi_compatibility": abi_compat,
               "before_library_sha256": before_hash,
               "after_library_sha256": after_hash,
               "before_build": before_cmd, "after_build": after_cmd,

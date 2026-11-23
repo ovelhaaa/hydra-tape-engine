@@ -1,6 +1,6 @@
 # Hydra Tape Engine — Plano de reforma do DSP por fases (instruções para agentes)
 
-**Versão:** 1.0 — 2026-11-23  
+**Versão:** 1.1 — 2026-11-23 (reconciliação F0.1)
 **Estado:** **PLANEJADO; nenhuma fase de implementação autorizada por este documento isoladamente.**  
 **Origem técnica obrigatória:** [TAPE_DELAY_DSP_MUSICAL_AUDIT_2026-11-23.md](TAPE_DELAY_DSP_MUSICAL_AUDIT_2026-11-23.md).  
 **Baseline analisada:** `main` @ `6849edf738c0d60731f51e96f7a16d1deac08cfe`. Antes de executar, revalidar a HEAD atual e quaisquer mudanças posteriores à auditoria.  
@@ -57,6 +57,50 @@ Essa leitura pode ser incremental em fases subsequentes **somente se** o agente 
 
 ## 1. Mapa de ondas, dependências e estados
 
+### Reconciliação F0.1 — leitura anterior aos contratos F1–F11
+
+Este quadro qualifica os objetivos originais abaixo, sem apagar fases ou
+autorizar implementação. **Main de produção:** `6d94af5`, rota A, API 1.7.0 / 38
+parâmetros. PRs #58–#62 abertas/draft, nenhuma integrada. **Experimental #61:**
+API 1.8.0 / 47, IDs 38–46 Motion; **experimental #62:** API 1.9.0 / 49, IDs 47–48
+Studio. Não reutilizar esses IDs em propostas futuras nem tratá-los como produção.
+G0.3 conserva a ABI da branch/target efetivamente escolhido e as estruturas
+legadas; não autoriza acrescentar novos parâmetros. Versão preset continua v2.
+
+Leitura adicional obrigatória: [reconciliação das PRs](DSP_REFORM_PR_RECONCILIATION.md),
+[consolidação F0](evidence/dsp-reform-f0/CONSOLIDATION.md) e
+[snapshot de SHAs/checks](evidence/dsp-reform-f0/branch-snapshot.json).
+Estados abaixo descrevem implementação existente **nas branches indicadas**, não
+aprovação, merge ou superioridade musical. Nenhuma F1–F11 incorporada foi comprovada.
+
+| Fase | Objetivos reconciliados / classificação | Evidência existente e trabalho restante |
+|---|---|---|
+| F0 | Integridade/testes PARTIALLY_IMPLEMENTED; regeneração BLOCKED | 10/10 WAV SHA íntegros, Native/WASM zero; CTest 15/19 padrão e 19/19 com TEMP no build. Receita completa não recuperada; físico atual PENDING_PHYSICAL. Não usar READY_FOR_F1 histórico como liberação. |
+| F1 | Independência ALREADY_IMPLEMENTED em C; recriar C SUPERSEDED; economia CONDITIONAL; escolha/promoção STILL_REQUIRED | C e seleção #58 já atendem separação do monitor. Nova rota só após demonstrar benefício de custo ainda não atendido; preservar caráter C por A/B. Encerrar F1 por decisão de rota sem código é válido. |
+| F2 | Calibração espectral STILL_REQUIRED | #59 envelhecimento dinâmico não calibra HPF/bump/gap existentes. Medir por repetição; recomendação de primeiro experimento, dependente da liberação F0 e decisão F1. |
+| F3 | Saturação/progressividade PARTIALLY_IMPLEMENTED; calibração STILL_REQUIRED | Dupla saturação, soft-knee e sustain limitado já existem; C/C1–C3 não provam nova curva musical 65–95%. Preservar bias/LUT. |
+| F4 | Separação de monitor e transições PARTIALLY_IMPLEMENTED; ergonomia STILL_REQUIRED | #62 implementa dry unidade, wet externo e morph 30 ms; #61 slew Amount/Stereo. Não recriar Studio. Freeze/head selection/drive/tone e caudas compartilhadas continuam a medir. |
+| F5 | Movimento PARTIALLY_IMPLEMENTED; tempo musical STILL_REQUIRED | #61 modula leitura e muda Motion sem reset; não unifica mudança de BPM, tap/MIDI ou delays dos cabeçotes. Preservar engine Motion ao testar alvos de tempo. |
+| F6 | EQ existente ALREADY_IMPLEMENTED; calibração STILL_REQUIRED | Playback C/Studio já usam filtros; pre-emphasis da eletrônica continua escalar. Calibrar sem criar cadeias paralelas. |
+| F7 | Transição entre modos ALREADY_IMPLEMENTED na #61; política temporal CONDITIONAL | Fade 150 ms é de deslocamento Motion, não dois leitores de mudança de tempo. Não descartar F7 por confusão com Motion; só abrir se F5 demonstrar necessidade. |
+| F8 | HF dinâmica PARTIALLY_IMPLEMENTED em C1/C2/C3; reimplementação desses modelos SUPERSEDED; adoção CONDITIONAL | #59 já faz spectral wear/transient softening, não está na #61. Escuta achou similares: preservar C0. Pré/pós-ênfase espectral real e mérito perceptivo/custo continuam condicionais. |
+| F9 | Movimento ALREADY_IMPLEMENTED experimental; adoção/estéreo PARTIALLY_IMPLEMENTED | #60/#61 M0–M3, correlação/common-diff e StereoMotion. Não recriar motor. Pan por cabeçote, matriz mono/escuta e qualificação física continuam CONDITIONAL. |
+| F10 | Comparativo de interpolação CONDITIONAL | Motion mantém Hermite, sem demonstração de deficiência que justifique troca. Nenhuma PR supre estudo de F10; conservar gatilho. |
+| F11 | Release STILL_REQUIRED; promoção BLOCKED | CI verde não substitui baseline regenerável, escuta das integrações, físico/headroom/rollback e decisão explícita. |
+
+Dependências existentes: #58 → #59 e #61; #60 é referência experimental da #61;
+#61 → #62. **#59 não entrou na #61.** #61/#62 partiram antes dos documentos
+atuais de governança: ao eventual retarget integrar contratos/documentos sem
+sobrescrever arquitetura experimental nem promover seus defaults à main.
+
+O próximo marco proposto passa a ser **liberar F0 e decidir referência F1;
+depois medir/calibrar F2**. A proposta antiga de F1-Lean é CONDITIONAL à evidência
+de economia necessária, não tarefa automática. Reabrir A/B/C apenas para uma
+hipótese nova mensurável; os testes existentes e a preferência C são patrimônio.
+Cada preflight abaixo deve usar linhas do SHA escolhido, pois números originais
+referem-se à main histórica. Nenhum objetivo marcado SUPERSEDED elimina a fase:
+a justificativa e os testes de evidência permanecem acima e na reconciliação.
+
 **Nenhum estágio está automaticamente autorizado.** "Planejada" significa somente que existe um contrato de implementação.
 
 | Fase | Onda | Foco | Depende de | Estado inicial |
@@ -97,7 +141,7 @@ A sequência poderá ser reordenada *somente por decisão documentada* se os res
 
 **Tarefas e não tarefas:**
 - Congelar A aprovada, B limpa, C degradada e resultados físicos C existentes.
-- Projetar **somente uma hipótese por PR** de feedback independente com custo menor, preferindo reutilizar estados/filtragem disponíveis; preservar integralmente o caminho de monitoração e as rotas Warp/Reverse conforme contrato.
+- Somente se o gate CONDITIONAL da reconciliação F0.1 demonstrar benefício novo: projetar **uma hipótese por PR** de feedback independente com custo menor, preferindo reutilizar estados/filtragem disponíveis; preservar integralmente o caminho de monitoração e as rotas Warp/Reverse conforme contrato. Caso contrário, decidir entre rotas existentes sem recriar C.
 - Provar que o mix do monitor não altera a cauda por dependência estrutural, sem exigir igual loudness entre topologias distintas.
 - **Não** promover C padrão só por ser mais próxima de um esquema clássico, e **não** duplicar filtros do monitor avançando seus estados duas vezes.
 

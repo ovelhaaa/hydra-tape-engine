@@ -1,0 +1,2 @@
+MinGW GCC 14.2.0 host sizeof; not ESP32 heap or timing.
+motion coeff=192 state=160 organic coeff=152 state=112

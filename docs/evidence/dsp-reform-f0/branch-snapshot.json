@@ -1,0 +1,605 @@
+{
+  "date": "2026-11-23",
+  "main": "6d94af5557f8ec23ef4627af3d0a584f7e5fd517",
+  "f0": "8358cc4d784d7e0a55242aaadd78fdde1b7c0a7e",
+  "prs": [
+    {
+      "number": 58,
+      "url": "https://github.com/ovelhaaa/hydra-tape-engine/pull/58",
+      "branch": "feat/phase7-3-classic-c-web-default",
+      "sha": "d2d36dd2b5d0fe06e66aca6d309a532a13001d87",
+      "base": "main",
+      "state": "open",
+      "draft": true,
+      "merged": false,
+      "checks": [
+        {
+          "name": "deploy",
+          "conclusion": "skipped",
+          "url": "https://github.com/ovelhaaa/hydra-tape-engine/actions/runs/45092867507/job/137426435896"
+        },
+        {
+          "name": "test_native_vs_wasm (ubuntu-24.04)",
+          "conclusion": "success",
+          "url": "https://github.com/ovelhaaa/hydra-tape-engine/actions/runs/45092867435/job/137426422774"
+        },
+        {
+          "name": "test_native_vs_wasm (ubuntu-26.04)",
+          "conclusion": "success",
+          "url": "https://github.com/ovelhaaa/hydra-tape-engine/actions/runs/45092867435/job/137426422750"
+        },
+        {
+          "name": "listening_review",
+          "conclusion": "success",
+          "url": "https://github.com/ovelhaaa/hydra-tape-engine/actions/runs/45092867435/job/137426422672"
+        },
+        {
+          "name": "test_native_core",
+          "conclusion": "success",
+          "url": "https://github.com/ovelhaaa/hydra-tape-engine/actions/runs/45092867435/job/137426290782"
+        },
+        {
+          "name": "build_esp32_s3",
+          "conclusion": "success",
+          "url": "https://github.com/ovelhaaa/hydra-tape-engine/actions/runs/45092867435/job/137426185684"
+        },
+        {
+          "name": "build_wasm_core",
+          "conclusion": "success",
+          "url": "https://github.com/ovelhaaa/hydra-tape-engine/actions/runs/45092867435/job/137426185498"
+        },
+        {
+          "name": "validate_warp",
+          "conclusion": "success",
+          "url": "https://github.com/ovelhaaa/hydra-tape-engine/actions/runs/45092867435/job/137426185438"
+        },
+        {
+          "name": "magnetic_bias_review",
+          "conclusion": "success",
+          "url": "https://github.com/ovelhaaa/hydra-tape-engine/actions/runs/45092867435/job/137426185418"
+        },
+        {
+          "name": "build_native_core",
+          "conclusion": "success",
+          "url": "https://github.com/ovelhaaa/hydra-tape-engine/actions/runs/45092867435/job/137426185233"
+        },
+        {
+          "name": "audition_package",
+          "conclusion": "success",
+          "url": "https://github.com/ovelhaaa/hydra-tape-engine/actions/runs/45092867386/job/137426171437"
+        },
+        {
+          "name": "firmware_classic_c",
+          "conclusion": "success",
+          "url": "https://github.com/ovelhaaa/hydra-tape-engine/actions/runs/45092867386/job/137426171118"
+        },
+        {
+          "name": "validate",
+          "conclusion": "success",
+          "url": "https://github.com/ovelhaaa/hydra-tape-engine/actions/runs/45092867392/job/137426169825"
+        },
+        {
+          "name": "build",
+          "conclusion": "success",
+          "url": "https://github.com/ovelhaaa/hydra-tape-engine/actions/runs/45092867507/job/137426148478"
+        },
+        {
+          "name": "validate_bias",
+          "conclusion": "success",
+          "url": "https://github.com/ovelhaaa/hydra-tape-engine/actions/runs/45092867393/job/137426141221"
+        },
+        {
+          "name": "listening_lab",
+          "conclusion": "success",
+          "url": "https://github.com/ovelhaaa/hydra-tape-engine/actions/runs/45092867376/job/137426136465"
+        }
+      ],
+      "comments": [
+        {
+          "url": "https://github.com/ovelhaaa/hydra-tape-engine/pull/58#discussion_r4660953854",
+          "path": "CMakeLists.txt",
+          "body": "Corrigido na branch da PR #58: `hydra-build-info.json` é gerado como `hydra-build-info.pending.json` fora do diretório servido e copiado no `POST_BUILD` de `hydra_dsp_web`, somente após a compilação bem-sucedida (commit `199a60e`). A PR #59 também recebeu a correção. CI do novo HEAD em execução."
+        },
+        {
+          "url": "https://github.com/ovelhaaa/hydra-tape-engine/pull/58#pullrequestreview-6015551477",
+          "path": null,
+          "body": ""
+        }
+      ],
+      "remote_branch_head": "d2d36dd2b5d0fe06e66aca6d309a532a13001d87",
+      "remote_base_head": "6d94af5557f8ec23ef4627af3d0a584f7e5fd517",
+      "head_matches_remote": true,
+      "base_sha_from_api": "6849edf738c0d60731f51e96f7a16d1deac08cfe",
+      "base_sha": "6d94af5557f8ec23ef4627af3d0a584f7e5fd517"
+    },
+    {
+      "number": 59,
+      "url": "https://github.com/ovelhaaa/hydra-tape-engine/pull/59",
+      "branch": "experiment/phase7-4a-repeat-aging",
+      "sha": "20b3b2695a3090a47f28d9bb2769c92de2452997",
+      "base": "feat/phase7-3-classic-c-web-default",
+      "state": "open",
+      "draft": true,
+      "merged": false,
+      "checks": [
+        {
+          "name": "deploy",
+          "conclusion": "skipped",
+          "url": "https://github.com/ovelhaaa/hydra-tape-engine/actions/runs/45093042501/job/137427046673"
+        },
+        {
+          "name": "test_native_vs_wasm (ubuntu-24.04)",
+          "conclusion": "success",
+          "url": "https://github.com/ovelhaaa/hydra-tape-engine/actions/runs/45093042409/job/137426989955"
+        },
+        {
+          "name": "test_native_vs_wasm (ubuntu-26.04)",
+          "conclusion": "success",
+          "url": "https://github.com/ovelhaaa/hydra-tape-engine/actions/runs/45093042409/job/137426989893"
+        },
+        {
+          "name": "listening_review",
+          "conclusion": "success",
+          "url": "https://github.com/ovelhaaa/hydra-tape-engine/actions/runs/45093042409/job/137426989878"
+        },
+        {
+          "name": "test_native_core",
+          "conclusion": "success",
+          "url": "https://github.com/ovelhaaa/hydra-tape-engine/actions/runs/45093042409/job/137426853939"
+        },
+        {
+          "name": "build_esp32_s3",
+          "conclusion": "success",
+          "url": "https://github.com/ovelhaaa/hydra-tape-engine/actions/runs/45093042409/job/137426747562"
+        },
+        {
+          "name": "validate_warp",
+          "conclusion": "success",
+          "url": "https://github.com/ovelhaaa/hydra-tape-engine/actions/runs/45093042409/job/137426747211"
+        },
+        {
+          "name": "build_native_core",
+          "conclusion": "success",
+          "url": "https://github.com/ovelhaaa/hydra-tape-engine/actions/runs/45093042409/job/137426747203"
+        },
+        {
+          "name": "magnetic_bias_review",
+          "conclusion": "success",
+          "url": "https://github.com/ovelhaaa/hydra-tape-engine/actions/runs/45093042409/job/137426747109"
+        },
+        {
+          "name": "validate_bias",
+          "conclusion": "success",
+          "url": "https://github.com/ovelhaaa/hydra-tape-engine/actions/runs/45093042481/job/137426746958"
+        },
+        {
+          "name": "build_wasm_core",
+          "conclusion": "success",
+          "url": "https://github.com/ovelhaaa/hydra-tape-engine/actions/runs/45093042409/job/137426746776"
+        },
+        {
+          "name": "listening_lab",
+          "conclusion": "success",
+          "url": "https://github.com/ovelhaaa/hydra-tape-engine/actions/runs/45093042460/job/137426727899"
+        },
+        {
+          "name": "validate",
+          "conclusion": "success",
+          "url": "https://github.com/ovelhaaa/hydra-tape-engine/actions/runs/45093042491/job/137426698179"
+        },
+        {
+          "name": "build",
+          "conclusion": "success",
+          "url": "https://github.com/ovelhaaa/hydra-tape-engine/actions/runs/45093042501/job/137426694658"
+        },
+        {
+          "name": "validate-and-package",
+          "conclusion": "success",
+          "url": "https://github.com/ovelhaaa/hydra-tape-engine/actions/runs/45093042484/job/137426693106"
+        },
+        {
+          "name": "CodeRabbit",
+          "conclusion": "skipped",
+          "url": "https://github.com/ovelhaaa/hydra-tape-engine/runs/137426685053"
+        },
+        {
+          "name": "validate-and-package",
+          "conclusion": "success",
+          "url": "https://github.com/ovelhaaa/hydra-tape-engine/actions/runs/45093036295/job/137426653381"
+        }
+      ],
+      "comments": [
+        {
+          "url": "https://github.com/ovelhaaa/hydra-tape-engine/pull/59#issuecomment-7088051290",
+          "path": null,
+          "body": "<!-- codex-pull-request-review-summary -->\n<!-- codex-review-state:v1 {\"code_review\":{\"commit_sha\":\"0c51b2d92bdc87517afb5a2e5a4e4f5b6730535d\",\"has_any_findings\":true,\"has_unresolved_findings\":true,\"status\":\"completed\"},\"security_review\":{\"commit_sha\":null,\"has_any_findings\":null,\"has_unresolved_findings\":null,\"status\":null}} -->\n\n<details>\n<summary><strong>Codex Review Summary</strong>: ✅ Completed</summary>\n\nThis comment shows the latest Codex review activity on this pull request.\n\n| Review | Status | Commit | Review trigger |\n| --- | --- | --- | --- |\n| 📝 **Code Review** | ✅ **Completed** <relative-time datetime=\"2026-11-23T00:08:08.144992Z\">2026-11-23T00:08:08.144992Z</relative-time> | `0c51b2d` | PR opened |\n\n\n\n<details> <summary>ℹ️ About Codex in GitHub</summary>\n<br/>\n\n[Your team has set up Codex to review pull requests in this repo](https://chatgpt.com/codex/cloud/settings/general). Reviews are triggered when you\n- Open a pull request for review\n- Mark a draft as ready\n- Comment \"@codex review\" or \"@codex security review\".\n\nCodex reacts with 👀 while any review is running, comments if it has suggestions, and reacts with 👍 once all reviews finish with no findings.\n\n</details>\n\n</details>"
+        },
+        {
+          "url": "https://github.com/ovelhaaa/hydra-tape-engine/pull/59#discussion_r4660702896",
+          "path": "scripts/generate_phase73_web_listening.mjs",
+          "body": "**<sub><sub>![P2 Badge](https://img.shields.io/badge/P2-yellow?style=flat)</sub></sub>  Enable multiple heads in the multi-head listening scenario**\n\nWhen generating the Phase 7.3 A/C listening package, this scenario enables only the third playback head: `activeHeads` is passed unchanged through the worklet/C API and interpreted as a bitmask in `TapeCore::Impl::updateCachedParams()`, so `4` selects only bit 2. Consequently, the WAVs labeled “Multi-Head + Ping-Pong” do not exercise the head interactions that this scenario is intended to evaluate. Use a mask with multiple bits set (such as `7`) and regenerate the comparison evidence.\n\nUseful? React with 👍 / 👎.\n\n<!-- codex-code-review-finding:v1 -->"
+        },
+        {
+          "url": "https://github.com/ovelhaaa/hydra-tape-engine/pull/59#pullrequestreview-6015264378",
+          "path": null,
+          "body": "<!-- codex-review-receipt:v1 -->\n\n\n### 💡 Codex Review\n\nHere are some automated review suggestions for this pull request.\n\n**Reviewed commit:** `0c51b2d92b`\n    \n\n<details> <summary>ℹ️ About Codex in GitHub</summary>\n<br/>\n\n[Your team has set up Codex to review pull requests in this repo](https://chatgpt.com/codex/cloud/settings/general). Reviews are triggered when you\n- Open a pull request for review\n- Mark a draft as ready\n- Comment \"@codex review\".\n\nIf Codex has suggestions, it will comment; otherwise it will react with 👍.\n\n\n\n\nCodex can also answer questions or update the PR. Try commenting \"@codex address that feedback\".\n            \n</details>"
+        },
+        {
+          "url": "https://github.com/ovelhaaa/hydra-tape-engine/pull/59#discussion_r4660954042",
+          "path": "scripts/generate_phase73_web_listening.mjs",
+          "body": "Corrigido na PR #58 e sincronizado na branch da PR #59: o cenário `02_multihead_pingpong` agora configura `activeHeads: 7`, ativando as três cabeças (commit upstream `d2d36dd`, incorporado à #59). Os arquivos de audição precisam ser regenerados pelo workflow no HEAD atual."
+        },
+        {
+          "url": "https://github.com/ovelhaaa/hydra-tape-engine/pull/59#pullrequestreview-6015551686",
+          "path": null,
+          "body": ""
+        }
+      ],
+      "remote_branch_head": "20b3b2695a3090a47f28d9bb2769c92de2452997",
+      "remote_base_head": "d2d36dd2b5d0fe06e66aca6d309a532a13001d87",
+      "head_matches_remote": true,
+      "base_sha_from_api": "d2d36dd2b5d0fe06e66aca6d309a532a13001d87",
+      "base_sha": "d2d36dd2b5d0fe06e66aca6d309a532a13001d87"
+    },
+    {
+      "number": 60,
+      "url": "https://github.com/ovelhaaa/hydra-tape-engine/pull/60",
+      "branch": "experiment/phase7-4b-organic-motion",
+      "sha": "c1331a7d81b8b989df0ed523c9ae10c73c21a15e",
+      "base": "feat/phase7-3-classic-c-web-default",
+      "state": "open",
+      "draft": true,
+      "merged": false,
+      "checks": [
+        {
+          "name": "deploy",
+          "conclusion": "skipped",
+          "url": "https://github.com/ovelhaaa/hydra-tape-engine/actions/runs/45105796753/job/137466973072"
+        },
+        {
+          "name": "test_native_vs_wasm (ubuntu-26.04)",
+          "conclusion": "success",
+          "url": "https://github.com/ovelhaaa/hydra-tape-engine/actions/runs/45105796747/job/137466909187"
+        },
+        {
+          "name": "listening_review",
+          "conclusion": "success",
+          "url": "https://github.com/ovelhaaa/hydra-tape-engine/actions/runs/45105796747/job/137466909136"
+        },
+        {
+          "name": "test_native_vs_wasm (ubuntu-24.04)",
+          "conclusion": "success",
+          "url": "https://github.com/ovelhaaa/hydra-tape-engine/actions/runs/45105796747/job/137466909134"
+        },
+        {
+          "name": "test_native_core",
+          "conclusion": "success",
+          "url": "https://github.com/ovelhaaa/hydra-tape-engine/actions/runs/45105796747/job/137466758113"
+        },
+        {
+          "name": "validate_bias",
+          "conclusion": "success",
+          "url": "https://github.com/ovelhaaa/hydra-tape-engine/actions/runs/45105796779/job/137466679988"
+        },
+        {
+          "name": "build_native_core",
+          "conclusion": "success",
+          "url": "https://github.com/ovelhaaa/hydra-tape-engine/actions/runs/45105796747/job/137466678136"
+        },
+        {
+          "name": "validate_warp",
+          "conclusion": "success",
+          "url": "https://github.com/ovelhaaa/hydra-tape-engine/actions/runs/45105796747/job/137466677994"
+        },
+        {
+          "name": "magnetic_bias_review",
+          "conclusion": "success",
+          "url": "https://github.com/ovelhaaa/hydra-tape-engine/actions/runs/45105796747/job/137466677951"
+        },
+        {
+          "name": "build_wasm_core",
+          "conclusion": "success",
+          "url": "https://github.com/ovelhaaa/hydra-tape-engine/actions/runs/45105796747/job/137466677938"
+        },
+        {
+          "name": "build_esp32_s3",
+          "conclusion": "success",
+          "url": "https://github.com/ovelhaaa/hydra-tape-engine/actions/runs/45105796747/job/137466677713"
+        },
+        {
+          "name": "build",
+          "conclusion": "success",
+          "url": "https://github.com/ovelhaaa/hydra-tape-engine/actions/runs/45105796753/job/137466676473"
+        },
+        {
+          "name": "validate-and-package",
+          "conclusion": "success",
+          "url": "https://github.com/ovelhaaa/hydra-tape-engine/actions/runs/45105796732/job/137466672857"
+        },
+        {
+          "name": "validate",
+          "conclusion": "success",
+          "url": "https://github.com/ovelhaaa/hydra-tape-engine/actions/runs/45105796702/job/137466665582"
+        },
+        {
+          "name": "listening_lab",
+          "conclusion": "success",
+          "url": "https://github.com/ovelhaaa/hydra-tape-engine/actions/runs/45105796734/job/137466663618"
+        },
+        {
+          "name": "validate-and-package",
+          "conclusion": "success",
+          "url": "https://github.com/ovelhaaa/hydra-tape-engine/actions/runs/45105791388/job/137466645141"
+        }
+      ],
+      "comments": [
+        {
+          "url": "https://github.com/ovelhaaa/hydra-tape-engine/pull/60#issuecomment-7089111090",
+          "path": null,
+          "body": "<!-- codex-pull-request-review-summary -->\n<!-- codex-review-state:v1 {\"code_review\":{\"commit_sha\":\"f0b534e8128bc689b7f989ae1816c1555ab2e97c\",\"has_any_findings\":true,\"has_unresolved_findings\":true,\"status\":\"completed\"},\"security_review\":{\"commit_sha\":null,\"has_any_findings\":null,\"has_unresolved_findings\":null,\"status\":null}} -->\n\n<details>\n<summary><strong>Codex Review Summary</strong>: ✅ Completed</summary>\n\nThis comment shows the latest Codex review activity on this pull request.\n\n| Review | Status | Commit | Review trigger |\n| --- | --- | --- | --- |\n| 📝 **Code Review** | ✅ **Completed** <relative-time datetime=\"2026-11-23T01:25:39.971059Z\">2026-11-23T01:25:39.971059Z</relative-time> | `f0b534e` | PR opened |\n\n\n\n<details> <summary>ℹ️ About Codex in GitHub</summary>\n<br/>\n\n[Your team has set up Codex to review pull requests in this repo](https://chatgpt.com/codex/cloud/settings/general). Reviews are triggered when you\n- Open a pull request for review\n- Mark a draft as ready\n- Comment \"@codex review\" or \"@codex security review\".\n\nCodex reacts with 👀 while any review is running, comments if it has suggestions, and reacts with 👍 once all reviews finish with no findings.\n\n</details>\n\n</details>"
+        },
+        {
+          "url": "https://github.com/ovelhaaa/hydra-tape-engine/pull/60#discussion_r4661007820",
+          "path": "scripts/generate_phase74b_listening.mjs",
+          "body": "**<sub><sub>![P1 Badge](https://img.shields.io/badge/P1-orange?style=flat)</sub></sub>  Read the DSP handle through the create function's out parameter**\n\nThe listening generator calls `hydra_dsp_create` as though it returns a handle, but `dsp/core/hydra_dsp_c_api.cpp` defines it as a status-returning function with a third `hydra_dsp_handle** out_handle` argument. With that argument omitted, creation fails with `-1`; this is truthy, so the guard also accepts the error as a handle and subsequent calls access invalid memory. Allocate an output-pointer slot, pass it to creation, check the status, and read the actual handle from WASM memory. Otherwise the workflow cannot generate its listening package.\n\nUseful? React with 👍 / 👎.\n\n<!-- codex-code-review-finding:v1 -->"
+        },
+        {
+          "url": "https://github.com/ovelhaaa/hydra-tape-engine/pull/60#discussion_r4661007824",
+          "path": "scripts/generate_phase74b_listening.mjs",
+          "body": "**<sub><sub>![P2 Badge](https://img.shields.io/badge/P2-yellow?style=flat)</sub></sub>  Isolate the delayed signal before measuring its modulation**\n\nFor every carrier probe, `dryWet: 0` leaves the unmodulated input at full gain: `TapeCore::Impl::updateCachedParams()` defines `dryGain = 1 - textureWetGain`, and `writeCh()` adds `input * dryGain` to the tape output. Thus this probe demodulates a mixture of the dry carrier and delayed carrier rather than the delayed carrier alone. Their interference changes the measured phase derivative and L/R correlation, so the reported cents and excursions do not directly measure transport motion. Use an isolated delayed-output measurement path; simply raising `dryWet` also introduces the separate texture tap.\n\nUseful? React with 👍 / 👎.\n\n<!-- codex-code-review-finding:v1 -->"
+        },
+        {
+          "url": "https://github.com/ovelhaaa/hydra-tape-engine/pull/60#discussion_r4661007827",
+          "path": "scripts/generate_phase74b_listening.mjs",
+          "body": "**<sub><sub>![P2 Badge](https://img.shields.io/badge/P2-yellow?style=flat)</sub></sub>  Warm up the demodulator before collecting phase samples**\n\nAlthough the probe skips the first 0.6 seconds of audio, it initializes both quadrature filters to zero at that point and immediately records their startup phase. The resulting filter transient is included in all statistics and the spectrum. Running this function with `renderWithWasm` replaced by a passthrough of the pristine, unmodulated carrier reports approximately 4.98 cents RMS, 428 cents maximum, and one perturbation event, despite there being no modulation. Process a warm-up interval through the filters before retaining phases so startup artifacts do not dominate comparisons of these subtle motion variants.\n\nUseful? React with 👍 / 👎.\n\n<!-- codex-code-review-finding:v1 -->"
+        },
+        {
+          "url": "https://github.com/ovelhaaa/hydra-tape-engine/pull/60#discussion_r4661007828",
+          "path": "scripts/generate_phase74b_listening.mjs",
+          "body": "**<sub><sub>![P2 Badge](https://img.shields.io/badge/P2-yellow?style=flat)</sub></sub>  Reapply the active gain after changing blind slot identities**\n\nWhen blind mode is toggled during playback, `slotOrder` changes and the buttons are relabeled, but the existing gains still select the variant from the previous ordering. Consequently, the highlighted slot and revealed identity can disagree with the audio being heard until another slot is clicked or playback restarts, which can misattribute human audition results. Reapply `switchSlot(activeSlot)` after changing the order, or stop playback before changing the mapping.\n\nUseful? React with 👍 / 👎.\n\n<!-- codex-code-review-finding:v1 -->"
+        },
+        {
+          "url": "https://github.com/ovelhaaa/hydra-tape-engine/pull/60#pullrequestreview-6015615415",
+          "path": null,
+          "body": "<!-- codex-review-receipt:v1 -->\n\n\n### 💡 Codex Review\n\nHere are some automated review suggestions for this pull request.\n\n**Reviewed commit:** `f0b534e812`\n    \n\n<details> <summary>ℹ️ About Codex in GitHub</summary>\n<br/>\n\n[Your team has set up Codex to review pull requests in this repo](https://chatgpt.com/codex/cloud/settings/general). Reviews are triggered when you\n- Open a pull request for review\n- Mark a draft as ready\n- Comment \"@codex review\".\n\nIf Codex has suggestions, it will comment; otherwise it will react with 👍.\n\n\n\n\nCodex can also answer questions or update the PR. Try commenting \"@codex address that feedback\".\n            \n</details>"
+        },
+        {
+          "url": "https://github.com/ovelhaaa/hydra-tape-engine/pull/60#discussion_r4661517047",
+          "path": "scripts/generate_phase74b_listening.mjs",
+          "body": "Corrigido no commit `33e9111`: `hydra_dsp_create` agora recebe um `hydra_dsp_handle**` alocado em WASM, verifica o status, recupera o ponteiro e libera os recursos com `try/finally`. `scripts/test_phase74b_wasm_api.mjs` valida o ciclo de vida; workflow 7.4B está verde."
+        },
+        {
+          "url": "https://github.com/ovelhaaa/hydra-tape-engine/pull/60#pullrequestreview-6016220592",
+          "path": null,
+          "body": ""
+        },
+        {
+          "url": "https://github.com/ovelhaaa/hydra-tape-engine/pull/60#discussion_r4661517215",
+          "path": "scripts/generate_phase74b_listening.mjs",
+          "body": "Corrigido no commit `33e9111`: o probe desativa o dry (`dryWet=100`) e isola um tap modulado (`delayWet=0`); o caminho e as limitações da medida estão documentados em `MODULATION_ANALYSIS.md`. Calibração e workflow 7.4B aprovados."
+        },
+        {
+          "url": "https://github.com/ovelhaaa/hydra-tape-engine/pull/60#pullrequestreview-6016220819",
+          "path": null,
+          "body": ""
+        },
+        {
+          "url": "https://github.com/ovelhaaa/hydra-tape-engine/pull/60#discussion_r4661517392",
+          "path": "scripts/generate_phase74b_listening.mjs",
+          "body": "Corrigido no commit `33e9111`: demodulador separado com período de acomodação e aquecimento I/Q antes da coleta. Controles negativos e FM conhecida são verificados por `scripts/test_phase74b_demodulator.mjs`; workflow aprovado."
+        },
+        {
+          "url": "https://github.com/ovelhaaa/hydra-tape-engine/pull/60#pullrequestreview-6016221019",
+          "path": null,
+          "body": ""
+        },
+        {
+          "url": "https://github.com/ovelhaaa/hydra-tape-engine/pull/60#discussion_r4661517587",
+          "path": "scripts/generate_phase74b_listening.mjs",
+          "body": "Corrigido no commit `33e9111`: a troca do modo cego chama `applySlotGains()` imediatamente após reorganizar os slots; `scripts/test_phase74b_player.mjs` valida slots, ganhos, troca durante reprodução e sincronização."
+        },
+        {
+          "url": "https://github.com/ovelhaaa/hydra-tape-engine/pull/60#pullrequestreview-6016221244",
+          "path": null,
+          "body": ""
+        }
+      ],
+      "remote_branch_head": "c1331a7d81b8b989df0ed523c9ae10c73c21a15e",
+      "remote_base_head": "d2d36dd2b5d0fe06e66aca6d309a532a13001d87",
+      "head_matches_remote": true,
+      "base_sha_from_api": "d2d36dd2b5d0fe06e66aca6d309a532a13001d87",
+      "base_sha": "d2d36dd2b5d0fe06e66aca6d309a532a13001d87"
+    },
+    {
+      "number": 61,
+      "url": "https://github.com/ovelhaaa/hydra-tape-engine/pull/61",
+      "branch": "feature/phase7-4c-unified-motion",
+      "sha": "c1f996b0dbe22117238252b6d5530e15d5ebe26f",
+      "base": "feat/phase7-3-classic-c-web-default",
+      "state": "open",
+      "draft": true,
+      "merged": false,
+      "checks": [
+        {
+          "name": "deploy",
+          "conclusion": "skipped",
+          "url": "https://github.com/ovelhaaa/hydra-tape-engine/actions/runs/45257835405/job/137985000196"
+        },
+        {
+          "name": "test_native_vs_wasm (ubuntu-24.04)",
+          "conclusion": "success",
+          "url": "https://github.com/ovelhaaa/hydra-tape-engine/actions/runs/45257835382/job/137984676774"
+        },
+        {
+          "name": "listening_review",
+          "conclusion": "success",
+          "url": "https://github.com/ovelhaaa/hydra-tape-engine/actions/runs/45257835382/job/137984676324"
+        },
+        {
+          "name": "test_native_vs_wasm (ubuntu-26.04)",
+          "conclusion": "success",
+          "url": "https://github.com/ovelhaaa/hydra-tape-engine/actions/runs/45257835382/job/137984676299"
+        },
+        {
+          "name": "test_native_core",
+          "conclusion": "success",
+          "url": "https://github.com/ovelhaaa/hydra-tape-engine/actions/runs/45257835382/job/137984409323"
+        },
+        {
+          "name": "unified_motion_lab",
+          "conclusion": "success",
+          "url": "https://github.com/ovelhaaa/hydra-tape-engine/actions/runs/45257834877/job/137984223449"
+        },
+        {
+          "name": "validate",
+          "conclusion": "success",
+          "url": "https://github.com/ovelhaaa/hydra-tape-engine/actions/runs/45257835505/job/137984221345"
+        },
+        {
+          "name": "listening_lab",
+          "conclusion": "success",
+          "url": "https://github.com/ovelhaaa/hydra-tape-engine/actions/runs/45257835544/job/137984219915"
+        },
+        {
+          "name": "validate_warp",
+          "conclusion": "success",
+          "url": "https://github.com/ovelhaaa/hydra-tape-engine/actions/runs/45257835382/job/137984219682"
+        },
+        {
+          "name": "build_wasm_core",
+          "conclusion": "success",
+          "url": "https://github.com/ovelhaaa/hydra-tape-engine/actions/runs/45257835382/job/137984219676"
+        },
+        {
+          "name": "build_native_core",
+          "conclusion": "success",
+          "url": "https://github.com/ovelhaaa/hydra-tape-engine/actions/runs/45257835382/job/137984219639"
+        },
+        {
+          "name": "build_esp32_s3",
+          "conclusion": "success",
+          "url": "https://github.com/ovelhaaa/hydra-tape-engine/actions/runs/45257835382/job/137984219551"
+        },
+        {
+          "name": "build",
+          "conclusion": "success",
+          "url": "https://github.com/ovelhaaa/hydra-tape-engine/actions/runs/45257835405/job/137984219488"
+        },
+        {
+          "name": "magnetic_bias_review",
+          "conclusion": "success",
+          "url": "https://github.com/ovelhaaa/hydra-tape-engine/actions/runs/45257835382/job/137984219118"
+        },
+        {
+          "name": "unified_motion_lab",
+          "conclusion": "success",
+          "url": "https://github.com/ovelhaaa/hydra-tape-engine/actions/runs/45257835392/job/137984219105"
+        },
+        {
+          "name": "validate_bias",
+          "conclusion": "success",
+          "url": "https://github.com/ovelhaaa/hydra-tape-engine/actions/runs/45257835417/job/137984218925"
+        }
+      ],
+      "comments": [],
+      "remote_branch_head": "c1f996b0dbe22117238252b6d5530e15d5ebe26f",
+      "remote_base_head": "d2d36dd2b5d0fe06e66aca6d309a532a13001d87",
+      "head_matches_remote": true,
+      "base_sha_from_api": "d2d36dd2b5d0fe06e66aca6d309a532a13001d87",
+      "base_sha": "d2d36dd2b5d0fe06e66aca6d309a532a13001d87"
+    },
+    {
+      "number": 62,
+      "url": "https://github.com/ovelhaaa/hydra-tape-engine/pull/62",
+      "branch": "experiment/phase7-5a1-studio-signal-path",
+      "sha": "565ae355b75741ee8aca37fc6c09c0aac449bf8b",
+      "base": "feature/phase7-4c-unified-motion",
+      "state": "open",
+      "draft": true,
+      "merged": false,
+      "checks": [
+        {
+          "name": "deploy",
+          "conclusion": "skipped",
+          "url": "https://github.com/ovelhaaa/hydra-tape-engine/actions/runs/45263172867/job/138003707998"
+        },
+        {
+          "name": "test_native_vs_wasm (ubuntu-26.04)",
+          "conclusion": "success",
+          "url": "https://github.com/ovelhaaa/hydra-tape-engine/actions/runs/45263172782/job/138003484799"
+        },
+        {
+          "name": "listening_review",
+          "conclusion": "success",
+          "url": "https://github.com/ovelhaaa/hydra-tape-engine/actions/runs/45263172782/job/138003484678"
+        },
+        {
+          "name": "test_native_vs_wasm (ubuntu-24.04)",
+          "conclusion": "success",
+          "url": "https://github.com/ovelhaaa/hydra-tape-engine/actions/runs/45263172782/job/138003484395"
+        },
+        {
+          "name": "test_native_core",
+          "conclusion": "success",
+          "url": "https://github.com/ovelhaaa/hydra-tape-engine/actions/runs/45263172782/job/138003256880"
+        },
+        {
+          "name": "validate",
+          "conclusion": "success",
+          "url": "https://github.com/ovelhaaa/hydra-tape-engine/actions/runs/45263172814/job/138003224777"
+        },
+        {
+          "name": "validate_bias",
+          "conclusion": "success",
+          "url": "https://github.com/ovelhaaa/hydra-tape-engine/actions/runs/45263172725/job/138003194887"
+        },
+        {
+          "name": "studio_signal_path",
+          "conclusion": "success",
+          "url": "https://github.com/ovelhaaa/hydra-tape-engine/actions/runs/45263172793/job/138003194574"
+        },
+        {
+          "name": "build_wasm_core",
+          "conclusion": "success",
+          "url": "https://github.com/ovelhaaa/hydra-tape-engine/actions/runs/45263172782/job/138003032900"
+        },
+        {
+          "name": "magnetic_bias_review",
+          "conclusion": "success",
+          "url": "https://github.com/ovelhaaa/hydra-tape-engine/actions/runs/45263172782/job/138003032633"
+        },
+        {
+          "name": "build_esp32_s3",
+          "conclusion": "success",
+          "url": "https://github.com/ovelhaaa/hydra-tape-engine/actions/runs/45263172782/job/138003032413"
+        },
+        {
+          "name": "validate_warp",
+          "conclusion": "success",
+          "url": "https://github.com/ovelhaaa/hydra-tape-engine/actions/runs/45263172782/job/138003032379"
+        },
+        {
+          "name": "build_native_core",
+          "conclusion": "success",
+          "url": "https://github.com/ovelhaaa/hydra-tape-engine/actions/runs/45263172782/job/138003031927"
+        },
+        {
+          "name": "build",
+          "conclusion": "success",
+          "url": "https://github.com/ovelhaaa/hydra-tape-engine/actions/runs/45263172867/job/138003031919"
+        },
+        {
+          "name": "listening_lab",
+          "conclusion": "success",
+          "url": "https://github.com/ovelhaaa/hydra-tape-engine/actions/runs/45263172769/job/138003031826"
+        }
+      ],
+      "comments": [],
+      "remote_branch_head": "565ae355b75741ee8aca37fc6c09c0aac449bf8b",
+      "remote_base_head": "c1f996b0dbe22117238252b6d5530e15d5ebe26f",
+      "head_matches_remote": true,
+      "base_sha_from_api": "c1f996b0dbe22117238252b6d5530e15d5ebe26f",
+      "base_sha": "c1f996b0dbe22117238252b6d5530e15d5ebe26f"
+    }
+  ]
+}

@@ -1,0 +1,3 @@
+# Preserve historical captured bytes, including CRLF, for the recorded hashes.
+benchmark_results.json -text
+serial_log.txt -text

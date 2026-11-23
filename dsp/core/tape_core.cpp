@@ -358,10 +358,13 @@ struct TapeCore::Impl {
   TapeMotionCoeffs motionCoeffs;
   TapeMotionState motionState;
 
-  HYDRA_DSP_IRAM inline void computeUnifiedMotion(float scrapeL,
-                                                  float scrapeR,
-                                                  float& outModL,
-                                                  float& outModR) {
+#if defined(__GNUC__) || defined(__clang__)
+  __attribute__((noinline))
+#endif
+  void computeUnifiedMotion(float scrapeL,
+                            float scrapeR,
+                            float& outModL,
+                            float& outModR) {
     const float textureBaseSamples = sampleRate * 0.012f;
     const float modBaseSamples = delayActive ? smoothedDelaySamples
                                              : std::max(smoothedDelaySamples, textureBaseSamples);

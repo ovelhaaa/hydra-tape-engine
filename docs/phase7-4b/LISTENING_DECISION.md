@@ -1,31 +1,15 @@
-# Phase 7.4B — Listening Decision (Pending Human Audition)
+# Phase 7.4B — Listening Decision (Approved)
 
 ## Status
-**PENDING HUMAN A/B AUDITION**
+**APPROVED BY HUMAN A/B AUDITION**
 
-No variant (M0, M1, M2, or M3) is declared a winner by automated metrics.
+All three experimental motion variants (**M1 — Motor Drift**, **M2 — Capstan Flutter**, and **M3 — Worn Transport**) were evaluated via the Phase 7.4B.1 A/B Lab (`comparisons/index.html`) across the 10 scenarios and **all three were judged to sound good and surpass M0 (Classic C)**.
 
 ## Phase 7.4B.1 Verification Readiness
 - **WASM C API Contract:** Fixed (`hydra_dsp_create` 3-arg out-pointer + `hydra_dsp_prepare` stereo channels `2`) and gated by `scripts/test_phase74b_wasm_api.mjs`.
 - **Demodulator & Isolation:** Calibrated and verified against positive/negative FM controls (`scripts/test_phase74b_demodulator.mjs`).
 - **Blind A/B Player:** Fixed slot-to-gain synchronization when toggling Blind Mode before or during playback (`scripts/test_phase74b_player.mjs`).
-
-## Audition Procedure
-1. Download the GitHub Actions artifact `hydra-phase74b-organic-motion-listening` from the `Phase 7.4B Organic Tape Motion Listening & Validation` workflow run.
-2. Extract the archive and serve locally:
-   ```powershell
-   python -m http.server 8080
-   ```
-3. Open `http://localhost:8080/comparisons/index.html` and evaluate all 10 scenarios using both direct A/B switching (`M0 | M1 | M2 | M3`) and **Blind A/B Mode**.
-
-## Perceptual Evaluation Criteria
-- Is the difference clearly audible compared to M0 (Classic C)?
-- Does the motion feel natural and physically plausible?
-- Does it enrich sustained chords and clean guitar notes?
-- Does it avoid excessive detuning?
-- Does it improve perceived depth and stereo dimensionality without collapsing center focus?
-- Does it preserve pick attack definition?
-- Does it remain musical under high feedback (`07-single-head-high-fb`) and Reverse (`10-reverse-feedback`)?
+- **Physical ESP32-S3 Profiling:** Completed on hardware (`COM15`, 240 MHz, 44.1 kHz, 128-frame blocks). All four variants (`M0`, `M1`, `M2`, `M3`) achieved **0 overruns** across standard, Multi-Head + Spring, and Multi-Head + Reverse + Spring loads (see `docs/phase7-4b/REALTIME_FEASIBILITY.md`).
 
 ## Next Step
-After human listening approval, decide whether any 7.4B motion variant merits ESP32-S3 hardware profiling (`NOT_EXECUTED` so far) and/or combination with 7.4A (PR #59) in a future phase.
+Decide which candidate (or combination with Phase 7.4A Repeat Aging in PR #59) to promote in the next integration phase, and whether to remove the constant `Depth=0` floor in `OrganicMotionCoeffs::update()` documented in `docs/phase7-4b/MODULATION_ANALYSIS.md`.

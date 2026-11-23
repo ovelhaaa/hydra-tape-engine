@@ -17,6 +17,8 @@ on:
       - 'tests/core/phase74b_organic_motion_test.cpp'
       - 'tests/core/m0_equivalence_runner.cpp'
       - 'tests/core/verify_m0_bit_exact.py'
+      - 'platformio.ini'
+      - 'scripts/bench_phase74b_esp32.py'
   pull_request:
     branches: [feat/phase7-3-classic-c-web-default]
     paths:
@@ -33,6 +35,8 @@ on:
       - 'tests/core/phase74b_organic_motion_test.cpp'
       - 'tests/core/m0_equivalence_runner.cpp'
       - 'tests/core/verify_m0_bit_exact.py'
+      - 'platformio.ini'
+      - 'scripts/bench_phase74b_esp32.py'
   workflow_dispatch:
 
 permissions:
@@ -70,6 +74,12 @@ jobs:
         uses: mymindstorm/setup-emsdk@v14
         with:
           version: 3.1.62
+
+      - name: Validate ESP32-S3 Benchmark Configuration (No Flash)
+        id: physical_config_check
+        run: |
+          python3 -m py_compile scripts/bench_phase74b_esp32.py
+          python3 scripts/bench_phase74b_esp32.py
 
       - name: Build Native DSP & Tests
         run: |
@@ -183,7 +193,8 @@ jobs:
             echo "| Control Semantics Audit | \`${{ steps.control_audit.outcome }}\` |"
             echo "| WAV Package & Manifest SHA-256 | \`${{ steps.generate_wavs.outcome }}\` / \`${{ steps.manifest_check.outcome }}\` |"
             echo "| Blind A/B Player | \`${{ steps.player_test.outcome }}\` |"
-            echo "| ESP32-S3 Physical | \`NOT_EXECUTED\` |"
+            echo "| ESP32-S3 Benchmark Config (No Flash) | \`${{ steps.physical_config_check.outcome }}\` |"
+            echo "| ESP32-S3 Physical (After Flag Fix) | \`NOT_EXECUTED\` |"
             echo "| Human Listening | \`PENDING\` |"
           } >> "$GITHUB_STEP_SUMMARY"
 

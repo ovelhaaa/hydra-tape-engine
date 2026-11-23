@@ -1490,6 +1490,10 @@ void executeCommand(String line) {
                ESP.getPsramSize(), ESP.getFlashChipSize(), g_i2s_initialized ? 1 : 0);
 #if defined(HYDRA_PHASE72_CLASSIC_FEEDBACK_ROUTING) && HYDRA_PHASE72_CLASSIC_FEEDBACK_ROUTING
     dualPrintln("FeedbackRouting=PHASE72_CLASSIC_C");
+    dualPrintln("ProductionArchitecture=CLASSIC_C");
+#else
+    dualPrintln("FeedbackRouting=LEGACY_A");
+    dualPrintln("ProductionArchitecture=LEGACY_A_ROLLBACK");
 #endif
     dualPrintln("=== IDENTITY END ===");
     return;

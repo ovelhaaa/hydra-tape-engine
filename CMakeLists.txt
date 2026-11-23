@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.20)
 project(hydra_tape_engine LANGUAGES C CXX)
 
 option(BUILD_WEB "Build WebAssembly artifacts with Emscripten" OFF)
+option(HYDRA_WEB_LEGACY_A "Build web demo with legacy A feedback routing (manual rollback only)" OFF)
 option(BUILD_TESTING "Build tests" ON)
 
 set(CMAKE_CXX_STANDARD 17)
@@ -199,6 +200,34 @@ if(BUILD_WEB)
     ${CMAKE_CURRENT_SOURCE_DIR}/dsp/core
   )
 
+  # Phase 7.3: the browser's actual AudioWorklet WASM runs Classic C by
+  # default. Legacy A is opt-in for recovery/controlled comparisons.
+  # Do not silently change the historical Native/WASM golden runners.
+  if(HYDRA_WEB_LEGACY_A)
+    target_compile_definitions(hydra_dsp_web PRIVATE HYDRA_PHASE72_CLASSIC_FEEDBACK_ROUTING=0)
+    set(HYDRA_WEB_FEEDBACK_ROUTING "LEGACY_A")
+  else()
+    target_compile_definitions(hydra_dsp_web PRIVATE HYDRA_PHASE72_CLASSIC_FEEDBACK_ROUTING=1)
+    set(HYDRA_WEB_FEEDBACK_ROUTING "PHASE72_CLASSIC_C")
+  endif()
+  set(HYDRA_WEB_GIT_COMMIT "unknown")
+  find_package(Git QUIET)
+  if(GIT_FOUND)
+    execute_process(
+      COMMAND "${GIT_EXECUTABLE}" rev-parse --short=12 HEAD
+      WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+      OUTPUT_VARIABLE HYDRA_WEB_GIT_COMMIT_RAW
+      OUTPUT_STRIP_TRAILING_WHITESPACE
+      ERROR_QUIET
+      RESULT_VARIABLE HYDRA_GIT_RESULT
+    )
+    if(HYDRA_GIT_RESULT EQUAL 0 AND HYDRA_WEB_GIT_COMMIT_RAW)
+      set(HYDRA_WEB_GIT_COMMIT "${HYDRA_WEB_GIT_COMMIT_RAW}")
+    endif()
+  endif()
+  file(GENERATE OUTPUT "${CMAKE_BINARY_DIR}/hydra-build-info.pending.json"
+    CONTENT "{\n  \"feedbackRouting\": \"${HYDRA_WEB_FEEDBACK_ROUTING}\",\n  \"buildTarget\": \"hydra_dsp_web\",\n  \"gitCommit\": \"${HYDRA_WEB_GIT_COMMIT}\",\n  \"emscriptenVersion\": \"${CMAKE_CXX_COMPILER_VERSION}\"\n}\n")
+
   set_target_properties(hydra_dsp_web PROPERTIES
     OUTPUT_NAME "hydra_dsp"
     SUFFIX ".js"
@@ -235,6 +264,11 @@ if(BUILD_WEB)
       "${CMAKE_CURRENT_SOURCE_DIR}/host/web/resetController.js"
       "${CMAKE_CURRENT_SOURCE_DIR}/host/web/webMidiTime.js"
       "${HYDRA_WEB_DIR}"
+    # Publish architecture metadata only when the target successfully builds.
+    # Configuration alone must never relabel an old WASM as a new architecture.
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+      "${CMAKE_BINARY_DIR}/hydra-build-info.pending.json"
+      "${HYDRA_WEB_DIR}/hydra-build-info.json"
     VERBATIM
   )
 

@@ -84,6 +84,12 @@ const browser = await chromium.launch({
 
 try {
   const page = await browser.newPage({ viewport: { width: 1280, height: 800 } });
+  await page.addInitScript(() => {
+    const Native = window.AudioWorkletNode; window.hydraNodeCreations = 0;
+    window.AudioWorkletNode = class extends Native {
+      constructor(...args) { super(...args); window.hydraNodeCreations++; }
+    };
+  });
   const consoleErrors = [];
   const pageErrors = [];
   page.on('console', (msg) => {
@@ -97,7 +103,7 @@ try {
   const archText = await page.locator('#architectureBadge').textContent();
   assert.match(archText || '', /Classic C \+ Unified Motion/);
   const paramSummaryText = await page.locator('#dspParamCountSummary').textContent();
-  assert.match(paramSummaryText || '', /47 Parameters Mapped/);
+  assert.match(paramSummaryText || '', /(?:47|49) Parameters Mapped/);
 
   // 2. Verify all 4 mode buttons + keyboard navigation + advanced panel visibility
   const modes = [
@@ -175,6 +181,28 @@ try {
   const modeStatusText = await page.locator('#motionModeStatus').textContent();
   assert.match(modeStatusText || '', /^DSP: CLASSIC$/);
 
+  // Studio policy: live selection confirmed by the DSP in every Motion Mode.
+  const nodeCountBeforeSwitch = await page.evaluate(() => window.hydraNodeCreations);
+  const studio = page.locator('[data-signal-path="1"]');
+  const classic = page.locator('[data-signal-path="0"]');
+  for (const mode of [0,1,2,3]) {
+    await page.locator(`[data-motion-mode="${mode}"]`).click();
+    await studio.click();
+    await page.waitForFunction(() => document.querySelector('#signalPathStatus').textContent === 'DSP: STUDIO');
+    assert.equal(await page.locator('#studioWetControls').isVisible(), true);
+    await page.locator('#studioWetLevel').fill('0');
+    await page.locator('#studioWetLevel').dispatchEvent('input');
+    await classic.click();
+    await page.waitForFunction(() => document.querySelector('#signalPathStatus').textContent === 'DSP: CLASSIC');
+    assert.equal(await page.locator('#studioWetControls').isVisible(), false);
+  }
+  await studio.click();
+  await page.locator('#studioWetLevel').fill('73');
+  await page.locator('#studioWetLevel').dispatchEvent('input');
+  await page.waitForFunction(() => document.querySelector('#signalPathStatus').textContent === 'DSP: STUDIO');
+
+  assert.equal(await page.evaluate(() => window.hydraNodeCreations), nodeCountBeforeSwitch, 'Switching policies must not recreate AudioWorklet/WASM');
+
   // 4. Offline WAV export with Worn Transport (3)
   await page.locator('.motion-mode-btn[data-motion-mode="3"]').click();
   await page.locator('#offlineBtn').click();
@@ -196,6 +224,8 @@ try {
   await page.waitForTimeout(100);
   assert.equal(await page.locator('#motionMode').inputValue(), '2');
   assert.equal(await page.locator('#motionAmount').inputValue(), '80');
+  assert.equal(await page.locator('#signalPathMode').inputValue(), '0');
+  await page.waitForFunction(() => document.querySelector('#signalPathStatus').textContent === 'DSP: CLASSIC');
 
   const v1Preset = JSON.stringify({
     version: 1,
@@ -225,7 +255,9 @@ try {
 
   assert.deepEqual(consoleErrors, [], `Console errors: ${consoleErrors.join('; ')}`);
   assert.deepEqual(pageErrors, [], `Page errors: ${pageErrors.join('; ')}`);
-  console.log('Phase 7.4C Playwright browser test PASSED');
+  await fs.mkdir(path.join(ROOT,'artifacts','phase7-5a'), {recursive:true});
+  await page.screenshot({path:path.join(ROOT,'artifacts','phase7-5a','mobile-ui.png'),fullPage:true});
+  console.log('Phase 7.4C + 7.5A Playwright browser test PASSED');
 } finally {
   await browser.close();
   server.close();

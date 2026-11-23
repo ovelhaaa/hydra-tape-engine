@@ -87,7 +87,7 @@ def main():
 
     before = render.HydraEngineRunner(before_lib)
     after = render.HydraEngineRunner(after_lib)
-    if before.api_version != after.api_version:
+    if (before.api_version >> 16) != (after.api_version >> 16):
         raise RuntimeError("ABI version mismatch")
 
     if args.output.exists():

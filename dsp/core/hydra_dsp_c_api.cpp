@@ -68,6 +68,8 @@ static const hydra_dsp_param_spec kParamSpecs[HYDRA_DSP_PARAM_COUNT] = {
     {HYDRA_DSP_PARAM_MOTION_IRREGULARITY, "motionIrregularity", 0.0f, 100.0f, 50.0f, HYDRA_DSP_SMOOTHING_BLOCK_EDGE, HYDRA_DSP_PARAM_SPEC_FLAG_NONE},
     {HYDRA_DSP_PARAM_MOTION_INSTABILITY, "motionInstability", 0.0f, 100.0f, 50.0f, HYDRA_DSP_SMOOTHING_BLOCK_EDGE, HYDRA_DSP_PARAM_SPEC_FLAG_NONE},
     {HYDRA_DSP_PARAM_MOTION_TENSION_REC, "motionTensionRec", 0.0f, 100.0f, 50.0f, HYDRA_DSP_SMOOTHING_BLOCK_EDGE, HYDRA_DSP_PARAM_SPEC_FLAG_NONE},
+    {HYDRA_DSP_PARAM_SIGNAL_PATH_MODE, "signalPathMode", 0.f, 1.f, 0.f, HYDRA_DSP_SMOOTHING_PER_SAMPLE_INTERNAL, HYDRA_DSP_PARAM_SPEC_FLAG_NONE},
+    {HYDRA_DSP_PARAM_STUDIO_WET_LEVEL, "studioWetLevel", 0.f, 200.f, 100.f, HYDRA_DSP_SMOOTHING_PER_SAMPLE_INTERNAL, HYDRA_DSP_PARAM_SPEC_FLAG_NONE},
 };
 
 static hydra_dsp_param_spec resolve_runtime_spec(const hydra_dsp_handle* handle, hydra_dsp_param_id param_id) {
@@ -173,6 +175,12 @@ static int set_param(hydra_dsp_handle* h, hydra_dsp_param_id id, float v) {
     case HYDRA_DSP_PARAM_MOTION_IRREGULARITY: h->params.motionIrregularity = std::clamp(v, 0.0f, 100.0f); break;
     case HYDRA_DSP_PARAM_MOTION_INSTABILITY: h->params.motionInstability = std::clamp(v, 0.0f, 100.0f); break;
     case HYDRA_DSP_PARAM_MOTION_TENSION_REC: h->params.motionTensionRec = std::clamp(v, 0.0f, 100.0f); break;
+    case HYDRA_DSP_PARAM_SIGNAL_PATH_MODE:
+      if (!std::isfinite(v)) return -1;
+      h->params.signalPathMode = (int)std::lround(std::clamp(v, 0.f, 1.f)); break;
+    case HYDRA_DSP_PARAM_STUDIO_WET_LEVEL:
+      if (!std::isfinite(v)) return -1;
+      h->params.studioWetLevel = std::clamp(v, 0.f, 200.f); break;
     default: return -2;
   }
   h->dirty = true;
@@ -300,6 +308,8 @@ int hydra_dsp_get_parameter(hydra_dsp_handle* handle, hydra_dsp_param_id param_i
     case HYDRA_DSP_PARAM_MOTION_IRREGULARITY: *out_value = handle->params.motionIrregularity; break;
     case HYDRA_DSP_PARAM_MOTION_INSTABILITY: *out_value = handle->params.motionInstability; break;
     case HYDRA_DSP_PARAM_MOTION_TENSION_REC: *out_value = handle->params.motionTensionRec; break;
+    case HYDRA_DSP_PARAM_SIGNAL_PATH_MODE: *out_value = handle->params.signalPathMode; break;
+    case HYDRA_DSP_PARAM_STUDIO_WET_LEVEL: *out_value = handle->params.studioWetLevel; break;
     default: return -2;
   }
   return 0;

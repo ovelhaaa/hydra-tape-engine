@@ -52,6 +52,8 @@ const PARAM = {
   motionTexture: 43,
   motionIrregularity: 44,
   motionInstability: 45,
+  signalPathMode: 47,
+  studioWetLevel: 48,
   motionTensionRec: 46
 };
 
@@ -63,11 +65,13 @@ const CONTINUOUS_PARAM_IDS = new Set([
   'flutterRate', 'wowRate', 'delayTimeMs', 'feedback', 'dryWet', 'delayWet',
   'bpm', 'tone', 'springDecay', 'springDamping', 'springMix',
   'warpSpeed', 'warpGrainMs', 'warpStereo', 'warpFeedback',
-  'motionAmount', 'stereoMotion', 'motionInertia', 'motionDriftChar',
+  'studioWetLevel', 'motionAmount', 'stereoMotion', 'motionInertia', 'motionDriftChar',
   'motionTexture', 'motionIrregularity', 'motionInstability', 'motionTensionRec'
 ]);
 
 const PARAM_METADATA = {
+  signalPathMode: { group: "Signal Path", engineParamId: PARAM.signalPathMode, layer: "MessagePort (Enum)" },
+  studioWetLevel: { group: "Signal Path", engineParamId: PARAM.studioWetLevel, layer: "AudioParam (Smooth)" },
   flutterDepth: { group: 'Tape Dynamics', engineParamId: PARAM.flutterDepth, layer: 'AudioParam (Smooth)' },
   wowDepth: { group: 'Tape Dynamics', engineParamId: PARAM.wowDepth, layer: 'AudioParam (Smooth)' },
   dropoutSeverity: { group: 'Tape Quality', engineParamId: PARAM.dropoutSeverity, layer: 'AudioParam (Smooth)' },
@@ -342,6 +346,7 @@ async function ensureAudioGraph() {
       setActionFeedback('Worklet execution failed', 'error');
     } else if (event.data?.type === 'stateAck') {
       engineState[event.data.key] = event.data.value;
+      if (event.data.key === 'signalPathMode') updateSignalPathUI();
       if (event.data.key === 'motionMode') {
         updateMotionModeStatus(uiState.motionMode ?? event.data.value);
       }
@@ -441,6 +446,8 @@ function updateMotionModeUI(rawMode) {
 function applyControlStateToUI(controlState) {
   const normalizedState = {
     ...controlState,
+    signalPathMode: controlState.signalPathMode ?? 0,
+    studioWetLevel: controlState.studioWetLevel ?? 100,
     motionMode: Object.prototype.hasOwnProperty.call(controlState, 'motionMode')
       ? controlState.motionMode
       : DEFAULT_CONTROL_STATE.motionMode
@@ -455,6 +462,7 @@ function applyControlStateToUI(controlState) {
     }
   });
   updateMotionModeUI(normalizedState.motionMode);
+  updateSignalPathUI();
   syncAllParams();
 }
 
@@ -1012,6 +1020,30 @@ ALL_PARAM_IDS.forEach((id) => {
   el.addEventListener('input', onInput);
   el.addEventListener('change', onInput);
 });
+
+function updateSignalPathUI() {
+  const requested = Number(document.getElementById('signalPathMode').value);
+  const confirmed = engineState.signalPathMode;
+  document.querySelectorAll('[data-signal-path]').forEach(button => {
+    button.setAttribute('aria-checked', String(Number(button.dataset.signalPath) === requested));
+  });
+  document.getElementById('studioWetControls').hidden = requested !== 1;
+  document.getElementById('dryWet').closest('.control-row').hidden = requested === 1;
+  document.getElementById('signalPathDescription').textContent = requested === 1
+    ? 'Transparent dry, independently controlled wet. Leave peak headroom; reduce Wet Level if overloaded.'
+    : 'Original tape mix and vintage character';
+  document.getElementById('signalPathStatus').textContent = !fxNode ? 'DSP idle'
+    : confirmed === requested ? `DSP: ${requested ? 'STUDIO' : 'CLASSIC'}` : 'Syncing...';
+}
+document.querySelectorAll('[data-signal-path]').forEach(button => {
+  button.addEventListener('click', () => {
+    const input = document.getElementById('signalPathMode');
+    input.value = button.dataset.signalPath;
+    input.dispatchEvent(new Event('input'));
+    updateSignalPathUI();
+  });
+});
+updateSignalPathUI();
 
 // Tape Motion 4-mode segmented selector (click + arrow-key radiogroup navigation)
 const motionModeButtons = Array.from(document.querySelectorAll('.motion-mode-btn[data-motion-mode]'));

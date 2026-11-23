@@ -148,7 +148,7 @@ try {
   assert.equal(archState, 'success');
   if (isUnifiedMotion) {
     const paramSummaryText = await page.textContent('#dspParamCountSummary');
-    assert.match(paramSummaryText || '', /47 Parameters Mapped/);
+    assert.ok(paramSummaryText?.includes(`${wasmParamCount} Parameters Mapped`), 'UI parameter count must match the actual WASM ABI');
   }
 
   // 2. Upload test WAV file

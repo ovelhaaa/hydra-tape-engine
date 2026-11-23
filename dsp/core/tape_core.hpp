@@ -54,6 +54,8 @@ struct TapeParams {
   float motionIrregularity = 50.0f;
   float motionInstability = 50.0f;
   float motionTensionRec = 50.0f;
+  int signalPathMode = 0; // Classic remains the default
+  float studioWetLevel = 100.0f; // linear output trim, never feedback
 };
 
 class TapeCore {

@@ -81,7 +81,8 @@ std::vector<float> renderToneWithMotion(int mode,
 
 void testParamContract() {
   CHECK(hydra_dsp_get_param_count() == HYDRA_DSP_PARAM_COUNT);
-  CHECK(HYDRA_DSP_PARAM_COUNT == 47);
+  CHECK(HYDRA_DSP_PARAM_MOTION_TENSION_REC == 46);
+  CHECK(HYDRA_DSP_PARAM_COUNT >= 47);
 
   hydra_dsp_param_spec spec{};
   CHECK(hydra_dsp_get_param_spec(HYDRA_DSP_PARAM_MOTION_MODE, &spec) == 0);

@@ -1,0 +1,68 @@
+name: Phase 7.5A.1 Studio Signal Path
+on:
+  pull_request:
+    branches: [feature/phase7-4c-unified-motion]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: phase75a-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  studio_signal_path:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    env:
+      HYDRA_WEB_BUILD: build-web/web
+      PYTHONUTF8: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: mymindstorm/setup-emsdk@v14
+        with:
+          version: '3.1.64'
+      - name: Build and test Native (legacy and Classic C)
+        run: |
+          mkdir -p artifacts/phase7-5a
+          python -m pip install -r scripts/listening-lab-requirements.txt
+          cmake -S . -B build-native -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=ON
+          cmake --build build-native -j 4
+          ctest --test-dir build-native --output-on-failure | tee artifacts/phase7-5a/native-ctest.txt
+          build-native/hydra_phase75a_studio_classic_c_test | tee artifacts/phase7-5a/native-benchmark.txt
+      - name: Build and test WASM (including strict Native equivalence)
+        run: |
+          emcmake cmake -S . -B build-web -DCMAKE_BUILD_TYPE=Release -DBUILD_WEB=ON -DBUILD_TESTING=ON -DHYDRA_NATIVE_TRACE_RUNNER=$PWD/build-native/hydra_render_trace_native
+          cmake --build build-web -j 4
+          ctest --test-dir build-web --output-on-failure | tee artifacts/phase7-5a/wasm-ctest.txt
+          node --test host/web/tests/*.test.mjs
+      - name: Real Web UI / AudioWorklet browser tests
+        run: |
+          npm --prefix tools/phase6-listening-lab ci
+          npx --prefix tools/phase6-listening-lab playwright install --with-deps chromium
+          node scripts/test_phase74c_browser.mjs
+      - name: Frozen Classic parity, headroom calibration, and ten listening scenarios
+        run: |
+          python scripts/phase75a_studio_lab.py
+          node scripts/phase75a_wasm.mjs
+          node scripts/test_phase75a_lab_browser.mjs
+      - name: Compile experimental ESP32-S3 (never upload)
+        run: |
+          python -m pip install platformio
+          pio run -e esp32-s3-phase75a1-studio
+      - name: Package real Web UI, synchronized blind A/B, metrics, hashes and manifest
+        run: python scripts/package_phase75a.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: hydra-phase75a1-studio-signal-path-listening
+          path: |
+            artifacts/hydra-phase75a1-studio-signal-path-listening.zip
+            artifacts/hydra-phase75a1-studio-signal-path-listening.zip.sha256
+          retention-days: 30

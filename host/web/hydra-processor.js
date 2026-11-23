@@ -93,6 +93,7 @@ const CONTINUOUS_PARAM_SPECS = [
   { name: 'p_43', defaultValue: 50, minValue: 0, maxValue: 100 },   // motionTexture
   { name: 'p_44', defaultValue: 50, minValue: 0, maxValue: 100 },   // motionIrregularity
   { name: 'p_45', defaultValue: 50, minValue: 0, maxValue: 100 },   // motionInstability
+  { name: 'p_48', defaultValue: 100, minValue: 0, maxValue: 200 }, // Studio wet trim
   { name: 'p_46', defaultValue: 50, minValue: 0, maxValue: 100 }    // motionTensionRec
 ];
 
@@ -193,8 +194,8 @@ class HydraProcessor extends AudioWorkletProcessor {
       this.tempoSourcePtr = this.module._malloc(4);
       this.motionTelemetryPtr = this.module._malloc(8);
       this.paramReadPtr = this.module._malloc(4);
-      if (!this.api.getParamCount || this.api.getParamCount() < 47) {
-        throw new Error(`Incompatible WASM binary: expected >= 47 params, got ${this.api.getParamCount ? this.api.getParamCount() : 'unknown'}`);
+      if (!this.api.getParamCount || this.api.getParamCount() < 49) {
+        throw new Error(`Incompatible WASM binary: expected >= 49 params, got ${this.api.getParamCount ? this.api.getParamCount() : 'unknown'}`);
       }
 
       const handlePtr = this.module._malloc(4);
@@ -311,6 +312,7 @@ class HydraProcessor extends AudioWorkletProcessor {
         warpMode: 35,
         reverseMode: 36,
         reverseDivision: 37,
+        signalPathMode: 47,
         motionMode: 38
       };
 
@@ -323,7 +325,7 @@ class HydraProcessor extends AudioWorkletProcessor {
           return;
         }
         let confirmedValue = Number(value);
-        if (command === 'motionMode' && this.api.getParameter && this.paramReadPtr) {
+        if ((command === 'motionMode' || command === 'signalPathMode') && this.api.getParameter && this.paramReadPtr) {
           if (this.api.getParameter(this.handle, paramId, this.paramReadPtr) === 0) {
             const view = new DataView((this.module.HEAPU8 || this.module.HEAP32).buffer, this.paramReadPtr, 4);
             confirmedValue = Math.round(view.getFloat32(0, true));

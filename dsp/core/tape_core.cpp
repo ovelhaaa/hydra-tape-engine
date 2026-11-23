@@ -343,12 +343,17 @@ struct TapeCore::Impl {
   float maxHistoryMs() const {
     return (sampleRate > 0.f) ? (static_cast<float>(bufferSize) / sampleRate * 1000.f) : 0.f;
   }
-  void updateSampleRateConstants(){ const float fs=std::max(1.0f,sampleRate); invSampleRate=1.0f/fs; reverseFadeStep=1.f/std::max(1.f,0.010f*fs); reverseControlAlpha=1.f-std::exp(-1.f/(0.015f*fs)); maxDropoutFc=0.45f*fs; delaySmoothAlpha=1.f-std::exp(-1.f/(0.200f*fs)); delayRampInc=1.f/(0.250f*fs); azimuthInc=0.2f*invSampleRate; mechNoiseSlowAlpha=mechNoiseOnePoleAlpha(fs,kMechNoiseSlowTimeSeconds); mechNoiseFastAlpha=mechNoiseOnePoleAlpha(fs,kMechNoiseFastTimeSeconds); duckAttackCoeff=1.f-std::exp(-1.f/(kHissDuckAttackTimeSeconds*fs)); duckReleaseCoeff=1.f-std::exp(-1.f/(kHissDuckReleaseTimeSeconds*fs)); }
+  void updateSampleRateConstants(){ const float fs=std::max(1.0f,sampleRate); invSampleRate=1.0f/fs; signalPathFadeStep=1.f/std::max(1.f,.030f*fs); reverseFadeStep=1.f/std::max(1.f,0.010f*fs); reverseControlAlpha=1.f-std::exp(-1.f/(0.015f*fs)); maxDropoutFc=0.45f*fs; delaySmoothAlpha=1.f-std::exp(-1.f/(0.200f*fs)); delayRampInc=1.f/(0.250f*fs); azimuthInc=0.2f*invSampleRate; mechNoiseSlowAlpha=mechNoiseOnePoleAlpha(fs,kMechNoiseSlowTimeSeconds); mechNoiseFastAlpha=mechNoiseOnePoleAlpha(fs,kMechNoiseFastTimeSeconds); duckAttackCoeff=1.f-std::exp(-1.f/(kHissDuckAttackTimeSeconds*fs)); duckReleaseCoeff=1.f-std::exp(-1.f/(kHissDuckReleaseTimeSeconds*fs)); }
   void updateCachedParams();
   void updateFilters();
   void updatePlaybackFilters();
   void flushDenormals();
   FastTanhLUT tanhLUT; TapeMagnetics magneticsL,magneticsR; float sampleRate; float invSampleRate=1.0f/48000.0f,maxDropoutFc=21600.0f,invHeadGainSum=1.0f; TapeParams currentParams{}; float flutterPhase=0,wowPhase=0,azimuthPhase=0; float flutterInc=0,wowInc=0,azimuthInc=0,delaySmoothAlpha=0,delayRampInc=0,mechNoiseSlowAlpha=0,mechNoiseFastAlpha=0;
+  float signalPathBlend=0.f, studioWetCurrent=1.f;
+  float signalPathFadeStep=1.f/1440.f, studioWetTarget=1.f;
+  BiquadFilter studioBump[2], studioRolloff[2], studioGap[2];
+  OnePoleLP studioDropout[2];
+  AllpassFilter studioAzimuth[2];
   float driveGain=0,dryGain=0.5f,textureWetGain=0.5f,delayWetGain=0.5f,safeFeedback=0,feedbackWearAmount=0;
   MechanicalState mechStateL{};
   MechanicalState mechStateR{0,0,0,0,0x2468ACE1u,0x56473829u};
@@ -519,6 +524,7 @@ struct TapeCore::Impl {
 };
 
 HYDRA_DSP_IRAM void TapeCore::Impl::updateCachedParams(){
+  studioWetTarget=clampf(currentParams.studioWetLevel*.01f,0.f,2.f);
   driveGain=currentParams.drive*0.05f;
   textureWetGain=clampf(currentParams.dryWet*0.01f,0.f,1.f);
   delayWetGain=clampf(currentParams.delayWet*0.01f,0.f,1.f);
@@ -700,6 +706,11 @@ HYDRA_DSP_IRAM void TapeCore::Impl::updatePlaybackFilters(){
   tapeRolloffR.copyCoeffsFrom(tapeRolloff);
   gapLossLPF.setLowpass(sampleRate,cut,0.707f);
   gapLossLPFR.copyCoeffsFrom(gapLossLPF);
+  for(int c=0;c<2;++c){
+    studioBump[c].copyCoeffsFrom(reproHeadBump);
+    studioRolloff[c].copyCoeffsFrom(tapeRolloff);
+    studioGap[c].copyCoeffsFrom(gapLossLPF);
+  }
 #if defined(HYDRA_PHASE72_CLASSIC_FEEDBACK_ROUTING) && HYDRA_PHASE72_CLASSIC_FEEDBACK_ROUTING
   // Same playback EQ coefficients and 20 ms coefficient interpolation.
   classicReproBumpL.copyCoeffsFrom(reproHeadBump);
@@ -865,6 +876,9 @@ void TapeCore::reset(){
   impl_->mechStateL=Impl::MechanicalState{};
   impl_->mechStateR=Impl::MechanicalState{0,0,0,0,0x2468ACE1u,0x56473829u};
   impl_->motionState.activeMode = std::max(0, std::min(3, impl_->currentParams.motionMode));
+  impl_->signalPathBlend = impl_->currentParams.signalPathMode == 1 ? 1.f : 0.f;
+  impl_->studioWetCurrent = clampf(impl_->currentParams.studioWetLevel * .01f, 0.f, 2.f);
+  for(int c=0;c<2;++c){ impl_->studioBump[c].reset(); impl_->studioRolloff[c].reset(); impl_->studioGap[c].reset(); impl_->studioDropout[c].reset(); impl_->studioAzimuth[c].reset(); }
   impl_->motionState.reset();
   // Explicit reset starts at the requested controls; do not record a spurious
   // stereo trajectory for 30 ms before the control slew reaches Stereo=0.
@@ -961,6 +975,7 @@ HYDRA_DSP_IRAM void TapeCore::Impl::flushDenormals(){
   flutterLPF.flushDenormals(); flutterLPFR.flushDenormals();
   warpHPF_L.flushDenormals(); warpHPF_R.flushDenormals();
   warpLPF_L.flushDenormals(); warpLPF_R.flushDenormals();
+  for(int c=0;c<2;++c){ studioBump[c].flushDenormals(); studioRolloff[c].flushDenormals(); studioGap[c].flushDenormals(); studioDropout[c].flushDenormals(); studioAzimuth[c].flushDenormals(); }
   reproHeadBump.flushDenormals(); reproHeadBumpR.flushDenormals();
   tapeRolloff.flushDenormals(); tapeRolloffR.flushDenormals();
   gapLossLPF.flushDenormals(); gapLossLPFR.flushDenormals();
@@ -1242,9 +1257,11 @@ HYDRA_DSP_IRAM void TapeCore::processStereoBlock(const float* inLBlock,const flo
   struct ChannelFrame {
     float conditionedInput;
     float tapeOutput;
+    float studioOutput;
     float feedbackSource;
   };
 
+  int studioChannel = 0;
   auto readCh=[&](float input,float noiseInjected,float* buffer,BiquadFilter& reproHeadBumpFilter,BiquadFilter& tr,BiquadFilter& outputGapLossFilter,AllpassFilter& az,BiquadFilter&iHP,BiquadFilter&iLP,OnePoleLP&dropoutFilter,DropoutFrame drop,float mod,float warpSig,float warpFb) HYDRA_LAMBDA_INLINE HYDRA_DSP_IRAM {
     ChannelFrame frame{};
     // --- input conditioning ---
@@ -1317,6 +1334,16 @@ HYDRA_DSP_IRAM void TapeCore::processStereoBlock(const float* inLBlock,const flo
 #endif
     }
     frame.tapeOutput=outputGapLossFilter.process(reproHeadBumpFilter.process(tr.process(tapeSig)));
+    // Independent playback memory, same reads and transport. Never feeds record.
+    const int c=studioChannel++;
+    float cleanWet=delaySig*delayGain;
+    if(drop.hfLoss<0.9995f||drop.ampGain<0.9995f){
+      impl_->studioDropout[c].setCutoffFastInv(impl_->maxDropoutFc,impl_->invSampleRate,dropoutBaseCutoff*(0.35f+0.65f*drop.hfLoss));
+      cleanWet=impl_->studioDropout[c].process(cleanWet)*drop.ampGain;
+    }
+    if(useAzimuth){ impl_->studioAzimuth[c].setCoeff(impl_->smoothedAzCoeff); cleanWet=impl_->studioAzimuth[c].process(cleanWet); }
+    cleanWet += noiseInjected;
+    frame.studioOutput=impl_->studioGap[c].process(impl_->studioBump[c].process(impl_->studioRolloff[c].process(cleanWet)));
     HYDRA_PROFILE_END(PlaybackFilters, tPlayF);
     return frame;
   };
@@ -1411,6 +1438,18 @@ HYDRA_DSP_IRAM void TapeCore::processStereoBlock(const float* inLBlock,const flo
   const float feedbackR=feedbackFrom(fbSourceR,impl_->feedbackHPFR,impl_->feedbackHeadBumpR,impl_->feedbackGapLossR,impl_->feedbackPhaseR,impl_->inEnvR);
   *outL=writeCh(inL,frameL.tapeOutput,frameL,feedbackL,impl_->delayLine,impl_->dcBlocker,impl_->magneticsL);
   *outR=writeCh(inR,frameR.tapeOutput,frameR,feedbackR,impl_->delayLineR,impl_->dcBlockerR,impl_->magneticsR);
+  // One shared auxiliary chain. Morph its input, then restore transparent dry
+  // after all wet processing. No delay reset, re-read, or extra engine instance.
+  const float pathTarget=p->signalPathMode == 1 ? 1.f : 0.f;
+  const float pathStep=impl_->signalPathFadeStep;
+  float& pathBlend=impl_->signalPathBlend;
+  pathBlend += clampf(pathTarget-pathBlend,-pathStep,pathStep);
+  const float wetTarget=impl_->studioWetTarget;
+  impl_->studioWetCurrent += clampf(wetTarget-impl_->studioWetCurrent,-2.f*pathStep,2.f*pathStep);
+  if(pathBlend>0.f){
+    *outL += pathBlend*(frameL.studioOutput-*outL);
+    *outR += pathBlend*(frameR.studioOutput-*outR);
+  }
   HYDRA_PROFILE_START(tAux);
   if (impl_->reverseSmear && legacyReverse) {
     for (int i=0;i<4;i++) {
@@ -1439,6 +1478,15 @@ HYDRA_DSP_IRAM void TapeCore::processStereoBlock(const float* inLBlock,const flo
     impl_->springFB_L = wetL; impl_->springFB_R = wetR;
     float wetMix=impl_->springWetGain;
     *outL=impl_->outputLimiter(dryL*(1-wetMix)+wetL*wetMix); *outR=impl_->outputLimiter(dryR*(1-wetMix)+wetR*wetMix);
+  }
+  if(pathBlend>0.f){
+    const float trim=1.f+pathBlend*(impl_->studioWetCurrent-1.f);
+    const float studioL=(*outL)*trim+inL*pathBlend;
+    const float studioR=(*outR)*trim+inR*pathBlend;
+    // Separate emergency sample-peak guard; no envelope or auto normalization.
+    // Identity for finite sums within full scale, including dry-only transients.
+    *outL=std::isfinite(studioL)?clampf(studioL,-1.f,1.f):0.f;
+    *outR=std::isfinite(studioR)?clampf(studioR,-1.f,1.f):0.f;
   }
   if(impl_->freeze){if(impl_->freezeFade<1.0f){impl_->freezeFade+=0.0002f; if(impl_->freezeFade>1.0f)impl_->freezeFade=1.0f;}} else {if(impl_->freezeFade>0.0f){impl_->freezeFade-=0.0008f; if(impl_->freezeFade<0.0f)impl_->freezeFade=0.0f;}}
   HYDRA_PROFILE_END(Auxiliary, tAux);

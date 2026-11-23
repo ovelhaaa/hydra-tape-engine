@@ -1,6 +1,19 @@
 name: Phase 7.4A Repeat Aging Listening & Validation
 
 on:
+  # This new experimental workflow does not yet exist on the base branch.
+  # Use pushes to the experiment branch for immediate CI/artifact generation.
+  push:
+    branches: [experiment/phase7-4a-repeat-aging]
+    paths:
+      - '.github/workflows/phase74-repeat-aging.yml'
+      - 'dsp/core/**'
+      - 'include/**'
+      - 'CMakeLists.txt'
+      - 'scripts/generate_phase74a_listening.mjs'
+      - 'tests/core/phase74_repeat_aging_test.cpp'
+      - 'tests/core/c0_equivalence_runner.cpp'
+      - 'tests/core/verify_c0_bit_exact.py'
   pull_request:
     branches: [feat/phase7-3-classic-c-web-default]
     paths:

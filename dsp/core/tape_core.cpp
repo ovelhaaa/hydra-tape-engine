@@ -29,6 +29,7 @@
 #if HYDRA_PHASE74_REPEAT_AGING_MODE > 3
 #error "HYDRA_PHASE74_REPEAT_AGING_MODE must be 0 (C0), 1 (C1), 2 (C2), or 3 (C3)"
 #endif
+#include "repeat_aging_experiment.hpp"
 #endif
 #include "reverse_windows.hpp"
 
@@ -356,16 +357,7 @@ struct TapeCore::Impl {
   }
   void updateSampleRateConstants(){ const float fs=std::max(1.0f,sampleRate); invSampleRate=1.0f/fs; reverseFadeStep=1.f/std::max(1.f,0.010f*fs); reverseControlAlpha=1.f-std::exp(-1.f/(0.015f*fs)); maxDropoutFc=0.45f*fs; delaySmoothAlpha=1.f-std::exp(-1.f/(0.200f*fs)); delayRampInc=1.f/(0.250f*fs); azimuthInc=0.2f*invSampleRate; mechNoiseSlowAlpha=mechNoiseOnePoleAlpha(fs,kMechNoiseSlowTimeSeconds); mechNoiseFastAlpha=mechNoiseOnePoleAlpha(fs,kMechNoiseFastTimeSeconds); duckAttackCoeff=1.f-std::exp(-1.f/(kHissDuckAttackTimeSeconds*fs)); duckReleaseCoeff=1.f-std::exp(-1.f/(kHissDuckReleaseTimeSeconds*fs));
 #if defined(HYDRA_PHASE74_REPEAT_AGING_MODE) && (HYDRA_PHASE74_REPEAT_AGING_MODE > 0)
-    c1EnvAttackAlpha=1.f-std::exp(-1.f/(0.015f*fs));
-    c1EnvReleaseAlpha=1.f-std::exp(-1.f/(0.180f*fs));
-    c1HfAttackAlpha=1.f-std::exp(-1.f/(0.008f*fs));
-    c1HfReleaseAlpha=1.f-std::exp(-1.f/(0.120f*fs));
-    c2FastAttackAlpha=1.f-std::exp(-1.f/(0.001f*fs));
-    c2FastReleaseAlpha=1.f-std::exp(-1.f/(0.012f*fs));
-    c2SlowAttackAlpha=1.f-std::exp(-1.f/(0.022f*fs));
-    c2SlowReleaseAlpha=1.f-std::exp(-1.f/(0.110f*fs));
-    c2TransAttackAlpha=1.f-std::exp(-1.f/(0.0015f*fs));
-    c2TransReleaseAlpha=1.f-std::exp(-1.f/(0.035f*fs));
+    repeatAgingCoeffs.update(fs);
 #endif
   }
   void updateCachedParams();
@@ -437,81 +429,8 @@ struct TapeCore::Impl {
   AllpassFilter classicAzimuthL,classicAzimuthR;
 #endif
 #if defined(HYDRA_PHASE74_REPEAT_AGING_MODE) && (HYDRA_PHASE74_REPEAT_AGING_MODE > 0)
-  struct RepeatAgingChannelState {
-    float prevX = 0.0f;
-    float envSlow = 0.0f;
-    float hfEnv = 0.0f;
-    OnePoleLP wearLPF;
-    float fastEnv = 0.0f;
-    float slowEnv = 0.0f;
-    float transSmooth = 0.0f;
-    OnePoleLP softLPF;
-    AllpassFilter smearAP;
-    void reset() {
-      prevX = 0.0f;
-      envSlow = 0.0f;
-      hfEnv = 0.0f;
-      wearLPF.reset();
-      fastEnv = 0.0f;
-      slowEnv = 0.0f;
-      transSmooth = 0.0f;
-      softLPF.reset();
-      smearAP.reset();
-      smearAP.setCoeff(0.38f);
-    }
-    void flushDenormals() {
-      if (std::fabs(prevX) < 1e-20f) prevX = 0.0f;
-      if (std::fabs(envSlow) < 1e-20f) envSlow = 0.0f;
-      if (std::fabs(hfEnv) < 1e-20f) hfEnv = 0.0f;
-      wearLPF.flushDenormals();
-      if (std::fabs(fastEnv) < 1e-20f) fastEnv = 0.0f;
-      if (std::fabs(slowEnv) < 1e-20f) slowEnv = 0.0f;
-      if (std::fabs(transSmooth) < 1e-20f) transSmooth = 0.0f;
-      softLPF.flushDenormals();
-      smearAP.flushDenormals();
-    }
-  };
-  float c1EnvAttackAlpha=0, c1EnvReleaseAlpha=0, c1HfAttackAlpha=0, c1HfReleaseAlpha=0;
-  float c2FastAttackAlpha=0, c2FastReleaseAlpha=0, c2SlowAttackAlpha=0, c2SlowReleaseAlpha=0;
-  float c2TransAttackAlpha=0, c2TransReleaseAlpha=0;
-  RepeatAgingChannelState repeatAgingL, repeatAgingR;
-
-  HYDRA_DSP_IRAM HYDRA_AUDIO_INLINE float processDynamicSpectralWear(float x, RepeatAgingChannelState& st, float depthScale) const {
-    const float absX = std::fabs(x);
-    const float absHf = std::fabs(x - st.prevX);
-    st.prevX = x;
-    const float aEnv = (absX > st.envSlow) ? c1EnvAttackAlpha : c1EnvReleaseAlpha;
-    st.envSlow += aEnv * (absX - st.envSlow);
-    const float aHf = (absHf > st.hfEnv) ? c1HfAttackAlpha : c1HfReleaseAlpha;
-    st.hfEnv += aHf * (absHf - st.hfEnv);
-    const float wearNorm = clampf(1.4f * st.envSlow + 1.1f * st.hfEnv, 0.0f, 1.0f);
-    const float ageHeadroom = 0.35f + 0.65f * (1.0f - 0.60f * tapeAgeNorm);
-    const float maxCut = clampf(11000.0f + 3000.0f * tapeSpeedNorm, 4000.0f, maxDropoutFc);
-    const float minCut = 2400.0f + 600.0f * tapeSpeedNorm;
-    const float fc = maxCut - (maxCut - minCut) * (wearNorm * 0.78f * ageHeadroom * depthScale);
-    st.wearLPF.setCutoffFastInv(maxDropoutFc, invSampleRate, fc);
-    return st.wearLPF.process(x);
-  }
-
-  HYDRA_DSP_IRAM HYDRA_AUDIO_INLINE float processTransientSoftening(float x, RepeatAgingChannelState& st, float depthScale) const {
-    const float absX = std::fabs(x);
-    const float aFast = (absX > st.fastEnv) ? c2FastAttackAlpha : c2FastReleaseAlpha;
-    st.fastEnv += aFast * (absX - st.fastEnv);
-    const float aSlow = (absX > st.slowEnv) ? c2SlowAttackAlpha : c2SlowReleaseAlpha;
-    st.slowEnv += aSlow * (absX - st.slowEnv);
-    const float transient = std::max(0.0f, st.fastEnv - 1.15f * st.slowEnv);
-    const float transNorm = clampf(transient * fastRecip(st.slowEnv + 0.03f), 0.0f, 1.0f);
-    const float aTrans = (transNorm > st.transSmooth) ? c2TransAttackAlpha : c2TransReleaseAlpha;
-    st.transSmooth += aTrans * (transNorm - st.transSmooth);
-    const float mod = clampf(st.transSmooth * depthScale, 0.0f, 1.0f);
-    const float minCut = 1400.0f + 600.0f * tapeSpeedNorm;
-    const float maxCut = std::min(14000.0f, maxDropoutFc);
-    const float fc = maxCut - (maxCut - minCut) * mod;
-    st.softLPF.setCutoffFastInv(maxDropoutFc, invSampleRate, fc);
-    const float y = st.softLPF.process(x);
-    const float ap = st.smearAP.process(y);
-    return y + (0.30f * mod) * (ap - y);
-  }
+  experimental::RepeatAgingCoeffs repeatAgingCoeffs;
+  experimental::RepeatAgingChannelState repeatAgingL, repeatAgingR;
 #endif
   DelayAllpass springAP_L[6],springAP_R[6],reverseAP_L[4],reverseAP_R[4]; BiquadFilter springLPF_L[6],springLPF_R[6]; float springFB_L=0,springFB_R=0; float freezeFade=0; float delayEnableRamp=0,smoothedDelaySamples=0,smoothedAzCoeff=0; float* delayLine=nullptr; float* delayLineR=nullptr; int32_t normalBufferSize=0,bufferSize=0,bufferCapacity=0,writeHead=0,reverseCounter=0,reverseWindowSize=0; float bufferSizeF=0.0f,maxReadDelayF=2.0f;
 };
@@ -1373,18 +1292,32 @@ HYDRA_DSP_IRAM void TapeCore::processStereoBlock(const float* inLBlock,const flo
         impl_->classicDropoutR, impl_->classicAzimuthR,
         impl_->classicRolloffR, impl_->classicReproBumpR, impl_->classicGapLossR);
 #if defined(HYDRA_PHASE74_REPEAT_AGING_MODE) && (HYDRA_PHASE74_REPEAT_AGING_MODE == 1)
-    frameL.feedbackSource = impl_->processDynamicSpectralWear(frameL.feedbackSource, impl_->repeatAgingL, 1.0f);
-    frameR.feedbackSource = impl_->processDynamicSpectralWear(frameR.feedbackSource, impl_->repeatAgingR, 1.0f);
+    frameL.feedbackSource = experimental::processDynamicSpectralWear(
+        frameL.feedbackSource, impl_->repeatAgingL, impl_->repeatAgingCoeffs,
+        impl_->tapeAgeNorm, impl_->tapeSpeedNorm, 1.0f);
+    frameR.feedbackSource = experimental::processDynamicSpectralWear(
+        frameR.feedbackSource, impl_->repeatAgingR, impl_->repeatAgingCoeffs,
+        impl_->tapeAgeNorm, impl_->tapeSpeedNorm, 1.0f);
 #elif defined(HYDRA_PHASE74_REPEAT_AGING_MODE) && (HYDRA_PHASE74_REPEAT_AGING_MODE == 2)
-    frameL.feedbackSource = impl_->processTransientSoftening(frameL.feedbackSource, impl_->repeatAgingL, 1.0f);
-    frameR.feedbackSource = impl_->processTransientSoftening(frameR.feedbackSource, impl_->repeatAgingR, 1.0f);
+    frameL.feedbackSource = experimental::processTransientSoftening(
+        frameL.feedbackSource, impl_->repeatAgingL, impl_->repeatAgingCoeffs,
+        impl_->tapeSpeedNorm, 1.0f);
+    frameR.feedbackSource = experimental::processTransientSoftening(
+        frameR.feedbackSource, impl_->repeatAgingR, impl_->repeatAgingCoeffs,
+        impl_->tapeSpeedNorm, 1.0f);
 #elif defined(HYDRA_PHASE74_REPEAT_AGING_MODE) && (HYDRA_PHASE74_REPEAT_AGING_MODE == 3)
-    frameL.feedbackSource = impl_->processDynamicSpectralWear(
-        impl_->processTransientSoftening(frameL.feedbackSource, impl_->repeatAgingL, 0.75f),
-        impl_->repeatAgingL, 0.75f);
-    frameR.feedbackSource = impl_->processDynamicSpectralWear(
-        impl_->processTransientSoftening(frameR.feedbackSource, impl_->repeatAgingR, 0.75f),
-        impl_->repeatAgingR, 0.75f);
+    frameL.feedbackSource = experimental::processDynamicSpectralWear(
+        experimental::processTransientSoftening(
+            frameL.feedbackSource, impl_->repeatAgingL, impl_->repeatAgingCoeffs,
+            impl_->tapeSpeedNorm, 0.70f),
+        impl_->repeatAgingL, impl_->repeatAgingCoeffs,
+        impl_->tapeAgeNorm, impl_->tapeSpeedNorm, 0.70f);
+    frameR.feedbackSource = experimental::processDynamicSpectralWear(
+        experimental::processTransientSoftening(
+            frameR.feedbackSource, impl_->repeatAgingR, impl_->repeatAgingCoeffs,
+            impl_->tapeSpeedNorm, 0.70f),
+        impl_->repeatAgingR, impl_->repeatAgingCoeffs,
+        impl_->tapeAgeNorm, impl_->tapeSpeedNorm, 0.70f);
 #endif
   }
 #endif

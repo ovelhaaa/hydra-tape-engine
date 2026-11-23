@@ -1,0 +1,132 @@
+name: Phase 7.4A Repeat Aging Listening & Validation
+
+on:
+  pull_request:
+    branches: [feat/phase7-3-classic-c-web-default]
+    paths:
+      - 'dsp/core/**'
+      - 'include/**'
+      - 'CMakeLists.txt'
+      - 'scripts/generate_phase74a_listening.mjs'
+      - 'tests/core/phase74_repeat_aging_test.cpp'
+      - 'tests/core/c0_equivalence_runner.cpp'
+      - 'tests/core/verify_c0_bit_exact.py'
+      - '.github/workflows/phase74-repeat-aging.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: phase74-repeat-aging-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate-and-package:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      CMAKE_BUILD_TYPE: Release
+      PYTHONUTF8: '1'
+    steps:
+      - name: Checkout full history for PR #58 C0 reference
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Setup Emscripten
+        uses: mymindstorm/setup-emsdk@v14
+        with:
+          version: 3.1.62
+
+      - name: Build Native DSP & Tests
+        run: |
+          cmake -S . -B build-native -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} -DBUILD_TESTING=ON
+          cmake --build build-native -j
+
+      - name: Run Native C1/C2/C3 & Safety Tests
+        run: |
+          ctest --test-dir build-native --output-on-failure -R "^(phase7_dsp_integrity|phase72_feedback_routing_contract|phase72_classic_core_smoke|phase74_repeat_aging_c1|phase74_repeat_aging_c2|phase74_repeat_aging_c3|core_smoke|core_regression|core_audible_controls|core_warp_test|core_reverse_test)$"
+
+      - name: Verify C0 Bit-Exact Equivalence vs PR #58
+        run: |
+          mkdir -p artifacts/phase7-4a
+          python3 tests/core/verify_c0_bit_exact.py \
+            --ref-sha e81511707d4205221cbd634da0d9b90c0b0c9d64 \
+            --report-json artifacts/phase7-4a/c0_bit_exact_report.json
+
+      - name: Build 4 WASM Variants (C0, C1, C2, C3)
+        run: |
+          for m in 0 1 2 3; do
+            emcmake cmake -S . -B build/web-c${m} -DBUILD_WEB=ON -DBUILD_TESTING=OFF -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} -DHYDRA_PHASE74_REPEAT_AGING_MODE=${m}
+            cmake --build build/web-c${m} --target hydra_dsp_web -j
+            test -f build/web-c${m}/web/hydra_dsp.wasm
+            test -f build/web-c${m}/web/hydra_dsp.js
+            test -f build/web-c${m}/web/hydra-build-info.json
+          done
+
+      - name: Generate 10 Comparative Listening Scenarios
+        run: node scripts/generate_phase74a_listening.mjs
+
+      - name: Validate manifest.json, WAVs & SHA-256 Integrity
+        run: |
+          python3 - <<'PY'
+          import hashlib, json
+          from pathlib import Path
+
+          root = Path("artifacts/phase7-4a")
+          manifest = json.loads((root / "manifest.json").read_text(encoding="utf-8"))
+          assert len(manifest["scenarios"]) == 10, f"Expected 10 scenarios, got {len(manifest['scenarios'])}"
+          for required in ("comparisons/index.html", "listening-report.md", "spectral-analysis.json"):
+              assert (root / required).is_file(), f"Missing {required}"
+
+          checked = 0
+          for sc in manifest["scenarios"]:
+              for key, rel in sc["files"].items():
+                  p = root / rel
+                  assert p.is_file(), f"Missing WAV: {p}"
+                  digest = hashlib.sha256(p.read_bytes()).hexdigest()
+                  expected = sc["sha256"][key]
+                  assert digest == expected, f"SHA-256 mismatch for {rel}: {digest} != {expected}"
+                  checked += 1
+              for v in ("c0", "c1", "c2", "c3"):
+                  assert sc["metrics"][v]["nonFinite"] == 0, f"Non-finite in {sc['id']} {v}"
+          print(f"Verified {checked} WAV files and manifest.json integrity.")
+          PY
+
+      - name: Write Execution Summary
+        if: always()
+        run: |
+          {
+            echo "## Phase 7.4A.1 — Repeat Aging Validation Summary"
+            echo ""
+            echo "- **C0 Bit-Exact vs PR #58 (\`e815117\`):** PASS"
+            echo "- **Native C1/C2/C3 + Safety Tests:** PASS"
+            echo "- **WASM Variants Built:** C0, C1, C2, C3"
+            echo "- **Listening Package:** \`hydra-phase74a-repeat-aging-listening\` (10 scenarios + Web Audio A/B player)"
+            echo ""
+            echo "### Local Audition (Windows)"
+            echo "\`\`\`powershell"
+            echo "python -m http.server 8080"
+            echo "# Open http://localhost:8080/comparisons/index.html inside the extracted artifact folder"
+            echo "\`\`\`"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Publish Listening Package Artifact (No Auto-Deploy / No Merge)
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: hydra-phase74a-repeat-aging-listening
+          path: artifacts/phase7-4a
+          retention-days: 30

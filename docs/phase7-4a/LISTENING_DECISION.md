@@ -1,24 +1,39 @@
-# Phase 7.4A — Listening Decision & Comparison Guide
+# Phase 7.4A.1 — Listening Decision & Validation Summary
 
-## Status: Awaiting Human Audition
+## Status Tokens
 
-Per Phase 7.4A decision rules, **no winner is declared from objective metrics alone**. Final approval depends on human listening of the rendered WAVs.
+- `DSP_REFINEMENT_PASS`
+- `C0_BIT_EXACT_PASS`
+- `WEB_LISTENING_READY`
+- `ESP32_PHYSICAL_NOT_EXECUTED`
 
----
-
-## How to Audition
-
-1. Serve the repository root locally (or open the artifacts folder via a local HTTP server, e.g. `npx serve .` or `python -m http.server 8000`).
-2. Open `artifacts/phase7-4a/comparisons/index.html` in a browser.
-3. Switch seamlessly between **C0 (Classic C Baseline)**, **C1 (Dynamic Spectral Wear)**, **C2 (Transient Softening)**, **C3 (Combined Aging)**, and **Dry** across all 10 scenarios.
+Per Phase 7.4A decision rules, **no winner is declared from objective metrics alone**. Final selection depends on human listening of the regenerated WAVs.
 
 ---
 
-## Preliminary Technical Assessment
+## Integration Note (Phase 7.3 / PR #58)
 
-- **C0 (Classic C Baseline):** Preserved bit-exact. Remains the musical reference.
-- **C1 (Dynamic Spectral Wear):** Very subtle, controlled HF wear (`-20 Hz` centroid shift by E4 in Single-Head, `-0.5 dB` H/L shift at high feedback). Safe against muddiness on high `tapeAge` and sustained chords.
-- **C2 (Transient Softening):** Most distinct evolution on plucked transients (`-81 Hz` centroid by E4 in moderate feedback, `-1.25 dB` H/L shift in high feedback) while leaving E0 untouched and sustained chords transparent.
-- **C3 (Combined Aging):** Intermediate behavior (`0.75x` depth each), smoothly bridging C1 and C2 without over-darkening.
+- **PR #58 (`feat/phase7-3-classic-c-web-default`)** remains untouched and is still the production candidate.
+- **C0 Bit-Exact Equivalence:** Verified byte-for-byte across all 10 deterministic scenarios (`48 kHz`, `128`-frame blocks, `-ffp-contract=off`) against PR #58 HEAD (`e81511707d4205221cbd634da0d9b90c0b0c9d64`).
+- **Pending Phase 7.3 Dependency:** `CMakeLists.txt` currently writes `build/web/hydra-build-info.json` via `file(GENERATE ...)` at CMake configure/generate time (before `cmake --build` succeeds). That fix belongs to Phase 7.3 and was intentionally **not** altered in Phase 7.4A.
 
-**Next Step:** Human A/B listening on `01_single_head_moderate_fb`, `02_single_head_high_fb`, `03_multi_head_three`, `05_guitar_pluck_transients`, and `06_sustained_chords` to decide whether C1, C2, or C3 warrants promotion or tuning.
+---
+
+## How to Audition Locally (Windows / macOS / Linux)
+
+1. Serve the `artifacts/phase7-4a/` directory (or extracted CI artifact `hydra-phase74a-repeat-aging-listening`):
+   ```powershell
+   python -m http.server 8080
+   ```
+2. Open `http://localhost:8080/comparisons/index.html` in a browser.
+3. Use the Web Audio API A/B player (preloaded `AudioBuffer`s, synchronized `AudioBufferSourceNode`s, 8 ms crossfade, unity gain, loop toggle, `[1-4]` / `[Space]` shortcuts) to compare **C0 Original**, **C1 Wear**, **C2 Transient**, **C3 Combined**, and **Dry** without playback interruption.
+
+---
+
+## C3 Cascade Order & Balance
+
+In **C3 (`HYDRA_PHASE74_REPEAT_AGING_MODE == 3`)**, `frame.feedbackSource` passes through:
+1. `processTransientSoftening` (C2, `depthScale = 0.70f`) — detects raw attack transients before spectral wear alters the envelope.
+2. `processDynamicSpectralWear` (C1, `depthScale = 0.70f`) — applies smooth energy/HF-dependent wear to the post-transient signal.
+
+Because both stages now return `x` identically when inactive, sustained low-to-moderate signals avoid double static filtering while high-energy transient repeats receive controlled combined aging.

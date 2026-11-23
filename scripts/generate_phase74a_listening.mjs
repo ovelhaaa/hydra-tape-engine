@@ -532,58 +532,356 @@ const manifest = {
 
 await writeFile(resolve(outRoot, 'manifest.json'), JSON.stringify(manifest, null, 2));
 
+const spectralJson = {
+  generatedAt: manifest.generatedAt,
+  gitCommit: manifest.gitCommit,
+  sampleRate: SAMPLE_RATE,
+  format: manifest.format,
+  scenarios: manifestScenarios.map(sc => ({
+    id: sc.id,
+    title: sc.title,
+    metrics: sc.metrics
+  }))
+};
+await writeFile(resolve(outRoot, 'spectral-analysis.json'), JSON.stringify(spectralJson, null, 2));
+
+const reportLines = [
+  '# Hydra Tape Engine — Phase 7.4A.1 Listening & Spectral Report',
+  '',
+  `- **Git Commit:** \`${manifest.gitCommit}\``,
+  `- **Generated:** ${manifest.generatedAt}`,
+  `- **Format:** 48,000 Hz, 16-bit PCM stereo WAV, unity gain (no independent normalization)`,
+  '- **Status:** Pending human listening evaluation (`WEB_LISTENING_READY`)',
+  '',
+  '## How to Audition Locally (Windows / macOS / Linux)',
+  '',
+  '```powershell',
+  'npx --yes serve .',
+  '# or with Python:',
+  'python -m http.server 8080',
+  '```',
+  '',
+  'Open `http://localhost:8080/comparisons/index.html` (if serving inside `phase7-4a/`) or `http://localhost:8080/artifacts/phase7-4a/comparisons/index.html` (if serving from repo root).',
+  '',
+  '## Cross-Scenario Summary',
+  '',
+  '| Scenario | Variant | RMS | Peak | Crest (dB) | Centroid (Hz) | H/L Ratio (dB) | Tail RMS (dB) | Non-Finite |',
+  '|---|---|---:|---:|---:|---:|---:|---:|---:|'
+];
+for (const sc of manifestScenarios) {
+  for (const v of VARIANTS) {
+    const m = sc.metrics[v.key];
+    reportLines.push(
+      `| \`${sc.id}\` | ${v.key.toUpperCase()} | ${m.rms.toFixed(6)} | ${m.peak.toFixed(6)} | ${m.crestDb.toFixed(2)} | ${m.centroidHz.toFixed(1)} | ${m.highLowRatioDb.toFixed(2)} | ${m.tailRmsDb.toFixed(2)} | ${m.nonFinite} |`
+    );
+  }
+}
+await writeFile(resolve(outRoot, 'listening-report.md'), reportLines.join('\n') + '\n');
+
 const abHtml = `<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8" />
-<title>Hydra Phase 7.4A — Repeat Aging A/B Listening Lab</title>
+<title>HYDRA — Repeat Aging Lab</title>
 <style>
-  body { font-family: system-ui, sans-serif; background: #141619; color: #e8eaed; max-width: 960px; margin: 24px auto; padding: 0 16px; }
-  h1 { font-size: 1.3rem; }
-  .card { background: #1e2227; border: 1px solid #2e343d; border-radius: 8px; padding: 14px; margin-bottom: 12px; }
-  .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 8px; }
-  button { background: #2c333d; color: #e8eaed; border: 1px solid #454f5e; border-radius: 6px; padding: 6px 12px; cursor: pointer; }
-  button.active { background: #3b82f6; border-color: #60a5fa; color: #fff; }
-  audio { width: 100%; margin-top: 10px; }
-  small { color: #9aa0a6; }
+  :root { color-scheme: dark; }
+  body { font-family: system-ui, -apple-system, sans-serif; background: #121417; color: #e8eaed; max-width: 780px; margin: 32px auto; padding: 0 18px; }
+  h1 { font-size: 1.2rem; letter-spacing: 0.06em; margin-bottom: 4px; }
+  .sub { color: #9aa0a6; font-size: 0.85rem; margin-bottom: 18px; }
+  .panel { background: #1b1f24; border: 1px solid #2d333b; border-radius: 10px; padding: 18px; }
+  .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 14px; }
+  label { font-size: 0.9rem; color: #9aa0a6; }
+  select { background: #262b33; color: #e8eaed; border: 1px solid #3f4752; border-radius: 6px; padding: 7px 10px; font-size: 0.95rem; flex: 1; min-width: 240px; }
+  button { background: #262b33; color: #e8eaed; border: 1px solid #3f4752; border-radius: 6px; padding: 8px 14px; cursor: pointer; font-size: 0.92rem; transition: background 0.1s; }
+  button:hover:not(:disabled) { background: #313844; }
+  button:disabled { opacity: 0.5; cursor: default; }
+  button.active { background: #2563eb; border-color: #60a5fa; color: #fff; font-weight: 600; }
+  button.toggle-on { background: #1d4ed8; border-color: #60a5fa; color: #fff; }
+  .timeline-wrap { display: flex; align-items: center; gap: 10px; margin: 14px 0; }
+  input[type="range"] { flex: 1; accent-color: #3b82f6; cursor: pointer; }
+  .time { font-variant-numeric: tabular-nums; font-size: 0.85rem; color: #9aa0a6; min-width: 92px; text-align: right; }
+  .status { display: flex; justify-content: space-between; align-items: center; font-size: 0.9rem; padding-top: 10px; border-top: 1px solid #2d333b; }
+  .current { font-weight: 600; color: #93c5fd; }
+  .meta { color: #9aa0a6; font-size: 0.8rem; }
 </style>
 </head>
 <body>
-<h1>Hydra Tape Engine — Phase 7.4A Repeat Aging A/B Lab</h1>
-<p><small>48 kHz / 16-bit stereo WAV, no normalization. Switch variants seamlessly to compare C0 (Classic C) vs C1 / C2 / C3.</small></p>
-<div id="list"></div>
+<h1>HYDRA — REPEAT AGING LAB</h1>
+<div class="sub">48 kHz / 16-bit PCM stereo WAV, unity gain (no normalization). Web Audio API sample-aligned A/B switching (8 ms crossfade).</div>
+
+<div class="panel">
+  <div class="row">
+    <label for="scenarioSelect">Scenario:</label>
+    <select id="scenarioSelect"></select>
+  </div>
+
+  <div class="row" id="variantButtons">
+    <button data-variant="c0" class="active">C0 Original</button>
+    <button data-variant="c1">C1 Wear</button>
+    <button data-variant="c2">C2 Transient</button>
+    <button data-variant="c3">C3 Combined</button>
+    <button data-variant="dry">Dry</button>
+  </div>
+
+  <div class="row">
+    <button id="playBtn" disabled>&#9654; Play</button>
+    <button id="loopBtn" class="toggle-on">&#8635; Loop: ON</button>
+    <span class="meta" id="loadStatus">Loading manifest...</span>
+  </div>
+
+  <div class="timeline-wrap">
+    <input type="range" id="timeline" min="0" max="1" step="0.001" value="0" disabled />
+    <span class="time" id="timeDisplay">0.00s / 0.00s</span>
+  </div>
+
+  <div class="status">
+    <span class="current" id="currentLabel">Current: C0 — Classic C Baseline</span>
+    <span class="meta">Keys: [1-4] C0-C3, [Space] Play/Pause</span>
+  </div>
+</div>
+
 <script>
-fetch('../manifest.json').then(r => r.json()).then(m => {
-  const list = document.getElementById('list');
-  m.scenarios.forEach(sc => {
-    const card = document.createElement('div');
-    card.className = 'card';
-    card.innerHTML = '<strong>' + sc.title + '</strong> <small>(' + sc.id + ')</small>';
-    const row = document.createElement('div');
-    row.className = 'row';
-    const audio = document.createElement('audio');
-    audio.controls = true;
-    const keys = [['c0','C0 Classic C'],['c1','C1 Spectral Wear'],['c2','C2 Transient Softening'],['c3','C3 Combined'],['dry','Dry']];
-    keys.forEach(([k, lbl], idx) => {
-      const btn = document.createElement('button');
-      btn.textContent = lbl;
-      if (idx === 0) btn.classList.add('active');
-      btn.onclick = () => {
-        const t = audio.currentTime;
-        const wasPlaying = !audio.paused;
-        row.querySelectorAll('button').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        audio.src = '../' + sc.files[k];
-        audio.onloadedmetadata = () => { audio.currentTime = Math.min(t, audio.duration || t); if (wasPlaying) audio.play(); };
-      };
-      row.appendChild(btn);
-    });
-    audio.src = '../' + sc.files.c0;
-    card.appendChild(row);
-    card.appendChild(audio);
-    list.appendChild(card);
+const VARIANT_LABELS = {
+  c0: 'C0 — Classic C Baseline',
+  c1: 'C1 — Dynamic Spectral Wear',
+  c2: 'C2 — Transient Softening',
+  c3: 'C3 — Combined Aging',
+  dry: 'Dry — Input Stimulus'
+};
+const VARIANT_KEYS = ['c0', 'c1', 'c2', 'c3', 'dry'];
+const XFADE_SEC = 0.008;
+
+let manifest = null;
+let audioCtx = null;
+let buffers = {};
+let sources = {};
+let gains = {};
+let activeVariant = 'c0';
+let isPlaying = false;
+let isLooping = true;
+let durationSec = 0;
+let offsetSec = 0;
+let startCtxTime = 0;
+let rafId = null;
+
+const scenarioSelect = document.getElementById('scenarioSelect');
+const playBtn = document.getElementById('playBtn');
+const loopBtn = document.getElementById('loopBtn');
+const timeline = document.getElementById('timeline');
+const timeDisplay = document.getElementById('timeDisplay');
+const currentLabel = document.getElementById('currentLabel');
+const loadStatus = document.getElementById('loadStatus');
+const variantButtons = Array.from(document.querySelectorAll('#variantButtons button'));
+
+function ensureAudioContext() {
+  if (!audioCtx) {
+    const Ctx = window.AudioContext || window.webkitAudioContext;
+    audioCtx = new Ctx();
+  }
+  if (audioCtx.state === 'suspended') {
+    return audioCtx.resume();
+  }
+  return Promise.resolve();
+}
+
+function stopSources(preserveOffset) {
+  if (preserveOffset && isPlaying && audioCtx && durationSec > 0) {
+    const elapsed = audioCtx.currentTime - startCtxTime;
+    offsetSec = isLooping ? ((offsetSec + elapsed) % durationSec) : Math.min(durationSec, offsetSec + elapsed);
+  }
+  for (const k of Object.keys(sources)) {
+    try { sources[k].stop(); } catch (_) {}
+    try { sources[k].disconnect(); } catch (_) {}
+  }
+  for (const k of Object.keys(gains)) {
+    try { gains[k].disconnect(); } catch (_) {}
+  }
+  sources = {};
+  gains = {};
+  isPlaying = false;
+  playBtn.innerHTML = '&#9654; Play';
+  if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
+}
+
+function startSources(fromOffset) {
+  if (!audioCtx || !buffers.c0) return;
+  stopSources(false);
+  const when = audioCtx.currentTime + 0.02;
+  offsetSec = Math.max(0, Math.min(fromOffset, Math.max(0, durationSec - 0.001)));
+  startCtxTime = when;
+
+  for (const k of VARIANT_KEYS) {
+    if (!buffers[k]) continue;
+    const src = audioCtx.createBufferSource();
+    src.buffer = buffers[k];
+    src.loop = isLooping;
+    src.loopStart = 0;
+    src.loopEnd = durationSec;
+
+    const g = audioCtx.createGain();
+    g.gain.setValueAtTime(k === activeVariant ? 1.0 : 0.0, when);
+
+    src.connect(g);
+    g.connect(audioCtx.destination);
+    src.start(when, offsetSec);
+
+    sources[k] = src;
+    gains[k] = g;
+  }
+
+  if (sources.c0) {
+    sources.c0.onended = () => {
+      if (!isLooping && isPlaying) {
+        isPlaying = false;
+        offsetSec = 0;
+        timeline.value = 0;
+        playBtn.innerHTML = '&#9654; Play';
+        updateTimeUi();
+      }
+    };
+  }
+
+  isPlaying = true;
+  playBtn.innerHTML = '&#9646;&#9646; Pause';
+  tickTimeline();
+}
+
+function setVariant(nextKey) {
+  if (!VARIANT_LABELS[nextKey]) return;
+  activeVariant = nextKey;
+  variantButtons.forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.variant === nextKey);
+  });
+  currentLabel.textContent = 'Current: ' + VARIANT_LABELS[nextKey];
+  if (audioCtx && isPlaying) {
+    const now = audioCtx.currentTime;
+    for (const k of VARIANT_KEYS) {
+      const g = gains[k];
+      if (!g) continue;
+      g.gain.cancelScheduledValues(now);
+      g.gain.setValueAtTime(g.gain.value, now);
+      g.gain.linearRampToValueAtTime(k === nextKey ? 1.0 : 0.0, now + XFADE_SEC);
+    }
+  }
+}
+
+function currentPositionSec() {
+  if (!isPlaying || !audioCtx || durationSec <= 0) return offsetSec;
+  const elapsed = Math.max(0, audioCtx.currentTime - startCtxTime);
+  const pos = offsetSec + elapsed;
+  return isLooping ? (pos % durationSec) : Math.min(durationSec, pos);
+}
+
+function updateTimeUi() {
+  const pos = currentPositionSec();
+  if (durationSec > 0) {
+    timeline.value = pos / durationSec;
+  }
+  timeDisplay.textContent = pos.toFixed(2) + 's / ' + durationSec.toFixed(2) + 's';
+}
+
+function tickTimeline() {
+  updateTimeUi();
+  if (isPlaying) {
+    rafId = requestAnimationFrame(tickTimeline);
+  }
+}
+
+async function loadScenario(index) {
+  const wasPlaying = isPlaying;
+  stopSources(false);
+  offsetSec = 0;
+  timeline.value = 0;
+  timeline.disabled = true;
+  playBtn.disabled = true;
+  loadStatus.textContent = 'Preloading & decoding WAVs...';
+
+  await ensureAudioContext();
+  const sc = manifest.scenarios[index];
+  const decoded = {};
+  await Promise.all(VARIANT_KEYS.map(async (k) => {
+    const resp = await fetch('../' + sc.files[k]);
+    if (!resp.ok) throw new Error('Failed to fetch ' + sc.files[k]);
+    const arr = await resp.arrayBuffer();
+    decoded[k] = await audioCtx.decodeAudioData(arr);
+  }));
+  buffers = decoded;
+  durationSec = buffers.c0.duration;
+  timeline.disabled = false;
+  playBtn.disabled = false;
+  loadStatus.textContent = 'Ready (' + durationSec.toFixed(2) + 's)';
+  updateTimeUi();
+  if (wasPlaying) {
+    startSources(0);
+  }
+}
+
+variantButtons.forEach(btn => {
+  btn.addEventListener('click', () => setVariant(btn.dataset.variant));
+});
+
+playBtn.addEventListener('click', async () => {
+  await ensureAudioContext();
+  if (isPlaying) {
+    stopSources(true);
+    updateTimeUi();
+  } else {
+    startSources(offsetSec);
+  }
+});
+
+loopBtn.addEventListener('click', () => {
+  isLooping = !isLooping;
+  loopBtn.classList.toggle('toggle-on', isLooping);
+  loopBtn.innerHTML = isLooping ? '&#8635; Loop: ON' : '&#8635; Loop: OFF';
+  for (const k of Object.keys(sources)) {
+    sources[k].loop = isLooping;
+  }
+});
+
+timeline.addEventListener('input', () => {
+  const target = parseFloat(timeline.value) * durationSec;
+  offsetSec = target;
+  if (isPlaying) {
+    startSources(target);
+  } else {
+    updateTimeUi();
+  }
+});
+
+scenarioSelect.addEventListener('change', () => {
+  loadScenario(parseInt(scenarioSelect.value, 10)).catch(err => {
+    loadStatus.textContent = 'Error: ' + err.message;
   });
 });
+
+window.addEventListener('keydown', (e) => {
+  if (e.target.tagName === 'SELECT' || e.target.tagName === 'INPUT') return;
+  if (e.code === 'Space') {
+    e.preventDefault();
+    if (!playBtn.disabled) playBtn.click();
+  } else if (e.key === '1') setVariant('c0');
+  else if (e.key === '2') setVariant('c1');
+  else if (e.key === '3') setVariant('c2');
+  else if (e.key === '4') setVariant('c3');
+});
+
+fetch('../manifest.json')
+  .then(r => r.json())
+  .then(m => {
+    manifest = m;
+    m.scenarios.forEach((sc, idx) => {
+      const opt = document.createElement('option');
+      opt.value = String(idx);
+      opt.textContent = sc.title + ' (' + sc.id + ')';
+      scenarioSelect.appendChild(opt);
+    });
+    loadStatus.textContent = 'Click Play or select scenario to decode';
+    return loadScenario(0);
+  })
+  .catch(err => {
+    loadStatus.textContent = 'Error loading manifest: ' + err.message;
+  });
 </script>
 </body>
 </html>

@@ -1,6 +1,8 @@
-# Phase 7.4A — ESP32-S3 Real-Time Feasibility Estimate
+# Phase 7.4A.1 — ESP32-S3 Real-Time Feasibility Estimate
 
-## Physical Budget
+**Physical Hardware Status:** `ESP32_PHYSICAL_NOT_EXECUTED` (no physical ESP32-S3 board measurement in this session; physical feasibility remains **pending** on-device profiling).
+
+## Physical Budget (Reference Baseline)
 
 - **Sample Rate:** 44,100 Hz
 - **Block Size:** 128 frames
@@ -10,25 +12,23 @@
 
 ---
 
-## Estimated Additional Cost per Variant (Stereo, 128 frames)
+## Parallel Dry/Wet Architecture Cost Note
 
-Both C1 and C2 were designed with **zero per-sample `exp()`, `sin()`, `cos()`, `pow()`, or `tan()`** calls:
-- All envelope attack/release alphas are precomputed in `updateSampleRateConstants()`.
-- Dynamic filter cutoffs use `OnePoleLP::setCutoffFastInv()` (`x / (1 + x)` via `fastRecip`, which uses hardware `recip0.s` + 2 Newton-Raphson steps on Xtensa).
-- No dynamic allocations, no locks, no I/O, and no double-precision math in the audio path.
+With the Phase 7.4A.1 parallel dry/wet refinement (`x + amount * (wet - x)`):
+- **Zero dynamic allocations, no locks, no I/O, no per-sample `exp()`/`sin()`/`cos()`/`pow()`/`tan()`, and no unnecessary `double` math.**
+- **Continuous State Tracking Cost:** Even when `amount == 0` or `mod == 0` (audible effect is zero), the envelope detectors and internal filter states (`wearLPF`, `softLPF`, `smearAP`) **continue updating every sample** to guarantee click-free, phase-coherent activation. Therefore, the per-sample CPU cost is **constant** (branchless) and **never drops to zero** during quiet or sustained passages.
+- **Extra ops vs. Phase 7.4A initial:** +2 `sub`/`fma` per channel per active stage for `x + amount * (wet - x)` (~+2–4 µs per 128-frame block).
 
-| Variant | Per-Frame Ops (Stereo, L+R) | Estimated Block Cost @ 240 MHz | Remaining Margin (vs 2,604 µs) | Firmware Candidate? |
+| Variant | Per-Frame Ops (Stereo, L+R) | Estimated Block Cost @ 240 MHz | Remaining Margin (vs 2,604 µs) | Firmware Promotion? |
 |---|---|---|---|---|
-| **C0** | 0 extra | `0 µs` | `298.5 µs` | Production default |
-| **C1** | ~24 FMA/add/cmp + 2 `fastRecip` | `~18–35 µs` | `~263–280 µs` | **Yes** (subject to device profiling) |
-| **C2** | ~32 FMA/add/cmp + 4 `fastRecip` | `~25–45 µs` | `~253–273 µs` | **Yes** (subject to device profiling) |
-| **C3** | ~56 FMA/add/cmp + 6 `fastRecip` | `~43–80 µs` | `~218–255 µs` | **Conditional** (tighter margin; measure on-target) |
+| **C0** | 0 extra | `0 µs` | `298.5 µs` | Production default (PR #58) |
+| **C1** | ~28 FMA/add/cmp + 2 `raFastRecip` | `~20–38 µs` (est.) | `~260–278 µs` (est.) | **Not promoted** (pending human listening + HW profile) |
+| **C2** | ~36 FMA/add/cmp + 4 `raFastRecip` | `~27–48 µs` (est.) | `~250–271 µs` (est.) | **Not promoted** (pending human listening + HW profile) |
+| **C3** | ~64 FMA/add/cmp + 6 `raFastRecip` | `~47–86 µs` (est.) | `~212–251 µs` (est.) | **Not promoted** (tighter margin; requires HW profile) |
 
 ---
 
-## Risks & Gate Before Hardware Deployment
+## Gate Before Hardware Deployment
 
-1. **PSRAM / Cache Pressure:** Adding `RepeatAgingChannelState` (2 × ~48 bytes = ~96 bytes) fits easily in internal DRAM (`TapeCore::Impl`), so PSRAM cache misses are not expected, but must be verified with `esp32-s3-classic-c-dltrace` / `esp32-s3-stageprofile`.
-2. **WASM Pass ≠ ESP32 Proof:** WASM/Native execution only validates functional correctness and numerical stability. **No Phase 7.4A variant should be enabled in `platformio.ini` production firmware** until:
-   - Human listening approves the musicality of C1/C2/C3.
-   - On-device ESP32-S3 block timing confirms zero deadline overruns in Multi-Head + Reverse + Spring worst-case scenarios.
+1. Do **not** enable `HYDRA_PHASE74_REPEAT_AGING_MODE > 0` in `platformio.ini` production firmware.
+2. Operation-count estimates are **not** proof of real-time safety on hardware. On-device ESP32-S3 profiling (`esp32-s3-classic-c-dltrace` / `esp32-s3-stageprofile`) in Multi-Head (`activeHeads=7`) + Reverse + Spring worst-case is mandatory before any promotion.

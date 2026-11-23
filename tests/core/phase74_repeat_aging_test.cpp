@@ -1,3 +1,4 @@
+#include "repeat_aging_experiment.hpp"
 #include "tape_core.hpp"
 
 #include <cmath>
@@ -52,9 +53,112 @@ void verifyFiniteAndBounded(const std::vector<float>& outL,
   check(meanL < 0.01 && meanR < 0.01, "DC offset exceeded 0.01");
 }
 
+void testTransparencyConditions() {
+  using namespace hydra::dsp::experimental;
+  constexpr float kFs = 48000.0f;
+  RepeatAgingCoeffs coeffs;
+  coeffs.update(kFs);
+
+  // Condition A: Zero intensity must return exact input even after internal state warmup
+  {
+    RepeatAgingChannelState st1, st2;
+    st1.reset();
+    st2.reset();
+    for (int i = 0; i < 4800; ++i) {
+      const float x = 0.7f * std::sin(2.0f * 3.14159265f * 2800.0f * i / kFs);
+      (void)processDynamicSpectralWear(x, st1, coeffs, 0.3f, 0.5f, 1.0f);
+      (void)processTransientSoftening(x, st2, coeffs, 0.5f, 1.0f);
+    }
+    check(st1.envSlow > 0.1f && st1.hfEnv > 0.1f, "C1 warmup state should be non-zero");
+
+    float c1Amt = -1.0f, c2Mod = -1.0f;
+    for (int i = 0; i < 2048; ++i) {
+      const float x = 0.45f * std::sin(2.0f * 3.14159265f * 4500.0f * i / kFs);
+      const float y1 = processDynamicSpectralWear(x, st1, coeffs, 0.3f, 0.5f, 0.0f, &c1Amt);
+      const float y2 = processTransientSoftening(x, st2, coeffs, 0.5f, 0.0f, &c2Mod);
+      check(c1Amt == 0.0f && c2Mod == 0.0f, "zero depthScale must yield zero effective amount");
+      check(y1 == x, "C1 zero-intensity must be bit-exact passthrough after warmup");
+      check(y2 == x, "C2 zero-intensity must be bit-exact passthrough after warmup");
+    }
+    // Detector must keep tracking signal even when depthScale == 0.0f
+    check(st1.envSlow > 0.1f && st1.hfEnv > 0.1f, "C1 detector must remain active at zero intensity");
+    check(st2.slowEnv > 0.1f, "C2 detector must remain active at zero intensity");
+  }
+
+  // Condition B: Sustained content must not receive permanent softening in C2
+  {
+    RepeatAgingChannelState st;
+    st.reset();
+    const int total = static_cast<int>(kFs * 1.0f);
+    const int settle = static_cast<int>(kFs * 0.40f);
+    float maxModAfterSettle = 0.0f;
+    float maxDiffAfterSettle = 0.0f;
+    for (int i = 0; i < total; ++i) {
+      const float ramp = std::min(1.0f, static_cast<float>(i) / (0.05f * kFs));
+      const float x = ramp * 0.35f * (
+          std::sin(2.0f * 3.14159265f * 330.0f * i / kFs) +
+          0.4f * std::sin(2.0f * 3.14159265f * 660.0f * i / kFs) +
+          0.2f * std::sin(2.0f * 3.14159265f * 2640.0f * i / kFs));
+      float mod = 0.0f;
+      const float y = processTransientSoftening(x, st, coeffs, 0.5f, 1.0f, &mod);
+      if (i >= settle) {
+        maxModAfterSettle = std::max(maxModAfterSettle, mod);
+        maxDiffAfterSettle = std::max(maxDiffAfterSettle, std::fabs(y - x));
+      }
+    }
+    if (!(maxModAfterSettle < 1e-4f)) {
+      std::fprintf(stderr, "maxModAfterSettle=%g maxDiffAfterSettle=%g\n",
+                   maxModAfterSettle, maxDiffAfterSettle);
+    }
+    check(maxModAfterSettle < 1e-4f, "C2 must return to zero modulation on sustained tone");
+    check(maxDiffAfterSettle < 1e-4f, "C2 must be transparent on sustained tone");
+  }
+
+  // Condition C: Isolated transient produces measurable modification during attack, then recovers
+  {
+    RepeatAgingChannelState st;
+    st.reset();
+    const int total = static_cast<int>(kFs * 0.5f);
+    const int hitSample = static_cast<int>(kFs * 0.05f);
+    float peakAttackMod = 0.0f;
+    float peakAttackDiff = 0.0f;
+    float lateMod = 0.0f;
+    float lateDiff = 0.0f;
+    for (int i = 0; i < total; ++i) {
+      float x = 0.0f;
+      if (i >= hitSample && i < hitSample + 2400) {
+        const int k = i - hitSample;
+        const float env = std::exp(-static_cast<float>(k) / 400.0f);
+        x = 0.6f * env * (
+            std::sin(2.0f * 3.14159265f * 880.0f * k / kFs) +
+            0.6f * std::sin(2.0f * 3.14159265f * 3520.0f * k / kFs));
+      } else if (i >= hitSample + 2400) {
+        // Low-level steady probe after transient to verify transparency recovery
+        x = 0.08f * std::sin(2.0f * 3.14159265f * 3000.0f * i / kFs);
+      }
+      float mod = 0.0f;
+      const float y = processTransientSoftening(x, st, coeffs, 0.5f, 1.0f, &mod);
+      if (i >= hitSample && i < hitSample + static_cast<int>(0.025f * kFs)) {
+        peakAttackMod = std::max(peakAttackMod, mod);
+        peakAttackDiff = std::max(peakAttackDiff, std::fabs(y - x));
+      }
+      if (i >= total - 1024) {
+        lateMod = std::max(lateMod, mod);
+        lateDiff = std::max(lateDiff, std::fabs(y - x));
+      }
+    }
+    check(peakAttackMod > 0.25f, "C2 must detect isolated transient attack");
+    check(peakAttackDiff > 0.02f, "C2 must measurably soften isolated transient");
+    check(lateMod < 1e-3f, "C2 must recover to transparency after transient");
+    check(lateDiff < 1e-3f, "C2 probe must be transparent after recovery");
+  }
+}
+
 }  // namespace
 
 int main() {
+  testTransparencyConditions();
+
   constexpr float kFs = 48000.0f;
   hydra::dsp::TapeCore core(kFs, 2000.0f, 8100.0f);
   check(core.isValid(), "TapeCore allocation");
@@ -63,7 +167,9 @@ int main() {
   std::vector<float> impulseL(N, 0.0f), impulseR(N, 0.0f);
   for (size_t i = 0; i < 600; ++i) {
     const float env = std::exp(-static_cast<float>(i) / 150.0f);
-    const float s = 0.6f * env * std::sin(2.0f * 3.14159265f * 440.0f * i / kFs);
+    const float s = 0.6f * env * (
+        std::sin(2.0f * 3.14159265f * 440.0f * i / kFs) +
+        0.5f * std::sin(2.0f * 3.14159265f * 2200.0f * i / kFs));
     impulseL[i + 128] = s;
     impulseR[i + 128] = s * 0.9f;
   }
@@ -131,7 +237,7 @@ int main() {
   }
   check(silPeak < 1e-6f, "silence with noise=0 should remain silent");
 
-  // 5. Parameter automation sweep (no clicks > 0.35 sample-to-sample during steady tone)
+  // 5. Parameter automation sweep (rapid Tape Age, Tape Speed, Feedback)
   core.reset();
   std::vector<float> toneL(N), toneR(N);
   for (size_t i = 0; i < N; ++i) {
@@ -161,6 +267,6 @@ int main() {
   }
   check(maxJump < 0.25f, "automation click threshold");
 
-  std::puts("Phase 7.4A repeat aging safety test PASS");
+  std::puts("Phase 7.4A repeat aging safety & transparency test PASS");
   return 0;
 }

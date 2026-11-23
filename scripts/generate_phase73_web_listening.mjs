@@ -225,7 +225,7 @@ const scenarios = [
     objective: 'Separação espacial e dinâmica das cabeças',
     stimulusKey: 'transient',
     params: { p_12: [280], p_13: [60], p_14: [60], p_15: [75], p_6: [30], p_20: [55] },
-    commands: { activeHeads: 4, pingPong: 1, reverse: 0 }
+    commands: { activeHeads: 7, pingPong: 1, reverse: 0 }
   },
   {
     id: '03_high_tape_age',

@@ -14,7 +14,8 @@ enum class DspHandoffCommandType : uint8_t {
   TransportSetBpm,
   TransportSetTimeSignature,
   MidiClockReset,
-  SetTempoSource
+  SetTempoSource,
+  SetParameter
 };
 
 struct DspHandoffCommand {
@@ -25,6 +26,8 @@ struct DspHandoffCommand {
   uint32_t num = 0;
   uint32_t den = 0;
   uint32_t tempo_source = 0;
+  uint32_t param_id = 0;
+  float param_value = 0.0f;
 };
 
 struct DspMidiEvent {
@@ -85,6 +88,7 @@ public:
   bool postMidiClockEvent(uint8_t status, uint64_t timestamp_frames = 0, int64_t arrival_time_us = 0);
   bool postMidiClockReset();
   bool postSetTempoSource(uint32_t source);
+  bool postSetParameter(hydra_dsp_param_id paramId, float value);
 
   // Drain pending handoff commands (executed at block start in audio task)
   void drainCommandQueue();

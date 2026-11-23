@@ -23,6 +23,7 @@
 #include "feedback_routing_experiment.hpp"
 #endif
 #include "reverse_windows.hpp"
+#include "tape_motion_engine.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -354,6 +355,96 @@ struct TapeCore::Impl {
   float wowLeakCoeff=0.9996f,wowStepCoeff=0.00003f,wowLpAlpha=0.00008f;
   float flutterHpAlpha=0.0025f,flutterLpAlpha=0.015f;
   float wowDepthScale=0,flutterDepthScale=0,scrapeDepthScale=0;
+  TapeMotionCoeffs motionCoeffs;
+  TapeMotionState motionState;
+
+  HYDRA_DSP_IRAM inline void computeUnifiedMotion(float scrapeL,
+                                                  float scrapeR,
+                                                  float& outModL,
+                                                  float& outModR) {
+    const float textureBaseSamples = sampleRate * 0.012f;
+    const float modBaseSamples = delayActive ? smoothedDelaySamples
+                                             : std::max(smoothedDelaySamples, textureBaseSamples);
+    const int active = motionState.activeMode;
+
+    if (!motionState.transitioning) {
+      if (active == 0) {
+        const float residual = 0.03f * fast_sin(wowPhase) + 0.01f * fast_sin(flutterPhase + 0.31f);
+        const float cL = mechanicalMod(scrapeL, flutterLPF, mechStateL, residual);
+        const float cR = mechanicalMod(scrapeR, flutterLPFR, mechStateR, residual);
+        motionState.scaleClassicMode(cL, cR, modBaseSamples, motionCoeffs, outModL, outModR);
+      } else {
+        motionState.evalOrganicMode(active, motionCoeffs, modBaseSamples,
+                                    scrapeL, scrapeR, true, true, true,
+                                    outModL, outModR);
+      }
+      motionState.lastOutL = outModL;
+      motionState.lastOutR = outModR;
+      return;
+    }
+
+    // Clickless modulation-layer transition between prevMode and activeMode
+    const int prev = motionState.prevMode;
+    const bool needM0 = (prev == 0 || active == 0);
+    const bool needM1 = (prev == 1 || active == 1 || prev == 3 || active == 3);
+    const bool needM2 = (prev == 2 || active == 2 || prev == 3 || active == 3);
+    const bool needM3 = (prev == 3 || active == 3);
+
+    float m0L = 0.0f, m0R = 0.0f;
+    if (needM0) {
+      const float residual = 0.03f * fast_sin(wowPhase) + 0.01f * fast_sin(flutterPhase + 0.31f);
+      const float cL = mechanicalMod(scrapeL, flutterLPF, mechStateL, residual);
+      const float cR = mechanicalMod(scrapeR, flutterLPFR, mechStateR, residual);
+      motionState.scaleClassicMode(cL, cR, modBaseSamples, motionCoeffs, m0L, m0R);
+    }
+    if (needM1) motionState.stepM1(motionCoeffs);
+    if (needM2) motionState.stepM2(motionCoeffs);
+    if (needM3) motionState.stepM3(motionCoeffs, false);
+
+    float modPrevL = 0.0f, modPrevR = 0.0f;
+    if (prev == 0) {
+      modPrevL = m0L;
+      modPrevR = m0R;
+    } else {
+      motionState.evalOrganicMode(prev, motionCoeffs, modBaseSamples,
+                                  scrapeL, scrapeR, false, false, false,
+                                  modPrevL, modPrevR);
+    }
+
+    float modNextL = 0.0f, modNextR = 0.0f;
+    if (active == 0) {
+      modNextL = m0L;
+      modNextR = m0R;
+    } else {
+      motionState.evalOrganicMode(active, motionCoeffs, modBaseSamples,
+                                  scrapeL, scrapeR, false, false, false,
+                                  modNextL, modNextR);
+    }
+
+    if (motionState.pendingSnapHold) {
+      const float maxHold = 0.25f * modBaseSamples;
+      motionState.holdOffsetL = clampf(motionState.lastOutL - modPrevL, -maxHold, maxHold);
+      motionState.holdOffsetR = clampf(motionState.lastOutR - modPrevR, -maxHold, maxHold);
+      motionState.pendingSnapHold = false;
+    }
+
+    const float t = motionState.transitionPos;
+    const float s = t * t * (3.0f - 2.0f * t);
+    outModL = (1.0f - s) * (modPrevL + motionState.holdOffsetL) + s * modNextL;
+    outModR = (1.0f - s) * (modPrevR + motionState.holdOffsetR) + s * modNextR;
+
+    motionState.transitionPos += motionCoeffs.transitionStep;
+    if (motionState.transitionPos >= 1.0f) {
+      motionState.transitionPos = 1.0f;
+      motionState.transitioning = false;
+      motionState.prevMode = motionState.activeMode;
+      motionState.holdOffsetL = 0.0f;
+      motionState.holdOffsetR = 0.0f;
+    }
+
+    motionState.lastOutL = outModL;
+    motionState.lastOutR = outModR;
+  }
   float inEnvL=0,inEnvR=0,duckAttackCoeff=0,duckReleaseCoeff=0,noiseBaseGain=0,noiseMinDuckGain=kHissNoiseMinDuckGain,noiseDuckStrength=10.0f;
   float tapeSpeedNorm=0.5f,tapeAgeNorm=0.4f,toneNorm=0.5f,azimuthErrorNorm=0;
   float feedbackPreEmph=1.12f,feedbackDeEmph=1.0f/1.12f;
@@ -480,6 +571,27 @@ HYDRA_DSP_IRAM void TapeCore::Impl::updateFilters(){
   wowDepthScale=0.00025f*clampf(currentParams.wowDepth,0.0f,100.0f);
   flutterDepthScale=0.00010f*clampf(currentParams.flutterDepth,0.0f,100.0f);
   scrapeDepthScale=kScrapeModAmount*0.18f;
+  {
+    TapeMotionParams mp;
+    mp.sampleRate = sampleRate;
+    mp.wowRate = currentParams.wowRate;
+    mp.wowDepth = currentParams.wowDepth;
+    mp.flutterRate = currentParams.flutterRate;
+    mp.flutterDepth = currentParams.flutterDepth;
+    mp.tapeAge = currentParams.tapeAge;
+    mp.scrapeAmount = scrapeDepthScale;
+    mp.motionMode = currentParams.motionMode;
+    mp.motionAmount = currentParams.motionAmount;
+    mp.stereoMotion = currentParams.stereoMotion;
+    mp.inertia = currentParams.motionInertia;
+    mp.driftChar = currentParams.motionDriftChar;
+    mp.capstanTexture = currentParams.motionTexture;
+    mp.capstanIrregularity = currentParams.motionIrregularity;
+    mp.wornInstability = currentParams.motionInstability;
+    mp.tensionRecovery = currentParams.motionTensionRec;
+    motionCoeffs.update(mp);
+    motionState.setTargetMode(currentParams.motionMode);
+  }
   float speedMod=tapeSpeedNorm,ageMod=tapeAgeNorm,toneMod=toneNorm;
   feedbackPreEmph=1.0f+(0.06f+0.10f*(1.0f-speedMod)+0.06f*ageMod);
   feedbackDeEmph=1.0f/feedbackPreEmph;
@@ -727,6 +839,8 @@ void TapeCore::reset(){
   impl_->flutterPhase=impl_->wowPhase=impl_->azimuthPhase=0;
   impl_->mechStateL=Impl::MechanicalState{};
   impl_->mechStateR=Impl::MechanicalState{0,0,0,0,0x2468ACE1u,0x56473829u};
+  impl_->motionState.activeMode = std::max(0, std::min(3, impl_->currentParams.motionMode));
+  impl_->motionState.reset();
   impl_->freezeFade=0; impl_->delayEnableRamp=0; impl_->smoothedDelaySamples=0; impl_->smoothedAzCoeff=0; impl_->springFB_L=impl_->springFB_R=0;
   impl_->dcBlocker.clear(); impl_->dcBlockerR.clear(); impl_->magneticsL.reset(); impl_->magneticsR.reset(); impl_->dropout.reset(); impl_->dropout.setSampleRate(impl_->sampleRate); impl_->noiseGen.reset(impl_->sampleRate, 123456789u); impl_->noiseGenR.reset(impl_->sampleRate, 987654321u); impl_->mechNoiseL.reset(); impl_->mechNoiseR.reset();
   impl_->flutterLPF.reset(); impl_->flutterLPFR.reset(); impl_->warpHPF_L.reset(); impl_->warpHPF_R.reset(); impl_->warpLPF_L.reset(); impl_->warpLPF_R.reset(); impl_->reproHeadBump.reset(); impl_->reproHeadBumpR.reset(); impl_->tapeRolloff.reset(); impl_->tapeRolloffR.reset(); impl_->gapLossLPF.reset(); impl_->gapLossLPFR.reset(); impl_->dropoutLPF.reset(); impl_->dropoutLPFR.reset();
@@ -907,9 +1021,8 @@ HYDRA_DSP_IRAM void TapeCore::processStereoBlock(const float* inLBlock,const flo
 
   float scrapeL=impl_->mechNoiseL.lowRate(impl_->mechNoiseSlowAlpha,impl_->mechNoiseFastAlpha);
   float scrapeR=impl_->mechNoiseR.lowRate(impl_->mechNoiseSlowAlpha,impl_->mechNoiseFastAlpha);
-  float residual=0.03f*fast_sin(impl_->wowPhase)+0.01f*fast_sin(impl_->flutterPhase+0.31f);
-  float modL=impl_->mechanicalMod(scrapeL,impl_->flutterLPF,impl_->mechStateL,residual);
-  float modR=impl_->mechanicalMod(scrapeR,impl_->flutterLPFR,impl_->mechStateR,residual);
+  float modL = 0.0f, modR = 0.0f;
+  impl_->computeUnifiedMotion(scrapeL, scrapeR, modL, modR);
 
   const bool useAzimuth=impl_->useAzimuth;
   if(useAzimuth){
@@ -1312,6 +1425,11 @@ HYDRA_DSP_IRAM void TapeCore::processStereoBlock(const float* inLBlock,const flo
   impl_->tapTempo.update(impl_->transportClock.absoluteSamplePosition());
   impl_->midiClockSync.update(impl_->transportClock.absoluteSamplePosition());
   impl_->flushDenormals();
+}
+
+void TapeCore::getMotionTelemetry(float* outModL, float* outModR) const {
+  if (outModL) *outModL = impl_->motionState.lastOutL;
+  if (outModR) *outModR = impl_->motionState.lastOutR;
 }
 
 } // namespace hydra::dsp

@@ -43,7 +43,16 @@ const PARAM = {
   warpFeedback: 34,
   warpMode: 35,
   reverseMode: 36,
-  reverseDivision: 37
+  reverseDivision: 37,
+  motionMode: 38,
+  motionAmount: 39,
+  stereoMotion: 40,
+  motionInertia: 41,
+  motionDriftChar: 42,
+  motionTexture: 43,
+  motionIrregularity: 44,
+  motionInstability: 45,
+  motionTensionRec: 46
 };
 
 const ALL_PARAM_IDS = Object.keys(PARAM).filter(id => id !== 'reset');
@@ -53,7 +62,9 @@ const CONTINUOUS_PARAM_IDS = new Set([
   'tapeSpeed', 'tapeAge', 'headBumpAmount', 'azimuthError',
   'flutterRate', 'wowRate', 'delayTimeMs', 'feedback', 'dryWet', 'delayWet',
   'bpm', 'tone', 'springDecay', 'springDamping', 'springMix',
-  'warpSpeed', 'warpGrainMs', 'warpStereo', 'warpFeedback'
+  'warpSpeed', 'warpGrainMs', 'warpStereo', 'warpFeedback',
+  'motionAmount', 'stereoMotion', 'motionInertia', 'motionDriftChar',
+  'motionTexture', 'motionIrregularity', 'motionInstability', 'motionTensionRec'
 ]);
 
 const PARAM_METADATA = {
@@ -93,7 +104,16 @@ const PARAM_METADATA = {
   warpFeedback: { group: 'Warp Feedback', engineParamId: PARAM.warpFeedback, layer: 'AudioParam (Smooth)' },
   warpMode: { group: 'Warp Mode', engineParamId: PARAM.warpMode, layer: 'MessagePort (Int Enum)' },
   reverseMode: { group: 'Playback Direction', engineParamId: PARAM.reverseMode, layer: 'MessagePort (Int Enum)' },
-  reverseDivision: { group: 'Tempo Sync', engineParamId: PARAM.reverseDivision, layer: 'MessagePort (Int Enum)' }
+  reverseDivision: { group: 'Tempo Sync', engineParamId: PARAM.reverseDivision, layer: 'MessagePort (Int Enum)' },
+  motionMode: { group: 'Tape Motion', engineParamId: PARAM.motionMode, layer: 'MessagePort (Int Enum)' },
+  motionAmount: { group: 'Tape Motion', engineParamId: PARAM.motionAmount, layer: 'AudioParam (Smooth)' },
+  stereoMotion: { group: 'Tape Motion', engineParamId: PARAM.stereoMotion, layer: 'AudioParam (Smooth)' },
+  motionInertia: { group: 'Tape Motion (M1)', engineParamId: PARAM.motionInertia, layer: 'AudioParam (Smooth)' },
+  motionDriftChar: { group: 'Tape Motion (M1)', engineParamId: PARAM.motionDriftChar, layer: 'AudioParam (Smooth)' },
+  motionTexture: { group: 'Tape Motion (M2)', engineParamId: PARAM.motionTexture, layer: 'AudioParam (Smooth)' },
+  motionIrregularity: { group: 'Tape Motion (M2)', engineParamId: PARAM.motionIrregularity, layer: 'AudioParam (Smooth)' },
+  motionInstability: { group: 'Tape Motion (M3)', engineParamId: PARAM.motionInstability, layer: 'AudioParam (Smooth)' },
+  motionTensionRec: { group: 'Tape Motion (M3)', engineParamId: PARAM.motionTensionRec, layer: 'AudioParam (Smooth)' }
 };
 
 const DEBUG_ROUNDTRIP = false;
@@ -144,7 +164,8 @@ async function displayCompiledArchitecture() {
     ].filter(Boolean).join(' | ');
     if (details) architectureBadge.title = details;
     if (build.feedbackRouting === 'PHASE72_CLASSIC_C') {
-      architectureBadge.textContent = 'DSP: Classic C (WASM)';
+      const motionLabel = build.motionEngine === 'UNIFIED_7_4C' ? ' + Unified Motion' : '';
+      architectureBadge.textContent = `DSP: Classic C${motionLabel} (WASM)`;
       architectureBadge.dataset.state = 'success';
     } else if (build.feedbackRouting === 'LEGACY_A') {
       architectureBadge.textContent = 'DSP: Legacy A (WASM)';
@@ -360,8 +381,47 @@ function getControlStateFromUI() {
   return { ...DEFAULT_CONTROL_STATE, ...snapshot };
 }
 
+const MOTION_MODE_META = [
+  { name: 'Classic', desc: 'Classic — Original Hydra mechanical wow & flutter' },
+  { name: 'Motor Drift', desc: 'Motor Drift — Slow, organic motor torque & flywheel drift' },
+  { name: 'Capstan Flutter', desc: 'Capstan Flutter — Structured capstan periodicity & mechanical texture' },
+  { name: 'Worn Transport', desc: 'Worn Transport — Expressive transport sag, tension snaps & wear' }
+];
+
+function updateMotionModeUI(rawMode) {
+  const mode = Math.max(0, Math.min(3, Math.round(Number(rawMode) || 0)));
+  const hiddenInput = document.getElementById('motionMode');
+  if (hiddenInput) hiddenInput.value = String(mode);
+
+  const buttons = document.querySelectorAll('.motion-mode-btn[data-motion-mode]');
+  buttons.forEach((btn) => {
+    const btnMode = Number(btn.getAttribute('data-motion-mode'));
+    const isActive = btnMode === mode;
+    btn.setAttribute('aria-checked', isActive ? 'true' : 'false');
+    btn.tabIndex = isActive ? 0 : -1;
+  });
+
+  const descEl = document.getElementById('motionModeDesc');
+  if (descEl) descEl.textContent = MOTION_MODE_META[mode].desc;
+
+  const summaryEl = document.getElementById('motionAdvancedSummary');
+  if (summaryEl) summaryEl.textContent = `Advanced — ${MOTION_MODE_META[mode].name}`;
+
+  const advPanels = document.querySelectorAll('.motion-advanced-panel[data-motion-adv]');
+  advPanels.forEach((panel) => {
+    const panelMode = Number(panel.getAttribute('data-motion-adv'));
+    panel.hidden = panelMode !== mode;
+  });
+}
+
 function applyControlStateToUI(controlState) {
-  Object.entries(controlState).forEach(([id, value]) => {
+  const normalizedState = {
+    ...controlState,
+    motionMode: Object.prototype.hasOwnProperty.call(controlState, 'motionMode')
+      ? controlState.motionMode
+      : DEFAULT_CONTROL_STATE.motionMode
+  };
+  Object.entries(normalizedState).forEach(([id, value]) => {
     const el = document.getElementById(id);
     if (!el) return;
     if (el.type === 'checkbox') {
@@ -370,6 +430,7 @@ function applyControlStateToUI(controlState) {
       el.value = String(value);
     }
   });
+  updateMotionModeUI(normalizedState.motionMode);
   syncAllParams();
 }
 
@@ -584,6 +645,16 @@ function updateTransportUI(data) {
       syncBadgeEl.textContent = 'PAUSED';
       syncBadgeEl.setAttribute('data-state', 'warning');
     }
+  }
+
+  const motionThumbEl = document.getElementById('motionTelemetryThumb');
+  const motionValEl = document.getElementById('motionTelemetryValue');
+  if (motionThumbEl && motionValEl && Number.isFinite(data.motionModL) && Number.isFinite(data.motionModR)) {
+    const avgMod = 0.5 * (data.motionModL + data.motionModR);
+    const clampedNorm = Math.max(-1, Math.min(1, avgMod / 24.0));
+    const pct = 50 + clampedNorm * 42;
+    motionThumbEl.style.left = `calc(${pct.toFixed(1)}% - 4px)`;
+    motionValEl.textContent = `${avgMod >= 0 ? '+' : ''}${avgMod.toFixed(1)} smp`;
   }
 
   const reverseWarnEl = document.getElementById('reverseClampedWarning');
@@ -910,6 +981,35 @@ ALL_PARAM_IDS.forEach((id) => {
   el.addEventListener('input', onInput);
   el.addEventListener('change', onInput);
 });
+
+// Tape Motion 4-mode segmented selector (click + arrow-key radiogroup navigation)
+const motionModeButtons = Array.from(document.querySelectorAll('.motion-mode-btn[data-motion-mode]'));
+const selectMotionMode = (mode) => {
+  const clamped = Math.max(0, Math.min(3, Math.round(Number(mode) || 0)));
+  updateMotionModeUI(clamped);
+  uiState.motionMode = clamped;
+  post({ type: 'command', command: 'motionMode', value: clamped });
+  requestUIFlush();
+};
+motionModeButtons.forEach((btn, idx) => {
+  btn.addEventListener('click', () => {
+    selectMotionMode(btn.getAttribute('data-motion-mode'));
+  });
+  btn.addEventListener('keydown', (event) => {
+    if (event.key === 'ArrowRight' || event.key === 'ArrowDown') {
+      event.preventDefault();
+      const next = motionModeButtons[(idx + 1) % motionModeButtons.length];
+      next.focus();
+      selectMotionMode(next.getAttribute('data-motion-mode'));
+    } else if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') {
+      event.preventDefault();
+      const prev = motionModeButtons[(idx - 1 + motionModeButtons.length) % motionModeButtons.length];
+      prev.focus();
+      selectMotionMode(prev.getAttribute('data-motion-mode'));
+    }
+  });
+});
+updateMotionModeUI(document.getElementById('motionMode')?.value || 0);
 
 exportPresetBtn.addEventListener('click', () => {
   try {

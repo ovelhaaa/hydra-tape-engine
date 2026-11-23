@@ -44,6 +44,10 @@ if(BUILD_TESTING)
   target_include_directories(hydra_phase72_feedback_routing_test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/dsp/core)
   add_test(NAME phase72_feedback_routing_contract COMMAND hydra_phase72_feedback_routing_test)
 
+  add_executable(hydra_phase74c_unified_motion_test tests/core/phase74c_unified_motion_test.cpp)
+  target_link_libraries(hydra_phase74c_unified_motion_test PRIVATE hydra_dsp_core)
+  add_test(NAME phase74c_unified_motion_test COMMAND hydra_phase74c_unified_motion_test)
+
   # Variant C is built and smoke-tested independently, because the normal
   # DSP and its Native/WASM goldens must keep the approved Phase 7.1 topology.
   add_executable(hydra_phase72_classic_core_smoke
@@ -226,7 +230,7 @@ if(BUILD_WEB)
     endif()
   endif()
   file(GENERATE OUTPUT "${CMAKE_BINARY_DIR}/hydra-build-info.pending.json"
-    CONTENT "{\n  \"feedbackRouting\": \"${HYDRA_WEB_FEEDBACK_ROUTING}\",\n  \"buildTarget\": \"hydra_dsp_web\",\n  \"gitCommit\": \"${HYDRA_WEB_GIT_COMMIT}\",\n  \"emscriptenVersion\": \"${CMAKE_CXX_COMPILER_VERSION}\"\n}\n")
+    CONTENT "{\n  \"feedbackRouting\": \"${HYDRA_WEB_FEEDBACK_ROUTING}\",\n  \"motionEngine\": \"UNIFIED_7_4C\",\n  \"buildTarget\": \"hydra_dsp_web\",\n  \"gitCommit\": \"${HYDRA_WEB_GIT_COMMIT}\",\n  \"emscriptenVersion\": \"${CMAKE_CXX_COMPILER_VERSION}\"\n}\n")
 
   set_target_properties(hydra_dsp_web PROPERTIES
     OUTPUT_NAME "hydra_dsp"
@@ -245,7 +249,7 @@ if(BUILD_WEB)
     # runs the generated ES module as web-compatible JS, not via a separate
     # `worklet` ENVIRONMENT token.
     "SHELL:-sENVIRONMENT=web,worker"
-    "SHELL:-sEXPORTED_FUNCTIONS=['_hydra_dsp_get_api_version','_hydra_dsp_get_param_count','_hydra_dsp_get_param_specs','_hydra_dsp_get_param_spec','_hydra_dsp_get_param_spec_for_handle','_hydra_dsp_create','_hydra_dsp_create_v1_4','_hydra_dsp_destroy','_hydra_dsp_prepare','_hydra_dsp_reset','_hydra_dsp_set_parameter','_hydra_dsp_get_parameter','_hydra_dsp_get_reverse_status','_hydra_dsp_get_reverse_diagnostics','_hydra_dsp_transport_play','_hydra_dsp_transport_pause','_hydra_dsp_transport_stop','_hydra_dsp_transport_reset','_hydra_dsp_transport_locate','_hydra_dsp_transport_set_bpm','_hydra_dsp_transport_set_time_signature','_hydra_dsp_transport_get_state','_hydra_dsp_tap_tempo_event','_hydra_dsp_tap_tempo_get_state','_hydra_dsp_tap_tempo_reset','_hydra_dsp_midi_clock_event','_hydra_dsp_midi_clock_get_state','_hydra_dsp_midi_clock_reset','_hydra_dsp_set_tempo_source','_hydra_dsp_get_tempo_source','_hydra_dsp_set_params','_hydra_dsp_set_params_v1_2','_hydra_dsp_set_params_v1_3','_hydra_dsp_set_params_sized','_hydra_dsp_commit','_hydra_dsp_process','_malloc','_free']"
+    "SHELL:-sEXPORTED_FUNCTIONS=['_hydra_dsp_get_api_version','_hydra_dsp_get_param_count','_hydra_dsp_get_param_specs','_hydra_dsp_get_param_spec','_hydra_dsp_get_param_spec_for_handle','_hydra_dsp_create','_hydra_dsp_create_v1_4','_hydra_dsp_destroy','_hydra_dsp_prepare','_hydra_dsp_reset','_hydra_dsp_set_parameter','_hydra_dsp_get_parameter','_hydra_dsp_get_reverse_status','_hydra_dsp_get_reverse_diagnostics','_hydra_dsp_get_motion_telemetry','_hydra_dsp_transport_play','_hydra_dsp_transport_pause','_hydra_dsp_transport_stop','_hydra_dsp_transport_reset','_hydra_dsp_transport_locate','_hydra_dsp_transport_set_bpm','_hydra_dsp_transport_set_time_signature','_hydra_dsp_transport_get_state','_hydra_dsp_tap_tempo_event','_hydra_dsp_tap_tempo_get_state','_hydra_dsp_tap_tempo_reset','_hydra_dsp_midi_clock_event','_hydra_dsp_midi_clock_get_state','_hydra_dsp_midi_clock_reset','_hydra_dsp_set_tempo_source','_hydra_dsp_get_tempo_source','_hydra_dsp_set_params','_hydra_dsp_set_params_v1_2','_hydra_dsp_set_params_v1_3','_hydra_dsp_set_params_sized','_hydra_dsp_commit','_hydra_dsp_process','_malloc','_free']"
     "SHELL:-sEXPORTED_RUNTIME_METHODS=['cwrap','HEAP32','HEAPF32','HEAPU8']"
   )
 

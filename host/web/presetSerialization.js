@@ -50,7 +50,17 @@ export const DEFAULT_CONTROL_STATE = {
   warpFeedback: 0,
   warpMode: 0,
   reverseMode: 0,
-  reverseDivision: 0
+  reverseDivision: 0,
+  // Tape Motion (Phase 7.4C)
+  motionMode: 0,
+  motionAmount: 100,
+  stereoMotion: 100,
+  motionInertia: 50,
+  motionDriftChar: 50,
+  motionTexture: 50,
+  motionIrregularity: 50,
+  motionInstability: 50,
+  motionTensionRec: 50
 };
 
 const RANGE_BY_PARAM = {
@@ -96,7 +106,17 @@ const RANGE_BY_PARAM = {
   warpFeedback: { min: 0, max: 100 },
   warpMode: { min: 0, max: 3 },
   reverseMode: { min: 0, max: 2, isInteger: true },
-  reverseDivision: { min: 0, max: 8, isInteger: true }
+  reverseDivision: { min: 0, max: 8, isInteger: true },
+  // Tape Motion (Phase 7.4C)
+  motionMode: { min: 0, max: 3, isInteger: true },
+  motionAmount: { min: 0, max: 100 },
+  stereoMotion: { min: 0, max: 100 },
+  motionInertia: { min: 0, max: 100 },
+  motionDriftChar: { min: 0, max: 100 },
+  motionTexture: { min: 0, max: 100 },
+  motionIrregularity: { min: 0, max: 100 },
+  motionInstability: { min: 0, max: 100 },
+  motionTensionRec: { min: 0, max: 100 }
 };
 
 function isObject(value) {

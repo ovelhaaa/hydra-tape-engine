@@ -218,6 +218,10 @@ void HydraDspEsp32Adapter::drainCommandQueue() {
       case DspHandoffCommandType::SetTempoSource:
         hydra_dsp_set_tempo_source(handle_, cmd.tempo_source);
         break;
+      case DspHandoffCommandType::SetParameter:
+        hydra_dsp_set_parameter(handle_, static_cast<hydra_dsp_param_id>(cmd.param_id), cmd.param_value);
+        hydra_dsp_commit(handle_);
+        break;
       default:
         break;
     }
@@ -403,5 +407,13 @@ bool HydraDspEsp32Adapter::postSetTempoSource(uint32_t source) {
   DspHandoffCommand cmd;
   cmd.type = DspHandoffCommandType::SetTempoSource;
   cmd.tempo_source = source;
+  return commandQueue_.push(cmd);
+}
+
+bool HydraDspEsp32Adapter::postSetParameter(hydra_dsp_param_id paramId, float value) {
+  DspHandoffCommand cmd;
+  cmd.type = DspHandoffCommandType::SetParameter;
+  cmd.param_id = static_cast<uint32_t>(paramId);
+  cmd.param_value = value;
   return commandQueue_.push(cmd);
 }

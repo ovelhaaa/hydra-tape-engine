@@ -97,6 +97,11 @@ float p_warpStereo = 0.5f;       // 50% stereo phase offset
 float p_warpFeedback = 0.0f;     // 0% feedback (pure single pass)
 int p_warpMode = 0;              // 0 = 2-Taps Musical Hermite
 
+// === UNIFIED TAPE MOTION (PHASE 7.4C) ===
+int p_motionMode = 0;            // 0 = Classic, 1 = Motor Drift, 2 = Capstan Flutter, 3 = Worn Transport
+float p_motionAmount = 100.0f;   // 0..100%
+float p_stereoMotion = 100.0f;   // 0..100%
+
 // === DSP PERFORMANCE TELEMETRY ===
 constexpr double kDspBlockBudgetUs = 1000000.0 * AUDIO_CHUNK_SIZE / SAMPLE_RATE;
 struct DspPerformance {
@@ -1980,6 +1985,28 @@ void executeCommand(String line) {
     else if (cmd == "wmd") {
       p_warpMode = constrain((int)val, 0, 3);
       dualPrintf("Warp Mode: %d\n", p_warpMode);
+    }
+    else if (cmd == "motion") {
+      valStr.trim();
+      if (valStr.length() == 0) {
+        const char* names[] = {"Classic", "Motor Drift", "Capstan Flutter", "Worn Transport"};
+        dualPrintf("Motion Mode: %d (%s), Amount: %.0f%%, Stereo: %.0f%%\n",
+                   p_motionMode, names[constrain(p_motionMode, 0, 3)],
+                   p_motionAmount, p_stereoMotion);
+      } else if (valStr.startsWith("amt ")) {
+        p_motionAmount = constrain(valStr.substring(4).toFloat(), 0.0f, 100.0f);
+        if (tape) tape->postSetParameter(HYDRA_DSP_PARAM_MOTION_AMOUNT, p_motionAmount);
+        dualPrintf("Motion Amount: %.1f%%\n", p_motionAmount);
+      } else if (valStr.startsWith("stereo ")) {
+        p_stereoMotion = constrain(valStr.substring(7).toFloat(), 0.0f, 100.0f);
+        if (tape) tape->postSetParameter(HYDRA_DSP_PARAM_STEREO_MOTION, p_stereoMotion);
+        dualPrintf("Stereo Motion: %.1f%%\n", p_stereoMotion);
+      } else {
+        p_motionMode = constrain((int)val, 0, 3);
+        if (tape) tape->postSetParameter(HYDRA_DSP_PARAM_MOTION_MODE, static_cast<float>(p_motionMode));
+        const char* names[] = {"Classic", "Motor Drift", "Capstan Flutter", "Worn Transport"};
+        dualPrintf("Motion Mode: %d (%s)\n", p_motionMode, names[p_motionMode]);
+      }
     }
     else if (cmd == "perf") {
       valStr.trim();

@@ -45,6 +45,15 @@ struct TapeParams {
   int warpMode = 0;
   int reverseMode = 0; // 0 Rhythmic, 1 Free, 2 V1
   int reverseDivision = 0; // quarter note
+  int motionMode = 0; // 0 Classic, 1 Motor Drift, 2 Capstan Flutter, 3 Worn Transport
+  float motionAmount = 100.0f;
+  float stereoMotion = 100.0f;
+  float motionInertia = 50.0f;
+  float motionDriftChar = 50.0f;
+  float motionTexture = 50.0f;
+  float motionIrregularity = 50.0f;
+  float motionInstability = 50.0f;
+  float motionTensionRec = 50.0f;
 };
 
 class TapeCore {
@@ -61,6 +70,7 @@ public:
   float effectiveReverseMs() const;
   float requestedReverseMs() const;
   float maxHistoryMs() const;
+  void getMotionTelemetry(float* outModL, float* outModR) const;
   GlobalTransportClock& transport();
   const GlobalTransportClock& transport() const;
   TapTempo& tapTempo();

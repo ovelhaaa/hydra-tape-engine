@@ -790,6 +790,7 @@ bool testStatePublisherSnapshotConsistency() {
   std::atomic<bool> running{true};
   std::atomic<uint32_t> invariantViolations{0};
   std::atomic<uint64_t> validSnapshots{0};
+  std::atomic<bool> firstPublished{false};
   constexpr uint32_t kIterations = 50000;
 
   std::thread producer([&]() {
@@ -800,11 +801,24 @@ bool testStatePublisherSnapshotConsistency() {
       p.magic = 0xDEADBEEFCAFEBABEULL;
       p.samplePosition = static_cast<double>(i) * 128.0;
       publisher.publish(p);
+      if (i == 1) {
+        firstPublished.store(true, std::memory_order_release);
+        // Require an observed publication before the finite producer can exit.
+        // A slow scheduler must not turn this into a zero-work consumer test.
+        const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(5);
+        while (validSnapshots.load(std::memory_order_acquire) == 0 &&
+               std::chrono::steady_clock::now() < deadline) {
+          std::this_thread::yield();
+        }
+      }
     }
     running.store(false, std::memory_order_release);
   });
 
   std::thread consumer([&]() {
+    while (!firstPublished.load(std::memory_order_acquire)) {
+      std::this_thread::yield();
+    }
     while (running.load(std::memory_order_acquire)) {
       InvariantPayload p{};
       if (publisher.read(p)) {

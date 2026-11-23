@@ -103,11 +103,15 @@ async function renderModeAudio(mode, overrides = {}, blocks = 240) {
   node.port.onmessage({ data: { type: 'command', command: 'motionMode', value: mode } });
 
   const params = buildDefaultParamMap({ p_1: 22, p_0: 26, ...overrides });
-  // Settle 4ms smoothing
   const inL = new Float32Array(128);
   const inR = new Float32Array(128);
   const outL = new Float32Array(128);
   const outR = new Float32Array(128);
+  // Settle 4ms AudioParam smoothing on silence before resetting DSP state
+  for (let s = 0; s < 16; s++) {
+    node.process([[inL, inR]], [[outL, outR]], params);
+  }
+  node.port.onmessage({ data: { type: 'reset', requestId: 1 } });
   const fullL = new Float32Array(blocks * 128);
   const fullR = new Float32Array(blocks * 128);
 
@@ -160,6 +164,18 @@ test('presetSerialization stores and migrates Phase 7.4C Tape Motion parameters'
   assert.equal(importedV1.controlState.motionMode, 0);
   assert.equal(importedV1.controlState.motionAmount, 100);
   assert.equal(importedV1.controlState.drive, 55);
+
+  // V2 preset without motionMode defaults to Classic (0) while preserving other params
+  const v2Legacy = JSON.stringify({
+    version: 2,
+    name: 'Legacy V2',
+    engineParams: { drive: 62, flutterDepth: 14, wowDepth: 10 },
+    fxChain: [{ type: 'tapeDelay', enabled: true, params: { delayTimeMs: 410, feedback: 52, dryWet: 50 } }]
+  });
+  const importedV2Legacy = deserializePresetFromText(v2Legacy);
+  assert.equal(importedV2Legacy.controlState.motionMode, 0);
+  assert.equal(importedV2Legacy.controlState.drive, 62);
+  assert.equal(importedV2Legacy.controlState.delayTimeMs, 410);
 });
 
 test('WASM AudioWorklet supports all 4 motion modes, clickless switching, and motion controls', {
@@ -218,5 +234,7 @@ test('WASM AudioWorklet supports all 4 motion modes, clickless switching, and mo
   assert.ok(maxJump < 0.25, `Expected clickless transitions, got maxJump=${maxJump}`);
   const telemetryMsgs = messages.filter((m) => m.type === 'transportTelemetry' && Number.isFinite(m.motionModL));
   assert.ok(telemetryMsgs.length > 0, 'Worklet should emit real motionModL/R telemetry');
+  const motionAcks = messages.filter((m) => m.type === 'stateAck' && m.key === 'motionMode');
+  assert.deepStrictEqual(motionAcks.map((m) => m.value), [1, 2, 3, 0], 'Worklet must confirm motionMode via C API');
   node.cleanup();
 });

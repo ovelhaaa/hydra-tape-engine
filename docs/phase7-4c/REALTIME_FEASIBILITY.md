@@ -15,8 +15,8 @@ Measured in `host/web/tests/webClassicCAudioProcessing.test.mjs` against `build-
 ## Physical ESP32-S3 Benchmark (`COM15`, 44.1 kHz / 128 frames, 2,902.49 us budget)
 
 - **Firmware**: `esp32-s3-phase74c-unified` (`.pio/build/esp32-s3-phase74c-unified/firmware.bin`)
-- **SHA256**: `59CBB93FCE0BD6482217F777E58C59C1C2D4D3A5E9146360B108C1B8EFEAE9EA`
-- **Artifacts**: `artifacts/phase7-4c/physical/benchmark_results.json`, `artifacts/phase7-4c/physical/serial_log.txt`
+- **SHA256**: `59CBB93FCE0BD6482217F777E58C59C1C2D4D3A5E9146360B108C1B8EFEAE9EA` (verified against local `firmware.bin` and `benchmark_results.json`)
+- **Artifacts**: `artifacts/phase7-4c/physical/benchmark_results.json`, `artifacts/phase7-4c/physical/serial_log.txt` (local build/hardware artifacts; `artifacts/` and `.pio/` are gitignored and not committed to git)
 
 | Mode | Scenario | Mean (us) | P99 (us) | Peak (us) | Budget Mean | Overruns |
 |---|---|---:|---:|---:|---:|---:|

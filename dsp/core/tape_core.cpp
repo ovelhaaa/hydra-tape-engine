@@ -593,7 +593,17 @@ HYDRA_DSP_IRAM void TapeCore::Impl::updateFilters(){
     mp.wornInstability = currentParams.motionInstability;
     mp.tensionRecovery = currentParams.motionTensionRec;
     motionCoeffs.update(mp);
-    motionState.setTargetMode(currentParams.motionMode);
+    if (!hasProcessed) {
+      motionState.activeMode = std::max(0, std::min(3, currentParams.motionMode));
+      motionState.prevMode = motionState.activeMode;
+      motionState.transitioning = false;
+      motionState.pendingSnapHold = false;
+      motionState.transitionPos = 1.0f;
+      motionState.holdOffsetL = 0.0f;
+      motionState.holdOffsetR = 0.0f;
+    } else {
+      motionState.setTargetMode(currentParams.motionMode);
+    }
   }
   float speedMod=tapeSpeedNorm,ageMod=tapeAgeNorm,toneMod=toneNorm;
   feedbackPreEmph=1.0f+(0.06f+0.10f*(1.0f-speedMod)+0.06f*ageMod);

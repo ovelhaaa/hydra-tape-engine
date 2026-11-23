@@ -137,6 +137,10 @@ const importPresetInput = document.getElementById('importPresetInput');
 const downloadLink = document.getElementById('downloadLink');
 const previewBadge = document.getElementById('previewBadge');
 const architectureBadge = document.getElementById('architectureBadge');
+const dspParamCountSummary = document.getElementById('dspParamCountSummary');
+if (dspParamCountSummary) {
+  dspParamCountSummary.textContent = `DSP Node Variables (${Object.keys(PARAM).length} Parameters Mapped)`;
+}
 
 let cachedBuildInfo = null;
 
@@ -338,6 +342,9 @@ async function ensureAudioGraph() {
       setActionFeedback('Worklet execution failed', 'error');
     } else if (event.data?.type === 'stateAck') {
       engineState[event.data.key] = event.data.value;
+      if (event.data.key === 'motionMode') {
+        updateMotionModeStatus(uiState.motionMode ?? event.data.value);
+      }
     } else if (event.data?.type === 'transportTelemetry') {
       updateTransportUI(event.data);
     }
@@ -382,11 +389,26 @@ function getControlStateFromUI() {
 }
 
 const MOTION_MODE_META = [
-  { name: 'Classic', desc: 'Classic — Original Hydra mechanical wow & flutter' },
-  { name: 'Motor Drift', desc: 'Motor Drift — Slow, organic motor torque & flywheel drift' },
-  { name: 'Capstan Flutter', desc: 'Capstan Flutter — Structured capstan periodicity & mechanical texture' },
-  { name: 'Worn Transport', desc: 'Worn Transport — Expressive transport sag, tension snaps & wear' }
+  { name: 'Classic', short: 'CLASSIC', desc: 'Classic — Original Hydra mechanical wow & flutter' },
+  { name: 'Motor Drift', short: 'MOTOR DRIFT', desc: 'Motor Drift — Slow, organic motor torque & flywheel drift' },
+  { name: 'Capstan Flutter', short: 'CAPSTAN FLUTTER', desc: 'Capstan Flutter — Structured capstan periodicity & mechanical texture' },
+  { name: 'Worn Transport', short: 'WORN TRANSPORT', desc: 'Worn Transport — Expressive transport sag, tension snaps & wear' }
 ];
+
+function updateMotionModeStatus(requestedRaw) {
+  const statusBadge = document.getElementById('motionModeStatus');
+  if (!statusBadge) return;
+  const requested = Math.max(0, Math.min(3, Math.round(Number(requestedRaw) || 0)));
+  const hasConfirmed = Object.prototype.hasOwnProperty.call(engineState, 'motionMode');
+  const confirmed = hasConfirmed ? Math.max(0, Math.min(3, Math.round(Number(engineState.motionMode) || 0))) : null;
+  if (!fxNode) {
+    statusBadge.textContent = `Selected: ${MOTION_MODE_META[requested].short} (DSP idle)`;
+  } else if (confirmed === null || confirmed !== requested) {
+    statusBadge.textContent = `Requested: ${MOTION_MODE_META[requested].short} (syncing...)`;
+  } else {
+    statusBadge.textContent = `DSP: ${MOTION_MODE_META[confirmed].short}`;
+  }
+}
 
 function updateMotionModeUI(rawMode) {
   const mode = Math.max(0, Math.min(3, Math.round(Number(rawMode) || 0)));
@@ -412,6 +434,8 @@ function updateMotionModeUI(rawMode) {
     const panelMode = Number(panel.getAttribute('data-motion-adv'));
     panel.hidden = panelMode !== mode;
   });
+
+  updateMotionModeStatus(mode);
 }
 
 function applyControlStateToUI(controlState) {
@@ -647,14 +671,21 @@ function updateTransportUI(data) {
     }
   }
 
-  const motionThumbEl = document.getElementById('motionTelemetryThumb');
-  const motionValEl = document.getElementById('motionTelemetryValue');
-  if (motionThumbEl && motionValEl && Number.isFinite(data.motionModL) && Number.isFinite(data.motionModR)) {
-    const avgMod = 0.5 * (data.motionModL + data.motionModR);
-    const clampedNorm = Math.max(-1, Math.min(1, avgMod / 24.0));
-    const pct = 50 + clampedNorm * 42;
-    motionThumbEl.style.left = `calc(${pct.toFixed(1)}% - 4px)`;
-    motionValEl.textContent = `${avgMod >= 0 ? '+' : ''}${avgMod.toFixed(1)} smp`;
+  const motionThumbLEl = document.getElementById('motionTelemetryThumbL');
+  const motionThumbREl = document.getElementById('motionTelemetryThumbR');
+  const motionValLEl = document.getElementById('motionTelemetryValueL');
+  const motionValREl = document.getElementById('motionTelemetryValueR');
+  if (motionThumbLEl && motionThumbREl && motionValLEl && motionValREl &&
+      Number.isFinite(data.motionModL) && Number.isFinite(data.motionModR)) {
+    const scaleSamples = 24.0;
+    const normL = Math.max(-1, Math.min(1, data.motionModL / scaleSamples));
+    const normR = Math.max(-1, Math.min(1, data.motionModR / scaleSamples));
+    const pctL = 50 + normL * 44;
+    const pctR = 50 + normR * 44;
+    motionThumbLEl.style.left = `calc(${pctL.toFixed(1)}% - 3px)`;
+    motionThumbREl.style.left = `calc(${pctR.toFixed(1)}% - 3px)`;
+    motionValLEl.textContent = `${data.motionModL >= 0 ? '+' : ''}${data.motionModL.toFixed(1)} smp`;
+    motionValREl.textContent = `${data.motionModR >= 0 ? '+' : ''}${data.motionModR.toFixed(1)} smp`;
   }
 
   const reverseWarnEl = document.getElementById('reverseClampedWarning');
@@ -1006,6 +1037,15 @@ motionModeButtons.forEach((btn, idx) => {
       const prev = motionModeButtons[(idx - 1 + motionModeButtons.length) % motionModeButtons.length];
       prev.focus();
       selectMotionMode(prev.getAttribute('data-motion-mode'));
+    } else if (event.key === 'Home') {
+      event.preventDefault();
+      motionModeButtons[0].focus();
+      selectMotionMode(motionModeButtons[0].getAttribute('data-motion-mode'));
+    } else if (event.key === 'End') {
+      event.preventDefault();
+      const last = motionModeButtons[motionModeButtons.length - 1];
+      last.focus();
+      selectMotionMode(last.getAttribute('data-motion-mode'));
     }
   });
 });

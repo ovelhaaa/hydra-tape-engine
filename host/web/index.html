@@ -396,17 +396,37 @@
 
       .motion-meter {
         display: inline-flex;
-        align-items: center;
-        gap: 0.35rem;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 0.2rem;
         font-family: var(--font-mono);
-        font-size: 0.65rem;
+        font-size: 0.62rem;
         color: var(--text-lo);
+      }
+
+      .motion-meter-rows {
+        display: flex;
+        flex-direction: column;
+        gap: 0.16rem;
+      }
+
+      .motion-meter-ch {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+      }
+
+      .motion-meter-ch-label {
+        width: 0.7rem;
+        text-align: right;
+        color: var(--text-mid);
+        font-weight: 600;
       }
 
       .motion-meter-track {
         position: relative;
-        width: 56px;
-        height: 6px;
+        width: 68px;
+        height: 5px;
         background: rgba(255, 255, 255, 0.08);
         border-radius: 999px;
         overflow: hidden;
@@ -423,13 +443,37 @@
 
       .motion-meter-thumb {
         position: absolute;
-        top: 1px;
-        width: 8px;
+        top: 0.5px;
+        width: 6px;
         height: 4px;
         border-radius: 999px;
         background: var(--accent-hover);
-        left: calc(50% - 4px);
+        left: calc(50% - 3px);
         transition: left 45ms linear;
+      }
+
+      .motion-meter-thumb.is-right {
+        background: #38bdf8;
+      }
+
+      .motion-meter-val {
+        min-width: 3.1rem;
+        text-align: right;
+        font-variant-numeric: tabular-nums;
+      }
+
+      .motion-mode-status-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+      }
+
+      .motion-mode-status {
+        font-family: var(--font-mono);
+        font-size: 0.64rem;
+        color: var(--text-mid);
       }
 
       .motion-mode-group {
@@ -509,6 +553,10 @@
 
       .motion-advanced-panel {
         margin-top: 0.55rem;
+      }
+
+      .motion-advanced-panel[hidden] {
+        display: none !important;
       }
     </style>
   </head>
@@ -650,7 +698,7 @@
       <!-- RIGHT COLUMN: DSP ENGINE MAPPINGS -->
       <div class="panel">
         <div class="panel-title">
-          <span>DSP Node Variables (34 Parameters Mapped)</span>
+          <span id="dspParamCountSummary">DSP Node Variables</span>
           <div style="display: flex; gap: 0.5rem;">
             <span id="latencyReport" style="font-size: 0.7rem; font-family: var(--font-mono); color: var(--text-mid); margin-right: 0.5rem; display: flex; align-items: center;"></span>
             <button class="btn" id="latencyCheckBtn" style="font-size: 0.65rem; padding: 0.25rem 0.5rem;">Run Stress Test</button>
@@ -732,12 +780,25 @@
             <div class="param-card" id="tapeMotionCard">
               <div class="param-card-header motion-header-row">
                 <span>2. Tape Motion</span>
-                <span class="motion-meter" id="motionTelemetryMeter" title="Real-time DSP read-head displacement (samples)">
-                  <span class="motion-meter-track">
-                    <span class="motion-meter-center"></span>
-                    <span class="motion-meter-thumb" id="motionTelemetryThumb"></span>
+                <span class="motion-meter" id="motionTelemetryMeter" title="Real-time DSP read-head displacement L/R (normalized to +/-24.0 samples)">
+                  <span class="motion-meter-rows">
+                    <span class="motion-meter-ch">
+                      <span class="motion-meter-ch-label">L</span>
+                      <span class="motion-meter-track">
+                        <span class="motion-meter-center"></span>
+                        <span class="motion-meter-thumb" id="motionTelemetryThumbL"></span>
+                      </span>
+                      <span class="motion-meter-val" id="motionTelemetryValueL">+0.0 smp</span>
+                    </span>
+                    <span class="motion-meter-ch">
+                      <span class="motion-meter-ch-label">R</span>
+                      <span class="motion-meter-track">
+                        <span class="motion-meter-center"></span>
+                        <span class="motion-meter-thumb is-right" id="motionTelemetryThumbR"></span>
+                      </span>
+                      <span class="motion-meter-val" id="motionTelemetryValueR">+0.0 smp</span>
+                    </span>
                   </span>
-                  <span id="motionTelemetryValue">0.0 smp</span>
                 </span>
               </div>
               <div class="param-group">
@@ -749,7 +810,10 @@
                   <button type="button" class="motion-mode-btn" role="radio" aria-checked="false" data-motion-mode="2">CAPSTAN</button>
                   <button type="button" class="motion-mode-btn" role="radio" aria-checked="false" data-motion-mode="3">WORN</button>
                 </div>
-                <div class="motion-mode-desc" id="motionModeDesc">Classic — Original Hydra mechanical wow &amp; flutter</div>
+                <div class="motion-mode-status-row">
+                  <div class="motion-mode-desc" id="motionModeDesc">Classic — Original Hydra mechanical wow &amp; flutter</div>
+                  <span class="motion-mode-status" id="motionModeStatus">Motion: CLASSIC (idle)</span>
+                </div>
 
                 <div class="grid-2col" style="border-bottom: 1px solid rgba(255,255,255,0.02); padding-bottom: 0.5rem;">
                   <div class="control-row">

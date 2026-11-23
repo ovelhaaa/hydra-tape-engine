@@ -224,11 +224,92 @@ void testClicklessSwitchingHighFeedbackMultiHeadReverseSpring() {
   hydra_dsp_destroy(h);
 }
 
+void testRapidTransitionDerivativeAndContinuity() {
+  constexpr float kSampleRate = 48000.0f;
+  constexpr uint32_t kStepSamples = 1; // sample-accurate derivative check
+
+  hydra_dsp_handle* h = nullptr;
+  CHECK(hydra_dsp_create_v1_4(kSampleRate, 2000.0f, 4000.0f, &h) == 0);
+  CHECK(hydra_dsp_prepare(h, 128, HYDRA_DSP_CHANNELS_STEREO) == 0);
+
+  CHECK(hydra_dsp_set_parameter(h, HYDRA_DSP_PARAM_DELAY_ACTIVE, 1.0f) == 0);
+  CHECK(hydra_dsp_set_parameter(h, HYDRA_DSP_PARAM_DELAY_MS, 200.0f) == 0);
+  CHECK(hydra_dsp_set_parameter(h, HYDRA_DSP_PARAM_FEEDBACK, 55.0f) == 0);
+  CHECK(hydra_dsp_set_parameter(h, HYDRA_DSP_PARAM_WOW_DEPTH, 28.0f) == 0);
+  CHECK(hydra_dsp_set_parameter(h, HYDRA_DSP_PARAM_FLUTTER_DEPTH, 32.0f) == 0);
+  CHECK(hydra_dsp_set_parameter(h, HYDRA_DSP_PARAM_TAPE_AGE, 70.0f) == 0);
+  CHECK(hydra_dsp_set_parameter(h, HYDRA_DSP_PARAM_MOTION_AMOUNT, 100.0f) == 0);
+  CHECK(hydra_dsp_set_parameter(h, HYDRA_DSP_PARAM_STEREO_MOTION, 100.0f) == 0);
+  CHECK(hydra_dsp_commit(h) == 0);
+
+  // Schedule covers:
+  // - full transitions: M0->M1, M1->M2, M2->M3, M3->M0
+  // - mid-transition 10ms switches: M0->M3->M1 (at +10ms)
+  // - bounce-back before 150ms completion: M1->M2->M1 (at +30ms)
+  struct SwitchEvent { uint32_t sample; int mode; };
+  const SwitchEvent events[] = {
+    {  4800, 1 }, // M0 -> M1 (100ms in)
+    { 14400, 2 }, // M1 -> M2 (200ms later)
+    { 24000, 3 }, // M2 -> M3
+    { 33600, 0 }, // M3 -> M0
+    { 43200, 3 }, // M0 -> M3
+    { 43680, 1 }, // +10ms mid-transition -> M1
+    { 44160, 2 }, // +10ms mid-transition -> M2
+    { 45600, 1 }, // +30ms bounce back M1->M2->M1 before 150ms finishes
+    { 46080, 3 }, // +10ms -> M3
+    { 46560, 0 }, // +10ms -> M0
+  };
+  size_t evIdx = 0;
+
+  float prevModL = 0.0f, prevModR = 0.0f;
+  float prevVelL = 0.0f, prevVelR = 0.0f;
+  float maxPosJump = 0.0f;
+  float maxAccelJump = 0.0f;
+
+  for (uint32_t n = 0; n < 56000; ++n) {
+    if (evIdx < sizeof(events) / sizeof(events[0]) && n == events[evIdx].sample) {
+      CHECK(hydra_dsp_set_parameter(h, HYDRA_DSP_PARAM_MOTION_MODE, static_cast<float>(events[evIdx].mode)) == 0);
+      CHECK(hydra_dsp_commit(h) == 0);
+      ++evIdx;
+    }
+
+    const float s = 0.3f * std::sin(kTwoPi * 220.0f * static_cast<float>(n) / kSampleRate);
+    float outL = 0.0f, outR = 0.0f;
+    CHECK(hydra_dsp_process(h, &s, &s, &outL, &outR, kStepSamples) == 0);
+    CHECK(std::isfinite(outL) && std::isfinite(outR));
+
+    float modL = 0.0f, modR = 0.0f;
+    CHECK(hydra_dsp_get_motion_telemetry(h, &modL, &modR) == 0);
+    CHECK(std::isfinite(modL) && std::isfinite(modR));
+
+    if (n > 0) {
+      const float velL = modL - prevModL;
+      const float velR = modR - prevModR;
+      maxPosJump = std::max(maxPosJump, std::max(std::fabs(velL), std::fabs(velR)));
+      if (n > 1) {
+        const float accL = velL - prevVelL;
+        const float accR = velR - prevVelR;
+        maxAccelJump = std::max(maxAccelJump, std::max(std::fabs(accL), std::fabs(accR)));
+      }
+      prevVelL = velL;
+      prevVelR = velR;
+    }
+    prevModL = modL;
+    prevModR = modR;
+  }
+
+  // Read-head position and velocity must stay smooth across all rapid switches
+  CHECK(maxPosJump < 0.20f);
+  CHECK(maxAccelJump < 0.20f);
+  hydra_dsp_destroy(h);
+}
+
 } // namespace
 
 int main() {
   testParamContract();
   testModesAndControlsDistinct();
   testClicklessSwitchingHighFeedbackMultiHeadReverseSpring();
+  testRapidTransitionDerivativeAndContinuity();
   return 0;
 }

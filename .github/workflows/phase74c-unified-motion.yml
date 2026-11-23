@@ -1,0 +1,111 @@
+name: Phase 7.4C Unified Motion Lab
+
+on:
+  push:
+    branches:
+      - feature/phase7-4c-unified-motion
+  pull_request:
+    branches:
+      - feat/phase7-3-classic-c-web-default
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: phase74c-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  unified_motion_lab:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - name: Checkout with full git history for baseline equivalence
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+
+      - name: Fetch reference branches for M0 and M1/M2/M3 equivalence
+        run: |
+          git fetch origin feat/phase7-3-classic-c-web-default:refs/remotes/origin/feat/phase7-3-classic-c-web-default
+          git fetch origin experiment/phase7-4b-organic-motion:refs/remotes/origin/experiment/phase7-4b-organic-motion
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Setup Emscripten
+        uses: mymindstorm/setup-emsdk@v14
+        with:
+          version: '3.1.64'
+
+      - name: 1. Build Native
+        run: |
+          cmake -S . -B build-native -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=ON
+          cmake --build build-native -j 4
+
+      - name: 2-3. Run Native Regression and Unified Motion Tests
+        run: ctest --test-dir build-native --output-on-failure
+
+      - name: 4-5. Verify M0 Bit-Exactness and M1/M2/M3 Parity
+        run: |
+          python3 scripts/verify_phase74c_equivalence.py \
+            --parity-wav-dir artifacts/phase7-4c/parity \
+            --json-out artifacts/phase7-4c/parity-metrics.json
+
+      - name: 6. Build WASM and Web Runtime
+        run: |
+          emcmake cmake -S . -B build-web \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DBUILD_WEB=ON \
+            -DBUILD_TESTING=ON \
+            -DHYDRA_NATIVE_TRACE_RUNNER=$PWD/build-native/hydra_render_trace_native
+          cmake --build build-web --target hydra_dsp_web hydra_render_trace_wasm -j 4
+
+      - name: 6b. Strict Native vs WASM Equivalence Gate (Issue #48)
+        run: ctest --test-dir build-web -R '^native_vs_wasm_equivalence$' --output-on-failure
+
+      - name: 7. Validate WASM Binary Identity
+        run: |
+          node -e '
+            const fs = require("node:fs");
+            const info = JSON.parse(fs.readFileSync("build-web/web/hydra-build-info.json", "utf8"));
+            if (info.feedbackRouting !== "PHASE72_CLASSIC_C") throw new Error("Unexpected feedbackRouting: " + info.feedbackRouting);
+            if (info.motionEngine !== "UNIFIED_7_4C") throw new Error("Unexpected motionEngine: " + info.motionEngine);
+            console.log("Verified binary identity:", info);
+          '
+
+      - name: 8-10. Run AudioWorklet, UI, and Preset Tests
+        env:
+          HYDRA_WEB_BUILD: ${{ github.workspace }}/build-web/web
+        run: node --test host/web/tests/*.test.mjs
+
+      - name: 11. Install Playwright and Run Browser E2E Verification
+        env:
+          HYDRA_WEB_BUILD: ${{ github.workspace }}/build-web/web
+        run: |
+          npm --prefix tools/phase6-listening-lab ci
+          npx --prefix tools/phase6-listening-lab playwright install chromium
+          node scripts/test_phase74c_browser.mjs
+
+      - name: 12-13. Generate Unified Listening Package, Hashes, and Manifest
+        env:
+          HYDRA_WEB_BUILD: ${{ github.workspace }}/build-web/web
+        run: |
+          node scripts/generate_phase74c_listening.mjs
+          rm -f artifacts/phase7-4c/parity-metrics.json
+
+      - name: 14. Upload Listening Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: hydra-phase74c-unified-motion-listening
+          path: artifacts/phase7-4c
+          retention-days: 30

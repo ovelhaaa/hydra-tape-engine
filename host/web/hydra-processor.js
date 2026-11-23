@@ -146,7 +146,10 @@ class HydraProcessor extends AudioWorkletProcessor {
     this.outL = this.module._malloc(this.capacity * 4);
     this.outR = this.module._malloc(this.capacity * 4);
 
-    this.api.prepare(this.handle, this.capacity, 2);
+    const prepRes = this.api.prepare(this.handle, this.capacity, 2);
+    if (prepRes !== 0) {
+      throw new Error(`DSP prepare failed: ${prepRes}`);
+    }
   }
 
   async initWasm(wasmBinary) {
@@ -159,6 +162,7 @@ class HydraProcessor extends AudioWorkletProcessor {
         prepare: this.module.cwrap('hydra_dsp_prepare', 'number', ['number', 'number', 'number']),
         reset: this.module.cwrap('hydra_dsp_reset', null, ['number']),
         setParameter: this.module.cwrap('hydra_dsp_set_parameter', 'number', ['number', 'number', 'number']),
+        getParameter: this.module.cwrap('hydra_dsp_get_parameter', 'number', ['number', 'number', 'number']),
         commit: this.module.cwrap('hydra_dsp_commit', 'number', ['number']),
         process: this.module.cwrap('hydra_dsp_process', 'number', ['number', 'number', 'number', 'number', 'number', 'number']),
         getReverseDiagnostics: this.module.cwrap('hydra_dsp_get_reverse_diagnostics', 'number', ['number', 'number', 'number', 'number', 'number']),
@@ -188,17 +192,18 @@ class HydraProcessor extends AudioWorkletProcessor {
       this.midiClockStatePtr = this.module._malloc(48);
       this.tempoSourcePtr = this.module._malloc(4);
       this.motionTelemetryPtr = this.module._malloc(8);
+      this.paramReadPtr = this.module._malloc(4);
       if (!this.api.getParamCount || this.api.getParamCount() < 47) {
         throw new Error(`Incompatible WASM binary: expected >= 47 params, got ${this.api.getParamCount ? this.api.getParamCount() : 'unknown'}`);
       }
 
       const handlePtr = this.module._malloc(4);
       const res = this.api.create(sampleRate, 4000.0, 16100.0, handlePtr);
-      if (res !== 0) throw new Error(`DSP instantiation error: ${res}`);
-
-      this.handle = this.module.HEAP32[handlePtr >> 2];
+      this.handle = res === 0 ? this.module.HEAP32[handlePtr >> 2] : 0;
       this.module._free(handlePtr);
-      if (res !== 0) throw new Error(`DSP instantiation error: ${res}`);
+      if (res !== 0 || !this.handle) {
+        throw new Error(`DSP instantiation error: ${res}`);
+      }
 
       this.ensureBuffers(128);
 
@@ -253,7 +258,8 @@ class HydraProcessor extends AudioWorkletProcessor {
       if (this.transportStatePtr) this.module._free(this.transportStatePtr);
       if (this.reverseDiagPtr) this.module._free(this.reverseDiagPtr);
       if (this.motionTelemetryPtr) this.module._free(this.motionTelemetryPtr);
-      this.inL = this.inR = this.outL = this.outR = this.transportStatePtr = this.reverseDiagPtr = this.motionTelemetryPtr = 0;
+      if (this.paramReadPtr) this.module._free(this.paramReadPtr);
+      this.inL = this.inR = this.outL = this.outR = this.transportStatePtr = this.reverseDiagPtr = this.motionTelemetryPtr = this.paramReadPtr = 0;
     }
   }
 
@@ -310,9 +316,25 @@ class HydraProcessor extends AudioWorkletProcessor {
 
       const paramId = commandMap[command];
       if (paramId !== undefined) {
-        this.api.setParameter(this.handle, paramId, Number(value));
-        this.api.commit(this.handle);
-        this.port.postMessage({ type: 'stateAck', key: command, value });
+        const setRes = this.api.setParameter(this.handle, paramId, Number(value));
+        const commitRes = setRes === 0 ? this.api.commit(this.handle) : setRes;
+        if (commitRes !== 0) {
+          this.port.postMessage({ type: 'error', message: `DSP command ${command} failed (${commitRes})` });
+          return;
+        }
+        let confirmedValue = Number(value);
+        if (command === 'motionMode' && this.api.getParameter && this.paramReadPtr) {
+          if (this.api.getParameter(this.handle, paramId, this.paramReadPtr) === 0) {
+            const view = new DataView((this.module.HEAPU8 || this.module.HEAP32).buffer, this.paramReadPtr, 4);
+            confirmedValue = Math.round(view.getFloat32(0, true));
+          }
+        }
+        this.port.postMessage({
+          type: 'stateAck',
+          key: command,
+          value: confirmedValue,
+          requestedValue: Number(value)
+        });
       }
     } else if (msg.type === 'transportPlay') {
       if (this.api.transportPlay) this.api.transportPlay(this.handle);

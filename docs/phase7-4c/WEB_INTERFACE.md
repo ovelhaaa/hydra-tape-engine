@@ -4,11 +4,12 @@
 
 Card 2 (`#tapeMotionCard`) integrates the unified Tape Motion controls without altering the rest of Hydra's layout:
 
-- **4-Mode Selector** (`role="radiogroup"`): `CLASSIC` (0), `MOTOR` (1), `CAPSTAN` (2), `WORN` (3), supporting mouse click and `ArrowLeft`/`ArrowRight` keyboard navigation.
-- **Mode Character Description** (`#motionModeDesc`): Updates immediately on mode selection.
+- **4-Mode Selector** (`role="radiogroup"`): `CLASSIC` (0), `MOTOR` (1), `CAPSTAN` (2), `WORN` (3), supporting mouse click and `ArrowLeft`/`ArrowRight`/`Home`/`End` keyboard navigation.
+- **Mode Character & DSP Sync Status** (`#motionModeDesc`, `#motionModeStatus`): Distinguishes requested mode from DSP-confirmed mode (`hydra_dsp_get_parameter` readback via `stateAck`).
 - **Common Motion Controls**: `Motion Amount` (`#motionAmount`) and `Stereo Motion` (`#stereoMotion`), plus existing `Wow Depth/Rate` and `Flutter Depth/Rate`.
-- **Collapsible Advanced Section** (`#motionAdvancedSection`): Displays only the two advanced controls relevant to the active mode while preserving all other modes' values in the DOM/state.
-- **Real DSP Telemetry Indicator** (`#motionTelemetryMeter`): Displays actual `motionModL`/`motionModR` displacement (samples) emitted by the AudioWorklet from `hydra_dsp_get_motion_telemetry()`.
+- **Collapsible Advanced Section** (`#motionAdvancedSection`): Displays only the two advanced controls relevant to the active mode (`.motion-advanced-panel[hidden] { display: none !important; }` prevents `.grid-2col` from overriding `[hidden]`) while preserving all other modes' values in the DOM/state.
+- **Dual-Channel Real DSP Telemetry Indicator** (`#motionTelemetryMeter`): Displays actual left (`#motionTelemetryThumbL`, `#motionTelemetryValueL`) and right (`#motionTelemetryThumbR`, `#motionTelemetryValueR`) read-head displacement in samples from `hydra_dsp_get_motion_telemetry()`, normalized to `±24.0 samples` (`clamp[-1, 1]`) so stereo differential motion is immediately visible without visual clipping.
+- **Dynamic Parameter Count** (`#dspParamCountSummary`): Computed dynamically from `PARAM` (`47 Parameters Mapped`).
 
 ## AudioWorklet (`host/web/hydra-processor.js`)
 

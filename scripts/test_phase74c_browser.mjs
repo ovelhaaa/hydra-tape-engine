@@ -93,9 +93,11 @@ try {
 
   await page.goto(url, { waitUntil: 'networkidle' });
 
-  // 1. Verify binary identity badge
+  // 1. Verify binary identity badge and dynamic parameter count
   const archText = await page.locator('#architectureBadge').textContent();
   assert.match(archText || '', /Classic C \+ Unified Motion/);
+  const paramSummaryText = await page.locator('#dspParamCountSummary').textContent();
+  assert.match(paramSummaryText || '', /47 Parameters Mapped/);
 
   // 2. Verify all 4 mode buttons + keyboard navigation + advanced panel visibility
   const modes = [
@@ -115,8 +117,17 @@ try {
     assert.equal(await page.locator('#motionMode').inputValue(), String(m.idx));
     assert.equal(await page.locator('#motionAdvancedSummary').textContent(), m.summary);
     for (let k = 0; k < 4; k++) {
-      const hidden = await page.locator(`.motion-advanced-panel[data-motion-adv="${k}"]`).evaluate((el) => el.hidden);
-      assert.equal(hidden, k !== m.idx, `Panel ${k} visibility mismatch in mode ${m.idx}`);
+      const panelState = await page.locator(`.motion-advanced-panel[data-motion-adv="${k}"]`).evaluate((el) => {
+        const cs = getComputedStyle(el);
+        return { hidden: el.hidden, display: cs.display, height: el.getBoundingClientRect().height };
+      });
+      assert.equal(panelState.hidden, k !== m.idx, `Panel ${k} hidden attr mismatch in mode ${m.idx}`);
+      if (k !== m.idx) {
+        assert.equal(panelState.display, 'none', `Panel ${k} computed display must be none in mode ${m.idx}`);
+        assert.equal(panelState.height, 0, `Panel ${k} must reserve zero height when hidden in mode ${m.idx}`);
+      } else {
+        assert.notEqual(panelState.display, 'none', `Panel ${k} must be visible in mode ${m.idx}`);
+      }
     }
   }
 
@@ -157,8 +168,12 @@ try {
     await page.locator(`.motion-mode-btn[data-motion-mode="${m}"]`).click();
     await page.waitForTimeout(120);
   }
-  const telemetryText = await page.locator('#motionTelemetryValue').textContent();
-  assert.match(telemetryText || '', /smp$/);
+  const telemetryL = await page.locator('#motionTelemetryValueL').textContent();
+  const telemetryR = await page.locator('#motionTelemetryValueR').textContent();
+  assert.match(telemetryL || '', /smp$/);
+  assert.match(telemetryR || '', /smp$/);
+  const modeStatusText = await page.locator('#motionModeStatus').textContent();
+  assert.match(modeStatusText || '', /^DSP: CLASSIC$/);
 
   // 4. Offline WAV export with Worn Transport (3)
   await page.locator('.motion-mode-btn[data-motion-mode="3"]').click();

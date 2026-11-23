@@ -9,6 +9,8 @@ main_js = (ROOT / 'host' / 'web' / 'main.js').read_text(encoding='utf-8')
 processor_js = (ROOT / 'host' / 'web' / 'hydra-processor.js').read_text(encoding='utf-8')
 
 name_map = {
+    'SIGNAL_PATH_MODE': 'signalPathMode',
+    'STUDIO_WET_LEVEL': 'studioWetLevel',
     'FLUTTER_DEPTH': 'flutterDepth',
     'WOW_DEPTH': 'wowDepth',
     'DROPOUT': 'dropoutSeverity',
@@ -69,7 +71,7 @@ errors = []
 for name, value in sorted(expected.items(), key=lambda item: item[1]):
     if actual.get(name) != value:
         errors.append(f'{name}: header={value} host/web/main.js={actual.get(name)}')
-    if name != 'reset' and f'p_{value}' not in processor_js and name not in ('activeHeads', 'delayActive', 'headsMusical', 'guitarFocus', 'pingPong', 'freeze', 'reverse', 'reverseSmear', 'spring', 'warpActive', 'warpMode', 'reverseMode', 'reverseDivision', 'motionMode'):
+    if name != 'reset' and f'p_{value}' not in processor_js and name not in ('activeHeads', 'delayActive', 'headsMusical', 'guitarFocus', 'pingPong', 'freeze', 'reverse', 'reverseSmear', 'spring', 'warpActive', 'warpMode', 'reverseMode', 'reverseDivision', 'motionMode', 'signalPathMode'):
         errors.append(f'{name}: p_{value} missing from hydra-processor.js AudioParam descriptors')
 
 if errors:

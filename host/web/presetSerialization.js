@@ -8,6 +8,8 @@ const WEB_PARAM_TUNING = Object.freeze({
 
 // Define valid ranges, defaults, and types for all 28 architecture variables
 export const DEFAULT_CONTROL_STATE = {
+  signalPathMode: 0,
+  studioWetLevel: 100,
   // Tape mechanics
   flutterDepth: WEB_PARAM_TUNING.flutterDepth.defaultValue,
   wowDepth: WEB_PARAM_TUNING.wowDepth.defaultValue,
@@ -64,6 +66,8 @@ export const DEFAULT_CONTROL_STATE = {
 };
 
 const RANGE_BY_PARAM = {
+  signalPathMode: { min: 0, max: 1, isInteger: true },
+  studioWetLevel: { min: 0, max: 200 },
   // Tape mechanics
   flutterDepth: { min: WEB_PARAM_TUNING.flutterDepth.min, max: WEB_PARAM_TUNING.flutterDepth.max },
   wowDepth: { min: WEB_PARAM_TUNING.wowDepth.min, max: WEB_PARAM_TUNING.wowDepth.max },

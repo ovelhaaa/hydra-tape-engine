@@ -169,8 +169,8 @@ def main():
     approved = render.HydraEngineRunner(ref_path)
     candidate_default = render.HydraEngineRunner(candidate_default_path)
     alternate = render.HydraEngineRunner(candidate_experiment_path)
-    if len({approved.api_version, candidate_default.api_version,
-            alternate.api_version}) != 1:
+    if len({approved.api_version >> 16, candidate_default.api_version >> 16,
+            alternate.api_version >> 16}) != 1:
         raise RuntimeError("Experiment unexpectedly changed the public DSP ABI")
 
     if args.output.exists():

@@ -112,7 +112,7 @@ def main():
     after_hash, after_cmd = build_library(after_root, after_lib)
     before = render.HydraEngineRunner(before_lib)
     after = render.HydraEngineRunner(after_lib)
-    if before.api_version != after.api_version:
+    if (before.api_version >> 16) != (after.api_version >> 16):
         raise RuntimeError("API version mismatch between before and after")
 
     if args.output.exists():

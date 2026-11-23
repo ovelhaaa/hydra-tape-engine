@@ -13,7 +13,7 @@ enum { HYDRA_DSP_CHANNELS_STEREO = 2 };
 
 enum {
   HYDRA_DSP_API_VERSION_MAJOR = 1,
-  HYDRA_DSP_API_VERSION_MINOR = 8,
+  HYDRA_DSP_API_VERSION_MINOR = 9,
   HYDRA_DSP_API_VERSION_PATCH = 0,
   HYDRA_DSP_API_VERSION =
       (HYDRA_DSP_API_VERSION_MAJOR << 16) |
@@ -211,7 +211,12 @@ typedef enum hydra_dsp_param_id {
   HYDRA_DSP_PARAM_MOTION_IRREGULARITY = 44,
   HYDRA_DSP_PARAM_MOTION_INSTABILITY = 45,
   HYDRA_DSP_PARAM_MOTION_TENSION_REC = 46,
-  HYDRA_DSP_PARAM_COUNT = 47
+  /* API 1.9: additive parameter IDs only; all legacy structures unchanged.
+   * Studio keeps dry unity, excludes the short texture head from monitoring,
+   * and applies an output-only linear trim (100 = unity, 0 = dry only). */
+  HYDRA_DSP_PARAM_SIGNAL_PATH_MODE = 47,
+  HYDRA_DSP_PARAM_STUDIO_WET_LEVEL = 48,
+  HYDRA_DSP_PARAM_COUNT = 49
 } hydra_dsp_param_id;
 
 typedef enum hydra_dsp_smoothing_policy {

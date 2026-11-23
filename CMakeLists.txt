@@ -253,6 +253,12 @@ if(BUILD_WEB)
     "SHELL:-sEXPORTED_RUNTIME_METHODS=['cwrap','HEAP32','HEAPF32','HEAPU8']"
   )
 
+  set_property(TARGET hydra_dsp_web APPEND PROPERTY LINK_DEPENDS
+    "${CMAKE_BINARY_DIR}/hydra-build-info.pending.json"
+    "${CMAKE_CURRENT_SOURCE_DIR}/host/web/index.html"
+    "${CMAKE_CURRENT_SOURCE_DIR}/host/web/main.js"
+    "${CMAKE_CURRENT_SOURCE_DIR}/host/web/hydra-processor.js"
+    "${CMAKE_CURRENT_SOURCE_DIR}/host/web/presetSerialization.js")
   set(HYDRA_WEB_DIR "${CMAKE_BINARY_DIR}/web")
   add_custom_command(
     TARGET hydra_dsp_web POST_BUILD
@@ -374,4 +380,25 @@ if(BUILD_WEB)
               --wasm
     )
   endif()
+endif()
+
+if(BUILD_TESTING)
+  add_executable(hydra_phase75a_studio_test tests/core/phase75a_studio_test.cpp)
+  target_link_libraries(hydra_phase75a_studio_test PRIVATE hydra_dsp_core)
+  add_test(NAME phase75a_studio_signal_path COMMAND hydra_phase75a_studio_test)
+endif()
+
+if(BUILD_TESTING)
+  add_executable(hydra_phase75a_studio_classic_c_test
+    tests/core/phase75a_studio_test.cpp dsp/core/tape_core.cpp dsp/core/hydra_dsp_c_api.cpp)
+  target_include_directories(hydra_phase75a_studio_classic_c_test PRIVATE include dsp/core)
+  target_compile_definitions(hydra_phase75a_studio_classic_c_test PRIVATE HYDRA_PHASE72_CLASSIC_FEEDBACK_ROUTING=1)
+  add_test(NAME phase75a_studio_classic_c COMMAND hydra_phase75a_studio_classic_c_test)
+endif()
+
+if(BUILD_TESTING AND NOT EMSCRIPTEN)
+  add_library(hydra_phase75a_classic_c SHARED dsp/core/tape_core.cpp dsp/core/hydra_dsp_c_api.cpp)
+  target_include_directories(hydra_phase75a_classic_c PRIVATE include dsp/core)
+  target_compile_definitions(hydra_phase75a_classic_c PRIVATE HYDRA_PHASE72_CLASSIC_FEEDBACK_ROUTING=1)
+  set_target_properties(hydra_phase75a_classic_c PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS ON)
 endif()

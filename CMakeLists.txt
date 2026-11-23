@@ -134,6 +134,16 @@ if(BUILD_TESTING)
   target_link_libraries(hydra_midi_clock_test PRIVATE hydra_dsp_core)
   add_test(NAME core_midi_clock_test COMMAND hydra_midi_clock_test)
 
+  add_executable(hydra_ui_model_test
+    tests/core/ui_model_test.cpp
+    lib/HydraUI/src/hydra_ui_catalog.cpp
+    lib/HydraUI/src/hydra_ui_model.cpp
+    lib/HydraUI/src/hydra_ui_renderer.cpp
+  )
+  target_include_directories(hydra_ui_model_test PRIVATE lib/HydraUI/include)
+  target_link_libraries(hydra_ui_model_test PRIVATE hydra_dsp_core)
+  add_test(NAME ui_model_test COMMAND hydra_ui_model_test)
+
   add_test(
     NAME web_param_ids
     COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/tests/core/web_param_ids_check.py

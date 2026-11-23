@@ -10,8 +10,12 @@
 #include "hydra_pcm.hpp"
 #include "realtime_profile.hpp"
 #include "hydra_firmware_identity.h"
+#if defined(HYDRA_UI_BACKEND_ST7789)
+#include "hydra_ui_esp32_bridge.h"
+#else
 #include "DisplayUI.h"
 #include "ParamDefs.h"
+#endif
 
 #include "esp_cpu.h"
 #include "esp_heap_caps.h"
@@ -306,7 +310,17 @@ volatile AudioSource p_source =
 
 HydraDspEsp32Adapter *tape = nullptr;
 MelodyGen *melody = nullptr;
+#if defined(HYDRA_UI_BACKEND_ST7789)
+hydra::ui::HydraUiEsp32Bridge *st7789UI = nullptr;
+int getAudioSourceIndex() { return static_cast<int>(p_source); }
+void setAudioSourceIndex(int idx) {
+  if (idx < 0) idx = 0;
+  if (idx > 2) idx = 2;
+  p_source = static_cast<AudioSource>(idx);
+}
+#else
 DisplayUI *displayUI = nullptr;  // OLED Display Interface
+#endif
 FrippEngine *fripp = nullptr;    // Frippertronics/Eno Engine
 
 // Frippertronics mode flag (when true, route audio through FrippEngine)
@@ -1176,9 +1190,20 @@ void ledTask(void *parameter) {
 }
 
 // ============================================
-// UI TASK (OLED Display - Runs on Core 0)
+// UI TASK (Display - Runs on Core 0)
 // ============================================
 void uiTask(void *parameter) {
+  (void)parameter;
+#if defined(HYDRA_UI_BACKEND_ST7789)
+  while (st7789UI == nullptr) {
+    vTaskDelay(pdMS_TO_TICKS(100));
+  }
+  Serial.println("ST7789 UI Task started on Core " + String(xPortGetCoreID()));
+  while (true) {
+    st7789UI->tick();
+    vTaskDelay(pdMS_TO_TICKS(10));  // 100 Hz input poll, ~15 FPS rate-limited draw
+  }
+#else
   // Wait for display to be initialized
   while (displayUI == nullptr) {
     vTaskDelay(pdMS_TO_TICKS(100));
@@ -1190,6 +1215,7 @@ void uiTask(void *parameter) {
     displayUI->update();
     vTaskDelay(pdMS_TO_TICKS(20));  // 50 Hz update rate
   }
+#endif
 }
 
 // ============================================
@@ -2339,6 +2365,20 @@ void setup() {
     Serial.println("LED task creation failed");
   }
 
+#if defined(HYDRA_UI_BACKEND_ST7789)
+  st7789UI = new hydra::ui::HydraUiEsp32Bridge();
+  if (st7789UI->begin()) {
+    Serial.println("ST7789 Display initialized OK (240x240 PSRAM+DMA)");
+    ret = xTaskCreatePinnedToCore(uiTask, "UI", 8192, NULL, 2, NULL, 0);
+    if (ret == pdPASS) {
+      Serial.println("ST7789 UI task created on Core 0");
+    } else {
+      Serial.println("ST7789 UI task creation failed");
+    }
+  } else {
+    Serial.println("ST7789 Display init FAILED - check SPI wiring!");
+  }
+#else
   // Initialize parameter pointers for UI
   initParamPointers();
   
@@ -2359,6 +2399,7 @@ void setup() {
     Serial.println("  SDA: GPIO 1");
     Serial.println("  SCL: GPIO 2");
   }
+#endif
 
   printHelp();
   Serial.println("=== SYSTEM READY ===");

@@ -1,0 +1,51 @@
+UpdateCTestConfiguration  from :C:/Users/devx/Documents/PlatformIO/Projects/hydra-f02/build-native/DartConfiguration.tcl
+Parse Config file:C:/Users/devx/Documents/PlatformIO/Projects/hydra-f02/build-native/DartConfiguration.tcl
+Test project C:/Users/devx/Documents/PlatformIO/Projects/hydra-f02/build-native
+Constructing a list of tests
+Done constructing a list of tests
+Updating test list for fixtures
+Added 0 tests to meet fixture requirements
+Checking test dependency graph...
+Checking test dependency graph end
+test 17
+    Start 17: test_golden_delay_modes
+
+17: Test command: C:\Users\devx\AppData\Local\Python\pythoncore-3.14-64\python.exe "C:/Users/devx/Documents/PlatformIO/Projects/hydra-f02/tests/core/golden_test.py" "--runner" "C:/Users/devx/Documents/PlatformIO/Projects/hydra-f02/build-native/hydra_golden_regression_native.exe" "--scenario" "delay_modes" "--fixtures-root" "C:/Users/devx/Documents/PlatformIO/Projects/hydra-f02/tests/fixtures" "--compare-script" "C:/Users/devx/Documents/PlatformIO/Projects/hydra-f02/tests/core/golden_compare.py"
+17: Working Directory: C:/Users/devx/Documents/PlatformIO/Projects/hydra-f02/build-native
+17: Test timeout computed to be: 1500
+17: max_abs=0.000000000000e+00
+17: rmse=0.000000000000e+00
+17: null_test_energy=0.000000000000e+00
+17: PASS: within tolerance
+1/3 Test #17: test_golden_delay_modes ..........   Passed    0.69 sec
+test 18
+    Start 18: test_golden_reset_state
+
+18: Test command: C:\Users\devx\AppData\Local\Python\pythoncore-3.14-64\python.exe "C:/Users/devx/Documents/PlatformIO/Projects/hydra-f02/tests/core/golden_test.py" "--runner" "C:/Users/devx/Documents/PlatformIO/Projects/hydra-f02/build-native/hydra_golden_regression_native.exe" "--scenario" "reset_state" "--fixtures-root" "C:/Users/devx/Documents/PlatformIO/Projects/hydra-f02/tests/fixtures" "--compare-script" "C:/Users/devx/Documents/PlatformIO/Projects/hydra-f02/tests/core/golden_compare.py"
+18: Working Directory: C:/Users/devx/Documents/PlatformIO/Projects/hydra-f02/build-native
+18: Test timeout computed to be: 1500
+18: max_abs=0.000000000000e+00
+18: rmse=0.000000000000e+00
+18: null_test_energy=0.000000000000e+00
+18: PASS: within tolerance
+2/3 Test #18: test_golden_reset_state ..........   Passed    0.65 sec
+test 19
+    Start 19: test_golden_param_automation
+
+19: Test command: C:\Users\devx\AppData\Local\Python\pythoncore-3.14-64\python.exe "C:/Users/devx/Documents/PlatformIO/Projects/hydra-f02/tests/core/golden_test.py" "--runner" "C:/Users/devx/Documents/PlatformIO/Projects/hydra-f02/build-native/hydra_golden_regression_native.exe" "--scenario" "param_automation" "--fixtures-root" "C:/Users/devx/Documents/PlatformIO/Projects/hydra-f02/tests/fixtures" "--compare-script" "C:/Users/devx/Documents/PlatformIO/Projects/hydra-f02/tests/core/golden_compare.py"
+19: Working Directory: C:/Users/devx/Documents/PlatformIO/Projects/hydra-f02/build-native
+19: Test timeout computed to be: 1500
+19: max_abs=0.000000000000e+00
+19: rmse=0.000000000000e+00
+19: null_test_energy=0.000000000000e+00
+19: PASS: within tolerance
+3/3 Test #19: test_golden_param_automation .....   Passed    0.61 sec
+
+The following tests passed:
+	test_golden_delay_modes
+	test_golden_reset_state
+	test_golden_param_automation
+
+100% tests passed, 0 tests failed out of 3
+
+Total Test time (real) =   1.98 sec

@@ -1,5 +1,17 @@
 # F0.1 — Consolidação da baseline
 
+> **Atualização posterior F0.2:** a conclusão histórica abaixo permanece intacta.
+> A fase F0.2 explicitamente autorizada criou uma referência independente de
+> produção A, fonte `3cc6c1b5f4ce8b93d7665744d266a82cb42e80e2`, com dez cenários
+> bit-exact em duas execuções e gates sem regressão. Classificação
+> `NEW_BASELINE_REPRODUCIBLE`; gate offline `READY_FOR_DSP_EXPERIMENT`.
+> A receita F0 antiga continua desconhecida, seus dez WAVs e hashes preservados.
+> Ver [relatório F0.2](../dsp-reform-f0-2/README.md),
+> [manifesto congelado](../dsp-reform-f0-2/baseline_manifest.json) e
+> [protocolo](../dsp-reform-f0-2/REPRODUCTION_PROTOCOL.md).
+> Isso não promove C, não incorpora #58–#62 e não autoriza a próxima fase.
+> Escuta e validação física de mudanças futuras continuam obrigatórias.
+
 Data: 2026-11-23. Escopo: auditoria/documentação; nenhuma mudança de DSP, ABI,
 golden, áudio, flash ou merge. Decisão: **BLOCKED para iniciar novo experimento DSP**,
 por receita sonora incompleta; a consolidação está disponível para revisão.

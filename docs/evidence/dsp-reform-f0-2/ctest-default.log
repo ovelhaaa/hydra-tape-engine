@@ -1,0 +1,43 @@
+Test project C:/Users/devx/Documents/PlatformIO/Projects/hydra-f02/build-native
+      Start  1: fast_tanh_integrity
+ 1/19 Test  #1: fast_tanh_integrity .................   Passed    0.51 sec
+      Start  2: phase7_dsp_integrity
+ 2/19 Test  #2: phase7_dsp_integrity ................   Passed    0.09 sec
+      Start  3: phase72_feedback_routing_contract
+ 3/19 Test  #3: phase72_feedback_routing_contract ...   Passed    0.08 sec
+      Start  4: phase72_classic_core_smoke
+ 4/19 Test  #4: phase72_classic_core_smoke ..........   Passed    0.10 sec
+      Start  5: core_smoke
+ 5/19 Test  #5: core_smoke ..........................   Passed    0.09 sec
+      Start  6: core_regression
+ 6/19 Test  #6: core_regression .....................   Passed    0.13 sec
+      Start  7: core_audible_controls
+ 7/19 Test  #7: core_audible_controls ...............   Passed    0.32 sec
+      Start  8: core_warp_test
+ 8/19 Test  #8: core_warp_test ......................   Passed    0.96 sec
+      Start  9: core_reverse_test
+ 9/19 Test  #9: core_reverse_test ...................   Passed    1.32 sec
+      Start 10: core_transport_clock_test
+10/19 Test #10: core_transport_clock_test ...........   Passed    0.21 sec
+      Start 11: core_tap_tempo_test
+11/19 Test #11: core_tap_tempo_test .................   Passed    0.38 sec
+      Start 12: core_midi_clock_test
+12/19 Test #12: core_midi_clock_test ................   Passed    0.15 sec
+      Start 13: web_param_ids
+13/19 Test #13: web_param_ids .......................   Passed    0.73 sec
+      Start 14: core_abi_symbols
+14/19 Test #14: core_abi_symbols ....................   Passed    0.47 sec
+      Start 15: core_abi_legacy_consumer
+15/19 Test #15: core_abi_legacy_consumer ............   Passed    0.09 sec
+      Start 16: core_transition_characterization
+16/19 Test #16: core_transition_characterization ....   Passed    6.02 sec
+      Start 17: test_golden_delay_modes
+17/19 Test #17: test_golden_delay_modes .............   Passed    1.24 sec
+      Start 18: test_golden_reset_state
+18/19 Test #18: test_golden_reset_state .............   Passed    1.09 sec
+      Start 19: test_golden_param_automation
+19/19 Test #19: test_golden_param_automation ........   Passed    0.67 sec
+
+100% tests passed, 0 tests failed out of 19
+
+Total Test time (real) =  14.78 sec

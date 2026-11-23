@@ -1,6 +1,6 @@
 # Hydra Tape Engine — Plano de reforma do DSP por fases (instruções para agentes)
 
-**Versão:** 1.1 — 2026-11-23 (reconciliação F0.1)
+**Versão:** 1.2 — 2026-11-23 (baseline independente F0.2)
 **Estado:** **PLANEJADO; nenhuma fase de implementação autorizada por este documento isoladamente.**  
 **Origem técnica obrigatória:** [TAPE_DELAY_DSP_MUSICAL_AUDIT_2026-11-23.md](TAPE_DELAY_DSP_MUSICAL_AUDIT_2026-11-23.md).  
 **Baseline analisada:** `main` @ `6849edf738c0d60731f51e96f7a16d1deac08cfe`. Antes de executar, revalidar a HEAD atual e quaisquer mudanças posteriores à auditoria.  
@@ -57,6 +57,28 @@ Essa leitura pode ser incremental em fases subsequentes **somente se** o agente 
 
 ## 1. Mapa de ondas, dependências e estados
 
+### Atualização F0.2 — gate offline e referência dos próximos experimentos
+
+**`READY_FOR_DSP_EXPERIMENT`**, pela nova baseline independente
+`NEW_BASELINE_REPRODUCIBLE`, autorizada expressamente na F0.2. Fonte congelada
+`3cc6c1b5f4ce8b93d7665744d266a82cb42e80e2`, rota **A de produção**, sem promover
+C ou branches experimentais. Dez inputs/outputs float32/PCM/WAV idênticos em
+duas execuções; Native 19/19, goldens bit-exact e Native/WASM zero.
+[Relatório](evidence/dsp-reform-f0-2/README.md),
+[manifesto](evidence/dsp-reform-f0-2/baseline_manifest.json),
+[procedimento executável](evidence/dsp-reform-f0-2/REPRODUCTION_PROTOCOL.md).
+
+O bloqueio F0.1 por receita incompleta, descrito historicamente abaixo, foi
+resolvido pela solução 3; a receita histórica não foi recuperada nem seus hashes
+substituídos. O pacote externo ainda não tem URL pública; receita versionada
+permite recriação, com ambiente e identidade binária explicitados.
+Nenhuma F1–F11 foi implementada/aprovada/incorporada nesta fase.
+Próxima fase autorizável: investigação e calibração conjunta HPF/head bump/gap
+loss, após decisão explícita de rota F1; a referência disponível é A. Se a
+decisão for C/C0, congelar sua receita/flags e comparação própria, sem reusar
+esta baseline como se fosse C. Não iniciar sem nova ordem.
+Escuta A/B e físico permanecem obrigatórios antes de promover hot path.
+
 ### Reconciliação F0.1 — leitura anterior aos contratos F1–F11
 
 Este quadro qualifica os objetivos originais abaixo, sem apagar fases ou
@@ -75,7 +97,7 @@ aprovação, merge ou superioridade musical. Nenhuma F1–F11 incorporada foi co
 
 | Fase | Objetivos reconciliados / classificação | Evidência existente e trabalho restante |
 |---|---|---|
-| F0 | Integridade/testes PARTIALLY_IMPLEMENTED; regeneração BLOCKED | 10/10 WAV SHA íntegros, Native/WASM zero; CTest 15/19 padrão e 19/19 com TEMP no build. Receita completa não recuperada; físico atual PENDING_PHYSICAL. Não usar READY_FOR_F1 histórico como liberação. |
+| F0 | Histórico F0.1: regeneração BLOCKED; gate offline resolvido por F0.2 acima | F0 original preservada e receita antiga desconhecida. Nova referência A F0.2: 10/10 em duas execuções, Native 19/19 e Native/WASM zero. Físico de candidatos e decisão musical continuam pendentes; não usar READY_FOR_F1 histórico como aprovação humana. |
 | F1 | Independência ALREADY_IMPLEMENTED em C; recriar C SUPERSEDED; economia CONDITIONAL; escolha/promoção STILL_REQUIRED | C e seleção #58 já atendem separação do monitor. Nova rota só após demonstrar benefício de custo ainda não atendido; preservar caráter C por A/B. Encerrar F1 por decisão de rota sem código é válido. |
 | F2 | Calibração espectral STILL_REQUIRED | #59 envelhecimento dinâmico não calibra HPF/bump/gap existentes. Medir por repetição; recomendação de primeiro experimento, dependente da liberação F0 e decisão F1. |
 | F3 | Saturação/progressividade PARTIALLY_IMPLEMENTED; calibração STILL_REQUIRED | Dupla saturação, soft-knee e sustain limitado já existem; C/C1–C3 não provam nova curva musical 65–95%. Preservar bias/LUT. |

@@ -6,6 +6,7 @@
 2. **Roteiro de implementação por fases:** [docs/DSP_REFORM_IMPLEMENTATION_PHASES.md](docs/DSP_REFORM_IMPLEMENTATION_PHASES.md).
 3. Antes de **cada** fase, releia os contratos globais G0 e o preflight específico F0–F11 do roteiro; confirme a HEAD atual e quais fases anteriores foram realmente aprovadas e incorporadas.
 4. Leia a [reconciliação F0.1](docs/DSP_REFORM_PR_RECONCILIATION.md) e a [consolidação da F0](docs/evidence/dsp-reform-f0/CONSOLIDATION.md). Diferencie main (API 1.7/38) das APIs experimentais #61 (1.8/47) e #62 (1.9/49); não recrie C, Repeat Aging ou Motion sem conferir os SHAs e gates registrados. O READY_FOR_F1 histórico não supera o bloqueio de regenerabilidade documentado na F0.1.
+5. A [F0.2](docs/evidence/dsp-reform-f0-2/README.md) resolve o gate offline por uma **nova baseline independente reproduzível A**, preservando F0/F0.1. Use o [manifesto](docs/evidence/dsp-reform-f0-2/baseline_manifest.json) e o [protocolo](docs/evidence/dsp-reform-f0-2/REPRODUCTION_PROTOCOL.md); READY_FOR_DSP_EXPERIMENT não equivale a aprovação musical, promoção de C ou autorização automática da próxima fase.
 
 **Não confunda o plano com autorização para implementar todas as fases.** Trabalhe apenas na fase solicitada, preferencialmente uma PR por fase, sem merge automático. Antes de editar, apresente o mapeamento do código ativo, os caminhos `arquivo:linha`, a hipótese musical, o custo esperado no ESP32-S3 e o plano de validação.
 

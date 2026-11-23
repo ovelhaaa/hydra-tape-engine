@@ -1,0 +1,21 @@
+{
+  "source_sha": "3cc6c1b5f4ce8b93d7665744d266a82cb42e80e2",
+  "two_independent_processes": [
+    "frozen1",
+    "frozen2"
+  ],
+  "all_manifest_fields_identical": true,
+  "scenarios": 10,
+  "inputs_bit_exact": 10,
+  "output_f32_bit_exact": 10,
+  "pcm_bit_exact": 10,
+  "wav_bit_exact": 10,
+  "verifier_passes": 2,
+  "negative_corrupted_pcm_rejected": true,
+  "historical_integrity": 10,
+  "historical_probe_wav_hashes_confirmed": 7,
+  "nonimpulse_input_hashes_historical_match": 7,
+  "manifest_sha256": "ceb9a2c3dc8535cbe890639c900e31aaf9e0a2d61a9ad097d53c4e591f533646",
+  "recipe_sha256": "ae741f672bb1198c7c96165cd23baaaba0f77c0cad4fa24bd67c542d63b76c1b",
+  "library_sha256": "8f6836c77368a3554a2a6c50ec681aa58d8e09b09758847d4d85f596d91724dc"
+}

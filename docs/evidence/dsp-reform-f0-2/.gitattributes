@@ -1,0 +1,5 @@
+# Recipe SHA and captured evidence must survive checkout unchanged.
+*.py text eol=lf
+*.md text eol=lf
+*.json text eol=lf
+*.log text eol=lf

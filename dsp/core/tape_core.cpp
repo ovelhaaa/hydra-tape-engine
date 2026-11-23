@@ -866,6 +866,10 @@ void TapeCore::reset(){
   impl_->mechStateR=Impl::MechanicalState{0,0,0,0,0x2468ACE1u,0x56473829u};
   impl_->motionState.activeMode = std::max(0, std::min(3, impl_->currentParams.motionMode));
   impl_->motionState.reset();
+  // Explicit reset starts at the requested controls; do not record a spurious
+  // stereo trajectory for 30 ms before the control slew reaches Stereo=0.
+  impl_->motionState.smoothedAmount = impl_->motionCoeffs.amountNorm;
+  impl_->motionState.smoothedStereo = impl_->motionCoeffs.stereoNorm;
   impl_->freezeFade=0; impl_->delayEnableRamp=0; impl_->smoothedDelaySamples=0; impl_->smoothedAzCoeff=0; impl_->springFB_L=impl_->springFB_R=0;
   impl_->dcBlocker.clear(); impl_->dcBlockerR.clear(); impl_->magneticsL.reset(); impl_->magneticsR.reset(); impl_->dropout.reset(); impl_->dropout.setSampleRate(impl_->sampleRate); impl_->noiseGen.reset(impl_->sampleRate, 123456789u); impl_->noiseGenR.reset(impl_->sampleRate, 987654321u); impl_->mechNoiseL.reset(); impl_->mechNoiseR.reset();
   impl_->flutterLPF.reset(); impl_->flutterLPFR.reset(); impl_->warpHPF_L.reset(); impl_->warpHPF_R.reset(); impl_->warpLPF_L.reset(); impl_->warpLPF_R.reset(); impl_->reproHeadBump.reset(); impl_->reproHeadBumpR.reset(); impl_->tapeRolloff.reset(); impl_->tapeRolloffR.reset(); impl_->gapLossLPF.reset(); impl_->gapLossLPFR.reset(); impl_->dropoutLPF.reset(); impl_->dropoutLPFR.reset();

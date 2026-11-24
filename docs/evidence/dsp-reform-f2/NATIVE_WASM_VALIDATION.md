@@ -23,3 +23,19 @@ Preservados ABI1.7/38, sÃ­mbolos e consumidor legado, Reverse/Warp,
 Multi-Head/Ping-Pong, Tap/MIDI/transport, LUT e presets. Goldens A nÃ£o usados
 como expectativa sonora C. ProduÃ§Ã£o A e controle negativo Warp serÃ£o comparados
 separadamente; detalhes finais nos resultados desta fase.
+
+Qualificação local final: Native16/17 e WASM14/15 por candidata; única falha
+original é `core_regression` na assertion A conhecida. Observação completa
+confirma todas as outras assertions, full/split exato e teste específico de wrap.
+Suíte canônica de motor27/27 por candidata;154/154 screens/candidata, incluindo
+60 caudas60s, mais4 caudas Multi-Head+Ping-Pong por candidata.
+Produção A:10/10 renders bit-exact contra fonte congelada F1 sem macro C.
+Warp: três variantes bit-exact no controle negativo musical. Guards de build
+inválidos, ABI1.7/38, input/LUT e comandos efetivos de todos os targets DSP
+verificados. `tests/fixtures`, presets, host e F0.2/F1 têm diff vazio.
+
+Observação completa também compilada e executada emWASM para as três
+candidatas: todas as assertions após a falha de energia original foram
+avaliadas; nenhuma falha adicional. `wasm-observation-summary.json` contém
+comandos em++ reproduzíveis, stdout integral e identidade full/split L/R.
+Isso complementa o CTest original sem alterá-lo nem declarar sua suite verde.

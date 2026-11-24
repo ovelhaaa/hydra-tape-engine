@@ -1,0 +1,163 @@
+{
+  "physical_status": "PENDING_PHYSICAL",
+  "note": "Desktop wall-clock ctypes process call, block128/44100; excludes parameter setup, includes system scheduling. Not ESP32 DSP/full-work timing; no acceptance of hardware inferred.",
+  "input_sha256": "a057581c3ce2149fc6150d6e99be749108c8161c4556877546024c394959b4d7",
+  "parameters": [
+    8,
+    6,
+    5,
+    25,
+    10,
+    50,
+    50,
+    50,
+    10,
+    6,
+    0.8,
+    1,
+    500,
+    85,
+    100,
+    100,
+    7,
+    120,
+    0,
+    0,
+    50,
+    0,
+    0,
+    0,
+    0,
+    0,
+    60,
+    45,
+    50,
+    0,
+    0,
+    1,
+    80,
+    0.5,
+    0,
+    0,
+    0,
+    0
+  ],
+  "raw": {
+    "0": [
+      {
+        "library_sha256": "c4e39c0c0de403e79466d92124c094c028195dc51c5f377a0b030ed3932cadf4",
+        "block_us_P50_P95_P99_peak": [
+          89.4,
+          164.6,
+          239.1959999999999,
+          3149.3
+        ],
+        "elapsed_seconds": 0.5263894000090659
+      },
+      {
+        "library_sha256": "c4e39c0c0de403e79466d92124c094c028195dc51c5f377a0b030ed3932cadf4",
+        "block_us_P50_P95_P99_peak": [
+          90.8,
+          170.4,
+          202.23199999999997,
+          13412.6
+        ],
+        "elapsed_seconds": 0.5581734000006691
+      },
+      {
+        "library_sha256": "c4e39c0c0de403e79466d92124c094c028195dc51c5f377a0b030ed3932cadf4",
+        "block_us_P50_P95_P99_peak": [
+          95.1,
+          158.72999999999996,
+          205.48799999999974,
+          13561.4
+        ],
+        "elapsed_seconds": 0.5629981999954907
+      }
+    ],
+    "1": [
+      {
+        "library_sha256": "9448773ab24f7e9656bc88a7bbb2c5911f64a75216e4398af1c783d556a28fa8",
+        "block_us_P50_P95_P99_peak": [
+          88.8,
+          153.8,
+          208.02599999999984,
+          10044.1
+        ],
+        "elapsed_seconds": 0.5235859999957029
+      },
+      {
+        "library_sha256": "9448773ab24f7e9656bc88a7bbb2c5911f64a75216e4398af1c783d556a28fa8",
+        "block_us_P50_P95_P99_peak": [
+          92.7,
+          176.88999999999993,
+          241.2479999999996,
+          3027.4
+        ],
+        "elapsed_seconds": 0.583530800009612
+      },
+      {
+        "library_sha256": "9448773ab24f7e9656bc88a7bbb2c5911f64a75216e4398af1c783d556a28fa8",
+        "block_us_P50_P95_P99_peak": [
+          93.4,
+          170.7899999999999,
+          236.53199999999924,
+          1102.3
+        ],
+        "elapsed_seconds": 0.5721539999940433
+      }
+    ],
+    "2": [
+      {
+        "library_sha256": "a09e0772570eccb1b3415d09412cc669649d3d724faccffdc2d7168e0ba0dcae",
+        "block_us_P50_P95_P99_peak": [
+          94.4,
+          165.5,
+          250.3099999999995,
+          1206.7
+        ],
+        "elapsed_seconds": 0.5650182999961544
+      },
+      {
+        "library_sha256": "a09e0772570eccb1b3415d09412cc669649d3d724faccffdc2d7168e0ba0dcae",
+        "block_us_P50_P95_P99_peak": [
+          90.9,
+          150.8,
+          179.6859999999997,
+          1027.6
+        ],
+        "elapsed_seconds": 0.5272217999881832
+      },
+      {
+        "library_sha256": "a09e0772570eccb1b3415d09412cc669649d3d724faccffdc2d7168e0ba0dcae",
+        "block_us_P50_P95_P99_peak": [
+          89.8,
+          167.2899999999999,
+          305.8999999999993,
+          1443.3
+        ],
+        "elapsed_seconds": 0.529429699992761
+      }
+    ]
+  },
+  "median_block_us_P50_P95_P99_peak": {
+    "0": [
+      90.8,
+      164.6,
+      205.48799999999974,
+      13412.6
+    ],
+    "1": [
+      92.7,
+      170.7899999999999,
+      236.53199999999924,
+      3027.4
+    ],
+    "2": [
+      90.9,
+      165.5,
+      250.3099999999995,
+      1206.7
+    ]
+  }
+}

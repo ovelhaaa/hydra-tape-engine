@@ -1,0 +1,77 @@
+{
+  "0": {
+    "exit": 1,
+    "failures": [
+      "OBSERVATION_FAIL line=260 expr=channel_energy(fullR, 2840, 2960) > 1e-5f"
+    ],
+    "all_other_original_assertions_evaluated_and_pass": true,
+    "block_exact_both_channels": true,
+    "build_command": [
+      "C:/emsdk/upstream/emscripten/em++.bat",
+      "-O3",
+      "-std=c++17",
+      "-ffp-contract=off",
+      "-DHYDRA_PHASE72_CLASSIC_FEEDBACK_ROUTING=1",
+      "-DHYDRA_DSP_REFORM_F2_VARIANT=0",
+      "-IC:\\Users\\devx\\Documents\\PlatformIO\\Projects\\hydra-f2\\include",
+      "-IC:\\Users\\devx\\Documents\\PlatformIO\\Projects\\hydra-f2\\dsp\\core",
+      "C:\\Users\\devx\\Documents\\PlatformIO\\Projects\\hydra-f2\\docs\\evidence\\dsp-reform-f1\\regression_observation.cpp",
+      "C:\\Users\\devx\\Documents\\PlatformIO\\Projects\\hydra-f2\\build\\f2-0-wasm\\libhydra_dsp_core.a",
+      "-sWASM_BIGINT=1",
+      "-sENVIRONMENT=node",
+      "-o",
+      "C:\\Users\\devx\\Documents\\PlatformIO\\Projects\\hydra-f2\\artifacts\\dsp-reform-f2\\variant0\\regression-observation-wasm.js"
+    ],
+    "stdout": "wrap_R_energy=6.10860251982e-06 block_exact_L=1 block_exact_R=1\nOBSERVATION_FAIL line=260 expr=channel_energy(fullR, 2840, 2960) > 1e-5f\nregression_core: assertions observed (see failures)\nobservations_failed=1\n"
+  },
+  "1": {
+    "exit": 1,
+    "failures": [
+      "OBSERVATION_FAIL line=260 expr=channel_energy(fullR, 2840, 2960) > 1e-5f"
+    ],
+    "all_other_original_assertions_evaluated_and_pass": true,
+    "block_exact_both_channels": true,
+    "build_command": [
+      "C:/emsdk/upstream/emscripten/em++.bat",
+      "-O3",
+      "-std=c++17",
+      "-ffp-contract=off",
+      "-DHYDRA_PHASE72_CLASSIC_FEEDBACK_ROUTING=1",
+      "-DHYDRA_DSP_REFORM_F2_VARIANT=1",
+      "-IC:\\Users\\devx\\Documents\\PlatformIO\\Projects\\hydra-f2\\include",
+      "-IC:\\Users\\devx\\Documents\\PlatformIO\\Projects\\hydra-f2\\dsp\\core",
+      "C:\\Users\\devx\\Documents\\PlatformIO\\Projects\\hydra-f2\\docs\\evidence\\dsp-reform-f1\\regression_observation.cpp",
+      "C:\\Users\\devx\\Documents\\PlatformIO\\Projects\\hydra-f2\\build\\f2-1-wasm\\libhydra_dsp_core.a",
+      "-sWASM_BIGINT=1",
+      "-sENVIRONMENT=node",
+      "-o",
+      "C:\\Users\\devx\\Documents\\PlatformIO\\Projects\\hydra-f2\\artifacts\\dsp-reform-f2\\variant1\\regression-observation-wasm.js"
+    ],
+    "stdout": "wrap_R_energy=5.55066480956e-06 block_exact_L=1 block_exact_R=1\nOBSERVATION_FAIL line=260 expr=channel_energy(fullR, 2840, 2960) > 1e-5f\nregression_core: assertions observed (see failures)\nobservations_failed=1\n"
+  },
+  "2": {
+    "exit": 1,
+    "failures": [
+      "OBSERVATION_FAIL line=260 expr=channel_energy(fullR, 2840, 2960) > 1e-5f"
+    ],
+    "all_other_original_assertions_evaluated_and_pass": true,
+    "block_exact_both_channels": true,
+    "build_command": [
+      "C:/emsdk/upstream/emscripten/em++.bat",
+      "-O3",
+      "-std=c++17",
+      "-ffp-contract=off",
+      "-DHYDRA_PHASE72_CLASSIC_FEEDBACK_ROUTING=1",
+      "-DHYDRA_DSP_REFORM_F2_VARIANT=2",
+      "-IC:\\Users\\devx\\Documents\\PlatformIO\\Projects\\hydra-f2\\include",
+      "-IC:\\Users\\devx\\Documents\\PlatformIO\\Projects\\hydra-f2\\dsp\\core",
+      "C:\\Users\\devx\\Documents\\PlatformIO\\Projects\\hydra-f2\\docs\\evidence\\dsp-reform-f1\\regression_observation.cpp",
+      "C:\\Users\\devx\\Documents\\PlatformIO\\Projects\\hydra-f2\\build\\f2-2-wasm\\libhydra_dsp_core.a",
+      "-sWASM_BIGINT=1",
+      "-sENVIRONMENT=node",
+      "-o",
+      "C:\\Users\\devx\\Documents\\PlatformIO\\Projects\\hydra-f2\\artifacts\\dsp-reform-f2\\variant2\\regression-observation-wasm.js"
+    ],
+    "stdout": "wrap_R_energy=5.67095594306e-06 block_exact_L=1 block_exact_R=1\nOBSERVATION_FAIL line=260 expr=channel_energy(fullR, 2840, 2960) > 1e-5f\nregression_core: assertions observed (see failures)\nobservations_failed=1\n"
+  }
+}

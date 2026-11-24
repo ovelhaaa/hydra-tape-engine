@@ -39,3 +39,12 @@ JSONs dessas tentativas preservados como diagnÃ³stico; nÃ£o sÃ£o sucesso F2.
 
 Nenhuma comparaÃ§Ã£o automÃ¡tica estabelece sustain agradÃ¡vel ou ausÃªncia de
 artefatos perceptuais. Hardware PENDING_PHYSICAL; audiÃ§Ã£o PENDING_HUMAN.
+
+Pico de saída global: .99 nos casos de sobrecarga ativa, finito. Quantidade de
+samples no teto durante guitarra/fast-new/FB100 (44100 /48000): C0=24/2,
+Warm=71/47, Vintage=38/17. Os candidatos produzem mais clipping transitório
+nesse estresse; isto é uma diferença dinâmica material para avaliação humana,
+não uma melhoria. **Zero samples no teto após cessar a entrada em todos os
+462 casos**. Estados antes do clamp e da escrita continuam limitados e decaem.
+Sem modificar ganho, limiter ou compressor. Esses eventos não são mascarados
+pela normalização MATCHED nem usados como evidência de preferência.

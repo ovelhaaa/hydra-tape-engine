@@ -38,3 +38,34 @@ o mesmo compilador e compara todas as saÃ­das; no Windows exige tambÃ©m os hashe
 do manifesto MinGW F1. CI Linux conserva proveniÃªncia prÃ³pria, sem presumir
 igualdade de libm entre sistemas. WAVs grandes sÃ³ em artifacts/CI, nunca Git.
 SHA-256 em `listening/sha256.json`; gabarito separado `answer-key.json`.
+
+## Evidência local concluída
+
+- C0:10/10 inputs/saídas/readbacks bit-exact com F1; wrap congelado exato.
+- Native/WASM: cinco cenários ×três candidatas, max_abs=0/RMSE=0, LUT/input exatos.
+- CTest original:16/17 Native,14/15 WASM por candidata; única falha é a assertion
+  A de energia conhecida. Contrato C0 específico e observação integral passam.
+- Motor:27/27 por candidata. Estresse:154/154 por candidata, incluindo60
+  caudas60s/candidata, mais4 caudas compostas Multi-Head+Ping-Pong.
+- Produção A:10/10 exact; Warp negativo: três candidatas exact.
+- 14 cenas/84WAVs:12 principais16s e duas de estresse60s, oito fontes sintéticas.
+  Arquivos de estresse bit-exact com os renders tecnicamente qualificados.
+- Player: hashes, áudio do terceiro slot, troca sincronizada, exportação de28
+  avaliações, persistência e revelação condicionada:PASS (teste automatizado,
+  **não** audição humana).
+
+Dados versionados: `validation-summary.json`, `spectral-summary.json`,
+`calibration-search.json`, `hpf-crosscheck-summary.json`,
+`native-benchmark-summary.json`, `browser-summary.json`, `render-manifest.json`.
+Os JSONs completos por caso, comandos efetivos, logs originais CTest, WAVs e
+gabarito separado acompanham o artifact. Presets, ABI e F0.2/F1 inalterados.
+
+**Diferença em relação ao pedido inicial:** B180Hz e C240Hz foram implementadas
+e rejeitadas pelo gate60s. Após sweep restrito ao HPF, finais B260/C280Hz
+passam a mesma matriz; bumps .6/.8dB e gap C×.75 mantidos. Não esconder essa
+recalibração: o ganho de corpo é menor que o inicialmente esperado.
+
+**Limite dinâmico observado:** guitarra full-level fast/new/FB100 já clipa
+transitoriamente no monitor C0. Candidatas têm mais samples no teto durante a
+entrada; zero teto após a parada e estados internos estáveis. Ver tabela em
+`FEEDBACK_STABILITY.md`; isso requer julgamento musical, não promoção automática.

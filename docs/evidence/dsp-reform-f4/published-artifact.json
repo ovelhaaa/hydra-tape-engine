@@ -1,0 +1,18 @@
+{
+  "status": "LOCAL_PACKAGE_VERIFIED_PENDING_CI",
+  "package": "artifacts/dsp-reform-f4/listening",
+  "branch": "experiment/dsp-reform-f4-performance-transitions",
+  "base_f3_head": "29f50258f1ac47139ac8f1fdb21aa59424ca9a75",
+  "scene_count": 13,
+  "wav_count": 52,
+  "formats": [
+    "RAW",
+    "MATCHED"
+  ],
+  "manifest_sha256": "9ee8e4b54908aa7d0f91400527da96a5208295183aa7bfb6e609f38f4d8405fc",
+  "answer_key_sha256": "e9a4511818f3a9af56a4c533ea88f0677a1d69a0866e80d0c2ad7bf95b13d72b",
+  "sha256_manifest_sha256": "427278ca8738fa0eda35ce29b8ffa70189c6b68ddb48ff1486cc5881192751e4",
+  "integrity": "52/52 WAVs PCM24 stereo 44100 verified; all package files hashed",
+  "artifact_url": null,
+  "note": "Publication happens in GitHub Actions workflow dsp-reform-f4.yml. No merge, flash or promotion."
+}

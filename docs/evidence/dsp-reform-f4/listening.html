@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="pt-BR">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Hydra F4 · Listening Lab A/B</title>
+<link rel="stylesheet" href="lab/style.css">
+<main style="max-width:920px;margin:2rem auto;padding:1rem">
+  <h1>Hydra F4 · Listening Lab A/B</h1>
+  <p>Comparação cega entre <strong>A — Vintage F3-A (F4=0)</strong> e
+     <strong>B — F4 Transitions</strong>. Mesmas entradas, parâmetros e instantes de comando.
+     Julgue a manipulação dos controles: saltos, ataques, cauda e naturalidade — não apenas o timbre estático.</p>
+  <label>Cena <select id="scene"></select></label>
+  <label>Formato <select id="format"><option>RAW</option><option>MATCHED</option></select></label>
+  <p id="description"></p>
+  <p id="status" role="status">Carregando manifesto…</p>
+  <button id="play" disabled>Reproduzir / pausar</button>
+  <button id="restart">Voltar ao início</button>
+  <div id="slots" style="display:flex;gap:1rem;margin:1rem 0"></div>
+  <label>Posição <input id="seek" type="range" min="0" max="10" value="0" step=".01"></label>
+  <label>Volume <input id="volume" type="range" min="0" max="1" value=".65" step=".01"></label>
+  <hr>
+  <label>Preferência <select id="preference">
+    <option value="">Avaliar…</option><option>X</option><option>Y</option>
+    <option>Equivalentes</option><option>Rejeitar todos</option>
+  </select></label>
+  <label>Confiança <select id="confidence">
+    <option value="">Selecionar…</option><option>Baixa</option><option>Média</option><option>Alta</option>
+  </select></label>
+  <p><label>Cliques, saltos, ataques, cauda, naturalidade<br>
+    <textarea id="comments" rows="4" style="width:100%"></textarea></label></p>
+  <p id="progress"></p>
+  <button id="export">Exportar avaliação JSON</button>
+  <button id="reveal" disabled>Revelar após concluir RAW e MATCHED</button>
+  <pre id="answers"></pre>
+  <p>Atalhos: 1/2 alternam X/Y no mesmo relógio; espaço reproduz/pausa; ←/→ deslocam.
+     Respostas ficam neste navegador. RAW preserva o ganho do render; MATCHED aplica
+     apenas um ganho constante por arquivo (RMS comum 0,5–8,5 s, teto 0,98 FS).</p>
+</main>
+<script type="module" src="listening.mjs"></script>
+</html>

@@ -37,6 +37,7 @@ jobs:
           python docs/evidence/dsp-reform-f4/run.py build
           python docs/evidence/dsp-reform-f4/run.py baseline
           python docs/evidence/dsp-reform-f4/run.py measure
+          python docs/evidence/dsp-reform-f4/run.py tail
           python docs/evidence/dsp-reform-f4/run.py blocksize
       - name: Native and WASM contracts
         run: |

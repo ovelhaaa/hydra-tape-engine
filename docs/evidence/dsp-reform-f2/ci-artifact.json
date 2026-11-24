@@ -1,0 +1,31 @@
+{
+  "run_id": 45312475778,
+  "conclusion": "success",
+  "source_commit": "693312ca6c802d6116e10a0d5ac16c0cda5fabfd",
+  "download": "https://github.com/ovelhaaa/hydra-tape-engine/actions/runs/45312475778/artifacts/14885385251",
+  "provider_metadata": {
+    "artifacts": [
+      {
+        "id": 14885385251,
+        "name": "hydra-dsp-reform-f2-feedback-listening",
+        "size_in_bytes": 349948838,
+        "url": "https://api.github.com/repos/ovelhaaa/hydra-tape-engine/actions/artifacts/14885385251",
+        "archive_download_url": "https://api.github.com/repos/ovelhaaa/hydra-tape-engine/actions/artifacts/14885385251/zip",
+        "expired": false,
+        "created_at": "2026-11-24T02:40:33Z",
+        "expires_at": "2026-12-24T02:40:19Z",
+        "updated_at": "2026-11-24T02:40:33Z",
+        "digest": "sha256:a9dfbec0c449837904fdd94c47f28558b3374ea163e042b54f0bb8f96fa82a7e",
+        "workflow_run": {
+          "id": 45312475778,
+          "repository_id": 1116598225,
+          "head_repository_id": 1116598225,
+          "head_branch": "experiment/dsp-reform-f2-feedback-calibration",
+          "head_sha": "693312ca6c802d6116e10a0d5ac16c0cda5fabfd"
+        }
+      }
+    ]
+  },
+  "verification": "published-artifact-summary.json",
+  "provenance_note": "Linux CI and MinGW local manifests retained separately. Later commits record evidence only; no DSP changes after this source commit."
+}

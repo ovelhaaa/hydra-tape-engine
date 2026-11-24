@@ -69,3 +69,9 @@ recalibração: o ganho de corpo é menor que o inicialmente esperado.
 transitoriamente no monitor C0. Candidatas têm mais samples no teto durante a
 entrada; zero teto após a parada e estados internos estáveis. Ver tabela em
 `FEEDBACK_STABILITY.md`; isso requer julgamento musical, não promoção automática.
+
+No ZIP extraído, a entrada correta é
+`artifacts/dsp-reform-f2/listening/index.html`, servida por HTTP conforme o guia.
+O pacote CI tem proveniência Linux própria; os hashes MinGW locais permanecem
+separados. Nenhum golden ou baseline foi regenerado para obter esses resultados.
+Hardware PENDING_PHYSICAL e decisão musical PENDING_HUMAN continuam explícitos.

@@ -1,7 +1,10 @@
 # F3 — Vintage, Smooth Saturation e Harmonic Bloom
 
-Estado: **READY_FOR_HUMAN_LISTENING**, para o pacote publicado e verificado
-no registro abaixo. Hardware **PENDING_PHYSICAL**, audição **PENDING_HUMAN**.
+Estado: **HUMAN_LISTENING_COMPLETED_EQUIVALENT**. O usuário concluiu26/26
+avaliações, todas equivalentes (24 confianças médias,2 altas), sem preferência
+ou rejeição. [Resultado humano e proveniência](HUMAN_LISTENING_RESULT.md).
+Vintage F3-A permanece referência existente; B/C experimentais, sem promoção.
+Hardware **PENDING_PHYSICAL**. READY_FOR_HUMAN_LISTENING foi o estado anterior.
 Nenhuma candidata promovida; sem merge ou release.
 
 [Baixar ZIP78WAVs + player + relatórios](https://github.com/ovelhaaa/hydra-tape-engine/actions/runs/45321905632/artifacts/14888527811).
@@ -47,4 +50,5 @@ ativo é confrontado separadamente com F3-A.
 Native/WASM preserva limites1e-5/1e-6. CTest original continua visível, incluindo
 assertion de energia A incompatível com C. Observação completa é complementar.
 Nenhum benchmark desktop é convertido em estimativa ESP32. Exigir campanha
-física comparável e escuta humana antes de promoção.
+física comparável antes de promoção; a escuta registrada não demonstrou
+vantagem perceptual de B/C.

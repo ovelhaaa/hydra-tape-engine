@@ -3,12 +3,17 @@
 | Variante | Hipótese | Situação musical |
 |---|---|---|
 | A Vintage Reference | F2-C intacta, referência congelada | selecionada somente como base experimental |
-| B Smooth Saturation | menos excitação no primeiro estágio, trim maior | PENDING_HUMAN |
-| C Harmonic Bloom | mais excitação no primeiro estágio, maior atenuação intermediária | PENDING_HUMAN |
+| B Smooth Saturation | menos excitação no primeiro estágio, trim maior | equivalência perceptual registrada, sem preferência |
+| C Harmonic Bloom | mais excitação no primeiro estágio, maior atenuação intermediária | equivalência perceptual registrada, sem preferência |
 
 Os nomes descrevem hipóteses. C não acrescenta drive por repetição: a densidade
 só evolui com a recirculação natural. Não há garantia de que harmônicos cresçam
 monotonicamente em cada repetição, pois filtros e decay também participam.
+
+Escuta humana concluída:26/26 avaliações equivalentes,24 confianças médias/2
+altas. Nenhuma vantagem perceptual demonstrada neste pacote; sem rejeição ou
+vencedora. [Registro completo](HUMAN_LISTENING_RESULT.md). A permanece referência
+existente; nenhuma promoção. Hardware continua PENDING_PHYSICAL.
 
 Matriz dinâmica local:192 cenas/candidata,44.1/48kHz, feedback0/25/50/65/75/85/95/100,
 níveis−24/−12/−6/0dBFS e seno/dois tons/burst. B e C diferem de A em168/192

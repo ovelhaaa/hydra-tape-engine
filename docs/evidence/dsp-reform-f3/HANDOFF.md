@@ -1,6 +1,8 @@
 # Handoff F3
 
-FASE:F3 — READY_FOR_HUMAN_LISTENING; aprovação musical das candidatas PENDING.
+FASE:F3 — HUMAN_LISTENING_COMPLETED_EQUIVALENT;26/26 equivalentes,
+confiança24 médias/2 altas. Nenhuma preferência ou rejeição de candidata.
+Evidência:HUMAN_LISTENING_RESULT.md e export original preservado.
 BASE HEAD:2c15b88680ff65aff8bd5ac09543fab44b52c785.
 FONTE DO PACOTE:1e454ebf5f02d7f39a4e0ea634bb107f32da4217.
 PR:#68 Draft, baseada na F2; nenhum merge.
@@ -23,5 +25,7 @@ teste automático não é audição humana.
 CPU/I2S/memória/stack físicos:PENDING_PHYSICAL; três builds ESP32 PASS,
 zero flash. Não promover com evidência desktop ou histórica.
 Rollback:F3=0/F2=2 para Vintage;F2=0 C0;F2=1 Warm; rotaA default intacta.
-Próxima fase:F4 NÃO AUTORIZADA. Escuta das candidatas e campanha física
-comparável necessárias antes de promoção/release; merge somente autorizado.
+Próxima fase:F4 NÃO AUTORIZADA. Escuta concluída sem vantagem perceptual
+demonstrada para B/C; manter referência Vintage existente e candidatas
+experimentais. Campanha física comparável necessária antes de promoção/release;
+merge somente autorizado.

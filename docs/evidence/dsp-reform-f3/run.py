@@ -55,7 +55,9 @@ def package(out):
 def main():
  p=argparse.ArgumentParser();p.add_argument('action',choices=['baseline','contracts','stress','render','package']);p.add_argument('--variant',type=int,choices=range(3),default=0);a=p.parse_args();OUT.mkdir(parents=True,exist_ok=True);dest=OUT/f'variant{a.variant}';dest.mkdir(exist_ok=True)
  if a.action=='baseline':frozen(OUT)
- elif a.action=='contracts':f2.contracts(a.variant,dest)
+ elif a.action=='contracts':
+  f2.contracts(a.variant,dest)
+  f2.command([sys.executable,HERE/'wasm_observation.py','--variant',a.variant],dest/'wasm-observation-driver.log')
  elif a.action=='stress':f2.stress(a.variant,dest,OUT/'inputs')
  elif a.action=='render':render(a.variant,dest)
  else:package(OUT)

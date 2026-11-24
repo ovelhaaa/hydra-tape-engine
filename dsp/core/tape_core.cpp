@@ -13,6 +13,7 @@
 #include "hydra_mech_noise.hpp"
 #include "tape_integrity.hpp"
 #include "realtime_profile.hpp"
+#include "feedback_calibration_experiment.hpp"
 // The B and C listening variants are deliberately separate binaries.
 #if defined(HYDRA_PHASE72_EXPERIMENTAL_FEEDBACK_ROUTING) && HYDRA_PHASE72_EXPERIMENTAL_FEEDBACK_ROUTING && \
     defined(HYDRA_PHASE72_CLASSIC_FEEDBACK_ROUTING) && HYDRA_PHASE72_CLASSIC_FEEDBACK_ROUTING
@@ -497,7 +498,7 @@ HYDRA_DSP_IRAM void TapeCore::Impl::updateFilters(){
   }
   float bumpFreq=60.f+(speedMod*140.f);
   float reproBumpGain=clampf(currentParams.headBumpAmount*0.06f,0.f,6.f);
-  float feedbackBumpGain=clampf(currentParams.headBumpAmount*0.02f,0.f,2.f);
+  float feedbackBumpGain=clampf(currentParams.headBumpAmount*experimental::kF2FeedbackBumpScale,0.f,2.f);
   if(!filtersPrimed || cachedFbBumpFreq != bumpFreq || cachedFbBumpGain != feedbackBumpGain){
     cachedFbBumpFreq = bumpFreq;
     cachedFbBumpGain = feedbackBumpGain;
@@ -519,6 +520,9 @@ HYDRA_DSP_IRAM void TapeCore::Impl::updateFilters(){
   }
   float feedbackWearAmount=ageMod;
   float fb=(9000+(speedMod*7000))*(1-(feedbackWearAmount*0.65f));
+#if HYDRA_DSP_REFORM_F2_VARIANT == 2
+  fb *= 0.75f; // Existing electronic gap only; private C playback is unchanged.
+#endif
   fb=std::max(1600.f,fb);
   if(!filtersPrimed || cachedFbGapCut != fb){
     cachedFbGapCut = fb;
@@ -526,7 +530,7 @@ HYDRA_DSP_IRAM void TapeCore::Impl::updateFilters(){
     feedbackGapLossR.copyCoeffFrom(feedbackGapLoss);
   }
   if(!filtersPrimed){
-    feedbackHPF.setHighpass(sampleRate,300,0.5f);
+    feedbackHPF.setHighpass(sampleRate,experimental::kF2FeedbackHighpassHz,0.5f);
     feedbackHPFR.copyCoeffsFrom(feedbackHPF);
   }
   float ap=0.3f+feedbackWearAmount*0.4f;

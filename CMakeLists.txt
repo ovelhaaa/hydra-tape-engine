@@ -67,6 +67,10 @@ if(BUILD_TESTING)
   target_link_libraries(hydra_core_regression PRIVATE hydra_dsp_core)
   add_test(NAME core_regression COMMAND hydra_core_regression)
 
+  add_executable(hydra_f2_wrap_contract tests/core/f2_wrap_contract.cpp)
+  target_link_libraries(hydra_f2_wrap_contract PRIVATE hydra_dsp_core)
+  add_test(NAME f2_physical_wrap_contract COMMAND hydra_f2_wrap_contract)
+
   add_executable(hydra_audible_controls tests/core/audible_controls.cpp)
   target_link_libraries(hydra_audible_controls PRIVATE hydra_dsp_core)
   add_test(NAME core_audible_controls COMMAND hydra_audible_controls)

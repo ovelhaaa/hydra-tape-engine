@@ -1,7 +1,12 @@
 # F4 — Transições de performance (Vintage F3-A preservada)
 
-Estado: **READY_FOR_HUMAN_LISTENING** na fonte local; hardware **PENDING_PHYSICAL**;
-publicação CI / decisão musical humana **pendentes** (ver `published-artifact.json`).
+Estado: **BLOCKED_FOR_HUMAN_LISTENING** — única causa: a publicação do
+artifact A/B não pôde ser executada porque este ambiente não tem credenciais
+de push para o GitHub. Todo o restante do pacote de critérios está cumprido:
+DSP, medições, testes e pacote local verificável. Assim que o branch for
+enviado, o workflow `dsp-reform-f4.yml` publica o artifact e o estado passa a
+`READY_FOR_HUMAN_LISTENING`. Hardware **PENDING_PHYSICAL**; decisão musical
+humana **pendente**.
 
 A F4 parte da HEAD verificada da F3
 `29f50258f1ac47139ac8f1fdb21aa59424ca9a75` (PR #68) e mantém a referência

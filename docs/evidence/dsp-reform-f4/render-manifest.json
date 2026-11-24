@@ -1,18 +1,18 @@
 {
   "package": "artifacts/dsp-reform-f4/listening",
   "scene_count": 13,
-  "files": 67,
-  "manifest_sha256": "9ee8e4b54908aa7d0f91400527da96a5208295183aa7bfb6e609f38f4d8405fc",
+  "files": 68,
+  "manifest_sha256": "f5e7726dfb1f72d92ce6d27caafef8f1d107895f7a0ae40a1b28308c2359d31e",
   "answer_key_sha256": "e9a4511818f3a9af56a4c533ea88f0677a1d69a0866e80d0c2ad7bf95b13d72b",
   "sha256": {
     "01_head_3_to_123-X-MATCHED.wav": "2044714a1187b2c28534d28846ac3b4d09787abcd691a7e69046d3f82130d0bd",
     "01_head_3_to_123-X-RAW.wav": "2044714a1187b2c28534d28846ac3b4d09787abcd691a7e69046d3f82130d0bd",
     "01_head_3_to_123-Y-MATCHED.wav": "53345984b9c073a3fd7e7f8e6c33b4343fd5e70d4f8d475242b2de2019d4ab49",
     "01_head_3_to_123-Y-RAW.wav": "94b92fcc2eb9de96a54cf0ba0f988bb7020bb672803961672dcd8dde0ade3435",
-    "02_head_rapid-X-MATCHED.wav": "320c98c922fb7b300be3afc6c2fbfb62a675dbdf9faefdc7068d53284d8f7efc",
-    "02_head_rapid-X-RAW.wav": "320c98c922fb7b300be3afc6c2fbfb62a675dbdf9faefdc7068d53284d8f7efc",
-    "02_head_rapid-Y-MATCHED.wav": "f7752e21dd0a92b3464bb027d955d120dd724cee9cbf51e275c69c4bff0670c1",
-    "02_head_rapid-Y-RAW.wav": "37f98a51da8922bf51206dd99c139219699272a2ffb69069f38a1274bcffc292",
+    "02_head_rapid-X-MATCHED.wav": "ebb00bb346fce1bc130f2360d74c6e30d39ce7791a3c2bfd0f9e95d4ce51374e",
+    "02_head_rapid-X-RAW.wav": "ebb00bb346fce1bc130f2360d74c6e30d39ce7791a3c2bfd0f9e95d4ce51374e",
+    "02_head_rapid-Y-MATCHED.wav": "9f2c4a643e293be535e873385e3393f42da58d0cbd9cee28294272e9f21f7307",
+    "02_head_rapid-Y-RAW.wav": "83d349a5f09a76dd7f99b3a050ad53f15eeb5bf1016a56e62eedff832ff89c46",
     "03_head_1_to_3-X-MATCHED.wav": "ba4716a6e2096f14bfa39677c5f2e9f957a97de9b1ce7677e031662b1e0ee01d",
     "03_head_1_to_3-X-RAW.wav": "ba4716a6e2096f14bfa39677c5f2e9f957a97de9b1ce7677e031662b1e0ee01d",
     "03_head_1_to_3-Y-MATCHED.wav": "ad5fe610085ae7dfa5ea389c88a2649bc7640f48bdb729481807567d1ae30005",
@@ -25,10 +25,10 @@
     "05_freeze_on_off-X-RAW.wav": "7648236066b561aa1e9291d9fee0c8fcc87ab54890d67ef1cc1323629e4cb760",
     "05_freeze_on_off-Y-MATCHED.wav": "fdd74df7f0043abe538aa0ab7045a837ab865193811120e0f0f4473b3f653ede",
     "05_freeze_on_off-Y-RAW.wav": "74d09224b1a57f0431c1c66b6d71773641c450db9c1bda71ad822b0d6afb862a",
-    "06_freeze_high_fb-X-MATCHED.wav": "e2fe7be911da65b99640f7330ae8097a6ca8c5ebf9e5e88039177bb7f92f09d3",
-    "06_freeze_high_fb-X-RAW.wav": "e2fe7be911da65b99640f7330ae8097a6ca8c5ebf9e5e88039177bb7f92f09d3",
-    "06_freeze_high_fb-Y-MATCHED.wav": "f0cbd9332a195f8a816694bb9f138ff7bb108625ee9c12662685cc46312952bc",
-    "06_freeze_high_fb-Y-RAW.wav": "c7bdfa684110ccf3002a0d430ba41f3c8ba23fa69bfc576dbfcf82db40386e00",
+    "06_freeze_high_fb-X-MATCHED.wav": "beb25fde2850d72eb7396156c2e97ac8218546c6199891d7c6219da83298d300",
+    "06_freeze_high_fb-X-RAW.wav": "beb25fde2850d72eb7396156c2e97ac8218546c6199891d7c6219da83298d300",
+    "06_freeze_high_fb-Y-MATCHED.wav": "3f532fbd59afb0a06aa57023e2029b19c1a555b60ccb3fd5d6eb1482b99df06a",
+    "06_freeze_high_fb-Y-RAW.wav": "be23625a65675e8afdeeb85c6440fdc1d7cf0c0152f911cfa22d8bfb2b6bb8b9",
     "07_freeze_reverse-X-MATCHED.wav": "474c9bc1d1ae364c9d682db50180b37112655e12a9addf5d06f5f3725828644b",
     "07_freeze_reverse-X-RAW.wav": "c3fbb462c65c921838bc8f68432e2044a2dba0788685dc96d0d2edb3f73cbdf0",
     "07_freeze_reverse-Y-MATCHED.wav": "1da8e63036252f79b62a36758926d31624e8986d3e85e5529907b53bd06390e8",
@@ -37,10 +37,10 @@
     "08_mix_0_100_0-X-RAW.wav": "f9196b09e221b0559273fa9c3761ba404f94bc1101081ce388c140e61b1300f8",
     "08_mix_0_100_0-Y-MATCHED.wav": "2d9a89b46141c6c57a8eecc1d8f75d9fc332457a00e9265dc149c7343ce6e05d",
     "08_mix_0_100_0-Y-RAW.wav": "f5bab154c65f94e9fe27b5b01b98d970984a7225e9327bdc06f21d7c4b073dc6",
-    "09_drive_0_100_25-X-MATCHED.wav": "8e70ba867aafcc83cdc68d0a9e4cf2850e5f12231783ddcedf89796c09ca9193",
-    "09_drive_0_100_25-X-RAW.wav": "cb032b77caa060395d052b278897bb639e284b495297b798c8571c42a9485775",
-    "09_drive_0_100_25-Y-MATCHED.wav": "02e62c1ec797f6467f1f29c9dfd68d98d04e3b683e8f89de9ce1974da3b444e2",
-    "09_drive_0_100_25-Y-RAW.wav": "02e62c1ec797f6467f1f29c9dfd68d98d04e3b683e8f89de9ce1974da3b444e2",
+    "09_drive_0_100_25-X-MATCHED.wav": "b58e6e1e8b77663038a920ec1adf6c21b6eb9da2d209a2a1e4c945588f5e697c",
+    "09_drive_0_100_25-X-RAW.wav": "7ff27d876bbef12a1ba3ef2accf83a05d70b9d055991c2f5740628490aff1d06",
+    "09_drive_0_100_25-Y-MATCHED.wav": "6677b22ce1530459a9dec29ffe38f4928c2421950c0537b2d88d00b5fde9ba2f",
+    "09_drive_0_100_25-Y-RAW.wav": "6677b22ce1530459a9dec29ffe38f4928c2421950c0537b2d88d00b5fde9ba2f",
     "10_tone_0_100_0-X-MATCHED.wav": "4db04726680bb8fc1f03b5d5f28700ceba32cd5951700b11818218bdf7b35162",
     "10_tone_0_100_0-X-RAW.wav": "4db04726680bb8fc1f03b5d5f28700ceba32cd5951700b11818218bdf7b35162",
     "10_tone_0_100_0-Y-MATCHED.wav": "4db04726680bb8fc1f03b5d5f28700ceba32cd5951700b11818218bdf7b35162",
@@ -70,11 +70,12 @@
     "lab/session.mjs": "48c7f877e8e6d65cf09a2d8f1e7febfc3c13a1e90ac8e588cf7bfd0286730bd8",
     "lab/style.css": "8485244c7be909dfac3f3c1d62b4df2eb3497c30bc5ae5c5a445644f84e8ff47",
     "lab/wave.mjs": "a86e7f06839fc227d133b7c001a35e1888e03977c17965876ef3f9d2146cf4c6",
+    "LEIA-ME.md": "fb34a2bc0889a70d41267a3a6eda6c2142a8918badfe915cfc2360c7e991eb3c",
     "listening.mjs": "819f8793e99fac6bfc9af999439ed3d7df4621f62a801fb98e1044dcd5dcac9c",
-    "manifest.json": "9ee8e4b54908aa7d0f91400527da96a5208295183aa7bfb6e609f38f4d8405fc"
+    "manifest.json": "f5e7726dfb1f72d92ce6d27caafef8f1d107895f7a0ae40a1b28308c2359d31e"
   },
   "provenance": {
-    "source_commit": "29f50258f1ac47139ac8f1fdb21aa59424ca9a75",
+    "source_commit": "875b1307c1033d86eabba8ea9e646c6d8fad8989",
     "branch": "experiment/dsp-reform-f4-performance-transitions",
     "flags": {
       "A": [
@@ -91,8 +92,8 @@
       ]
     },
     "libraries": {
-      "A": "cd16722ec3d7ae8abe38f84bae1c1ee21fd288529034c2f0857026611dd05da2",
-      "B": "e2bf7f64fab6f9347d28a1fac269aa5209df894729785d9333299f86516d59f9"
+      "A": "0016eeb3317aec4ced5e07514eabedf0cbd1cb5e262450898cbb3c9cf1ea2aa7",
+      "B": "7f1008a400c882a27cc94c0b75800e169bff76baac9c77e29fd052200384856e"
     },
     "block_size": 128,
     "rate": 44100,

@@ -1,5 +1,5 @@
 {
-  "status": "LOCAL_PACKAGE_VERIFIED_PENDING_CI",
+  "status": "BLOCKED_PUBLICATION_NO_GITHUB_CREDENTIALS",
   "package": "artifacts/dsp-reform-f4/listening",
   "branch": "experiment/dsp-reform-f4-performance-transitions",
   "base_f3_head": "29f50258f1ac47139ac8f1fdb21aa59424ca9a75",
@@ -9,10 +9,11 @@
     "RAW",
     "MATCHED"
   ],
-  "manifest_sha256": "9ee8e4b54908aa7d0f91400527da96a5208295183aa7bfb6e609f38f4d8405fc",
+  "manifest_sha256": "f5e7726dfb1f72d92ce6d27caafef8f1d107895f7a0ae40a1b28308c2359d31e",
   "answer_key_sha256": "e9a4511818f3a9af56a4c533ea88f0677a1d69a0866e80d0c2ad7bf95b13d72b",
-  "sha256_manifest_sha256": "427278ca8738fa0eda35ce29b8ffa70189c6b68ddb48ff1486cc5881192751e4",
+  "sha256_manifest_sha256": "30debb85a7bade1b44388e23bbb1daa9e4f50c1b8751b1e07dea9266d14dc52d",
   "integrity": "52/52 WAVs PCM24 stereo 44100 verified; all package files hashed",
   "artifact_url": null,
-  "note": "Publication happens in GitHub Actions workflow dsp-reform-f4.yml. No merge, flash or promotion."
+  "note": "GitHub credentials unavailable in this session; push/CI artifact publication could not run. Package is local, hashed and reproducible.",
+  "publication_blocker": "git push cannot authenticate: SEC_E_NO_CREDENTIALS; no gh CLI or token in this session"
 }

@@ -6,6 +6,8 @@ from pathlib import Path
 def read(p):return json.loads(p.read_text(encoding='utf-8-sig'))
 def main():
  rows={};stress=[read(f.OUT/f'variant{v}/stress.json') for v in range(3)];dyn=[read(f.OUT/f'variant{v}/dynamics.json') for v in range(3)]
+ assert all(len(s)==154 and set(s)==set(stress[0]) for s in stress),'Stress matrix incomplete'
+ assert all(len(d)==192 and set(d)==set(dyn[0]) for d in dyn),'Dynamics matrix incomplete'
  for v in range(3):
   dest=f.OUT/f'variant{v}';s=stress[v];d=dyn[v];clipping={}
   for key,r in s.items():

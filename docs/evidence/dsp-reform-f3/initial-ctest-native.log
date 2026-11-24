@@ -1,0 +1,69 @@
+Test project C:/Users/devx/Documents/PlatformIO/Projects/hydra-f3/build/f3-0-native
+      Start  1: fast_tanh_integrity
+ 1/17 Test  #1: fast_tanh_integrity .................   Passed    1.19 sec
+      Start  2: phase7_dsp_integrity
+ 2/17 Test  #2: phase7_dsp_integrity ................   Passed    0.15 sec
+      Start  3: phase72_feedback_routing_contract
+ 3/17 Test  #3: phase72_feedback_routing_contract ...   Passed    0.16 sec
+      Start  4: phase72_classic_core_smoke
+ 4/17 Test  #4: phase72_classic_core_smoke ..........   Passed    0.19 sec
+      Start  5: core_smoke
+ 5/17 Test  #5: core_smoke ..........................   Passed    0.19 sec
+      Start  6: core_regression
+ 6/17 Test  #6: core_regression .....................***Failed    0.32 sec
+C:/Users/devx/Documents/PlatformIO/Projects/hydra-f3/tests/core/regression_core.cpp:255: check failed: channel_energy(fullR, 2840, 2960) > 1e-5f
+
+      Start  7: f2_physical_wrap_contract
+ 7/17 Test  #7: f2_physical_wrap_contract ...........   Passed    0.17 sec
+      Start  8: core_audible_controls
+ 8/17 Test  #8: core_audible_controls ...............   Passed    0.71 sec
+      Start  9: core_warp_test
+ 9/17 Test  #9: core_warp_test ......................   Passed    3.79 sec
+      Start 10: core_reverse_test
+10/17 Test #10: core_reverse_test ...................   Passed    4.17 sec
+      Start 11: core_transport_clock_test
+11/17 Test #11: core_transport_clock_test ...........   Passed    0.42 sec
+      Start 12: core_tap_tempo_test
+12/17 Test #12: core_tap_tempo_test .................***Failed    2.80 sec
+=== HYDRA TAP TEMPO V1 TEST SUITE ===
+[PASS] Basic Tap Tempo (60, 90, 120, 140, 180, 240 BPM)
+[PASS] Debounce (5, 20, 50 ms rejected without reference corruption)
+[PASS] Outlier Rejection (isolated deviation preserved stable BPM)
+[PASS] Intentional Tempo Change (120 -> 90 BPM fast convergence)
+[PASS] Timeout (>3s session separation preserves BPM, resets sequence)
+[PASS] Sample Rate Independence (44.1 kHz & 48 kHz)
+[PASS] Timestamp Validation (out-of-order, out-of-range, high offsets)
+[PASS] Transport Integration (tempo changed without phase/position jump)
+[PASS] Reverse Synchronization (Reverse adapts to tap tempo)
+[PASS] Block Independence (invariant across block offsets)
+[PASS] Thread Handoff & State Query
+[PASS] Legacy Compatibility (ABI 116, 140, 148 bytes intact)
+[PASS] SPSC Queue & State Publisher (Lock-Free FIFO, Overflow Protection, Triple Buffer)
+[PASS] Parameter Update Elimination (No updates on Tap 1, Outlier, Bounce, OutOfRange)
+[PASS] Concurrent Tap Tempo Handoff (Multi-threaded Stress, Lock-Free SPSC, Zero Corruption)
+[PASS] Concurrent Transport & Manual BPM (Full Concurrency Interleaving Invariant)
+[PASS] StatePublisher Stress & High-Frequency (100k publishes, zero corruption, 11358579 consistent reads)
+FAIL: validSnapshots.load() > 0u at C:/Users/devx/Documents/PlatformIO/Projects/hydra-f3/tests/core/tap_tempo_test.cpp:826
+[PASS] Slow Reader Protection (Writer safely cycled without corrupting reader's buffer)
+[PASS] SPSC Queue Overflow & FIFO Order (Capacity 32 exact, non-blocking drop)
+>>> TAP TEMPO TESTS FAILED <<<
+
+      Start 13: core_midi_clock_test
+13/17 Test #13: core_midi_clock_test ................   Passed    0.61 sec
+      Start 14: web_param_ids
+14/17 Test #14: web_param_ids .......................   Passed    1.20 sec
+      Start 15: core_abi_symbols
+15/17 Test #15: core_abi_symbols ....................   Passed    2.23 sec
+      Start 16: core_abi_legacy_consumer
+16/17 Test #16: core_abi_legacy_consumer ............   Passed    0.20 sec
+      Start 17: core_transition_characterization
+17/17 Test #17: core_transition_characterization ....   Passed   13.01 sec
+
+88% tests passed, 2 tests failed out of 17
+
+Total Test time (real) =  31.71 sec
+
+The following tests FAILED:
+	  6 - core_regression (Failed)
+	 12 - core_tap_tempo_test (Failed)
+Errors while running CTest

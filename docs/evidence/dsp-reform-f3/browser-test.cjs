@@ -28,7 +28,9 @@ const fs=require('node:fs');
  if(await page.locator('#reveal').isDisabled())throw Error('Completed evaluation cannot reveal');
  const downloaded=page.waitForEvent('download');await page.locator('#export').click();const file=await downloaded;
  const report=JSON.parse(fs.readFileSync(await file.path(),'utf8'));if(Object.keys(report.decisions).length!==sceneCount*2)throw Error('Incomplete decision export');
- await page.locator('#reveal').click();await page.waitForFunction(()=>document.getElementById('answers').textContent.includes('Vintage F3-A'));
+ await page.locator('#reveal').click();
+ try { await page.waitForFunction(()=>document.getElementById('answers').textContent.includes('Vintage F3-A')); }
+ catch(error) { console.error('Reveal diagnostic',await page.evaluate(()=>({answers:document.getElementById('answers').textContent,status:document.getElementById('status').textContent,progress:document.getElementById('progress').textContent})),errors);await browser.close();throw error; }
  await page.reload();await page.waitForFunction(n=>document.getElementById('progress').textContent.startsWith(`${n} /`),sceneCount*2);
  if(errors.length)throw Error(errors.join('\n'));
  console.log(JSON.stringify({status:'PASS',sha256_verified_three_slots:true,raw_matched:true,third_slot_audio:triple,decisions_exported:sceneCount*2,persistence:true,reveal_only_after_completion:true,human_listening:false},null,2));

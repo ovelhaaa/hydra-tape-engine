@@ -1,8 +1,30 @@
 # F3 — Vintage, Smooth Saturation e Harmonic Bloom
 
-Estado durante os ensaios: **BLOCKED_FOR_HUMAN_LISTENING** até fechar gates e
-publicar/verificar o ZIP. Hardware **PENDING_PHYSICAL**, audição **PENDING_HUMAN**.
+Estado: **READY_FOR_HUMAN_LISTENING**, para o pacote publicado e verificado
+no registro abaixo. Hardware **PENDING_PHYSICAL**, audição **PENDING_HUMAN**.
 Nenhuma candidata promovida; sem merge ou release.
+
+[Baixar ZIP78WAVs + player + relatórios](https://github.com/ovelhaaa/hydra-tape-engine/actions/runs/45321905632/artifacts/14888527811).
+[CI completa aprovada](https://github.com/ovelhaaa/hydra-tape-engine/actions/runs/45321905632),
+fonte `1e454eb`. ZIP382733731bytes, SHA256
+`13055c4bdf231a35e2dd2857a787ffae04fd3e285a4e4347ef7543401b1391d0`.
+Baixado: digest GitHub/CRC/94 hashes/78WAVs conferidos. Veja
+[guia simples](LISTENING_GUIDE.md) e [registro](published-artifact.json).
+PR [#68 Draft](https://github.com/ovelhaaa/hydra-tape-engine/pull/68).
+
+Resultados locais: A10/10 bit-exact F2-C; B/C168/192 cenas dinâmicas diferentes
+de A,24/192 FB0 exatas; Native/WASM0/0; motor27/27/candidata; estresse154/154,
+60 caudas60s +4 compostas/candidata; zero teto após entrada. Clipping ativo
+44100/48000:A38/17,B38/17,C30/13. Sem aumento nem headroom interno piorado.
+CTest16/17 Native e14/15 WASM: assertion A conhecida mantida. Um flake Tap
+inicial preservado; repetição completa passou no Tap. Observação completa
+Native/WASM só identifica a assertion A conhecida. Objetos Native:84160bytes
+text em todas; data/bss0. Nenhuma inferência de CPU física.
+
+CI da fonte1e454eb: Core Equivalence, Bias Anti-Aliasing, Reverse Real-Time,
+Listening Lab, Web Demo e F3 completos/sucesso. Mudanças posteriores de relatório
+ou verificação não mudam core/header experimental, entradas ou renderização.
+Os manifestos F0.2/F1/F2 e goldens anteriores têm diff vazio.
 
 Base F2 `2c15b88680ff65aff8bd5ac09543fab44b52c785`, branch
 `experiment/dsp-reform-f3-saturation`. F3-A mantém Vintage bit-exact;

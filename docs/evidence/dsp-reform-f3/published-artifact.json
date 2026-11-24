@@ -1,0 +1,16 @@
+{
+  "run_id": 45321905632,
+  "commit": "1e454ebf5f02d7f39a4e0ea634bb107f32da4217",
+  "artifact_id": 14888527811,
+  "url": "https://github.com/ovelhaaa/hydra-tape-engine/actions/runs/45321905632/artifacts/14888527811",
+  "zip_bytes": 382733731,
+  "sha256": "13055c4bdf231a35e2dd2857a787ffae04fd3e285a4e4347ef7543401b1391d0",
+  "digest_matches_GitHub": true,
+  "CRC_pass": true,
+  "hashes_verified": 94,
+  "wav_count": 78,
+  "PCM": "24bit/stereo/44100",
+  "CI_all_candidates_technical_pass": true,
+  "hardware": "PENDING_PHYSICAL",
+  "human": "PENDING_HUMAN"
+}

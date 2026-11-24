@@ -1,0 +1,14 @@
+{
+  "status": "PASS",
+  "sha256_verified_three_slots": true,
+  "raw_matched": true,
+  "third_slot_audio": {
+    "before": 0.10000000149011612,
+    "after": 0.30000001192092896,
+    "finite": true
+  },
+  "decisions_exported": 26,
+  "persistence": true,
+  "reveal_only_after_completion": true,
+  "human_listening": false
+}

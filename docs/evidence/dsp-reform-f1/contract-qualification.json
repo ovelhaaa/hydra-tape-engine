@@ -1,0 +1,8 @@
+{
+  "original_ctest_exit": 8,
+  "original_failed_tests": [
+    "core_regression"
+  ],
+  "qualification": "known unchanged A energy expectation; block invariance exact; all other original assertions evaluated and pass",
+  "observation_exit": 1
+}

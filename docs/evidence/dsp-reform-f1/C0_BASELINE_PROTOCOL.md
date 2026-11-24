@@ -64,3 +64,10 @@ filtros do loop C0 completo com impulsos 0.1 e bursts200Hz, feedback50/75/85/100
 20 janelas de 500ms; bandas/decay/pico/RMS/espectro/harmônicos e WAVs.
 A observação de regressão é uma cópia diagnóstica com assertions originais,
 que continua para registrar todas as falhas; **não é substituto do teste original**.
+
+Qualificação explícita (sem suprimir outras falhas):
+```powershell
+python docs/evidence/dsp-reform-f1/validate_contracts.py --build build-c0-native --output artifacts/dsp-reform-f1/contracts
+```
+Mantém CTest original falhando na assertion de energia A; compila/avalia todas
+as assertions da cópia diagnóstica e rejeita qualquer falha adicional.

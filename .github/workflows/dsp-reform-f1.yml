@@ -28,8 +28,7 @@ jobs:
           emcmake cmake -S . -B build-wasm -DBUILD_WEB=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_CXX_FLAGS=-DHYDRA_PHASE72_CLASSIC_FEEDBACK_ROUTING=1
           cmake --build build-wasm -j 2
       - name: Existing C0 contracts (known A amplitude assertion retained)
-        continue-on-error: true
-        run: ctest --test-dir build-native --output-on-failure -E test_golden
+        run: python docs/evidence/dsp-reform-f1/validate_contracts.py --build build-native --output artifacts/dsp-reform-f1/contracts
       - name: Strict C0 parity
         run: |
           mkdir -p artifacts/dsp-reform-f1

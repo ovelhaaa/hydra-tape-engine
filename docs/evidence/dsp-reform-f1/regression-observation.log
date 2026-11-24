@@ -1,4 +1,4 @@
 wrap_R_energy=6.10860251982e-06 block_exact_L=1 block_exact_R=1
 OBSERVATION_FAIL line=260 expr=channel_energy(fullR, 2840, 2960) > 1e-5f
-regression_core: ok
+regression_core: assertions observed (see failures)
 observations_failed=1

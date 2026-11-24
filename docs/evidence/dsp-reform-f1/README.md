@@ -53,6 +53,9 @@ CPU/RAM incremental de F1 no firmware: **zero**.
   energia é compatível com a coloração adicional C já aprovada; não prova bug
   de wrap. Aceitamos esta discrepância como expectativa sonora específica A,
   não como tolerância de paridade relaxada. A prova de bloco independe desse piso.
+  `validate_contracts.py` executa o CTest original e a observação completa; só
+  qualifica essa falha identificada e rejeita qualquer outra.
+  [Resultado local](contract-qualification.json).
 - Reverse V2, Warp, Multi-Head, Ping-Pong, transport, Tap/MIDI, ABI/símbolos,
   controles e LUT têm evidências C0; não foi usada CI verde A como prova C.
 - [Motor completo](engine-gates.json): **27/27**, 44.1/48 kHz, seis tails 60 s.

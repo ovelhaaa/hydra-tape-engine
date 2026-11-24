@@ -234,7 +234,10 @@ def render_listening(v,out,inputs):
  sources=list(json.loads((inputs/'manifest.json').read_text())['sources'])
  # 12 scenes: every source, every mode, each fb in each mode; no 480-file dump.
  for i in range(12):
-  kind=sources[i%8];mode=['single','multihead','reverse','pingpong'][i%4];feedback=[50,75,85][i//4]
+  # Put the bass proxy in single-head FB85, where low-band repeat evolution
+  # is easy to compare; use clean guitar for the separate Reverse FB75 scene.
+  source_index=0 if i==6 else 6 if i==8 else i%8
+  kind=sources[source_index];mode=['single','multihead','reverse','pingpong'][i%4];feedback=[50,75,85][i//4]
   p=params(feedback,mode,clean=False)
   source=np.fromfile(inputs/(kind+'.input.f32'),'<f4').reshape(-1,2)
   x=np.zeros((44100*16,2),np.float32);x[:len(source)]=source

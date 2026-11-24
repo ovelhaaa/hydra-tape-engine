@@ -39,7 +39,9 @@ jobs:
           status=0
           for v in 0 1 2; do
             python docs/evidence/dsp-reform-f2/run.py variant --variant $v || status=1
+            python scripts/phase64_validate_engine.py --library "$PWD/build/f2-$v-native/libhydra_abi_test_library.so" --output artifacts/dsp-reform-f2/variant$v/engine || status=1
           done
+          python docs/evidence/dsp-reform-f2/compound.py || status=1
           exit $status
       - name: Assemble and verify blind RAW/MATCHED audio
         if: ${{ !cancelled() && steps.builds.outcome == 'success' }}
@@ -71,6 +73,8 @@ jobs:
             artifacts/dsp-reform-f2/variant*/*.json
             artifacts/dsp-reform-f2/variant*/*.log
             artifacts/dsp-reform-f2/variant*/contracts-*/*
+            artifacts/dsp-reform-f2/variant*/engine/*.json
+            artifacts/dsp-reform-f2/compatibility/*.json
             artifacts/dsp-reform-f2/build-provenance/
             docs/evidence/dsp-reform-f2/
           retention-days: 30

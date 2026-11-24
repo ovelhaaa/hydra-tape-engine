@@ -50,7 +50,7 @@ async function load(){
  }catch(error){el('status').textContent=`Erro: ${error.message}`;}
 }
 function select(i){if(!deck)return;deck.select(i);for(const b of el('slots').children)b.setAttribute('aria-pressed',String(Number(b.dataset.slot)===i));}
-el('play').onclick=async()=>{if(!deck)return;await context.resume();deck.run?deck.pause():deck.start();};
+el('play').onclick=async()=>{const activeDeck=deck;if(!activeDeck)return;await context.resume();if(activeDeck!==deck)return;activeDeck.run?activeDeck.pause():activeDeck.start();};
 el('restart').onclick=()=>deck?.seek(0);el('seek').oninput=()=>deck?.seek(Number(el('seek').value));
 el('volume').oninput=()=>deck?.configure([1,1,1],1,Number(el('volume').value));
 for(const id of ['preference','confidence','comments'])el(id).addEventListener('input',save);

@@ -13,8 +13,10 @@
 #endif
 
 namespace hydra::dsp::experimental {
-constexpr float kF2FeedbackHighpassHz = HYDRA_DSP_REFORM_F2_VARIANT == 1 ? 180.f :
-                                      HYDRA_DSP_REFORM_F2_VARIANT == 2 ? 240.f : 300.f;
+// Initial 180/240 Hz hypotheses failed the 60s fast/new FB100 impulse gate.
+// Only the HPF was raised after a measured sweep; all other F2 mappings remain.
+constexpr float kF2FeedbackHighpassHz = HYDRA_DSP_REFORM_F2_VARIANT == 1 ? 260.f :
+                                      HYDRA_DSP_REFORM_F2_VARIANT == 2 ? 280.f : 300.f;
 constexpr float kF2FeedbackBumpScale = HYDRA_DSP_REFORM_F2_VARIANT == 1 ? 0.012f :
                                      HYDRA_DSP_REFORM_F2_VARIANT == 2 ? 0.016f : 0.02f;
 } // namespace hydra::dsp::experimental

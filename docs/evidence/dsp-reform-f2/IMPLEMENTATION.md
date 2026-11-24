@@ -13,8 +13,8 @@ mantêm estados próprios; nenhuma duplicação de filtro por sample.
 | Build | HPF/Q | Bump eletrônico em amount50 | Gap eletrônico |
 |---|---|---|---|
 |0 Classic C0|300Hz/.5|+1dB|original|
-|1 Warm Tape|180Hz/.5|+.6dB|original|
-|2 Vintage Progressive|240Hz/.5|+.8dB|cutoff original ×.75, mínimo1600Hz|
+|1 Warm Tape|260Hz/.5|+.6dB|original|
+|2 Vintage Progressive|280Hz/.5|+.8dB|cutoff original ×.75, mínimo1600Hz|
 
 Mudanças em `tape_core.cpp:499–537` e
 `feedback_calibration_experiment.hpp`. Centro60+140*speed e Q.8 do bump

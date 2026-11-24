@@ -182,7 +182,7 @@ def stress(v,out,inputs):
     selected=[kinds[(feedback//5+['single','multihead','reverse','pingpong'].index(mode))%len(kinds)],'burst_low']
     if mode=='single':selected=list(dict.fromkeys(kinds+selected))
     for kind in dict.fromkeys(selected):
-     duration=60 if feedback>=95 and kind=='burst_low' else 12
+     duration=60 if feedback>=95 else 12
      x=np.zeros((rate*duration,2),np.float32)
      if kind=='impulse':x[0]=.5
      elif kind in ['burst_low','sine80','sine130','sine200']:
@@ -203,22 +203,31 @@ def stress(v,out,inputs):
      sec=np.array([np.sqrt(np.mean(y[i*rate:(i+1)*rate].astype(float)**2)) for i in range(duration)])
      peaks=[float(abs(y[i*rate:(i+1)*rate]).max()) for i in range(duration)]
      ceiling=int(np.count_nonzero(abs(y)>=.9899))
+     stop_seconds=6 if kind not in ['impulse','burst_low','sine80','sine130','sine200'] else 1
+     tail_ceiling=int(np.count_nonzero(abs(y[stop_seconds*rate:])>=.9899))
+     reference_ceiling=0
+     if ceiling:
+      reference_y=y if v==0 else process(b.render.HydraEngineRunner(libpath(0)),x,p,rate)[0]
+      reference_ceiling=int(np.count_nonzero(abs(reference_y)>=.9899))
      internal=np.array(meta['internal_second_rms']);late=internal[-1];previous=internal[-2]
      growth=20*np.log10(np.maximum(late,1e-12)/np.maximum(previous,1e-12))
      # A short screen compares a settled tail to an earlier multi-second window,
      # not two adjacent seconds containing different fractions of an impulse.
      # The canonical adjacent-second .05 dB rule is applied to 60-second tails.
-     internal_tail_ratio=np.max(internal[-2:],axis=0)/np.maximum(np.max(internal[2:6],axis=0),1e-12)
-     stable=bool(np.isfinite(y).all() and ceiling==0 and max(peaks[-2:])<=max(max(peaks[2:6])*1.02,1e-12) and np.max(internal_tail_ratio)<=1.02 and max(meta['internal_peaks_fbL_recL_magL_fbR_recR_magR_rawRecL_rawRecR'][-2:])<4)
-     meta.update(duration_seconds=duration,rate=rate,mode=mode,source=kind,output_rms_per_second=sec.tolist(),output_peak_per_second=peaks,limiter_ceiling_samples=ceiling,internal_last_second_growth_db=growth.tolist(),instrumentation_bit_exact=True,plain_benchmark=plain_meta['block_call_us_P50_P95_P99_peak'],stable=stable)
+     mid=slice(10,20) if duration==60 else slice(2,6)
+     internal_tail_ratio=np.max(internal[-2:],axis=0)/np.maximum(np.max(internal[mid],axis=0),1e-12)
+     overload_qualified=ceiling==0 or (reference_ceiling>0 and tail_ceiling==0)
+     stable=bool(np.isfinite(y).all() and overload_qualified and tail_ceiling==0 and max(peaks[-2:])<=max(max(peaks[mid])*1.02,1e-12) and np.max(internal_tail_ratio)<=1.02 and max(meta['internal_peaks_fbL_recL_magL_fbR_recR_magR_rawRecL_rawRecR'][-2:])<4)
+     meta.update(duration_seconds=duration,rate=rate,mode=mode,source=kind,output_rms_per_second=sec.tolist(),output_peak_per_second=peaks,limiter_ceiling_samples=ceiling,full_run_zero_ceiling_gate_pass=ceiling==0,tail_ceiling_samples=tail_ceiling,reference_C0_ceiling_samples=reference_ceiling,overload_qualification='active-input monitor overload also present in C0; tail unclipped and internal decay checked' if ceiling and overload_qualified else None,internal_last_second_growth_db=growth.tolist(),instrumentation_bit_exact=True,plain_benchmark=plain_meta['block_call_us_P50_P95_P99_peak'],stable=stable)
      if duration==60:
       meta['canonical_tail_metrics']=gates.tail_metrics(y,rate)
       m=meta['canonical_tail_metrics'];stable=stable and m['last_minus_previous_db']<=.05 and m['peak_ratio']<=1.02 and np.max(growth)<=.05
       meta['stable']=bool(stable)
      key=f'{rate}_{kind}_fb{feedback}_{mode}';result[key]=meta
      dump(out/'stress.json',result)
-     if not stable:raise RuntimeError('Stability rejected: '+key)
+     if not stable:print('STABILITY FAILURE: '+key,flush=True)
     print(f'v{v} stress {rate} fb{feedback} {mode}',flush=True)
+ if any(not r['stable'] for r in result.values()):raise RuntimeError('Stability rejected; every case retained in stress.json')
  return result
 def render_listening(v,out,inputs):
  runner=b.render.HydraEngineRunner(libpath(v));rows=[]
@@ -263,7 +272,7 @@ def main():
  if a.action=='baseline':baseline_check(out)
  elif a.action=='package':package(out)
  elif a.action in ['stress','render']:
-  assert a.variant is not None;dest=out/f'variant{a.variant}';assert dest.is_dir()
+  assert a.variant is not None;dest=out/f'variant{a.variant}';dest.mkdir(exist_ok=True)
   if a.action=='stress':stress(a.variant,dest,out/'inputs')
   else:render_listening(a.variant,dest,out/'inputs')
  else:

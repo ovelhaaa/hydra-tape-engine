@@ -1,6 +1,6 @@
 import { Deck } from './lab/audio.mjs';
 // Retain the established synchronized Deck; generalize only slot crossfades.
-class TripleDeck extends Deck {
+export class TripleDeck extends Deck {
   select(index) {
     const t=this.context.currentTime;
     this.switches.forEach(({gain},i)=>{

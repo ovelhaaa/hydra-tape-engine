@@ -21,6 +21,7 @@ jobs:
         with:
           version: '3.1.62'
       - name: Build all candidates (explicit flags on every DSP target)
+        id: builds
         run: |
           for v in 0 1 2; do
             flags="-DHYDRA_PHASE72_CLASSIC_FEEDBACK_ROUTING=1 -DHYDRA_DSP_REFORM_F2_VARIANT=$v"
@@ -35,13 +36,20 @@ jobs:
           python docs/evidence/dsp-reform-f2/run.py baseline
       - name: Qualify all candidates; fail on unexpected CTest or any measured instability
         run: |
+          status=0
           for v in 0 1 2; do
-            python docs/evidence/dsp-reform-f2/run.py variant --variant $v
+            python docs/evidence/dsp-reform-f2/run.py variant --variant $v || status=1
           done
+          exit $status
       - name: Assemble and verify blind RAW/MATCHED audio
+        if: ${{ !cancelled() && steps.builds.outcome == 'success' }}
         run: |
+          for v in 0 1 2; do
+            python docs/evidence/dsp-reform-f2/run.py render --variant $v
+          done
           python docs/evidence/dsp-reform-f2/run.py package
           node --test tools/listening-lab/lab.test.mjs
+          python docs/evidence/dsp-reform-f2/compatibility.py
       - name: Record effective build commands and compiler versions
         if: always()
         run: |

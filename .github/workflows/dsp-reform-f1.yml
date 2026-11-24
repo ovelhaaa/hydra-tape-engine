@@ -1,6 +1,8 @@
 name: F1 C0 reference and listening artifacts
 on:
   workflow_dispatch:
+  push:
+    branches: [codex/dsp-reform-f1-c0-reference]
   pull_request:
     paths: ['docs/evidence/dsp-reform-f1/**', '.github/workflows/dsp-reform-f1.yml']
 permissions:

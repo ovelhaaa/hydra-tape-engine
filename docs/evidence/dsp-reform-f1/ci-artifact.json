@@ -1,0 +1,23 @@
+{
+  "artifacts": [
+    {
+      "id": 14878720106,
+      "name": "hydra-dsp-reform-f1-c0-listening",
+      "size_in_bytes": 173302673,
+      "url": "https://api.github.com/repos/ovelhaaa/hydra-tape-engine/actions/artifacts/14878720106",
+      "archive_download_url": "https://api.github.com/repos/ovelhaaa/hydra-tape-engine/actions/artifacts/14878720106/zip",
+      "expired": false,
+      "created_at": "2026-11-24T00:41:40Z",
+      "expires_at": "2026-12-24T00:41:32Z",
+      "updated_at": "2026-11-24T00:41:40Z",
+      "digest": "sha256:edcab75667afa816cf540cd41ee42ab1f8e4eb6229ea4b6258e361bffb10acd5",
+      "workflow_run": {
+        "id": 45298878493,
+        "repository_id": 1116598225,
+        "head_repository_id": 1116598225,
+        "head_branch": "codex/dsp-reform-f1-c0-reference",
+        "head_sha": "e942b2f125204cd9c61ebbf50f710504acc7a04b"
+      }
+    }
+  ]
+}

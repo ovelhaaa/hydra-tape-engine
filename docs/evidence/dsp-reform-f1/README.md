@@ -71,7 +71,15 @@ CPU/RAM incremental de F1 no firmware: **zero**.
 [desenho F2 e audição](F2_EXPERIMENT_DESIGN.md). Artefatos grandes ficam em
 `artifacts/dsp-reform-f1/`; hashes versionados permitem regeneração.
 Workflow `dsp-reform-f1.yml` publica WAVs C0 e proveniência da execução CI,
-comparando dois processos no ambiente CI. Isso não implica igualdade automática
+comparando dois processos no ambiente CI. [Pacote publicado](https://github.com/ovelhaaa/hydra-tape-engine/actions/runs/45298878493/artifacts/14878720106),
+173302673 bytes, digest/expiração em [ci-artifact.json](ci-artifact.json).
+Execução `45298878493` em `e942b2f` concluída com sucesso: build/paridade/dois
+renders/estabilidade. Esse snapshot usava continue-on-error no CTest; não é
+prova de suíte integral verde. O workflow posterior qualifica somente a
+assertion A conhecida e rejeita falhas adicionais; validado localmente.
+Core e receita de áudio são idênticos entre esse pacote e a entrega final.
+Não baixado/re-hasheado localmente; digest é o fornecido pelo GitHub.
+Isso não implica igualdade automática
 entre MinGW congelado e Linux CI; seus manifestos permanecem distintos.
 
 Compatibilidade: C0/Reverse/Warp/Multi-Head/Ping-Pong são testáveis nesta base.

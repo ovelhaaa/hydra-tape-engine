@@ -18,5 +18,8 @@
   "publication_blocker": "git push cannot authenticate: SEC_E_NO_CREDENTIALS; no gh CLI or token in this session",
   "local_zip": "artifacts/dsp-reform-f4/hydra-dsp-reform-f4-listening.zip",
   "local_zip_sha256": "652764f06a35af3fd7abd0cb50100363a4cec860bb02f853280fc1e1fdef4cb2",
-  "local_zip_bytes": 121763173
+  "local_zip_bytes": 121763173,
+  "render_source_commit": "875b1307c1033d86eabba8ea9e646c6d8fad8989",
+  "head_at_commit": "a7efa9029c9cc7e16359152b592cdfadc34cd19e",
+  "render_note": "WAVs were rendered from DSP commit 875b130; later commits only change evidence/docs/CI, not dsp/ or include/."
 }

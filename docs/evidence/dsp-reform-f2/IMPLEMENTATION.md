@@ -46,11 +46,11 @@ Infra de teste isolada: novo contrato em `tests/core/f2_wrap_contract.cpp`,
 registrado em CMake. O teste A original fica intacto. Probe offline acessa os
 filtros reais sem mudar o firmware; instrumentaÃ§Ã£o fica apenas em artifacts.
 
-Indicadores Native (MinGW14.2/O3): seção text84096/84128/84160 bytes
-(C0/B/C), delta+32/+64 bytes, data/bss0. Símbolo do hot path interno mantém
-32304 bytes e wrapper416 bytes nas três builds. Objetos103943/103985/104027
+Indicadores Native (MinGW14.2/O3): seÃ§Ã£o text84096/84128/84160 bytes
+(C0/B/C), delta+32/+64 bytes, data/bss0. SÃ­mbolo do hot path interno mantÃ©m
+32304 bytes e wrapper416 bytes nas trÃªs builds. Objetos103943/103985/104027
 bytes. Indicador desktop Multi-HeadFB85, blocos128/44100: medianas P50
-90.8/92.7/90.9µs; P99 205.49/236.53/250.31µs, com picos de scheduling de até
-13.4ms. Não é ensaio controlado de DSP isolado e não resolve o gate físico.
-Nenhuma estimativa de P99 ESP32-S3 é inferida desses tempos. Arquivo bruto
+90.8/92.7/90.9Âµs; P99 205.49/236.53/250.31Âµs, com picos de scheduling de atÃ©
+13.4ms. NÃ£o Ã© ensaio controlado de DSP isolado e nÃ£o resolve o gate fÃ­sico.
+Nenhuma estimativa de P99 ESP32-S3 Ã© inferida desses tempos. Arquivo bruto
 `artifacts/dsp-reform-f2/native-benchmark.json`.

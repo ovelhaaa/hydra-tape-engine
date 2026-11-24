@@ -1,5 +1,13 @@
 # F2 ‚Äî Musical Feedback Calibration
 
+**READY_FOR_HUMAN_LISTENING** ‚Äî pacote final publicado e conferido.
+[Baixar 84 WAVs, Listening Lab e relat√≥rios](https://github.com/ovelhaaa/hydra-tape-engine/actions/runs/45312475778/artifacts/14885385251).
+CI em `693312c` conclu√≠da com sucesso; commits posteriores s√≥ registram evid√™ncias.
+ZIP de 349.948.838 bytes: SHA-256 igual ao digest GitHub, CRC √≠ntegro,
+100 entradas SHA verificadas e 84 WAVs PCM24/44.100 Hz/est√©reo utiliz√°veis.
+Pico MATCHED ‚â§ 0,98; diferen√ßa RMS m√°xima entre slots de 1,914e‚àí10 na janela comum.
+Gabarito separado. Ver `ci-artifact.json` e `published-artifact-summary.json`.
+
 Fase experimental autorizada: Classic C0 √ó Warm Tape √ó Vintage Progressive.
 Base congelada F1 `f3281d0e9230ad151bcad94c574042adc7996467` (#66), empilhada
 sobre F0.2/#65 e F0.1/#64; todas as PRs #58‚Äì#66 continuam abertas/draft, sem
@@ -11,8 +19,9 @@ Implementa√ß√£o: apenas tr√™s calibra√ß√µes dos filtros existentes, selecionadas
 `HYDRA_DSP_REFORM_F2_VARIANT=0|1|2`, dependentes da Classic C expl√≠cita.
 API1.7/38, presets e buffers Tape/Reverse/Warp preservados. F0.2/F1 congeladas.
 Hardware atual: **PENDING_PHYSICAL**. Audi√ß√£o/decis√£o: **PENDING_HUMAN**.
-Estado de entrega atualizado ap√≥s verificar o pacote; nenhum sucesso de CI
-isolado constitui aprova√ß√£o musical ou f√≠sica.
+Pacotes local e CI funcionais: 14 cenas, RAW/MATCHED; browser QA de 28 avalia√ß√µes
+PASS e arquivo publicado baixado e re-hasheado. Nenhum sucesso autom√°tico
+constitui aprova√ß√£o musical ou f√≠sica.
 
 Ver [implementa√ß√£o](IMPLEMENTATION.md), [filtros](SPECTRAL_COMPARISON.md),
 [estabilidade](FEEDBACK_STABILITY.md), [Native/WASM](NATIVE_WASM_VALIDATION.md),
@@ -39,20 +48,20 @@ do manifesto MinGW F1. CI Linux conserva proveni√™ncia pr√≥pria, sem presumir
 igualdade de libm entre sistemas. WAVs grandes s√≥ em artifacts/CI, nunca Git.
 SHA-256 em `listening/sha256.json`; gabarito separado `answer-key.json`.
 
-## EvidÍncia local concluÌda
+## Evid√™ncia local conclu√≠da
 
-- C0:10/10 inputs/saÌdas/readbacks bit-exact com F1; wrap congelado exato.
-- Native/WASM: cinco cen·rios ◊trÍs candidatas, max_abs=0/RMSE=0, LUT/input exatos.
-- CTest original:16/17 Native,14/15 WASM por candidata; ˙nica falha È a assertion
-  A de energia conhecida. Contrato C0 especÌfico e observaÁ„o integral passam.
+- C0:10/10 inputs/sa√≠das/readbacks bit-exact com F1; wrap congelado exato.
+- Native/WASM: cinco cen√°rios √ótr√™s candidatas, max_abs=0/RMSE=0, LUT/input exatos.
+- CTest original:16/17 Native,14/15 WASM por candidata; √∫nica falha √© a assertion
+  A de energia conhecida. Contrato C0 espec√≠fico e observa√ß√£o integral passam.
 - Motor:27/27 por candidata. Estresse:154/154 por candidata, incluindo60
   caudas60s/candidata, mais4 caudas compostas Multi-Head+Ping-Pong.
-- ProduÁ„o A:10/10 exact; Warp negativo: trÍs candidatas exact.
-- 14 cenas/84WAVs:12 principais16s e duas de estresse60s, oito fontes sintÈticas.
+- Produ√ß√£o A:10/10 exact; Warp negativo: tr√™s candidatas exact.
+- 14 cenas/84WAVs:12 principais16s e duas de estresse60s, oito fontes sint√©ticas.
   Arquivos de estresse bit-exact com os renders tecnicamente qualificados.
-- Player: hashes, ·udio do terceiro slot, troca sincronizada, exportaÁ„o de28
-  avaliaÁıes, persistÍncia e revelaÁ„o condicionada:PASS (teste automatizado,
-  **n„o** audiÁ„o humana).
+- Player: hashes, √°udio do terceiro slot, troca sincronizada, exporta√ß√£o de28
+  avalia√ß√µes, persist√™ncia e revela√ß√£o condicionada:PASS (teste automatizado,
+  **n√£o** audi√ß√£o humana).
 
 Dados versionados: `validation-summary.json`, `spectral-summary.json`,
 `calibration-search.json`, `hpf-crosscheck-summary.json`,
@@ -60,18 +69,18 @@ Dados versionados: `validation-summary.json`, `spectral-summary.json`,
 Os JSONs completos por caso, comandos efetivos, logs originais CTest, WAVs e
 gabarito separado acompanham o artifact. Presets, ABI e F0.2/F1 inalterados.
 
-**DiferenÁa em relaÁ„o ao pedido inicial:** B180Hz e C240Hz foram implementadas
-e rejeitadas pelo gate60s. ApÛs sweep restrito ao HPF, finais B260/C280Hz
-passam a mesma matriz; bumps .6/.8dB e gap C◊.75 mantidos. N„o esconder essa
-recalibraÁ„o: o ganho de corpo È menor que o inicialmente esperado.
+**Diferen√ßa em rela√ß√£o ao pedido inicial:** B180Hz e C240Hz foram implementadas
+e rejeitadas pelo gate60s. Ap√≥s sweep restrito ao HPF, finais B260/C280Hz
+passam a mesma matriz; bumps .6/.8dB e gap C√ó.75 mantidos. N√£o esconder essa
+recalibra√ß√£o: o ganho de corpo √© menor que o inicialmente esperado.
 
-**Limite din‚mico observado:** guitarra full-level fast/new/FB100 j· clipa
-transitoriamente no monitor C0. Candidatas tÍm mais samples no teto durante a
-entrada; zero teto apÛs a parada e estados internos est·veis. Ver tabela em
-`FEEDBACK_STABILITY.md`; isso requer julgamento musical, n„o promoÁ„o autom·tica.
+**Limite din√¢mico observado:** guitarra full-level fast/new/FB100 j√° clipa
+transitoriamente no monitor C0. Candidatas t√™m mais samples no teto durante a
+entrada; zero teto ap√≥s a parada e estados internos est√°veis. Ver tabela em
+`FEEDBACK_STABILITY.md`; isso requer julgamento musical, n√£o promo√ß√£o autom√°tica.
 
-No ZIP extraÌdo, a entrada correta È
+No ZIP extra√≠do, a entrada correta √©
 `artifacts/dsp-reform-f2/listening/index.html`, servida por HTTP conforme o guia.
-O pacote CI tem proveniÍncia Linux prÛpria; os hashes MinGW locais permanecem
+O pacote CI tem proveni√™ncia Linux pr√≥pria; os hashes MinGW locais permanecem
 separados. Nenhum golden ou baseline foi regenerado para obter esses resultados.
-Hardware PENDING_PHYSICAL e decis„o musical PENDING_HUMAN continuam explÌcitos.
+Hardware PENDING_PHYSICAL e decis√£o musical PENDING_HUMAN continuam expl√≠citos.

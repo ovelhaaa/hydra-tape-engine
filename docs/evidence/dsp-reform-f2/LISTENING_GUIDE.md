@@ -1,7 +1,7 @@
 # Audição F2
 
 Extraia o pacote, abra um terminal em
-`artifacts/dsp-reform-f2/listening/` (a pasta que cont�m `index.html`) e execute:
+`artifacts/dsp-reform-f2/listening/` (a pasta que contém `index.html`) e execute:
 
 ```
 python -m http.server 8765 --bind 127.0.0.1

@@ -1,0 +1,18 @@
+<!doctype html><html lang="pt-BR"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Hydra F3 · Listening Lab</title><link rel="stylesheet" href="lab/style.css">
+<main style="max-width:900px;margin:2rem auto;padding:1rem"><h1>Hydra F3 · Listening Lab</h1>
+<p>Sete fontes sintéticas · três candidatos cegos · RAW / RMS-MATCHED. Ouça corpo, ataque, evolução e cauda. Nenhuma preferência foi escolhida.</p>
+<label>Cena <select id="scene"></select></label> <label>Formato <select id="format"><option>RAW</option><option>MATCHED</option></select></label>
+<p id="description"></p><p id="status" role="status">Carregando manifesto…</p>
+<button id="play" disabled>Reproduzir / pausar</button> <button id="restart">Voltar ao início</button>
+<div id="slots" style="display:flex;gap:1rem;margin:1rem 0"></div>
+<label>Posição <input id="seek" type="range" min="0" max="16" value="0" step=".01"></label>
+<label>Volume <input id="volume" type="range" min="0" max="1" value=".65" step=".01"></label>
+<hr><label>Preferência <select id="preference"><option value="">Avaliar…</option><option>X</option><option>Y</option><option>Z</option><option>Equivalentes</option><option>Rejeitar todos</option></select></label>
+<label>Confiança <select id="confidence"><option value="">Selecionar…</option><option>Baixa</option><option>Média</option><option>Alta</option></select></label>
+<p><label>Corpo, articulação, ressonância, escurecimento e sustain<br><textarea id="comments" rows="4" style="width:100%"></textarea></label></p>
+<p id="progress"></p><button id="export">Exportar avaliação JSON</button> <button id="reveal" disabled>Revelar após concluir RAW e MATCHED</button><pre id="answers"></pre>
+<p>Atalhos: 1/2/3 trocam os candidatos no mesmo relógio; espaço reproduz/pausa. Respostas salvas neste navegador. RAW mantém os ganhos do render; MATCHED aplica apenas um ganho constante em cada arquivo.</p>
+</main><script type="module" src="listening.mjs"></script></html>
+
+

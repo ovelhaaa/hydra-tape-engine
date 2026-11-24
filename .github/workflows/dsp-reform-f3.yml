@@ -1,0 +1,94 @@
+name: F3 saturation and blind listening
+on:
+  workflow_dispatch:
+  push:
+    branches: [experiment/dsp-reform-f3-saturation]
+    paths-ignore:
+      - 'docs/evidence/dsp-reform-f3/*.md'
+      - 'docs/evidence/dsp-reform-f3/*summary.json'
+      - 'docs/evidence/dsp-reform-f3/pr-snapshot.json'
+      - 'docs/evidence/dsp-reform-f3/published-artifact.json'
+permissions:
+  contents: read
+jobs:
+  listening:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.14'
+      - run: pip install numpy==2.4.1 scipy==1.17.0
+      - uses: mymindstorm/setup-emsdk@v14
+        with:
+          version: '3.1.62'
+      - name: Build explicit Vintage A/B/C
+        run: |
+          for v in 0 1 2; do
+            flags="-DHYDRA_PHASE72_CLASSIC_FEEDBACK_ROUTING=1 -DHYDRA_DSP_REFORM_F2_VARIANT=2 -DHYDRA_DSP_REFORM_F3_VARIANT=$v"
+            cmake -S . -B build/f3-$v-native -DCMAKE_BUILD_TYPE=Release -DCMAKE_EXPORT_COMPILE_COMMANDS=ON "-DCMAKE_CXX_FLAGS=$flags"
+            cmake --build build/f3-$v-native -j 2
+            emcmake cmake -S . -B build/f3-$v-wasm -DBUILD_WEB=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_EXPORT_COMPILE_COMMANDS=ON "-DCMAKE_CXX_FLAGS=$flags"
+            cmake --build build/f3-$v-wasm -j 2
+          done
+      - name: Freeze reference and qualify contracts
+        run: |
+          python docs/evidence/dsp-reform-f1/prepare_audition.py --output artifacts/dsp-reform-f3/inputs
+          python docs/evidence/dsp-reform-f3/run.py baseline
+          python docs/evidence/dsp-reform-f3/compatibility.py
+          for v in 0 1 2; do
+            python docs/evidence/dsp-reform-f3/run.py contracts --variant $v
+            python scripts/phase64_validate_engine.py --library "$PWD/build/f3-$v-native/libhydra_abi_test_library.so" --output artifacts/dsp-reform-f3/variant$v/engine
+          done
+      - name: Stability and dynamics
+        run: |
+          status=0
+          for v in 0 1 2; do
+            python docs/evidence/dsp-reform-f3/run.py stress --variant $v || status=1
+          done
+          python docs/evidence/dsp-reform-f3/compound.py || status=1
+          python docs/evidence/dsp-reform-f3/dynamics.py || status=1
+          exit $status
+      - name: Render and verify listening package
+        if: ${{ !cancelled() }}
+        run: |
+          for v in 0 1 2; do
+            python docs/evidence/dsp-reform-f3/run.py render --variant $v
+          done
+          python docs/evidence/dsp-reform-f3/run.py package
+          python docs/evidence/dsp-reform-f3/summarize.py
+          node --test tools/listening-lab/lab.test.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: hydra-dsp-reform-f3-saturation-listening
+          path: |
+            artifacts/dsp-reform-f3/listening/
+            artifacts/dsp-reform-f3/*.json
+            artifacts/dsp-reform-f3/variant*/*.json
+            artifacts/dsp-reform-f3/variant*/*.log
+            artifacts/dsp-reform-f3/variant*/contracts-*/*
+            artifacts/dsp-reform-f3/variant*/engine/*.json
+            artifacts/dsp-reform-f3/compatibility/*.json
+            docs/evidence/dsp-reform-f3/
+          retention-days: 30
+  esp32-build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install platformio
+      - run: pio run -e esp32-s3-f3-a -e esp32-s3-f3-b -e esp32-s3-f3-c
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: hydra-f3-esp32-builds-not-physical-validation
+          path: |
+            .pio/build/esp32-s3-f3-*/firmware.*
+            .pio/build/esp32-s3-f3-*/hydra_firmware_identity.h

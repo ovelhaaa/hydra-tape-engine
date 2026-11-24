@@ -1,0 +1,39 @@
+Test project C:/Users/devx/Documents/PlatformIO/Projects/hydra-f1/build-c0-wasm
+      Start  1: fast_tanh_integrity
+ 1/14 Test  #1: fast_tanh_integrity .................   Passed    0.30 sec
+      Start  2: phase7_dsp_integrity
+ 2/14 Test  #2: phase7_dsp_integrity ................   Passed    0.13 sec
+      Start  3: phase72_feedback_routing_contract
+ 3/14 Test  #3: phase72_feedback_routing_contract ...   Passed    0.11 sec
+      Start  4: phase72_classic_core_smoke
+ 4/14 Test  #4: phase72_classic_core_smoke ..........   Passed    0.11 sec
+      Start  5: core_smoke
+ 5/14 Test  #5: core_smoke ..........................   Passed    0.10 sec
+      Start  6: core_regression
+ 6/14 Test  #6: core_regression .....................***Failed    0.19 sec
+C:/Users/devx/Documents/PlatformIO/Projects/hydra-f1/tests/core/regression_core.cpp:255: check failed: channel_energy(fullR, 2840, 2960) > 1e-5f
+
+      Start  7: core_audible_controls
+ 7/14 Test  #7: core_audible_controls ...............   Passed    0.58 sec
+      Start  8: core_warp_test
+ 8/14 Test  #8: core_warp_test ......................   Passed    1.55 sec
+      Start  9: core_reverse_test
+ 9/14 Test  #9: core_reverse_test ...................   Passed    2.14 sec
+      Start 10: core_transport_clock_test
+10/14 Test #10: core_transport_clock_test ...........   Passed    0.39 sec
+      Start 11: core_tap_tempo_test
+11/14 Test #11: core_tap_tempo_test .................   Passed    0.24 sec
+      Start 12: core_midi_clock_test
+12/14 Test #12: core_midi_clock_test ................   Passed    0.29 sec
+      Start 13: web_param_ids
+13/14 Test #13: web_param_ids .......................   Passed    0.15 sec
+      Start 14: core_abi_symbols
+14/14 Test #14: core_abi_symbols ....................   Passed    1.23 sec
+
+93% tests passed, 1 tests failed out of 14
+
+Total Test time (real) =   7.57 sec
+
+The following tests FAILED:
+	  6 - core_regression (Failed)
+Errors while running CTest

@@ -1,0 +1,9 @@
+PASS: one input float32 byte altered in separate copy; frozen verification rejected it.
+Traceback (most recent call last):
+  File "C:\Users\devx\Documents\PlatformIO\Projects\hydra-f1\docs\evidence\dsp-reform-f1\baseline.py", line 258, in <module>
+    main()
+    ~~~~^^
+  File "C:\Users\devx\Documents\PlatformIO\Projects\hydra-f1\docs\evidence\dsp-reform-f1\baseline.py", line 200, in main
+    assert sha((args.output/(name+'.input.f32')).read_bytes()) == row['input_sha256']
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError

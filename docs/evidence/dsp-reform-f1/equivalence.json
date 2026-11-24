@@ -1,0 +1,38 @@
+{
+  "test_name": "native_vs_wasm_equivalence",
+  "samples": 10240,
+  "max_abs": 0.0,
+  "rmse": 0.0,
+  "status": "PASS",
+  "scenarios": {
+    "baseline_glue": {
+      "max_abs": 0.0,
+      "rmse": 0.0,
+      "status": "PASS"
+    },
+    "short_slap_bright": {
+      "max_abs": 0.0,
+      "rmse": 0.0,
+      "status": "PASS"
+    },
+    "feedback_edge": {
+      "max_abs": 0.0,
+      "rmse": 0.0,
+      "status": "PASS"
+    },
+    "saturated_dark": {
+      "max_abs": 0.0,
+      "rmse": 0.0,
+      "status": "PASS"
+    },
+    "modulated_space": {
+      "max_abs": 0.0,
+      "rmse": 0.0,
+      "status": "PASS"
+    }
+  },
+  "thresholds": {
+    "max_abs": 1e-05,
+    "rmse": 1e-06
+  }
+}

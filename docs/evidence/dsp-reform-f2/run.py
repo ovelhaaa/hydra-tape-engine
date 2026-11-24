@@ -41,6 +41,7 @@ def process(runner,x,params,rate=44100,diag=False):
   for i in range(38):
    val=C.c_float();assert lib.hydra_dsp_get_parameter(h,i,C.byref(val))==0;effective.append(val.value)
   if diag:
+   assert lib.phase64_diag_stride()==17
    lib.phase64_diag_data.restype=ptr
    lib.phase64_diag_enable(1)
   start_clock=time.perf_counter();block_us=[]
@@ -232,18 +233,24 @@ def stress(v,out,inputs):
 def render_listening(v,out,inputs):
  runner=b.render.HydraEngineRunner(libpath(v));rows=[]
  sources=list(json.loads((inputs/'manifest.json').read_text())['sources'])
- # 12 scenes: every source, every mode, each fb in each mode; no 480-file dump.
- for i in range(12):
+ # 12 main scenes + 2 validated 60s stress scenes, not a 480-file dump.
+ for i in range(14):
   # Put the bass proxy in single-head FB85, where low-band repeat evolution
   # is easy to compare; use clean guitar for the separate Reverse FB75 scene.
   source_index=0 if i==6 else 6 if i==8 else i%8
-  kind=sources[source_index];mode=['single','multihead','reverse','pingpong'][i%4];feedback=[50,75,85][i//4]
+  kind=sources[source_index];mode=['single','multihead','reverse','pingpong'][i%4];feedback=[50,75,85][min(i//4,2)]
   p=params(feedback,mode,clean=False)
+  if i>=12:
+   kind='electric_bass_proxy' if i==12 else 'low_mono_synth';mode='single';feedback=95 if i==12 else 100
+   p=params(feedback,mode,speed=0 if i==12 else 100,age=100 if i==12 else 0,bump=100)
   source=np.fromfile(inputs/(kind+'.input.f32'),'<f4').reshape(-1,2)
-  x=np.zeros((44100*16,2),np.float32);x[:len(source)]=source
+  x=np.zeros((44100*(60 if i>=12 else 16),2),np.float32);x[:len(source)]=source
   y,meta=process(runner,x,p);name=f'scene{i+1:02d}'
+  if i>=12:
+   stress=json.loads((out/'stress.json').read_text())[f'44100_{kind}_fb{feedback}_{mode}']
+   assert stress['stable'] and meta['output_sha256']==stress['output_sha256'],'Stress audio must equal the qualified 60-second render'
   (out/(name+'.f32')).write_bytes(y.astype('<f4').tobytes())
-  meta.update(scene=name,source=kind,mode=mode,feedback=feedback,sample_rate=44100,active_window=[0,6],synthetic=True)
+  meta.update(scene=name,source=kind,mode=mode,feedback=feedback,sample_rate=44100,active_window=[0,6],synthetic=True,tier='stress_60s' if i>=12 else 'main_16s')
   rows.append(meta)
  dump(out/'renders.json',rows)
 def package(out):
@@ -255,7 +262,7 @@ def package(out):
  for i,base in enumerate(allrows[0]):
   name=base['scene'];ys=[np.fromfile(out/f'variant{v}'/(name+'.f32'),'<f4').reshape(-1,2) for v in range(3)]
   rms=[np.sqrt(np.mean(y[:6*44100].astype(float)**2)) for y in ys];gains=[rms[0]/max(r,1e-30) for r in rms];trim=min(1,.98/max(float(abs(y).max())*g for y,g in zip(ys,gains)))
-  order=rng.sample(range(3),3);scene={k:base[k] for k in ['scene','source','mode','feedback','sample_rate','synthetic']};scene['slots']=[];key[name]={}
+  order=rng.sample(range(3),3);scene={k:base[k] for k in ['scene','source','mode','feedback','sample_rate','synthetic','tier']};scene['slots']=[];key[name]={}
   for j,v in enumerate(order):
    code=['X','Y','Z'][j];slot={'code':code,'files':{}}
    for fmt,y in [('RAW',ys[v]),('MATCHED',(ys[v].astype(float)*gains[v]*trim).astype(np.float32))]:
@@ -264,6 +271,7 @@ def package(out):
    scene['slots'].append(slot);key[name][code]=['Classic C0','Warm Tape','Vintage Progressive'][v]
   manifest['scenes'].append(scene)
   private.append({'scene':name,'per_variant':[dict(allrows[v][i],variant=v,matched_gain=float(gains[v]*trim),rms_window_0_6s=float(rms[v]),common_headroom_trim=float(trim),raw_sha256=b.sha(ys[v].tobytes())) for v in range(3)]})
+ manifest['provenance']={'dsp_source_sha256':b.sha((ROOT/'dsp/core/tape_core.cpp').read_bytes()),'calibration_header_sha256':b.sha((ROOT/'dsp/core/feedback_calibration_experiment.hpp').read_bytes()),'block_size':128,'rate':44100,'sample_format':'PCM24 round-to-even, no dither','compiler':command([os.environ.get('CXX','g++'),'--version']).stdout.splitlines()[0],'lifecycle':'fresh create_v1_4/prepare/reset; IDs ascending except command29; internal tempo/play/commit; 128 frames; no preroll','randomization':'Python random.Random(20261123), one fixed X/Y/Z allocation per scene, same in RAW/MATCHED'}
  dump(dest/'manifest.json',manifest);dump(dest/'answer-key.json',key);dump(out/'render-provenance.json',private)
  shutil.copy(HERE/'LISTENING_GUIDE.md',dest/'LEIA-ME.md')
  hashes={p.relative_to(dest).as_posix():b.sha(p.read_bytes()) for p in sorted(dest.rglob('*')) if p.is_file()}

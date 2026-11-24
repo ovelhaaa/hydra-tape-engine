@@ -26,6 +26,10 @@ f.dump(dest/'production-A.json',result)
 sources=out/'inputs';x=np.zeros((44100*10,2),np.float32);source=np.fromfile(sources/'clean_guitar.input.f32','<f4').reshape(-1,2);x[:len(source)]=source
 p=f.params(85);p[30]=1;p[34]=85
 ys=[f.process(f.b.render.HydraEngineRunner(f.libpath(v)),x,p)[0] for v in range(3)]
+for v in range(3):
+ runner=f.b.render.HydraEngineRunner(f.libpath(v))
+ runner.lib.hydra_dsp_get_param_count.restype=f.C.c_uint32
+ assert runner.api_version==0x010700 and runner.lib.hydra_dsp_get_param_count()==38
 assert all(np.array_equal(ys[0],y) for y in ys)
 f.dump(dest/'warp-negative-control.json',{'all_variants_bit_exact':True,'parameters':p,'output_sha256':f.b.sha(ys[0].tobytes())})
 sizes={}

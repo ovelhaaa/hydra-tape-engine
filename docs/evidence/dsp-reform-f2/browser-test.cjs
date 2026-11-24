@@ -18,7 +18,8 @@ const fs=require('node:fs');
   const y=out.getChannelData(0);return {before:y[2000],after:y[12000],finite:y.every(Number.isFinite)};
  });
  if(!triple.finite||Math.abs(triple.before-.1)>1e-6||Math.abs(triple.after-.3)>1e-6)throw Error('Triple audio output failed: '+JSON.stringify(triple));
- for(let i=0;i<12;i++)for(const format of ['RAW','MATCHED']){
+ const sceneCount=await page.locator('#scene option').count();
+ for(let i=0;i<sceneCount;i++)for(const format of ['RAW','MATCHED']){
   await page.locator('#scene').selectOption(String(i));await page.locator('#format').selectOption(format);
   await page.waitForFunction(()=>!document.getElementById('play').disabled);
   await page.locator('#preference').selectOption('Equivalentes');await page.locator('#confidence').selectOption('Baixa');
@@ -26,10 +27,10 @@ const fs=require('node:fs');
  }
  if(await page.locator('#reveal').isDisabled())throw Error('Completed evaluation cannot reveal');
  const downloaded=page.waitForEvent('download');await page.locator('#export').click();const file=await downloaded;
- const report=JSON.parse(fs.readFileSync(await file.path(),'utf8'));if(Object.keys(report.decisions).length!==24)throw Error('Incomplete decision export');
+ const report=JSON.parse(fs.readFileSync(await file.path(),'utf8'));if(Object.keys(report.decisions).length!==sceneCount*2)throw Error('Incomplete decision export');
  await page.locator('#reveal').click();await page.waitForFunction(()=>document.getElementById('answers').textContent.includes('Classic C0'));
- await page.reload();await page.waitForFunction(()=>document.getElementById('progress').textContent.startsWith('24 /'));
+ await page.reload();await page.waitForFunction(n=>document.getElementById('progress').textContent.startsWith(`${n} /`),sceneCount*2);
  if(errors.length)throw Error(errors.join('\n'));
- console.log(JSON.stringify({status:'PASS',sha256_verified_three_slots:true,raw_matched:true,third_slot_audio:triple,decisions_exported:24,persistence:true,reveal_only_after_completion:true,human_listening:false},null,2));
+ console.log(JSON.stringify({status:'PASS',sha256_verified_three_slots:true,raw_matched:true,third_slot_audio:triple,decisions_exported:sceneCount*2,persistence:true,reveal_only_after_completion:true,human_listening:false},null,2));
  await browser.close();
 })().catch(e=>{console.error(e);process.exit(1);});

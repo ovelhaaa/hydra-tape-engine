@@ -3,6 +3,12 @@ on:
   workflow_dispatch:
   push:
     branches: [experiment/dsp-reform-f2-feedback-calibration]
+    paths-ignore:
+      - 'docs/evidence/dsp-reform-f2/*.md'
+      - 'docs/evidence/dsp-reform-f2/*summary.json'
+      - 'docs/evidence/dsp-reform-f2/render-manifest.json'
+      - 'docs/evidence/dsp-reform-f2/calibration-search.json'
+      - 'docs/evidence/dsp-reform-f2/ci-artifact.json'
 permissions:
   contents: read
 jobs:
@@ -52,6 +58,7 @@ jobs:
           python docs/evidence/dsp-reform-f2/run.py package
           node --test tools/listening-lab/lab.test.mjs
           python docs/evidence/dsp-reform-f2/compatibility.py
+          python docs/evidence/dsp-reform-f2/benchmark.py
       - name: Record effective build commands and compiler versions
         if: always()
         run: |

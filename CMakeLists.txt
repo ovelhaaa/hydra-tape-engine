@@ -59,6 +59,25 @@ if(BUILD_TESTING)
   )
   add_test(NAME phase72_classic_core_smoke COMMAND hydra_phase72_classic_core_smoke)
 
+  # F4 transition experiment is compile-time opt-in. Built explicitly so the
+  # production core and its goldens keep HYDRA_DSP_REFORM_F4_TRANSITIONS=0.
+  add_executable(hydra_f4_transitions_test
+    tests/core/f4_transitions_test.cpp
+    dsp/core/tape_core.cpp
+    dsp/core/hydra_dsp_c_api.cpp
+  )
+  target_include_directories(hydra_f4_transitions_test PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/dsp/core
+  )
+  target_compile_definitions(hydra_f4_transitions_test PRIVATE
+    HYDRA_PHASE72_CLASSIC_FEEDBACK_ROUTING=1
+    HYDRA_DSP_REFORM_F2_VARIANT=2
+    HYDRA_DSP_REFORM_F3_VARIANT=0
+    HYDRA_DSP_REFORM_F4_TRANSITIONS=1
+  )
+  add_test(NAME f4_performance_transitions COMMAND hydra_f4_transitions_test)
+
   add_executable(hydra_core_smoke tests/core/smoke_core.cpp)
   target_link_libraries(hydra_core_smoke PRIVATE hydra_dsp_core)
   add_test(NAME core_smoke COMMAND hydra_core_smoke)

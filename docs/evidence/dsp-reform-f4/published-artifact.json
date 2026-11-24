@@ -1,0 +1,25 @@
+{
+  "status": "BLOCKED_PUBLICATION_NO_GITHUB_CREDENTIALS",
+  "package": "artifacts/dsp-reform-f4/listening",
+  "branch": "experiment/dsp-reform-f4-performance-transitions",
+  "base_f3_head": "29f50258f1ac47139ac8f1fdb21aa59424ca9a75",
+  "scene_count": 13,
+  "wav_count": 52,
+  "formats": [
+    "RAW",
+    "MATCHED"
+  ],
+  "manifest_sha256": "f5e7726dfb1f72d92ce6d27caafef8f1d107895f7a0ae40a1b28308c2359d31e",
+  "answer_key_sha256": "e9a4511818f3a9af56a4c533ea88f0677a1d69a0866e80d0c2ad7bf95b13d72b",
+  "sha256_manifest_sha256": "30debb85a7bade1b44388e23bbb1daa9e4f50c1b8751b1e07dea9266d14dc52d",
+  "integrity": "52/52 WAVs PCM24 stereo 44100 verified; all package files hashed",
+  "artifact_url": null,
+  "note": "GitHub credentials unavailable in this session; push/CI artifact publication could not run. Package is local, hashed and reproducible.",
+  "publication_blocker": "git push cannot authenticate: SEC_E_NO_CREDENTIALS; no gh CLI or token in this session",
+  "local_zip": "artifacts/dsp-reform-f4/hydra-dsp-reform-f4-listening.zip",
+  "local_zip_sha256": "652764f06a35af3fd7abd0cb50100363a4cec860bb02f853280fc1e1fdef4cb2",
+  "local_zip_bytes": 121763173,
+  "render_source_commit": "875b1307c1033d86eabba8ea9e646c6d8fad8989",
+  "head_at_commit": "a7efa9029c9cc7e16359152b592cdfadc34cd19e",
+  "render_note": "WAVs were rendered from DSP commit 875b130; later commits only change evidence/docs/CI, not dsp/ or include/."
+}

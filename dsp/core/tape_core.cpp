@@ -15,6 +15,7 @@
 #include "realtime_profile.hpp"
 #include "feedback_calibration_experiment.hpp"
 #include "saturation_calibration_experiment.hpp"
+#include "performance_transitions_experiment.hpp"
 // The B and C listening variants are deliberately separate binaries.
 #if defined(HYDRA_PHASE72_EXPERIMENTAL_FEEDBACK_ROUTING) && HYDRA_PHASE72_EXPERIMENTAL_FEEDBACK_ROUTING && \
     defined(HYDRA_PHASE72_CLASSIC_FEEDBACK_ROUTING) && HYDRA_PHASE72_CLASSIC_FEEDBACK_ROUTING
@@ -304,6 +305,50 @@ struct TapeCore::Impl {
     float mod=(wowDepthScale*modBaseSamples)*wow+(flutterDepthScale*modBaseSamples)*flutter+(scrapeDepthScale*modBaseSamples)*scrape+residual;
     return clampf(mod,-0.25f*modBaseSamples,0.25f*modBaseSamples);
   }
+#if HYDRA_DSP_REFORM_F4_TRANSITIONS
+  // Per-sample, block-size independent gesture ramps. Called only while a
+  // transition is active, so the stable path pays one predictable branch.
+  HYDRA_AUDIO_INLINE void updatePerformanceTransitions(){
+    if(headTransition){
+      const float s=headGainStep;
+      headGain1=(headGain1<headTarget1)?std::min(headTarget1,headGain1+s):std::max(headTarget1,headGain1-s);
+      headGain2=(headGain2<headTarget2)?std::min(headTarget2,headGain2+s):std::max(headTarget2,headGain2-s);
+      headGain3=(headGain3<headTarget3)?std::min(headTarget3,headGain3+s):std::max(headTarget3,headGain3-s);
+      if(headGain1==headTarget1&&headGain2==headTarget2&&headGain3==headTarget3){
+        headTransition=false;
+        headNormInv=invHeadGainSum;
+      } else {
+        const float sum=headGain1+0.75f*headGain2+0.55f*headGain3;
+        headNormInv=(sum>experimental::kF4HeadNormEpsilon)?(1.f/sum):0.f;
+      }
+    }
+    if(driveGainInc!=0.f){
+      driveGain+=driveGainInc;
+      if((driveGainInc>0.f&&driveGain>=driveGainTarget)||(driveGainInc<0.f&&driveGain<=driveGainTarget)){
+        driveGain=driveGainTarget; driveGainInc=0.f;
+      }
+    }
+    if(textureWetInc!=0.f){
+      textureWetGain+=textureWetInc;
+      if((textureWetInc>0.f&&textureWetGain>=textureWetTarget)||(textureWetInc<0.f&&textureWetGain<=textureWetTarget)){
+        textureWetGain=textureWetTarget; textureWetInc=0.f;
+      }
+      dryGain=1.f-textureWetGain;
+    }
+    if(delayWetInc!=0.f){
+      delayWetGain+=delayWetInc;
+      if((delayWetInc>0.f&&delayWetGain>=delayWetTarget)||(delayWetInc<0.f&&delayWetGain<=delayWetTarget)){
+        delayWetGain=delayWetTarget; delayWetInc=0.f;
+      }
+    }
+    if(!freeze&&freezeFade<1.f){
+      freezeFade+=freezeReleaseInc;
+      if(freezeFade>=1.f) freezeFade=1.f;
+    }
+    f4TransitionActive=headTransition||driveGainInc!=0.f||textureWetInc!=0.f||delayWetInc!=0.f||
+                       (!freeze&&freezeFade<1.f);
+  }
+#endif
   HYDRA_DSP_IRAM HYDRA_AUDIO_INLINE float readTapeAt(float d,const float* __restrict__ b){ d=clampf(d,2.0f,maxReadDelayF); return readHistory(d, b); }
   HYDRA_DSP_IRAM HYDRA_AUDIO_INLINE float readHistory(float d,const float* __restrict__ b){
     const uint32_t epoch = framesSinceDelayEnable;
@@ -414,13 +459,54 @@ struct TapeCore::Impl {
   AllpassFilter classicAzimuthL,classicAzimuthR;
 #endif
   DelayAllpass springAP_L[6],springAP_R[6],reverseAP_L[4],reverseAP_R[4]; BiquadFilter springLPF_L[6],springLPF_R[6]; float springFB_L=0,springFB_R=0; float freezeFade=0; float delayEnableRamp=0,smoothedDelaySamples=0,smoothedAzCoeff=0; float* delayLine=nullptr; float* delayLineR=nullptr; int32_t normalBufferSize=0,bufferSize=0,bufferCapacity=0,writeHead=0,reverseCounter=0,reverseWindowSize=0; float bufferSizeF=0.0f,maxReadDelayF=2.0f;
+#if HYDRA_DSP_REFORM_F4_TRANSITIONS
+  // F4 opt-in transition state. All gains settle to their target exactly, so a
+  // stable configuration reproduces the original expressions bit for bit.
+  // Head gains are membership 0/1; levels 1/.75/.55 stay in the read path.
+  float headGain1=0.f,headGain2=0.f,headGain3=1.f,headNormInv=1.f;
+  float headTarget1=0.f,headTarget2=0.f,headTarget3=1.f;
+  float headGainStep=1.f;
+  bool headTransition=false,headPrimed=false,f4TransitionActive=false;
+  float driveGainTarget=0.f,textureWetTarget=0.5f,delayWetTarget=0.5f;
+  float driveGainInc=0.f,textureWetInc=0.f,delayWetInc=0.f;
+  float freezeReleaseInc=1.f;
+#endif
 };
 
 HYDRA_DSP_IRAM void TapeCore::Impl::updateCachedParams(){
-  driveGain=currentParams.drive*0.05f;
-  textureWetGain=clampf(currentParams.dryWet*0.01f,0.f,1.f);
-  delayWetGain=clampf(currentParams.delayWet*0.01f,0.f,1.f);
+  const float newDriveGain=currentParams.drive*0.05f;
+  const float newTextureWetGain=clampf(currentParams.dryWet*0.01f,0.f,1.f);
+  const float newDelayWetGain=clampf(currentParams.delayWet*0.01f,0.f,1.f);
+#if HYDRA_DSP_REFORM_F4_TRANSITIONS
+  if(!headPrimed||!hasProcessed){
+    driveGain=newDriveGain;
+    textureWetGain=newTextureWetGain;
+    delayWetGain=newDelayWetGain;
+    dryGain=1.f-textureWetGain;
+    driveGainTarget=newDriveGain; textureWetTarget=newTextureWetGain; delayWetTarget=newDelayWetGain;
+    driveGainInc=textureWetInc=delayWetInc=0.f;
+  } else {
+    const float mixRampSamples=std::max(1.f,experimental::kF4MixFadeSeconds*sampleRate);
+    const float driveRampSamples=std::max(1.f,experimental::kF4DriveFadeSeconds*sampleRate);
+    if(newDriveGain!=driveGainTarget){
+      driveGainTarget=newDriveGain;
+      driveGainInc=(newDriveGain-driveGain)/driveRampSamples;
+    }
+    if(newTextureWetGain!=textureWetTarget){
+      textureWetTarget=newTextureWetGain;
+      textureWetInc=(newTextureWetGain-textureWetGain)/mixRampSamples;
+    }
+    if(newDelayWetGain!=delayWetTarget){
+      delayWetTarget=newDelayWetGain;
+      delayWetInc=(newDelayWetGain-delayWetGain)/mixRampSamples;
+    }
+  }
+#else
+  driveGain=newDriveGain;
+  textureWetGain=newTextureWetGain;
+  delayWetGain=newDelayWetGain;
   dryGain=1.f-textureWetGain;
+#endif
   safeFeedback=std::min(currentParams.feedback*0.01f,0.88f);
   reverseFeedback=0.83f*clampf(currentParams.feedback*0.01f,0.f,0.95f);
   if(reverseBlend==0.f){
@@ -447,6 +533,30 @@ HYDRA_DSP_IRAM void TapeCore::Impl::updateCachedParams(){
   if(activeHeadMask&2) hSum+=0.75f;
   if(activeHeadMask&4) hSum+=0.55f;
   invHeadGainSum=(hSum>0.0f)?(1.0f/hSum):0.0f;
+#if HYDRA_DSP_REFORM_F4_TRANSITIONS
+  const float newHeadGain1=(activeHeadMask&1)?1.f:0.f;
+  const float newHeadGain2=(activeHeadMask&2)?1.f:0.f;
+  const float newHeadGain3=(activeHeadMask&4)?1.f:0.f;
+  headGainStep=1.f/std::max(1.f,experimental::kF4HeadFadeSeconds*sampleRate);
+  freezeReleaseInc=1.f/std::max(1.f,experimental::kF4FreezeReleaseFadeSeconds*sampleRate);
+  if(!headPrimed||!hasProcessed){
+    headGain1=newHeadGain1; headGain2=newHeadGain2; headGain3=newHeadGain3;
+    headTarget1=newHeadGain1; headTarget2=newHeadGain2; headTarget3=newHeadGain3;
+    headTransition=false;
+    headNormInv=invHeadGainSum;
+    freezeFade=currentParams.freeze?0.f:1.f;
+    headPrimed=true;
+    f4TransitionActive=(!currentParams.freeze && freezeFade<1.f);
+  } else {
+    headTarget1=newHeadGain1; headTarget2=newHeadGain2; headTarget3=newHeadGain3;
+    if(headTarget1!=headGain1||headTarget2!=headGain2||headTarget3!=headGain3) headTransition=true;
+    // Freeze is still a hard write gate. It only starts a fade when released,
+    // and that fade is the record-path gain applied in writeCh.
+    if(currentParams.freeze) freezeFade=0.f;
+    f4TransitionActive=headTransition||driveGainInc!=0.f||textureWetInc!=0.f||delayWetInc!=0.f||
+                       (!currentParams.freeze && freezeFade<1.f);
+  }
+#endif
   delayActive=currentParams.delayActive;
   headsMusical=currentParams.headsMusical;
   pingPong=currentParams.pingPong;
@@ -756,6 +866,9 @@ void TapeCore::reset(){
   // A destructive reset is a defined state boundary: snap the playback-filter
   // transition state instead of ramping from whatever was configured before.
   impl_->pbPrimed=false;
+#if HYDRA_DSP_REFORM_F4_TRANSITIONS
+  impl_->headPrimed=false;
+#endif
   impl_->updateFilters();
 }
 
@@ -1066,6 +1179,9 @@ HYDRA_DSP_IRAM void TapeCore::processStereoBlock(const float* inLBlock,const flo
     if (reverseBlend == 0.f) impl_->reverseWindows.reset();
   }
   ReverseWindows::Frame reverseFrame{};
+#if HYDRA_DSP_REFORM_F4_TRANSITIONS
+  if(impl_->f4TransitionActive) impl_->updatePerformanceTransitions();
+#endif
   float textureGain = impl_->textureWetGain;
   float delayGain = impl_->delayWetGain;
   float dryGain = impl_->dryGain;
@@ -1126,6 +1242,25 @@ HYDRA_DSP_IRAM void TapeCore::processStereoBlock(const float* inLBlock,const flo
         float d3 = (impl_->headsMusical ? impl_->musicalHeadDelay3 : impl_->smoothedDelaySamples) + mod;
         delaySig = impl_->readTapeReverse(d3,buffer);
       } else if(reverseBlend < 1.f){
+#if HYDRA_DSP_REFORM_F4_TRANSITIONS
+        // Crossfade the existing taps by membership gain. Read positions and
+        // the shared history are untouched; only the two sets of weights move.
+        const float g1=impl_->headGain1,g2=impl_->headGain2,g3=impl_->headGain3;
+        const float base = impl_->smoothedDelaySamples;
+        if(g1>0.f){
+          float d1 = (impl_->headsMusical ? impl_->musicalHeadDelay1 : (base * 0.33f)) + mod * 0.33f;
+          delaySig += impl_->readTapeAt(d1,buffer) * (1.0f * g1);
+        }
+        if(g2>0.f){
+          float d2 = (impl_->headsMusical ? impl_->musicalHeadDelay2 : (base * 0.66f)) + mod * 0.66f;
+          delaySig += impl_->readTapeAt(d2,buffer) * (0.75f * g2);
+        }
+        if(g3>0.f){
+          float d3 = (impl_->headsMusical ? impl_->musicalHeadDelay3 : base) + mod;
+          delaySig += impl_->readTapeAt(d3,buffer) * (0.55f * g3);
+        }
+        delaySig *= impl_->headNormInv;
+#else
         const uint8_t mask = impl_->activeHeadMask;
         const float base = impl_->smoothedDelaySamples;
         if(mask & 1){
@@ -1141,6 +1276,7 @@ HYDRA_DSP_IRAM void TapeCore::processStereoBlock(const float* inLBlock,const flo
           delaySig += impl_->readTapeAt(d3,buffer) * 0.55f;
         }
         delaySig *= impl_->invHeadGainSum;
+#endif
       }
     }
     HYDRA_PROFILE_END(ConventionalReads, tConvR);
@@ -1237,7 +1373,15 @@ HYDRA_DSP_IRAM void TapeCore::processStereoBlock(const float* inLBlock,const flo
                            std::fabs(freshInput) > 1e-7f;
     // --- magnetic saturation/write ---
     HYDRA_PROFILE_START(tMagWrite);
-    if(!impl_->freeze) buffer[impl_->writeHead]=mag.process(recSig, allowBias);
+    if(!impl_->freeze){
+      float writeSig=recSig;
+#if HYDRA_DSP_REFORM_F4_TRANSITIONS
+      // Release fade-in only. While frozen the write is fully gated, so the
+      // held buffer is never overwritten with silence.
+      if(impl_->freezeFade<1.f) writeSig*=impl_->freezeFade;
+#endif
+      buffer[impl_->writeHead]=mag.process(writeSig, allowBias);
+    }
     HYDRA_PROFILE_END(MagneticWrite, tMagWrite);
     HYDRA_PROFILE_START(tLim);
     const float limited = impl_->outputLimiter((input*dryGain)+dryTapeOutput);
@@ -1309,7 +1453,12 @@ HYDRA_DSP_IRAM void TapeCore::processStereoBlock(const float* inLBlock,const flo
     float wetMix=impl_->springWetGain;
     *outL=impl_->outputLimiter(dryL*(1-wetMix)+wetL*wetMix); *outR=impl_->outputLimiter(dryR*(1-wetMix)+wetR*wetMix);
   }
+#if HYDRA_DSP_REFORM_F4_TRANSITIONS
+  // Freeze entry/exit is handled per sample in updatePerformanceTransitions:
+  // the write gate stays hard, and only its release fades in.
+#else
   if(impl_->freeze){if(impl_->freezeFade<1.0f){impl_->freezeFade+=0.0002f; if(impl_->freezeFade>1.0f)impl_->freezeFade=1.0f;}} else {if(impl_->freezeFade>0.0f){impl_->freezeFade-=0.0008f; if(impl_->freezeFade<0.0f)impl_->freezeFade=0.0f;}}
+#endif
   HYDRA_PROFILE_END(Auxiliary, tAux);
   HYDRA_PROFILE_START(tTr);
   if(impl_->writeHead<TAPE_BUFFER_GUARD){ impl_->mirrorDelayGuard(impl_->delayLine); impl_->mirrorDelayGuard(impl_->delayLineR); }

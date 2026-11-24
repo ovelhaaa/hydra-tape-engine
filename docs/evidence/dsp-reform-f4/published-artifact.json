@@ -15,5 +15,8 @@
   "integrity": "52/52 WAVs PCM24 stereo 44100 verified; all package files hashed",
   "artifact_url": null,
   "note": "GitHub credentials unavailable in this session; push/CI artifact publication could not run. Package is local, hashed and reproducible.",
-  "publication_blocker": "git push cannot authenticate: SEC_E_NO_CREDENTIALS; no gh CLI or token in this session"
+  "publication_blocker": "git push cannot authenticate: SEC_E_NO_CREDENTIALS; no gh CLI or token in this session",
+  "local_zip": "artifacts/dsp-reform-f4/hydra-dsp-reform-f4-listening.zip",
+  "local_zip_sha256": "652764f06a35af3fd7abd0cb50100363a4cec860bb02f853280fc1e1fdef4cb2",
+  "local_zip_bytes": 121763173
 }

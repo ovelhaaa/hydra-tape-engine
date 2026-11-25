@@ -44,7 +44,8 @@ PLL_160M, m√∫ltiplo256, Philips32 est√©reo e RX slave interno do TX. Fra√ß√£o no
 compartilhado com teste Native/WASM: sil√™ncio, senoide440Hz moderada L/R,
 monitor linear ganho0,25. Normal mant√©m DSP/ganho anteriores.
 
-Mailbox lock-free verificada por static_assert. Estado fixo <128B; nenhum buffer
+Mailbox usa somente loads/stores alinhados de32 bits com acquire/release;
+desmontagem do ELF deve confirmar ausÍncia de helpers/locks atÙmicos. Estado fixo <128B; nenhum buffer
 longo/motor/tarefa extra. Normal: convers√£o24bit, decis√µes por bloco, inspe√ß√£o
 de retorno e bytes. Captura solicitada: 256 samples/bloco com soma/quadrado/pico
 e near-FS por canal durante128 blocos. Sqrt/prints s√≥ na CLI. Tom s√≥ em diagn√≥stico,
@@ -68,7 +69,12 @@ e build ESP32. Logs/JSON s√£o inclu√≠dos no artifact
 flags, pinout, hashes BIN/ELF e situa√ß√£o f√≠sica. O pacote exige checkout limpo.
 N√£o h√° flash, merge, altera√ß√£o de PR F4/F5 ou atualiza√ß√£o de goldens.
 
-Primeira rodada local: Native30/30, build ESP32 SUCCESS. Logs de execu√ß√£o e
+ValidaÁ„o local: Native30/30, WASM30/30; paridade00/10/01/11 com
+max_abs=0/RMSE=0; matriz congelada bit-exact; full-engine27/27 em produÁ„o e
+Live; feedback interno/saÌda instrumentada60s: produÁ„o6/6 e Live8/8.
+O diagnÛstico histÛrico de monotonicidade continua registrando sustain limitado
+na produÁ„o; n„o È gate de instabilidade nem foi relaxado. Build ESP32 SUCCESS
+na primeira rodada; revis„o final È novamente compilada pelo workflow. Logs de execu√ß√£o e
 demais resultados finais ficam em `gates/` no artifact, associados ao commit
 do manifesto; n√£o confundir esta observa√ß√£o com certificado f√≠sico.
 

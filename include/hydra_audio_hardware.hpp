@@ -13,7 +13,8 @@ inline int32_t pcm24Signed(uint32_t slot) {
 }
 inline float pcm24Float(uint32_t slot) { return pcm24Signed(slot)*(1.0f/8388608.0f); }
 inline int32_t pcm32(float x) { return hydra::dsp::saturatePcm32(x*2147483648.0f); }
-enum class Route : uint8_t { Normal, Silence, Tone, Left, Right, Monitor };
+// Share route selection as an aligned word on Xtensa.
+enum class Route : uint32_t { Normal, Silence, Tone, Left, Right, Monitor };
 inline float tone(uint32_t &phase) {
   // Fixed-cost oscillator, one polynomial per diagnostic frame; no libm in callback.
   phase += 42852281u; // round(440/44100 * 2^32)

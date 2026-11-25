@@ -10,7 +10,6 @@
 #include "hydra_pcm.hpp"
 #if HYDRA_AUDIO_HWTEST
 #include "hydra_audio_hardware.hpp"
-#include <atomic>
 #include <esp_arduino_version.h>
 #endif
 #include "realtime_profile.hpp"
@@ -59,12 +58,22 @@
 
 #if HYDRA_AUDIO_HWTEST
 using HwRoute = hydra::hardware::Route;
-std::atomic<HwRoute> g_hw_route{HwRoute::Normal};
-static_assert(std::atomic<HwRoute>::is_always_lock_free && std::atomic<unsigned>::is_always_lock_free,
-              "Hardware diagnostic mailbox must be lock-free");
+// Aligned word load/store only; no compare/exchange or RMW. Xtensa emits
+// l32i/s32i + memw for these builtins (checked in the firmware disassembly).
+template<class T> struct HwMailbox {
+  alignas(4) uint32_t value;
+  explicit HwMailbox(T initial) : value(static_cast<uint32_t>(initial)) {}
+  T load(int order=__ATOMIC_ACQUIRE) const {
+    return static_cast<T>(__atomic_load_n(&value,order));
+  }
+  void store(T next,int order=__ATOMIC_RELEASE) {
+    __atomic_store_n(&value,static_cast<uint32_t>(next),order);
+  }
+};
+HwMailbox<HwRoute> g_hw_route{HwRoute::Normal};
 // Request/result mailbox: release/acquire publishes capture without locks.
 // State 0 idle, 1 requested, 2 capturing, 3 ready. CLI is sole requester.
-std::atomic<unsigned> g_adc_state{0};
+HwMailbox<unsigned> g_adc_state{0};
 hydra::hardware::Capture g_adc_capture;
 uint32_t g_hw_phase=0;
 #endif
@@ -843,11 +852,11 @@ void audioTask(void *parameter) {
     // A concurrent 'src' command cannot switch source between acquisition
     // and conversion and make an uninitialized rxBuf become audible.
     #if HYDRA_AUDIO_HWTEST
-    const HwRoute hwRoute=g_hw_route.load(std::memory_order_relaxed);
+    const HwRoute hwRoute=g_hw_route.load(__ATOMIC_RELAXED);
     const AudioSource blockSource = hwRoute==HwRoute::Normal ? p_source : SOURCE_I2S_IN;
-    if(g_adc_state.load(std::memory_order_acquire)==1) {
+    if(g_adc_state.load(__ATOMIC_ACQUIRE)==1) {
       g_adc_capture=hydra::hardware::Capture{};
-      g_adc_state.store(2,std::memory_order_release);
+      g_adc_state.store(2,__ATOMIC_RELEASE);
     }
 #else
     const AudioSource blockSource = p_source;
@@ -863,7 +872,7 @@ void audioTask(void *parameter) {
       // Discard incomplete stereo frames; no partially populated channel pairs.
       const size_t validBytes=(bytesRead/8)*8;
       memset(reinterpret_cast<uint8_t*>(rxBuf)+validBytes,0,sizeof(rxBuf)-validBytes);
-      if(g_adc_state.load(std::memory_order_relaxed)==2) {
+      if(g_adc_state.load(__ATOMIC_RELAXED)==2) {
         if(rxError!=ESP_OK) ++g_adc_capture.failures;
         if(bytesRead!=sizeof(rxBuf)) ++g_adc_capture.shortReads;
         for(size_t i=0;i<validBytes/8;++i) g_adc_capture.add(rxBuf[2*i],rxBuf[2*i+1]);
@@ -871,7 +880,7 @@ void audioTask(void *parameter) {
         static unsigned captureBlocks=0;
         if(++captureBlocks>=128) {
           captureBlocks=0;
-          g_adc_state.store(3,std::memory_order_release);
+          g_adc_state.store(3,__ATOMIC_RELEASE);
         }
       }
 #else
@@ -1564,7 +1573,7 @@ void executeCommand(String line) {
     else if(mode=="right") route=HwRoute::Right;
     else if(mode=="monitor") route=HwRoute::Monitor;
     else { dualPrintln("hw normal|silence|tone|left|right|monitor"); return; }
-    g_hw_route.store(route,std::memory_order_relaxed);
+    g_hw_route.store(route,__ATOMIC_RELAXED);
     dualPrintf("HardwareRoute=%s (tone -20dBFS; monitor gain=0.25)\n",mode.c_str());
     return;
   }
@@ -1572,12 +1581,12 @@ void executeCommand(String line) {
     if(p_source!=SOURCE_I2S_IN && g_hw_route.load()==HwRoute::Normal) {
       dualPrintln("ADC requires src 2 or hw diagnostic route"); return;
     }
-    if(g_adc_state.load(std::memory_order_acquire)==0) g_adc_state.store(1,std::memory_order_release);
+    if(g_adc_state.load(__ATOMIC_ACQUIRE)==0) g_adc_state.store(1,__ATOMIC_RELEASE);
     const int64_t deadline=esp_timer_get_time()+3000000;
-    while(g_adc_state.load(std::memory_order_acquire)!=3 && esp_timer_get_time()<deadline) vTaskDelay(1);
-    if(g_adc_state.load(std::memory_order_acquire)!=3) { dualPrintln("ADC pending; retry adc (do not reset mailbox)"); return; }
+    while(g_adc_state.load(__ATOMIC_ACQUIRE)!=3 && esp_timer_get_time()<deadline) vTaskDelay(1);
+    if(g_adc_state.load(__ATOMIC_ACQUIRE)!=3) { dualPrintln("ADC pending; retry adc (do not reset mailbox)"); return; }
     const auto capture=g_adc_capture;
-    g_adc_state.store(0,std::memory_order_release);
+    g_adc_state.store(0,__ATOMIC_RELEASE);
     dualPrintf("ADC Frames=%u Samples=%u ReadErrors=%u ShortReads=%u\n",capture.frames,capture.frames*2,capture.failures,capture.shortReads);
     for(int c=0;c<2;++c) dualPrintf("ADC %s Peak=%.8f RMS=%.8f DC=%.8f NearFS=%u\n",c ? "R":"L",capture.peak[c],capture.frames ? sqrtf(capture.squares[c]/capture.frames):0,capture.frames ? capture.sum[c]/capture.frames:0,capture.clips[c]);
     return;

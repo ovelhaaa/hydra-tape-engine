@@ -1,0 +1,24 @@
+{
+  "phase": "F5",
+  "repository": "ovelhaaa/hydra-tape-engine",
+  "generated_at": "2026-11-24T21:30:00-03:00",
+  "remote_access": false,
+  "github_api": "unreachable (SSL/credentials)",
+  "head": "8c324f446c475c367adae6ae531797586a2e5aa4",
+  "dsp_commit": "4a8cfbbfed2088b72e2456c3799980ce96717f9a",
+  "branch": "experiment/dsp-reform-f5-musical-timing",
+  "base_branch": "experiment/dsp-reform-f3-saturation",
+  "base_head": "29f50258f1ac47139ac8f1fdb21aa59424ca9a75",
+  "pull_request": {
+    "number": null,
+    "state": "NOT_CREATED",
+    "draft_required": true,
+    "reason": "push failed with SEC_E_NO_CREDENTIALS; no remote branch exists"
+  },
+  "pr_text": "docs/evidence/dsp-reform-f5/PR_DRAFT.md",
+  "notes": [
+    "This branch was created from the verified F3 HEAD, not from F4/#69.",
+    "F4 is not integrated and its flag is absent from this branch.",
+    "The PR body must be copied from PR_DRAFT.md once push credentials exist."
+  ]
+}

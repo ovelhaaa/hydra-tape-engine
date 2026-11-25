@@ -1,0 +1,9 @@
+{
+  "scene_count": 11,
+  "wav_files": 66,
+  "wav_files_note": "counted in the published package; run.py's legacy field used hashes-2",
+  "manifest_sha256": "02927878f51cf39dcbb0c6859129394d5e1e584bae7d9c697d9f2d346b4b2697",
+  "answer_key_sha256": "6baaa1336a8317922ce955ce1c37166ace0fdd6a5983f5b0d0cafcc30a1f35ab",
+  "publication": "PUBLISHED_AND_VERIFIED",
+  "artifact_id": 14985866516
+}

@@ -1,0 +1,681 @@
+{
+  "seed": 20261124,
+  "method": "A/B/C blind listening. RAW keeps render gain; MATCHED applies one constant gain per file so all three variants share the lower RMS in 0.5-8.0 s, with a common headroom trim to 0.98 FS. Deterministic synthetic sources.",
+  "scenes": [
+    {
+      "scene": "01_manual_120_100_clean",
+      "source": "clean_guitar",
+      "description": "BPM 120 -> 100 during a clean guitar phrase (abrupt manual change)",
+      "sample_rate": 44100,
+      "block_size": 128,
+      "duration_sec": 8.75,
+      "events": [
+        2.5
+      ],
+      "slots": [
+        {
+          "code": "X",
+          "files": {
+            "RAW": {
+              "path": "01_manual_120_100_clean-X-RAW.wav",
+              "sha256": "5e7c1e54a678f2454149ae571be56a3496c4e71581cbe01967093a3df19ca02d"
+            },
+            "MATCHED": {
+              "path": "01_manual_120_100_clean-X-MATCHED.wav",
+              "sha256": "f6851339ddd261696fff264ac9da9a074680bfd35abf3e2b921bfd589efbba56"
+            }
+          }
+        },
+        {
+          "code": "Y",
+          "files": {
+            "RAW": {
+              "path": "01_manual_120_100_clean-Y-RAW.wav",
+              "sha256": "e3c25c67a5057c8e024b2565ea9c7802f26276e4b9b2ef765fd2226052098f68"
+            },
+            "MATCHED": {
+              "path": "01_manual_120_100_clean-Y-MATCHED.wav",
+              "sha256": "e3c25c67a5057c8e024b2565ea9c7802f26276e4b9b2ef765fd2226052098f68"
+            }
+          }
+        },
+        {
+          "code": "Z",
+          "files": {
+            "RAW": {
+              "path": "01_manual_120_100_clean-Z-RAW.wav",
+              "sha256": "e3c25c67a5057c8e024b2565ea9c7802f26276e4b9b2ef765fd2226052098f68"
+            },
+            "MATCHED": {
+              "path": "01_manual_120_100_clean-Z-MATCHED.wav",
+              "sha256": "e3c25c67a5057c8e024b2565ea9c7802f26276e4b9b2ef765fd2226052098f68"
+            }
+          }
+        }
+      ],
+      "matched_gain": {
+        "X": 0.9581949777749788,
+        "Y": 1.0,
+        "Z": 1.0
+      }
+    },
+    {
+      "scene": "02_manual_80_160_driven",
+      "source": "driven_guitar",
+      "description": "BPM 80 -> 160 big upward jump, saturated guitar",
+      "sample_rate": 44100,
+      "block_size": 128,
+      "duration_sec": 8.75,
+      "events": [
+        2.5
+      ],
+      "slots": [
+        {
+          "code": "X",
+          "files": {
+            "RAW": {
+              "path": "02_manual_80_160_driven-X-RAW.wav",
+              "sha256": "0a6b22a16cb1db0ebb5e7d20613d783fb0dcbc3e23880c8038b84ece4d8db5eb"
+            },
+            "MATCHED": {
+              "path": "02_manual_80_160_driven-X-MATCHED.wav",
+              "sha256": "e8a82fb9011e50a8f19bbab6ddce5e72d7e034484c25960f18065ceb2c99f4b4"
+            }
+          }
+        },
+        {
+          "code": "Y",
+          "files": {
+            "RAW": {
+              "path": "02_manual_80_160_driven-Y-RAW.wav",
+              "sha256": "17dc549ef289abf57ba957770f053f78879dfbcd421c55388872d177cab80b4d"
+            },
+            "MATCHED": {
+              "path": "02_manual_80_160_driven-Y-MATCHED.wav",
+              "sha256": "17dc549ef289abf57ba957770f053f78879dfbcd421c55388872d177cab80b4d"
+            }
+          }
+        },
+        {
+          "code": "Z",
+          "files": {
+            "RAW": {
+              "path": "02_manual_80_160_driven-Z-RAW.wav",
+              "sha256": "0a6b22a16cb1db0ebb5e7d20613d783fb0dcbc3e23880c8038b84ece4d8db5eb"
+            },
+            "MATCHED": {
+              "path": "02_manual_80_160_driven-Z-MATCHED.wav",
+              "sha256": "e8a82fb9011e50a8f19bbab6ddce5e72d7e034484c25960f18065ceb2c99f4b4"
+            }
+          }
+        }
+      ],
+      "matched_gain": {
+        "X": 0.9360321894471427,
+        "Y": 1.0,
+        "Z": 0.9360321894471427
+      }
+    },
+    {
+      "scene": "03_ramp_120_100_poly",
+      "source": "poly_synth",
+      "description": "Gradual BPM 120 -> 100 ramp over 0.25 s steps on a poly pad",
+      "sample_rate": 44100,
+      "block_size": 128,
+      "duration_sec": 8.75,
+      "events": [
+        2.5,
+        2.75,
+        3.0,
+        3.25,
+        3.5,
+        3.75,
+        4.0,
+        4.25
+      ],
+      "slots": [
+        {
+          "code": "X",
+          "files": {
+            "RAW": {
+              "path": "03_ramp_120_100_poly-X-RAW.wav",
+              "sha256": "2709ab6ddaee7ff029f91f9ce906ff25452b9bb70fcf0751470dbfbdfaa6feda"
+            },
+            "MATCHED": {
+              "path": "03_ramp_120_100_poly-X-MATCHED.wav",
+              "sha256": "2709ab6ddaee7ff029f91f9ce906ff25452b9bb70fcf0751470dbfbdfaa6feda"
+            }
+          }
+        },
+        {
+          "code": "Y",
+          "files": {
+            "RAW": {
+              "path": "03_ramp_120_100_poly-Y-RAW.wav",
+              "sha256": "33bbf8e6a81e02c640872e939878586cba6fe57674d909992b28a7c9df4e61d7"
+            },
+            "MATCHED": {
+              "path": "03_ramp_120_100_poly-Y-MATCHED.wav",
+              "sha256": "0f3d32ba50ecbd57802c1771c15dc465577b9c7eb2cec362349ca91cedfa0007"
+            }
+          }
+        },
+        {
+          "code": "Z",
+          "files": {
+            "RAW": {
+              "path": "03_ramp_120_100_poly-Z-RAW.wav",
+              "sha256": "2709ab6ddaee7ff029f91f9ce906ff25452b9bb70fcf0751470dbfbdfaa6feda"
+            },
+            "MATCHED": {
+              "path": "03_ramp_120_100_poly-Z-MATCHED.wav",
+              "sha256": "2709ab6ddaee7ff029f91f9ce906ff25452b9bb70fcf0751470dbfbdfaa6feda"
+            }
+          }
+        }
+      ],
+      "matched_gain": {
+        "X": 1.0,
+        "Y": 0.9646660671637496,
+        "Z": 1.0
+      }
+    },
+    {
+      "scene": "04_tap_120_90_clean",
+      "source": "clean_guitar",
+      "description": "Tap 120 -> 90 with six taps at each cadence",
+      "sample_rate": 44100,
+      "block_size": 128,
+      "duration_sec": 8.75,
+      "events": [
+        0.6,
+        1.1,
+        1.6,
+        2.1,
+        2.6,
+        3.1,
+        3.7667,
+        4.4333,
+        5.1,
+        5.7667
+      ],
+      "slots": [
+        {
+          "code": "X",
+          "files": {
+            "RAW": {
+              "path": "04_tap_120_90_clean-X-RAW.wav",
+              "sha256": "61b96b9da48c7c60ca5e66953b483c61cffe8e2a8fc78a1878682ebb63441185"
+            },
+            "MATCHED": {
+              "path": "04_tap_120_90_clean-X-MATCHED.wav",
+              "sha256": "8d7d032b674851e0b61fac02fbe97c455ce4e2287f7742e5f76381782adf98f6"
+            }
+          }
+        },
+        {
+          "code": "Y",
+          "files": {
+            "RAW": {
+              "path": "04_tap_120_90_clean-Y-RAW.wav",
+              "sha256": "8b02859e779a98fc747a977f1dc47510a7acf5d898f7a56dae48d9851db88ad4"
+            },
+            "MATCHED": {
+              "path": "04_tap_120_90_clean-Y-MATCHED.wav",
+              "sha256": "8b02859e779a98fc747a977f1dc47510a7acf5d898f7a56dae48d9851db88ad4"
+            }
+          }
+        },
+        {
+          "code": "Z",
+          "files": {
+            "RAW": {
+              "path": "04_tap_120_90_clean-Z-RAW.wav",
+              "sha256": "2e6809e52b0ed4e8a131846ba33bd3aeae8ef6907da30ef4503fa0cdea021bda"
+            },
+            "MATCHED": {
+              "path": "04_tap_120_90_clean-Z-MATCHED.wav",
+              "sha256": "37436079508da1c7cee260132d2f18189fbad66837f0fb45e876b987e351e05d"
+            }
+          }
+        }
+      ],
+      "matched_gain": {
+        "X": 0.9813553137646177,
+        "Y": 1.0,
+        "Z": 0.9816974175237527
+      }
+    },
+    {
+      "scene": "05_midi_120_125_poly",
+      "source": "poly_synth",
+      "description": "MIDI clock 120 -> 125 on a sustained poly synth",
+      "sample_rate": 44100,
+      "block_size": 128,
+      "duration_sec": 8.75,
+      "events": [
+        3.0
+      ],
+      "slots": [
+        {
+          "code": "X",
+          "files": {
+            "RAW": {
+              "path": "05_midi_120_125_poly-X-RAW.wav",
+              "sha256": "8410d1888939c94032a0d7b0af5a25567efa89e1cfdc9d1d2833789acfd25e1d"
+            },
+            "MATCHED": {
+              "path": "05_midi_120_125_poly-X-MATCHED.wav",
+              "sha256": "880d1af66698ecef10f108a945daa5e695180c5de57b6e9fd0a3681af372af8b"
+            }
+          }
+        },
+        {
+          "code": "Y",
+          "files": {
+            "RAW": {
+              "path": "05_midi_120_125_poly-Y-RAW.wav",
+              "sha256": "accece284fdbb43b30e0a07a305cbfc49c458990385e053d146f89dfeab24df3"
+            },
+            "MATCHED": {
+              "path": "05_midi_120_125_poly-Y-MATCHED.wav",
+              "sha256": "2e614972b82373d11722174bc3f9f9257d44203b6012a4c5e9081ea2ab8a8b5e"
+            }
+          }
+        },
+        {
+          "code": "Z",
+          "files": {
+            "RAW": {
+              "path": "05_midi_120_125_poly-Z-RAW.wav",
+              "sha256": "2014ec306bfa762bada4a7136175f022f1382a9d89a2c26f0d4185ec6e043b36"
+            },
+            "MATCHED": {
+              "path": "05_midi_120_125_poly-Z-MATCHED.wav",
+              "sha256": "2014ec306bfa762bada4a7136175f022f1382a9d89a2c26f0d4185ec6e043b36"
+            }
+          }
+        }
+      ],
+      "matched_gain": {
+        "X": 0.9633581900812824,
+        "Y": 0.9879552435879831,
+        "Z": 1.0
+      }
+    },
+    {
+      "scene": "06_midi_lost_recovered_bass",
+      "source": "electric_bass_proxy",
+      "description": "MIDI clock lost for 2.5 s and reacquired at a new tempo",
+      "sample_rate": 44100,
+      "block_size": 128,
+      "duration_sec": 10.75,
+      "events": [
+        6.5
+      ],
+      "slots": [
+        {
+          "code": "X",
+          "files": {
+            "RAW": {
+              "path": "06_midi_lost_recovered_bass-X-RAW.wav",
+              "sha256": "85ed0f125aa0f459e95a5147762457c51dbadda91a47b6aaff8e812e113ef293"
+            },
+            "MATCHED": {
+              "path": "06_midi_lost_recovered_bass-X-MATCHED.wav",
+              "sha256": "85ed0f125aa0f459e95a5147762457c51dbadda91a47b6aaff8e812e113ef293"
+            }
+          }
+        },
+        {
+          "code": "Y",
+          "files": {
+            "RAW": {
+              "path": "06_midi_lost_recovered_bass-Y-RAW.wav",
+              "sha256": "bbc10c94ee4aab154c375c9ac4809247ec3b7a67d3b1a3b42232b93372188c23"
+            },
+            "MATCHED": {
+              "path": "06_midi_lost_recovered_bass-Y-MATCHED.wav",
+              "sha256": "985e07ea21c6403b9f91b14d877d76f9dac7a4f8ff0cc0ec72b337c31961779a"
+            }
+          }
+        },
+        {
+          "code": "Z",
+          "files": {
+            "RAW": {
+              "path": "06_midi_lost_recovered_bass-Z-RAW.wav",
+              "sha256": "6f5a2f71a7b77d0bee23cd8f5d5359ad6a25ecb68928f7815615853948b7689a"
+            },
+            "MATCHED": {
+              "path": "06_midi_lost_recovered_bass-Z-MATCHED.wav",
+              "sha256": "6f5a2f71a7b77d0bee23cd8f5d5359ad6a25ecb68928f7815615853948b7689a"
+            }
+          }
+        }
+      ],
+      "matched_gain": {
+        "X": 0.9999999793818951,
+        "Y": 0.9999992999158605,
+        "Z": 1.0
+      }
+    },
+    {
+      "scene": "07_division_quarter_to_eighth_reverse",
+      "source": "poly_synth",
+      "description": "Reverse V2 quarter -> eighth subdivision",
+      "sample_rate": 44100,
+      "block_size": 128,
+      "duration_sec": 8.75,
+      "events": [
+        2.5
+      ],
+      "slots": [
+        {
+          "code": "X",
+          "files": {
+            "RAW": {
+              "path": "07_division_quarter_to_eighth_reverse-X-RAW.wav",
+              "sha256": "83337890c709e9bc1135452dd1e5335144426a91ce3f1e0706ff08ab717a34a8"
+            },
+            "MATCHED": {
+              "path": "07_division_quarter_to_eighth_reverse-X-MATCHED.wav",
+              "sha256": "83337890c709e9bc1135452dd1e5335144426a91ce3f1e0706ff08ab717a34a8"
+            }
+          }
+        },
+        {
+          "code": "Y",
+          "files": {
+            "RAW": {
+              "path": "07_division_quarter_to_eighth_reverse-Y-RAW.wav",
+              "sha256": "83337890c709e9bc1135452dd1e5335144426a91ce3f1e0706ff08ab717a34a8"
+            },
+            "MATCHED": {
+              "path": "07_division_quarter_to_eighth_reverse-Y-MATCHED.wav",
+              "sha256": "83337890c709e9bc1135452dd1e5335144426a91ce3f1e0706ff08ab717a34a8"
+            }
+          }
+        },
+        {
+          "code": "Z",
+          "files": {
+            "RAW": {
+              "path": "07_division_quarter_to_eighth_reverse-Z-RAW.wav",
+              "sha256": "83337890c709e9bc1135452dd1e5335144426a91ce3f1e0706ff08ab717a34a8"
+            },
+            "MATCHED": {
+              "path": "07_division_quarter_to_eighth_reverse-Z-MATCHED.wav",
+              "sha256": "83337890c709e9bc1135452dd1e5335144426a91ce3f1e0706ff08ab717a34a8"
+            }
+          }
+        }
+      ],
+      "matched_gain": {
+        "X": 1.0,
+        "Y": 1.0,
+        "Z": 1.0
+      }
+    },
+    {
+      "scene": "08_multihead_sync_120_100",
+      "source": "poly_synth",
+      "description": "Multi-head musical mode, BPM 120 -> 100",
+      "sample_rate": 44100,
+      "block_size": 128,
+      "duration_sec": 8.75,
+      "events": [
+        2.5
+      ],
+      "slots": [
+        {
+          "code": "X",
+          "files": {
+            "RAW": {
+              "path": "08_multihead_sync_120_100-X-RAW.wav",
+              "sha256": "41b5aeaeee0e746e99c62cf4190ab99c1952469f98a7d951daab99d97161dada"
+            },
+            "MATCHED": {
+              "path": "08_multihead_sync_120_100-X-MATCHED.wav",
+              "sha256": "41b5aeaeee0e746e99c62cf4190ab99c1952469f98a7d951daab99d97161dada"
+            }
+          }
+        },
+        {
+          "code": "Y",
+          "files": {
+            "RAW": {
+              "path": "08_multihead_sync_120_100-Y-RAW.wav",
+              "sha256": "45795a169e7a053c08c5bfa8e9bab52efcd9a38484314a4b6937fc65f69bdc2d"
+            },
+            "MATCHED": {
+              "path": "08_multihead_sync_120_100-Y-MATCHED.wav",
+              "sha256": "1c9bfa2733b799c2ecb4bfa90c23b0c11b5d2d070aefa2422c5ef1b3e49c8e07"
+            }
+          }
+        },
+        {
+          "code": "Z",
+          "files": {
+            "RAW": {
+              "path": "08_multihead_sync_120_100-Z-RAW.wav",
+              "sha256": "45795a169e7a053c08c5bfa8e9bab52efcd9a38484314a4b6937fc65f69bdc2d"
+            },
+            "MATCHED": {
+              "path": "08_multihead_sync_120_100-Z-MATCHED.wav",
+              "sha256": "1c9bfa2733b799c2ecb4bfa90c23b0c11b5d2d070aefa2422c5ef1b3e49c8e07"
+            }
+          }
+        }
+      ],
+      "matched_gain": {
+        "X": 1.0,
+        "Y": 0.9975829992196474,
+        "Z": 0.9975829992196474
+      }
+    },
+    {
+      "scene": "09_pad_reverse_90",
+      "source": "poly_synth",
+      "description": "Reverse V2 during a BPM 120 -> 90 change",
+      "sample_rate": 44100,
+      "block_size": 128,
+      "duration_sec": 8.75,
+      "events": [
+        2.5
+      ],
+      "slots": [
+        {
+          "code": "X",
+          "files": {
+            "RAW": {
+              "path": "09_pad_reverse_90-X-RAW.wav",
+              "sha256": "73a739625b1b828e4342c2dbf6b02cb5dae3edef22d22f2f62bf1695bf525bf3"
+            },
+            "MATCHED": {
+              "path": "09_pad_reverse_90-X-MATCHED.wav",
+              "sha256": "73a739625b1b828e4342c2dbf6b02cb5dae3edef22d22f2f62bf1695bf525bf3"
+            }
+          }
+        },
+        {
+          "code": "Y",
+          "files": {
+            "RAW": {
+              "path": "09_pad_reverse_90-Y-RAW.wav",
+              "sha256": "73a739625b1b828e4342c2dbf6b02cb5dae3edef22d22f2f62bf1695bf525bf3"
+            },
+            "MATCHED": {
+              "path": "09_pad_reverse_90-Y-MATCHED.wav",
+              "sha256": "73a739625b1b828e4342c2dbf6b02cb5dae3edef22d22f2f62bf1695bf525bf3"
+            }
+          }
+        },
+        {
+          "code": "Z",
+          "files": {
+            "RAW": {
+              "path": "09_pad_reverse_90-Z-RAW.wav",
+              "sha256": "73a739625b1b828e4342c2dbf6b02cb5dae3edef22d22f2f62bf1695bf525bf3"
+            },
+            "MATCHED": {
+              "path": "09_pad_reverse_90-Z-MATCHED.wav",
+              "sha256": "73a739625b1b828e4342c2dbf6b02cb5dae3edef22d22f2f62bf1695bf525bf3"
+            }
+          }
+        }
+      ],
+      "matched_gain": {
+        "X": 1.0,
+        "Y": 1.0,
+        "Z": 1.0
+      }
+    },
+    {
+      "scene": "10_drums_120_90",
+      "source": "irregular_percussion",
+      "description": "Irregular percussion, BPM 120 -> 90",
+      "sample_rate": 44100,
+      "block_size": 128,
+      "duration_sec": 8.75,
+      "events": [
+        2.5
+      ],
+      "slots": [
+        {
+          "code": "X",
+          "files": {
+            "RAW": {
+              "path": "10_drums_120_90-X-RAW.wav",
+              "sha256": "e322ddde9c5586ed999022bd8aa262ba59a8ca1735d65a62b0ed00663a86f30b"
+            },
+            "MATCHED": {
+              "path": "10_drums_120_90-X-MATCHED.wav",
+              "sha256": "f40ce43aef9b3622535d8bea2e198d773dea5f7b1093e57e85d7524fbe178175"
+            }
+          }
+        },
+        {
+          "code": "Y",
+          "files": {
+            "RAW": {
+              "path": "10_drums_120_90-Y-RAW.wav",
+              "sha256": "e322ddde9c5586ed999022bd8aa262ba59a8ca1735d65a62b0ed00663a86f30b"
+            },
+            "MATCHED": {
+              "path": "10_drums_120_90-Y-MATCHED.wav",
+              "sha256": "f40ce43aef9b3622535d8bea2e198d773dea5f7b1093e57e85d7524fbe178175"
+            }
+          }
+        },
+        {
+          "code": "Z",
+          "files": {
+            "RAW": {
+              "path": "10_drums_120_90-Z-RAW.wav",
+              "sha256": "9229640cf7e8982aba16e63c5890d1960243ef91365b5a272abb3e1f1ce5ceb1"
+            },
+            "MATCHED": {
+              "path": "10_drums_120_90-Z-MATCHED.wav",
+              "sha256": "9229640cf7e8982aba16e63c5890d1960243ef91365b5a272abb3e1f1ce5ceb1"
+            }
+          }
+        }
+      ],
+      "matched_gain": {
+        "X": 0.9910920218615632,
+        "Y": 0.9910920218615632,
+        "Z": 1.0
+      }
+    },
+    {
+      "scene": "11_control_static_guitar",
+      "source": "clean_guitar",
+      "description": "Negative control: no tempo command at all",
+      "sample_rate": 44100,
+      "block_size": 128,
+      "duration_sec": 8.75,
+      "events": [],
+      "slots": [
+        {
+          "code": "X",
+          "files": {
+            "RAW": {
+              "path": "11_control_static_guitar-X-RAW.wav",
+              "sha256": "8b02859e779a98fc747a977f1dc47510a7acf5d898f7a56dae48d9851db88ad4"
+            },
+            "MATCHED": {
+              "path": "11_control_static_guitar-X-MATCHED.wav",
+              "sha256": "8b02859e779a98fc747a977f1dc47510a7acf5d898f7a56dae48d9851db88ad4"
+            }
+          }
+        },
+        {
+          "code": "Y",
+          "files": {
+            "RAW": {
+              "path": "11_control_static_guitar-Y-RAW.wav",
+              "sha256": "8b02859e779a98fc747a977f1dc47510a7acf5d898f7a56dae48d9851db88ad4"
+            },
+            "MATCHED": {
+              "path": "11_control_static_guitar-Y-MATCHED.wav",
+              "sha256": "8b02859e779a98fc747a977f1dc47510a7acf5d898f7a56dae48d9851db88ad4"
+            }
+          }
+        },
+        {
+          "code": "Z",
+          "files": {
+            "RAW": {
+              "path": "11_control_static_guitar-Z-RAW.wav",
+              "sha256": "8b02859e779a98fc747a977f1dc47510a7acf5d898f7a56dae48d9851db88ad4"
+            },
+            "MATCHED": {
+              "path": "11_control_static_guitar-Z-MATCHED.wav",
+              "sha256": "8b02859e779a98fc747a977f1dc47510a7acf5d898f7a56dae48d9851db88ad4"
+            }
+          }
+        }
+      ],
+      "matched_gain": {
+        "X": 1.0,
+        "Y": 1.0,
+        "Z": 1.0
+      }
+    }
+  ],
+  "provenance": {
+    "source_commit": "a8bc9c56d3a0c81d784260dae643cf2560a33b42",
+    "branch": "experiment/dsp-reform-f5-musical-timing",
+    "flags": {
+      "A": [
+        "-DHYDRA_PHASE72_CLASSIC_FEEDBACK_ROUTING=1",
+        "-DHYDRA_DSP_REFORM_F2_VARIANT=2",
+        "-DHYDRA_DSP_REFORM_F3_VARIANT=0",
+        "-DHYDRA_DSP_REFORM_F5_TIMING_VARIANT=0"
+      ],
+      "B": [
+        "-DHYDRA_PHASE72_CLASSIC_FEEDBACK_ROUTING=1",
+        "-DHYDRA_DSP_REFORM_F2_VARIANT=2",
+        "-DHYDRA_DSP_REFORM_F3_VARIANT=0",
+        "-DHYDRA_DSP_REFORM_F5_TIMING_VARIANT=1"
+      ],
+      "C": [
+        "-DHYDRA_PHASE72_CLASSIC_FEEDBACK_ROUTING=1",
+        "-DHYDRA_DSP_REFORM_F2_VARIANT=2",
+        "-DHYDRA_DSP_REFORM_F3_VARIANT=0",
+        "-DHYDRA_DSP_REFORM_F5_TIMING_VARIANT=2"
+      ]
+    },
+    "libraries": {
+      "A": "84e8ddc10d152948237bba553a4d716060a788567ed6937988b448cd27afd1cd",
+      "B": "27a937b0e901647cec0b0b0998598f6c6dd1c665f4ec68413028d8afeac35105",
+      "C": "be73206219614761e9b57001b15d0b6ddbf032a02a92c1fc5efadfc320c2e807"
+    },
+    "block_size": 128,
+    "rate": 44100,
+    "sample_format": "PCM24 round-to-nearest(clip(float32,-1,1)*8388607), no dither",
+    "randomization": "Python random.Random(20261124), one fixed X/Y/Z permutation per scene",
+    "commands": "parameter/tap/MIDI commits at documented frames, identical in A/B/C"
+  }
+}

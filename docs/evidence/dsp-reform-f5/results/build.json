@@ -1,0 +1,143 @@
+{
+  "head": "4a8cfbbfed2088b72e2456c3799980ce96717f9a",
+  "branch": "experiment/dsp-reform-f5-musical-timing",
+  "libraries": {
+    "0": {
+      "variant": 0,
+      "hooks": true,
+      "flags": [
+        "-DHYDRA_PHASE72_CLASSIC_FEEDBACK_ROUTING=1",
+        "-DHYDRA_DSP_REFORM_F2_VARIANT=2",
+        "-DHYDRA_DSP_REFORM_F3_VARIANT=0",
+        "-DHYDRA_DSP_REFORM_F5_TIMING_VARIANT=0",
+        "-DHYDRA_DSP_TEST_HOOKS=1"
+      ],
+      "library": "build/f5-v0-native/libhydra_f5_v0_2499ba30421e.dll",
+      "library_sha256": "4085ca014d93ea345a1c3926003d96efc50f66678a137f84c65d4e6bc880d978",
+      "library_bytes": 164672,
+      "compiler": "g++ (MinGW-W64 x86_64-ucrt-posix-seh, built by Brecht Sanders, r2) 14.2.0",
+      "source_sha256": {
+        "dsp/core/tape_core.cpp": "6e08b3cd57dce9574f98dae1983cd4bbe5f2313743424719d2fd830dedf0c2f2",
+        "dsp/core/tape_core.hpp": "a246c44ea2980fcafce1ac903e31af9edf0f078cb17960d1d9b1e0deab7fd082",
+        "dsp/core/hydra_dsp_c_api.cpp": "f7b120713cbda28fcaa1d206e1861efb6728451678d6327d123ba18098f68f2a",
+        "dsp/core/fast_tanh_table.inc": "fcc7a4d288f3207a2f09a2cca3c708a713fabbe0289f9a49a5e5bcbc7ff8a7ad",
+        "dsp/core/musical_timing_experiment.hpp": "296c192431494e87be5489901d9b3c6254847a40d4943191f5f66cf88df59968",
+        "dsp/core/f5_timing_hooks.hpp": "4498af7c68b8a83ad64fcde03abb25d450698da456e5177ee38a3dc8606f617a",
+        "include/hydra_dsp.h": "d74f370120f0dd4e09bcfdfe3cd65faebf10e71a42ec7122020de331a7835179"
+      }
+    },
+    "1": {
+      "variant": 1,
+      "hooks": true,
+      "flags": [
+        "-DHYDRA_PHASE72_CLASSIC_FEEDBACK_ROUTING=1",
+        "-DHYDRA_DSP_REFORM_F2_VARIANT=2",
+        "-DHYDRA_DSP_REFORM_F3_VARIANT=0",
+        "-DHYDRA_DSP_REFORM_F5_TIMING_VARIANT=1",
+        "-DHYDRA_DSP_TEST_HOOKS=1"
+      ],
+      "library": "build/f5-v1-native/libhydra_f5_v1_2499ba30421e.dll",
+      "library_sha256": "2185adfcec989fb8ff44d58d245685a7597b75b69beedcf07e40132534049f8f",
+      "library_bytes": 168256,
+      "compiler": "g++ (MinGW-W64 x86_64-ucrt-posix-seh, built by Brecht Sanders, r2) 14.2.0",
+      "source_sha256": {
+        "dsp/core/tape_core.cpp": "6e08b3cd57dce9574f98dae1983cd4bbe5f2313743424719d2fd830dedf0c2f2",
+        "dsp/core/tape_core.hpp": "a246c44ea2980fcafce1ac903e31af9edf0f078cb17960d1d9b1e0deab7fd082",
+        "dsp/core/hydra_dsp_c_api.cpp": "f7b120713cbda28fcaa1d206e1861efb6728451678d6327d123ba18098f68f2a",
+        "dsp/core/fast_tanh_table.inc": "fcc7a4d288f3207a2f09a2cca3c708a713fabbe0289f9a49a5e5bcbc7ff8a7ad",
+        "dsp/core/musical_timing_experiment.hpp": "296c192431494e87be5489901d9b3c6254847a40d4943191f5f66cf88df59968",
+        "dsp/core/f5_timing_hooks.hpp": "4498af7c68b8a83ad64fcde03abb25d450698da456e5177ee38a3dc8606f617a",
+        "include/hydra_dsp.h": "d74f370120f0dd4e09bcfdfe3cd65faebf10e71a42ec7122020de331a7835179"
+      }
+    },
+    "2": {
+      "variant": 2,
+      "hooks": true,
+      "flags": [
+        "-DHYDRA_PHASE72_CLASSIC_FEEDBACK_ROUTING=1",
+        "-DHYDRA_DSP_REFORM_F2_VARIANT=2",
+        "-DHYDRA_DSP_REFORM_F3_VARIANT=0",
+        "-DHYDRA_DSP_REFORM_F5_TIMING_VARIANT=2",
+        "-DHYDRA_DSP_TEST_HOOKS=1"
+      ],
+      "library": "build/f5-v2-native/libhydra_f5_v2_2499ba30421e.dll",
+      "library_sha256": "309cebfa55e74e75845775451020b97739188d7121d412f0eaaeeef737725181",
+      "library_bytes": 171328,
+      "compiler": "g++ (MinGW-W64 x86_64-ucrt-posix-seh, built by Brecht Sanders, r2) 14.2.0",
+      "source_sha256": {
+        "dsp/core/tape_core.cpp": "6e08b3cd57dce9574f98dae1983cd4bbe5f2313743424719d2fd830dedf0c2f2",
+        "dsp/core/tape_core.hpp": "a246c44ea2980fcafce1ac903e31af9edf0f078cb17960d1d9b1e0deab7fd082",
+        "dsp/core/hydra_dsp_c_api.cpp": "f7b120713cbda28fcaa1d206e1861efb6728451678d6327d123ba18098f68f2a",
+        "dsp/core/fast_tanh_table.inc": "fcc7a4d288f3207a2f09a2cca3c708a713fabbe0289f9a49a5e5bcbc7ff8a7ad",
+        "dsp/core/musical_timing_experiment.hpp": "296c192431494e87be5489901d9b3c6254847a40d4943191f5f66cf88df59968",
+        "dsp/core/f5_timing_hooks.hpp": "4498af7c68b8a83ad64fcde03abb25d450698da456e5177ee38a3dc8606f617a",
+        "include/hydra_dsp.h": "d74f370120f0dd4e09bcfdfe3cd65faebf10e71a42ec7122020de331a7835179"
+      }
+    },
+    "0_plain": {
+      "variant": 0,
+      "hooks": false,
+      "flags": [
+        "-DHYDRA_PHASE72_CLASSIC_FEEDBACK_ROUTING=1",
+        "-DHYDRA_DSP_REFORM_F2_VARIANT=2",
+        "-DHYDRA_DSP_REFORM_F3_VARIANT=0",
+        "-DHYDRA_DSP_REFORM_F5_TIMING_VARIANT=0"
+      ],
+      "library": "build/f5-v0-plain-native/libhydra_f5_v0-plain_2499ba30421e.dll",
+      "library_sha256": "cd63cdecf5ce5798a4bdd6b2f370862dec9ae66f97c8bda25290c6cccac6f48a",
+      "library_bytes": 164027,
+      "compiler": "g++ (MinGW-W64 x86_64-ucrt-posix-seh, built by Brecht Sanders, r2) 14.2.0",
+      "source_sha256": {
+        "dsp/core/tape_core.cpp": "6e08b3cd57dce9574f98dae1983cd4bbe5f2313743424719d2fd830dedf0c2f2",
+        "dsp/core/tape_core.hpp": "a246c44ea2980fcafce1ac903e31af9edf0f078cb17960d1d9b1e0deab7fd082",
+        "dsp/core/hydra_dsp_c_api.cpp": "f7b120713cbda28fcaa1d206e1861efb6728451678d6327d123ba18098f68f2a",
+        "dsp/core/fast_tanh_table.inc": "fcc7a4d288f3207a2f09a2cca3c708a713fabbe0289f9a49a5e5bcbc7ff8a7ad",
+        "dsp/core/musical_timing_experiment.hpp": "296c192431494e87be5489901d9b3c6254847a40d4943191f5f66cf88df59968",
+        "dsp/core/f5_timing_hooks.hpp": "4498af7c68b8a83ad64fcde03abb25d450698da456e5177ee38a3dc8606f617a",
+        "include/hydra_dsp.h": "d74f370120f0dd4e09bcfdfe3cd65faebf10e71a42ec7122020de331a7835179"
+      }
+    }
+  },
+  "python": "3.14.0 (tags/v3.14.0:ebf955d, Oct  7 2025, 10:15:03) [MSC v.1944 64 bit (AMD64)]",
+  "numpy": "2.4.1",
+  "base_params": [
+    0,
+    0,
+    0,
+    25,
+    0,
+    50,
+    40,
+    30,
+    0,
+    6,
+    0.8,
+    1,
+    500,
+    65,
+    50,
+    50,
+    4,
+    120,
+    1,
+    0,
+    50,
+    0,
+    0,
+    0,
+    0,
+    0,
+    60,
+    45,
+    50,
+    0,
+    0,
+    1,
+    80,
+    0.5,
+    0,
+    0,
+    0,
+    0
+  ]
+}

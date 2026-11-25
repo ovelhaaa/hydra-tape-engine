@@ -1,5 +1,8 @@
 #include "hydra_dsp.h"
 #include "tape_core.hpp"
+#if defined(HYDRA_DSP_TEST_HOOKS)
+#include "f5_timing_hooks.hpp"
+#endif
 
 #include <algorithm>
 #include <cmath>
@@ -548,4 +551,34 @@ HYDRA_DSP_IRAM int hydra_dsp_process(hydra_dsp_handle* handle,
   handle->core->processStereoBlock(in_l, in_r, out_l, out_r, frames);
   return 0;
 }
+
+#if defined(HYDRA_DSP_TEST_HOOKS)
+// Test-only, read-only snapshot. Requires a library built with
+// -DHYDRA_DSP_TEST_HOOKS; production binaries do not export it.
+int hydra_dsp_test_timing_state(const hydra_dsp_handle* handle,
+                                hydra_f5_timing_state* out) {
+  if (!handle || !handle->core || !out) return -1;
+  hydra::dsp::TapeCore::TimingDiagnostics d;
+  if (!handle->core->timingDiagnostics(&d)) return -1;
+  out->transport_bpm = d.transportBpm;
+  out->musical_position = d.musicalPosition;
+  out->absolute_sample_position = d.absoluteSamplePosition;
+  out->transport_sample_position = d.transportSamplePosition;
+  out->target_beat_ms = d.targetBeatMs;
+  out->effective_beat_ms = d.effectiveBeatMs;
+  for (int i = 0; i < 3; ++i) {
+    out->head_delay_samples[i] = d.headDelaySamples[i];
+    out->target_head_samples[i] = d.targetHeadSamples[i];
+  }
+  out->smoothed_delay_samples = d.smoothedDelaySamples;
+  out->target_delay_samples = d.targetDelaySamples;
+  out->reverse_requested_ms = d.reverseRequestedMs;
+  out->reverse_effective_ms = d.reverseEffectiveMs;
+  out->reverse_clamped = d.reverseClamped;
+  out->musical = d.musical;
+  out->gliding = d.gliding;
+  out->variant = d.variant;
+  return 0;
+}
+#endif
 }

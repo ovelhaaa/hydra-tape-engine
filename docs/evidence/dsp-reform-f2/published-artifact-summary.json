@@ -1,0 +1,19 @@
+{
+  "status": "PASS",
+  "artifact_id": 14885385251,
+  "run_id": 45312475778,
+  "source_commit": "693312ca6c802d6116e10a0d5ac16c0cda5fabfd",
+  "zip_bytes": 349948838,
+  "zip_sha256": "a9dfbec0c449837904fdd94c47f28558b3374ea163e042b54f0bb8f96fa82a7e",
+  "github_digest_matches": true,
+  "zip_crc_integrity": true,
+  "manifest_scenes": 14,
+  "wav_files_verified": 84,
+  "all_sha256_entries_verified": 100,
+  "format": "stereo PCM24 44100",
+  "matched_peak_limit": 0.98,
+  "matched_rms_max_absolute_spread": 1.913449398927014e-10,
+  "listening_path_in_zip": "artifacts/dsp-reform-f2/listening/",
+  "blind_answer_key_separate": true,
+  "qualification": "Actual published ZIP downloaded and verified, no baseline or golden regenerated"
+}

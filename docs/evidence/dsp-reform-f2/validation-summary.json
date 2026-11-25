@@ -1,0 +1,538 @@
+{
+  "frozen_F1": "f3281d0e9230ad151bcad94c574042adc7996467",
+  "core_sha256": "a841ec1fbfca17ec8727316b435054d5e3fab371d993217d41a3cc1d4b68763e",
+  "calibration_header_sha256": "a710f5df9991a1c3016f6d697d8c2015709d379985749d312e7cd9b6e184a79e",
+  "hardware": "PENDING_PHYSICAL",
+  "human": "PENDING_HUMAN",
+  "variants": {
+    "0": {
+      "library_sha256": "c4e39c0c0de403e79466d92124c094c028195dc51c5f377a0b030ed3932cadf4",
+      "api_version_hex": "0x010700",
+      "parameter_count": 38,
+      "parity": {
+        "test_name": "native_vs_wasm_equivalence",
+        "samples": 10240,
+        "max_abs": 0.0,
+        "rmse": 0.0,
+        "status": "PASS",
+        "scenarios": {
+          "baseline_glue": {
+            "max_abs": 0.0,
+            "rmse": 0.0,
+            "status": "PASS"
+          },
+          "short_slap_bright": {
+            "max_abs": 0.0,
+            "rmse": 0.0,
+            "status": "PASS"
+          },
+          "feedback_edge": {
+            "max_abs": 0.0,
+            "rmse": 0.0,
+            "status": "PASS"
+          },
+          "saturated_dark": {
+            "max_abs": 0.0,
+            "rmse": 0.0,
+            "status": "PASS"
+          },
+          "modulated_space": {
+            "max_abs": 0.0,
+            "rmse": 0.0,
+            "status": "PASS"
+          }
+        },
+        "thresholds": {
+          "max_abs": 1e-05,
+          "rmse": 1e-06
+        }
+      },
+      "ctest": {
+        "native": {
+          "tests": 17,
+          "passed": 16,
+          "failed": [
+            "core_regression"
+          ],
+          "qualification": {
+            "original_exit": 8,
+            "failed": [
+              "core_regression"
+            ],
+            "note": "A energy assertion retained; all other assertions evaluated separately below. New physical reader and wrap identity are independent of energy."
+          }
+        },
+        "wasm": {
+          "tests": 15,
+          "passed": 14,
+          "failed": [
+            "core_regression"
+          ],
+          "qualification": {
+            "original_exit": 8,
+            "failed": [
+              "core_regression"
+            ],
+            "note": "A energy assertion retained; all other assertions evaluated separately below. New physical reader and wrap identity are independent of energy."
+          }
+        }
+      },
+      "engine_27_of_27": true,
+      "stress_cases": 154,
+      "tails_60s": 60,
+      "instrumentation_bit_exact_all": true,
+      "stress_all_stable": true,
+      "compound_60s_cases": 4,
+      "compound_pass": true,
+      "global_output_peak": 0.9900000095367432,
+      "internal_stage_peak_max": [
+        0.542756199836731,
+        1.136060357093811,
+        0.7513582110404968,
+        0.5510787963867188,
+        1.315818190574646,
+        0.7688787579536438,
+        1.136060357093811,
+        1.315818190574646
+      ],
+      "active_input_overload_cases": {
+        "44100_clean_guitar_fb100_single": {
+          "limiter_ceiling_samples": 24,
+          "tail_ceiling_samples": 0,
+          "reference_C0_ceiling_samples": 24,
+          "overload_qualification": "active-input monitor overload also present in C0; tail unclipped and internal decay checked"
+        },
+        "48000_clean_guitar_fb100_single": {
+          "limiter_ceiling_samples": 2,
+          "tail_ceiling_samples": 0,
+          "reference_C0_ceiling_samples": 2,
+          "overload_qualification": "active-input monitor overload also present in C0; tail unclipped and internal decay checked"
+        }
+      },
+      "tail_ceiling_samples_total": 0
+    },
+    "1": {
+      "library_sha256": "9448773ab24f7e9656bc88a7bbb2c5911f64a75216e4398af1c783d556a28fa8",
+      "api_version_hex": "0x010700",
+      "parameter_count": 38,
+      "parity": {
+        "test_name": "native_vs_wasm_equivalence",
+        "samples": 10240,
+        "max_abs": 0.0,
+        "rmse": 0.0,
+        "status": "PASS",
+        "scenarios": {
+          "baseline_glue": {
+            "max_abs": 0.0,
+            "rmse": 0.0,
+            "status": "PASS"
+          },
+          "short_slap_bright": {
+            "max_abs": 0.0,
+            "rmse": 0.0,
+            "status": "PASS"
+          },
+          "feedback_edge": {
+            "max_abs": 0.0,
+            "rmse": 0.0,
+            "status": "PASS"
+          },
+          "saturated_dark": {
+            "max_abs": 0.0,
+            "rmse": 0.0,
+            "status": "PASS"
+          },
+          "modulated_space": {
+            "max_abs": 0.0,
+            "rmse": 0.0,
+            "status": "PASS"
+          }
+        },
+        "thresholds": {
+          "max_abs": 1e-05,
+          "rmse": 1e-06
+        }
+      },
+      "ctest": {
+        "native": {
+          "tests": 17,
+          "passed": 16,
+          "failed": [
+            "core_regression"
+          ],
+          "qualification": {
+            "original_exit": 8,
+            "failed": [
+              "core_regression"
+            ],
+            "note": "A energy assertion retained; all other assertions evaluated separately below. New physical reader and wrap identity are independent of energy."
+          }
+        },
+        "wasm": {
+          "tests": 15,
+          "passed": 14,
+          "failed": [
+            "core_regression"
+          ],
+          "qualification": {
+            "original_exit": 8,
+            "failed": [
+              "core_regression"
+            ],
+            "note": "A energy assertion retained; all other assertions evaluated separately below. New physical reader and wrap identity are independent of energy."
+          }
+        }
+      },
+      "engine_27_of_27": true,
+      "stress_cases": 154,
+      "tails_60s": 60,
+      "instrumentation_bit_exact_all": true,
+      "stress_all_stable": true,
+      "compound_60s_cases": 4,
+      "compound_pass": true,
+      "global_output_peak": 0.9900000095367432,
+      "internal_stage_peak_max": [
+        0.5523726940155029,
+        1.1781251430511475,
+        0.7371348142623901,
+        0.5595152378082275,
+        1.333976149559021,
+        0.7775004506111145,
+        1.1781251430511475,
+        1.333976149559021
+      ],
+      "active_input_overload_cases": {
+        "44100_clean_guitar_fb100_single": {
+          "limiter_ceiling_samples": 71,
+          "tail_ceiling_samples": 0,
+          "reference_C0_ceiling_samples": 24,
+          "overload_qualification": "active-input monitor overload also present in C0; tail unclipped and internal decay checked"
+        },
+        "48000_clean_guitar_fb100_single": {
+          "limiter_ceiling_samples": 47,
+          "tail_ceiling_samples": 0,
+          "reference_C0_ceiling_samples": 2,
+          "overload_qualification": "active-input monitor overload also present in C0; tail unclipped and internal decay checked"
+        }
+      },
+      "tail_ceiling_samples_total": 0
+    },
+    "2": {
+      "library_sha256": "a09e0772570eccb1b3415d09412cc669649d3d724faccffdc2d7168e0ba0dcae",
+      "api_version_hex": "0x010700",
+      "parameter_count": 38,
+      "parity": {
+        "test_name": "native_vs_wasm_equivalence",
+        "samples": 10240,
+        "max_abs": 0.0,
+        "rmse": 0.0,
+        "status": "PASS",
+        "scenarios": {
+          "baseline_glue": {
+            "max_abs": 0.0,
+            "rmse": 0.0,
+            "status": "PASS"
+          },
+          "short_slap_bright": {
+            "max_abs": 0.0,
+            "rmse": 0.0,
+            "status": "PASS"
+          },
+          "feedback_edge": {
+            "max_abs": 0.0,
+            "rmse": 0.0,
+            "status": "PASS"
+          },
+          "saturated_dark": {
+            "max_abs": 0.0,
+            "rmse": 0.0,
+            "status": "PASS"
+          },
+          "modulated_space": {
+            "max_abs": 0.0,
+            "rmse": 0.0,
+            "status": "PASS"
+          }
+        },
+        "thresholds": {
+          "max_abs": 1e-05,
+          "rmse": 1e-06
+        }
+      },
+      "ctest": {
+        "native": {
+          "tests": 17,
+          "passed": 16,
+          "failed": [
+            "core_regression"
+          ],
+          "qualification": {
+            "original_exit": 8,
+            "failed": [
+              "core_regression"
+            ],
+            "note": "A energy assertion retained; all other assertions evaluated separately below. New physical reader and wrap identity are independent of energy."
+          }
+        },
+        "wasm": {
+          "tests": 15,
+          "passed": 14,
+          "failed": [
+            "core_regression"
+          ],
+          "qualification": {
+            "original_exit": 8,
+            "failed": [
+              "core_regression"
+            ],
+            "note": "A energy assertion retained; all other assertions evaluated separately below. New physical reader and wrap identity are independent of energy."
+          }
+        }
+      },
+      "engine_27_of_27": true,
+      "stress_cases": 154,
+      "tails_60s": 60,
+      "instrumentation_bit_exact_all": true,
+      "stress_all_stable": true,
+      "compound_60s_cases": 4,
+      "compound_pass": true,
+      "global_output_peak": 0.9900000095367432,
+      "internal_stage_peak_max": [
+        0.5477206707000732,
+        1.1530481576919556,
+        0.7432786226272583,
+        0.5554344654083252,
+        1.3279314041137695,
+        0.7735560536384583,
+        1.1530481576919556,
+        1.3279314041137695
+      ],
+      "active_input_overload_cases": {
+        "44100_clean_guitar_fb100_single": {
+          "limiter_ceiling_samples": 38,
+          "tail_ceiling_samples": 0,
+          "reference_C0_ceiling_samples": 24,
+          "overload_qualification": "active-input monitor overload also present in C0; tail unclipped and internal decay checked"
+        },
+        "48000_clean_guitar_fb100_single": {
+          "limiter_ceiling_samples": 17,
+          "tail_ceiling_samples": 0,
+          "reference_C0_ceiling_samples": 2,
+          "overload_qualification": "active-input monitor overload also present in C0; tail unclipped and internal decay checked"
+        }
+      },
+      "tail_ceiling_samples_total": 0
+    }
+  },
+  "c0_bit_exact": {
+    "01_clean_guitar_fb45": {
+      "input_sha256": "004b0895571ad38a293c4634ec398d7ad2737c686d358bef6db90ca19bc769d3",
+      "output_f32_sha256": "ff8f3692862f7b6844e66b226f5909dddf586f317cbc27a035a2e7ce630ee990",
+      "input_exact": true,
+      "output_exact": true,
+      "readback_exact": true,
+      "same_toolchain_frozen_F1_bit_exact": true
+    },
+    "02_driven_guitar_fb55": {
+      "input_sha256": "b84490e10e9aa0d3a7993546db7c7deed41954256e0ee55bfc33ab9fa4220f89",
+      "output_f32_sha256": "83c695bfdf5364bc5c93343ab631139e188b088c88912044852151725e9124d0",
+      "input_exact": true,
+      "output_exact": true,
+      "readback_exact": true,
+      "same_toolchain_frozen_F1_bit_exact": true
+    },
+    "03_mono_synth_fb65": {
+      "input_sha256": "d2973a4b2469ea7ebac69b400018abb4f8fc6fc2109f2008ac9c2886ab570ab5",
+      "output_f32_sha256": "47f84838cf4080c4e2dea04b585164f88bcdec1bc9b5da2e98ddd42912867483",
+      "input_exact": true,
+      "output_exact": true,
+      "readback_exact": true,
+      "same_toolchain_frozen_F1_bit_exact": true
+    },
+    "04_poly_synth_fb60_multihead": {
+      "input_sha256": "1f24654fccfc90281b76dcb2894bd549d191792ea09d0d0fa5070609392045be",
+      "output_f32_sha256": "067f00abcf7f993ca60b24b2ce8802497e825d5420b7f8cf5d32c820db5d3ec0",
+      "input_exact": true,
+      "output_exact": true,
+      "readback_exact": true,
+      "same_toolchain_frozen_F1_bit_exact": true
+    },
+    "05_drum_machine_fb55_pingpong": {
+      "input_sha256": "db6f1d00cdb29d1f6208bdd5d8caa8c29bcf8b1c1cfffb8ca5d732ed54b96e95",
+      "output_f32_sha256": "2d1efdb53283a7b1d367bbb2f4be3e56f76baf16eac726e1874bee3881a62768",
+      "input_exact": true,
+      "output_exact": true,
+      "readback_exact": true,
+      "same_toolchain_frozen_F1_bit_exact": true
+    },
+    "06_irregular_perc_fb75": {
+      "input_sha256": "cd8c3fb02cf1680ebea7b5529effba7cfd272fff4f67a0af6919ba1337e04466",
+      "output_f32_sha256": "73613526e515bb9f3aba5c837363931aef62445aa54281857631e504dcd436d7",
+      "input_exact": true,
+      "output_exact": true,
+      "readback_exact": true,
+      "same_toolchain_frozen_F1_bit_exact": true
+    },
+    "07_impulse_tail_fb45_moderate": {
+      "input_sha256": "73e157c29edbf9f4007b7b71b90e2f2d653a1de589a14d7a565cf3382479695a",
+      "output_f32_sha256": "69a54088b4b54c30cb7ef99cf05a33bd33832e9c7f4f71b3f203ba6297e45bbd",
+      "input_exact": true,
+      "output_exact": true,
+      "readback_exact": true,
+      "same_toolchain_frozen_F1_bit_exact": true
+    },
+    "08_impulse_tail_fb80_high": {
+      "input_sha256": "fc02e71a1e76d9326a90db1072557e6547c54e0f1bfca475483e8ac79ce8eecc",
+      "output_f32_sha256": "d82a0da8a87ae386f5753361022e966cc081976fac8268cb4e32bd8c8c399927",
+      "input_exact": true,
+      "output_exact": true,
+      "readback_exact": true,
+      "same_toolchain_frozen_F1_bit_exact": true
+    },
+    "09_impulse_tail_fb92_60s_near_selfosc": {
+      "input_sha256": "d320cb86d4075662df09a59bbff1ddf429f35ce89e48a03cbd509ceefb4809d0",
+      "output_f32_sha256": "88758ae585c180c13b78f0cba1f4ea54c2693d8d1e73fe73ac210d4ce86c3a80",
+      "input_exact": true,
+      "output_exact": true,
+      "readback_exact": true,
+      "same_toolchain_frozen_F1_bit_exact": true
+    },
+    "10_silence_hiss_floor": {
+      "input_sha256": "5f1e1c00de358de600c509ce668af3223c194fa2725c5274b57323882156f1ab",
+      "output_f32_sha256": "7f3c89c6567828bccd093f9d289288288a4e2a6042c85e91c96f28e8e1d7821b",
+      "input_exact": true,
+      "output_exact": true,
+      "readback_exact": true,
+      "same_toolchain_frozen_F1_bit_exact": true
+    }
+  },
+  "wrap_reference": {
+    "same_toolchain_frozen_F1_response_exact": true,
+    "reference_stdout": "channel=0 energy=2.4174529244191945e-05\nchannel=1 energy=6.1086025198164862e-06\nresponse_fnv1a64=9add861dd5ec3c1\nPASS exact full/split, finite non-silent channels\n"
+  },
+  "production_A": {
+    "01_clean_guitar_fb45": {
+      "bit_exact": true,
+      "output_sha256": "b0e920a2cd8b485cebce89f983a504b983e964a392b78cfcbe3609757668547e",
+      "input_sha256": "004b0895571ad38a293c4634ec398d7ad2737c686d358bef6db90ca19bc769d3"
+    },
+    "02_driven_guitar_fb55": {
+      "bit_exact": true,
+      "output_sha256": "e364759ca2d797aa68ac98067074ed16c9a5972570c2198d5edcd10d51d20caa",
+      "input_sha256": "b84490e10e9aa0d3a7993546db7c7deed41954256e0ee55bfc33ab9fa4220f89"
+    },
+    "03_mono_synth_fb65": {
+      "bit_exact": true,
+      "output_sha256": "6f21d0844141642a1bdfd5213f383733d87c220d56b244c5cf7a089e741ca293",
+      "input_sha256": "d2973a4b2469ea7ebac69b400018abb4f8fc6fc2109f2008ac9c2886ab570ab5"
+    },
+    "04_poly_synth_fb60_multihead": {
+      "bit_exact": true,
+      "output_sha256": "0a0bf001a9b232ff7037a77e992d78d52dd6560ad10c74d068965b3522b34dcf",
+      "input_sha256": "1f24654fccfc90281b76dcb2894bd549d191792ea09d0d0fa5070609392045be"
+    },
+    "05_drum_machine_fb55_pingpong": {
+      "bit_exact": true,
+      "output_sha256": "e3cee95c9bc4203c058d8ccdfe976eda01fed80e86d0f47f1fddb182e3e76108",
+      "input_sha256": "db6f1d00cdb29d1f6208bdd5d8caa8c29bcf8b1c1cfffb8ca5d732ed54b96e95"
+    },
+    "06_irregular_perc_fb75": {
+      "bit_exact": true,
+      "output_sha256": "4ef2a2de891c2602e0c58bc70ccfe77ecc105a546d82380b8f8b5812b6785eb1",
+      "input_sha256": "cd8c3fb02cf1680ebea7b5529effba7cfd272fff4f67a0af6919ba1337e04466"
+    },
+    "07_impulse_tail_fb45_moderate": {
+      "bit_exact": true,
+      "output_sha256": "8b3f2f81a0816791fcb3ee6c5465d78b699cbf7b64ef6c82cd7def9a1d0af973",
+      "input_sha256": "73e157c29edbf9f4007b7b71b90e2f2d653a1de589a14d7a565cf3382479695a"
+    },
+    "08_impulse_tail_fb80_high": {
+      "bit_exact": true,
+      "output_sha256": "260633ef30d0c20cb66ef03b6733d2ebf0ba5576a276cf7192411a231c9364c6",
+      "input_sha256": "fc02e71a1e76d9326a90db1072557e6547c54e0f1bfca475483e8ac79ce8eecc"
+    },
+    "09_impulse_tail_fb92_60s_near_selfosc": {
+      "bit_exact": true,
+      "output_sha256": "e95a8bbb46d4c1a981a117d2ebce98fe6bfbbb678f454f3a98c646afea51057e",
+      "input_sha256": "d320cb86d4075662df09a59bbff1ddf429f35ce89e48a03cbd509ceefb4809d0"
+    },
+    "10_silence_hiss_floor": {
+      "bit_exact": true,
+      "output_sha256": "8d84d43fa7212dda94281793e98b7c7998fc1c8ece38efb740fcaa4aa221247f",
+      "input_sha256": "5f1e1c00de358de600c509ce668af3223c194fa2725c5274b57323882156f1ab"
+    }
+  },
+  "warp": {
+    "all_variants_bit_exact": true,
+    "parameters": [
+      0,
+      0,
+      0,
+      25,
+      0,
+      50,
+      50,
+      50,
+      0,
+      6,
+      0.8,
+      1,
+      500,
+      85,
+      100,
+      100,
+      4,
+      120,
+      0,
+      0,
+      50,
+      0,
+      0,
+      0,
+      0,
+      0,
+      60,
+      45,
+      50,
+      0,
+      1,
+      1,
+      80,
+      0.5,
+      85,
+      0,
+      0,
+      0
+    ],
+    "output_sha256": "929b568b42fdf4a34124dc03e7303bac61125b0e995cf8a2daf2fec918d4655a"
+  },
+  "object_sizes": {
+    "0": {
+      "object_bytes": 103943,
+      "size": "   text\t   data\t    bss\t    dec\t    hex\tfilename\n  84096\t      0\t      0\t  84096\t  14880\tC:\\Users\\devx\\Documents\\PlatformIO\\Projects\\hydra-f2\\build\\f2-0-native\\CMakeFiles\\hydra_dsp_core.dir\\dsp\\core\\tape_core.cpp.obj\n",
+      "process_and_update_symbols": [
+        "0000000000011e40 00000000000001a0 T _ZN5hydra3dsp8TapeCore18processStereoBlockEPKfS3_PfS4_j",
+        "0000000000000910 00000000000014a0 T _ZN5hydra3dsp8TapeCore4Impl13updateFiltersEv",
+        "0000000000009f10 0000000000007e30 t _ZN5hydra3dsp8TapeCore18processStereoBlockEPKfS3_PfS4_j.part.0.isra.0"
+      ]
+    },
+    "1": {
+      "object_bytes": 103985,
+      "size": "   text\t   data\t    bss\t    dec\t    hex\tfilename\n  84128\t      0\t      0\t  84128\t  148a0\tC:\\Users\\devx\\Documents\\PlatformIO\\Projects\\hydra-f2\\build\\f2-1-native\\CMakeFiles\\hydra_dsp_core.dir\\dsp\\core\\tape_core.cpp.obj\n",
+      "process_and_update_symbols": [
+        "0000000000011e60 00000000000001a0 T _ZN5hydra3dsp8TapeCore18processStereoBlockEPKfS3_PfS4_j",
+        "0000000000000910 00000000000014c0 T _ZN5hydra3dsp8TapeCore4Impl13updateFiltersEv",
+        "0000000000009f30 0000000000007e30 t _ZN5hydra3dsp8TapeCore18processStereoBlockEPKfS3_PfS4_j.part.0.isra.0"
+      ]
+    },
+    "2": {
+      "object_bytes": 104027,
+      "size": "   text\t   data\t    bss\t    dec\t    hex\tfilename\n  84160\t      0\t      0\t  84160\t  148c0\tC:\\Users\\devx\\Documents\\PlatformIO\\Projects\\hydra-f2\\build\\f2-2-native\\CMakeFiles\\hydra_dsp_core.dir\\dsp\\core\\tape_core.cpp.obj\n",
+      "process_and_update_symbols": [
+        "0000000000011e60 00000000000001a0 T _ZN5hydra3dsp8TapeCore18processStereoBlockEPKfS3_PfS4_j",
+        "0000000000000910 00000000000014c0 T _ZN5hydra3dsp8TapeCore4Impl13updateFiltersEv",
+        "0000000000009f30 0000000000007e30 t _ZN5hydra3dsp8TapeCore18processStereoBlockEPKfS3_PfS4_j.part.0.isra.0"
+      ]
+    }
+  }
+}

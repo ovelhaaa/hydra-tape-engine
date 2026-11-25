@@ -1,0 +1,87 @@
+name: F2 feedback calibration and blind listening
+on:
+  workflow_dispatch:
+  push:
+    branches: [experiment/dsp-reform-f2-feedback-calibration]
+    paths-ignore:
+      - 'docs/evidence/dsp-reform-f2/*.md'
+      - 'docs/evidence/dsp-reform-f2/*summary.json'
+      - 'docs/evidence/dsp-reform-f2/render-manifest.json'
+      - 'docs/evidence/dsp-reform-f2/calibration-search.json'
+      - 'docs/evidence/dsp-reform-f2/ci-artifact.json'
+permissions:
+  contents: read
+jobs:
+  calibration:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.14'
+      - run: pip install numpy==2.4.1 scipy==1.17.0
+      - uses: mymindstorm/setup-emsdk@v14
+        with:
+          version: '3.1.62'
+      - name: Build all candidates (explicit flags on every DSP target)
+        id: builds
+        run: |
+          for v in 0 1 2; do
+            flags="-DHYDRA_PHASE72_CLASSIC_FEEDBACK_ROUTING=1 -DHYDRA_DSP_REFORM_F2_VARIANT=$v"
+            cmake -S . -B build/f2-$v-native -DCMAKE_BUILD_TYPE=Release -DCMAKE_EXPORT_COMPILE_COMMANDS=ON "-DCMAKE_CXX_FLAGS=$flags"
+            cmake --build build/f2-$v-native -j 2
+            emcmake cmake -S . -B build/f2-$v-wasm -DBUILD_WEB=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_EXPORT_COMPILE_COMMANDS=ON "-DCMAKE_CXX_FLAGS=$flags"
+            cmake --build build/f2-$v-wasm -j 2
+          done
+      - name: Prepare unchanged F1 sources and verify C0 against frozen F1 source
+        run: |
+          python docs/evidence/dsp-reform-f1/prepare_audition.py --output artifacts/dsp-reform-f2/inputs
+          python docs/evidence/dsp-reform-f2/run.py baseline
+      - name: Qualify all candidates; fail on unexpected CTest or any measured instability
+        run: |
+          status=0
+          for v in 0 1 2; do
+            python docs/evidence/dsp-reform-f2/run.py variant --variant $v || status=1
+            python scripts/phase64_validate_engine.py --library "$PWD/build/f2-$v-native/libhydra_abi_test_library.so" --output artifacts/dsp-reform-f2/variant$v/engine || status=1
+          done
+          python docs/evidence/dsp-reform-f2/compound.py || status=1
+          exit $status
+      - name: Assemble and verify blind RAW/MATCHED audio
+        if: ${{ !cancelled() && steps.builds.outcome == 'success' }}
+        run: |
+          for v in 0 1 2; do
+            python docs/evidence/dsp-reform-f2/run.py render --variant $v
+          done
+          python docs/evidence/dsp-reform-f2/run.py package
+          node --test tools/listening-lab/lab.test.mjs
+          python docs/evidence/dsp-reform-f2/compatibility.py
+          python docs/evidence/dsp-reform-f2/benchmark.py
+      - name: Record effective build commands and compiler versions
+        if: always()
+        run: |
+          mkdir -p artifacts/dsp-reform-f2/build-provenance
+          for v in 0 1 2; do
+            cp build/f2-$v-native/compile_commands.json artifacts/dsp-reform-f2/build-provenance/native-$v.json
+            cp build/f2-$v-wasm/compile_commands.json artifacts/dsp-reform-f2/build-provenance/wasm-$v.json
+          done
+          g++ --version > artifacts/dsp-reform-f2/build-provenance/compiler.txt
+          emcc --version >> artifacts/dsp-reform-f2/build-provenance/compiler.txt
+          git rev-parse HEAD > artifacts/dsp-reform-f2/build-provenance/commit.txt
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: hydra-dsp-reform-f2-feedback-listening
+          path: |
+            artifacts/dsp-reform-f2/listening/
+            artifacts/dsp-reform-f2/*.json
+            artifacts/dsp-reform-f2/variant*/*.json
+            artifacts/dsp-reform-f2/variant*/*.log
+            artifacts/dsp-reform-f2/variant*/contracts-*/*
+            artifacts/dsp-reform-f2/variant*/engine/*.json
+            artifacts/dsp-reform-f2/compatibility/*.json
+            artifacts/dsp-reform-f2/build-provenance/
+            docs/evidence/dsp-reform-f2/
+          retention-days: 30

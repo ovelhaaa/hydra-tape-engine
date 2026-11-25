@@ -1,0 +1,821 @@
+{
+  "blind_manifest": {
+    "seed": 20261123,
+    "method": "MATCHED: stereo RMS in common 0..6s window, one constant gain/file relative to C0; common headroom trim <=.98; no limiter. RAW untouched. All stimuli synthetic.",
+    "scenes": [
+      {
+        "scene": "scene01",
+        "source": "clean_guitar",
+        "mode": "single",
+        "feedback": 50,
+        "sample_rate": 44100,
+        "synthetic": true,
+        "tier": "main_16s",
+        "slots": [
+          {
+            "code": "X",
+            "files": {
+              "RAW": {
+                "path": "scene01-X-RAW.wav",
+                "sha256": "41acc0f10a69f0d79e502b62ee1a0bddf94e208bc47ae1ffc4eb2652ce1ee350"
+              },
+              "MATCHED": {
+                "path": "scene01-X-MATCHED.wav",
+                "sha256": "007e1d2bf112bf4ccecd9b01ede36e0f292a820af217afcd328c0096760bce2c"
+              }
+            }
+          },
+          {
+            "code": "Y",
+            "files": {
+              "RAW": {
+                "path": "scene01-Y-RAW.wav",
+                "sha256": "7d006419c09bc6104304f290a07d5567520983d01d658544614203a8f87cd800"
+              },
+              "MATCHED": {
+                "path": "scene01-Y-MATCHED.wav",
+                "sha256": "4d5df83330b212107c52ab68a1d5192c04bb3c899b73273ba069e1f8bdbbe079"
+              }
+            }
+          },
+          {
+            "code": "Z",
+            "files": {
+              "RAW": {
+                "path": "scene01-Z-RAW.wav",
+                "sha256": "9d7ccba90782ce33b3f67fcc46a3c17d86bde2ca7305e95cff5d95bb9253c4c6"
+              },
+              "MATCHED": {
+                "path": "scene01-Z-MATCHED.wav",
+                "sha256": "9d7ccba90782ce33b3f67fcc46a3c17d86bde2ca7305e95cff5d95bb9253c4c6"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "scene": "scene02",
+        "source": "driven_guitar",
+        "mode": "multihead",
+        "feedback": 50,
+        "sample_rate": 44100,
+        "synthetic": true,
+        "tier": "main_16s",
+        "slots": [
+          {
+            "code": "X",
+            "files": {
+              "RAW": {
+                "path": "scene02-X-RAW.wav",
+                "sha256": "b704924a069a32c51ab96ea4a0b0a8c1897d19643bf24f1b1e5bf2243d71f7b1"
+              },
+              "MATCHED": {
+                "path": "scene02-X-MATCHED.wav",
+                "sha256": "635b20f7cab27182b198f89e78f6f27248995fccff191173c87709b514075b63"
+              }
+            }
+          },
+          {
+            "code": "Y",
+            "files": {
+              "RAW": {
+                "path": "scene02-Y-RAW.wav",
+                "sha256": "2df3bb303986a596952a004fdd920705c5e0803891cac86360e833be97ec6be7"
+              },
+              "MATCHED": {
+                "path": "scene02-Y-MATCHED.wav",
+                "sha256": "86173f6ae4391c6e9e20464ea8ee5f3983feeac2072c2ef72ca8c60b0208a0a9"
+              }
+            }
+          },
+          {
+            "code": "Z",
+            "files": {
+              "RAW": {
+                "path": "scene02-Z-RAW.wav",
+                "sha256": "7e8d3b9c39a6365d154e1077e360678df4d1d84f835b4583cb6240cfced74efd"
+              },
+              "MATCHED": {
+                "path": "scene02-Z-MATCHED.wav",
+                "sha256": "8cfe599e23f917dd37fc255de4b06d0e222cf79442f6f55e28210a48eca4bc50"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "scene": "scene03",
+        "source": "mono_synth",
+        "mode": "reverse",
+        "feedback": 50,
+        "sample_rate": 44100,
+        "synthetic": true,
+        "tier": "main_16s",
+        "slots": [
+          {
+            "code": "X",
+            "files": {
+              "RAW": {
+                "path": "scene03-X-RAW.wav",
+                "sha256": "85069195cd2b9c6b065ce6d3663c3e1bd7f83fe927835c17abbd7b6f33d8fc6e"
+              },
+              "MATCHED": {
+                "path": "scene03-X-MATCHED.wav",
+                "sha256": "86434c054eb360900b34750a8497559b4e3220acf259ea223cb5ea6d348a3625"
+              }
+            }
+          },
+          {
+            "code": "Y",
+            "files": {
+              "RAW": {
+                "path": "scene03-Y-RAW.wav",
+                "sha256": "12059de66759ac84a9f63f2863696d035acd10ff823eb14fc13096d3e9c2b213"
+              },
+              "MATCHED": {
+                "path": "scene03-Y-MATCHED.wav",
+                "sha256": "12059de66759ac84a9f63f2863696d035acd10ff823eb14fc13096d3e9c2b213"
+              }
+            }
+          },
+          {
+            "code": "Z",
+            "files": {
+              "RAW": {
+                "path": "scene03-Z-RAW.wav",
+                "sha256": "f5b1c68c2d2ef7eae89aa54197588a610c889097a949e10222e41f73849767e0"
+              },
+              "MATCHED": {
+                "path": "scene03-Z-MATCHED.wav",
+                "sha256": "58a2739b956bc72efdaa481f1cfbbe0827b3268ded525fc8a571dc63d8a41846"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "scene": "scene04",
+        "source": "poly_synth",
+        "mode": "pingpong",
+        "feedback": 50,
+        "sample_rate": 44100,
+        "synthetic": true,
+        "tier": "main_16s",
+        "slots": [
+          {
+            "code": "X",
+            "files": {
+              "RAW": {
+                "path": "scene04-X-RAW.wav",
+                "sha256": "1d928136560c0b2b2adccd96cd22bdca23ca8a84b6cb309223388369a162fc31"
+              },
+              "MATCHED": {
+                "path": "scene04-X-MATCHED.wav",
+                "sha256": "651d07a36a4b493e8bb2393c0e9e49e231422c237b9c15f2910faa91addc9c42"
+              }
+            }
+          },
+          {
+            "code": "Y",
+            "files": {
+              "RAW": {
+                "path": "scene04-Y-RAW.wav",
+                "sha256": "60ee420b64aa63c72c4aafecd5ca658fbca2df11da1cca1e5caff5e934bc5791"
+              },
+              "MATCHED": {
+                "path": "scene04-Y-MATCHED.wav",
+                "sha256": "60ee420b64aa63c72c4aafecd5ca658fbca2df11da1cca1e5caff5e934bc5791"
+              }
+            }
+          },
+          {
+            "code": "Z",
+            "files": {
+              "RAW": {
+                "path": "scene04-Z-RAW.wav",
+                "sha256": "b526921335682efb6d562a673cd6479ad0a594976fc1c33f43ead270e5f59d27"
+              },
+              "MATCHED": {
+                "path": "scene04-Z-MATCHED.wav",
+                "sha256": "cf72ba3aa6c7ea71c973ca39cf1353ed44a64452de4e5a0613742008c27f391b"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "scene": "scene05",
+        "source": "drum_machine",
+        "mode": "single",
+        "feedback": 75,
+        "sample_rate": 44100,
+        "synthetic": true,
+        "tier": "main_16s",
+        "slots": [
+          {
+            "code": "X",
+            "files": {
+              "RAW": {
+                "path": "scene05-X-RAW.wav",
+                "sha256": "7c49bfda4149bab59fb4c6b7092d92653d70158a44fe73fdec56361a21522160"
+              },
+              "MATCHED": {
+                "path": "scene05-X-MATCHED.wav",
+                "sha256": "c62665be30ae0ec52ae273b461d98c732c14084eb095144189afc2eda73d54f8"
+              }
+            }
+          },
+          {
+            "code": "Y",
+            "files": {
+              "RAW": {
+                "path": "scene05-Y-RAW.wav",
+                "sha256": "f06cf9de0c8ff3de9a587d4ba9905fad0f2fdda90d223ae012429d25f27fe37a"
+              },
+              "MATCHED": {
+                "path": "scene05-Y-MATCHED.wav",
+                "sha256": "5a438403ce08400ef04689da3f40daf8be0b33e9115524d3e2cbd9e66bfe4c67"
+              }
+            }
+          },
+          {
+            "code": "Z",
+            "files": {
+              "RAW": {
+                "path": "scene05-Z-RAW.wav",
+                "sha256": "ee55903cf79c71a646c29ccfecbc576ae400eaae34a7ba90e3bb51a246b9f9b8"
+              },
+              "MATCHED": {
+                "path": "scene05-Z-MATCHED.wav",
+                "sha256": "ee55903cf79c71a646c29ccfecbc576ae400eaae34a7ba90e3bb51a246b9f9b8"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "scene": "scene06",
+        "source": "irregular_percussion",
+        "mode": "multihead",
+        "feedback": 75,
+        "sample_rate": 44100,
+        "synthetic": true,
+        "tier": "main_16s",
+        "slots": [
+          {
+            "code": "X",
+            "files": {
+              "RAW": {
+                "path": "scene06-X-RAW.wav",
+                "sha256": "8574d548c5092d975807d0a19892eee52a5ae02ea4624a63d0e529b2a9172c9f"
+              },
+              "MATCHED": {
+                "path": "scene06-X-MATCHED.wav",
+                "sha256": "4b46086b870667865b264f771017f722a86ea3f64794bc07ef68667804c1ad40"
+              }
+            }
+          },
+          {
+            "code": "Y",
+            "files": {
+              "RAW": {
+                "path": "scene06-Y-RAW.wav",
+                "sha256": "88c5ecd8a4b7029327e8eb625793f1d4896d2788691b7166842f8f79d0b4fec7"
+              },
+              "MATCHED": {
+                "path": "scene06-Y-MATCHED.wav",
+                "sha256": "88c5ecd8a4b7029327e8eb625793f1d4896d2788691b7166842f8f79d0b4fec7"
+              }
+            }
+          },
+          {
+            "code": "Z",
+            "files": {
+              "RAW": {
+                "path": "scene06-Z-RAW.wav",
+                "sha256": "0a927f68602f49eede81c36cccab0b3392990e0f66589dabd8e02b3d38e0ef52"
+              },
+              "MATCHED": {
+                "path": "scene06-Z-MATCHED.wav",
+                "sha256": "05629d586fa0ef96fdd1f05dc8b3c7822282d8bee54d57f69a3df215c68c13f5"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "scene": "scene07",
+        "source": "clean_guitar",
+        "mode": "reverse",
+        "feedback": 75,
+        "sample_rate": 44100,
+        "synthetic": true,
+        "tier": "main_16s",
+        "slots": [
+          {
+            "code": "X",
+            "files": {
+              "RAW": {
+                "path": "scene07-X-RAW.wav",
+                "sha256": "dec0458d809975f659fb2c20e5be781b5e32a9bf3af6d473e5b1da6c38c04f96"
+              },
+              "MATCHED": {
+                "path": "scene07-X-MATCHED.wav",
+                "sha256": "f74eb79a69388e39023eb9bea85780094e1e2fdfc026f67e7cf81d347c036313"
+              }
+            }
+          },
+          {
+            "code": "Y",
+            "files": {
+              "RAW": {
+                "path": "scene07-Y-RAW.wav",
+                "sha256": "4eaa862a58117f3e152de0a04af86486ac516bd4a224254019656cece4fe2754"
+              },
+              "MATCHED": {
+                "path": "scene07-Y-MATCHED.wav",
+                "sha256": "64bd46780d8cdd69288e969441202da616326a2f6b374b7bbb0f1258c5b7c830"
+              }
+            }
+          },
+          {
+            "code": "Z",
+            "files": {
+              "RAW": {
+                "path": "scene07-Z-RAW.wav",
+                "sha256": "643455628d5274a52f38e98536a99e4416a03cacc6d2954cc8162621cd38ab1c"
+              },
+              "MATCHED": {
+                "path": "scene07-Z-MATCHED.wav",
+                "sha256": "643455628d5274a52f38e98536a99e4416a03cacc6d2954cc8162621cd38ab1c"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "scene": "scene08",
+        "source": "low_mono_synth",
+        "mode": "pingpong",
+        "feedback": 75,
+        "sample_rate": 44100,
+        "synthetic": true,
+        "tier": "main_16s",
+        "slots": [
+          {
+            "code": "X",
+            "files": {
+              "RAW": {
+                "path": "scene08-X-RAW.wav",
+                "sha256": "9bb150823cab7bedb9fc6810ed0720108c66543aba99d9669611081fb007ce1e"
+              },
+              "MATCHED": {
+                "path": "scene08-X-MATCHED.wav",
+                "sha256": "9bb150823cab7bedb9fc6810ed0720108c66543aba99d9669611081fb007ce1e"
+              }
+            }
+          },
+          {
+            "code": "Y",
+            "files": {
+              "RAW": {
+                "path": "scene08-Y-RAW.wav",
+                "sha256": "062b3de082fb841aa321b0864f27988ea8451a56fa2f073f75666d7325d49ee7"
+              },
+              "MATCHED": {
+                "path": "scene08-Y-MATCHED.wav",
+                "sha256": "3b9fbf2ef80505e9b5f86390e4c5b09402631df4b771a7f8a362d8c7d38ec97d"
+              }
+            }
+          },
+          {
+            "code": "Z",
+            "files": {
+              "RAW": {
+                "path": "scene08-Z-RAW.wav",
+                "sha256": "a280256218c1d2b4d3f70d3938c7b3b5afa1361d17f8b75e7c9be0b33751fabf"
+              },
+              "MATCHED": {
+                "path": "scene08-Z-MATCHED.wav",
+                "sha256": "e98f02008990ee6122f668e36257a974424c59d67bffe4a4d1cccf7ba22ab516"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "scene": "scene09",
+        "source": "electric_bass_proxy",
+        "mode": "single",
+        "feedback": 85,
+        "sample_rate": 44100,
+        "synthetic": true,
+        "tier": "main_16s",
+        "slots": [
+          {
+            "code": "X",
+            "files": {
+              "RAW": {
+                "path": "scene09-X-RAW.wav",
+                "sha256": "1094ef41c22043469ecfe0c92cabd5c91c61bdb9d55857d1e15e63dd45a89c58"
+              },
+              "MATCHED": {
+                "path": "scene09-X-MATCHED.wav",
+                "sha256": "1094ef41c22043469ecfe0c92cabd5c91c61bdb9d55857d1e15e63dd45a89c58"
+              }
+            }
+          },
+          {
+            "code": "Y",
+            "files": {
+              "RAW": {
+                "path": "scene09-Y-RAW.wav",
+                "sha256": "ca95900b523071bf49b7c4059ccf7328ce414665a98eefcd7e43bfb5aa4295bc"
+              },
+              "MATCHED": {
+                "path": "scene09-Y-MATCHED.wav",
+                "sha256": "3e6400ea3628c8061848448d8dc33d1832e4555c4b7e112e3f654a3aba329b77"
+              }
+            }
+          },
+          {
+            "code": "Z",
+            "files": {
+              "RAW": {
+                "path": "scene09-Z-RAW.wav",
+                "sha256": "45d2964dd4cb4e55e540d9dea2b956e3d167c19d712223bcb0ce66361864db73"
+              },
+              "MATCHED": {
+                "path": "scene09-Z-MATCHED.wav",
+                "sha256": "98112d40976225dbef824c85d7078af47adc4090a6642f426b461c37340f6f95"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "scene": "scene10",
+        "source": "driven_guitar",
+        "mode": "multihead",
+        "feedback": 85,
+        "sample_rate": 44100,
+        "synthetic": true,
+        "tier": "main_16s",
+        "slots": [
+          {
+            "code": "X",
+            "files": {
+              "RAW": {
+                "path": "scene10-X-RAW.wav",
+                "sha256": "1c0b5ceca2a0f7d31b01ff4f11a63a8735917660359916d8512b27a75bf16745"
+              },
+              "MATCHED": {
+                "path": "scene10-X-MATCHED.wav",
+                "sha256": "4617f21ed6b22fdfced311cb730895f9e0ffdce5bc0c9e307d90ecf6d2181ba3"
+              }
+            }
+          },
+          {
+            "code": "Y",
+            "files": {
+              "RAW": {
+                "path": "scene10-Y-RAW.wav",
+                "sha256": "a6f3d80766cdeaaff6662d19c761b5aa286ade5ef1ebb00dd11fbe23ea584074"
+              },
+              "MATCHED": {
+                "path": "scene10-Y-MATCHED.wav",
+                "sha256": "65c4bed477d709a8c99389e38d85f4faa22cb51f40064f0371159c158e1ccddd"
+              }
+            }
+          },
+          {
+            "code": "Z",
+            "files": {
+              "RAW": {
+                "path": "scene10-Z-RAW.wav",
+                "sha256": "9145a6aa40a25a928b60f4c13cc2564fc2664db77011f5ec9253213fda59042f"
+              },
+              "MATCHED": {
+                "path": "scene10-Z-MATCHED.wav",
+                "sha256": "0794e6a3b0d4f00ca62a1b3c864512ed3e5583e1addf584c71c3c9992715cd96"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "scene": "scene11",
+        "source": "mono_synth",
+        "mode": "reverse",
+        "feedback": 85,
+        "sample_rate": 44100,
+        "synthetic": true,
+        "tier": "main_16s",
+        "slots": [
+          {
+            "code": "X",
+            "files": {
+              "RAW": {
+                "path": "scene11-X-RAW.wav",
+                "sha256": "237afab6cda48a84a407d446f013026a8f6936f3823617bd9399bdbcf8fd7b87"
+              },
+              "MATCHED": {
+                "path": "scene11-X-MATCHED.wav",
+                "sha256": "9bfda6fcf8a4f83a97fd160a9d7adbcfb14a4c682c5dec0333968f4e33de2ab3"
+              }
+            }
+          },
+          {
+            "code": "Y",
+            "files": {
+              "RAW": {
+                "path": "scene11-Y-RAW.wav",
+                "sha256": "39e1bb0824ede8eaa333f7124c570f8d0cc1f3ea19f8c889bf63f2faa9772453"
+              },
+              "MATCHED": {
+                "path": "scene11-Y-MATCHED.wav",
+                "sha256": "27c8d2624d5895a9070c8aea1d6acb9488c2da359a743e449c7c57d1e2c35089"
+              }
+            }
+          },
+          {
+            "code": "Z",
+            "files": {
+              "RAW": {
+                "path": "scene11-Z-RAW.wav",
+                "sha256": "0901064eb181eba7f964529befe3e3381997b5e99b0fce1b38961fccf08a075a"
+              },
+              "MATCHED": {
+                "path": "scene11-Z-MATCHED.wav",
+                "sha256": "0901064eb181eba7f964529befe3e3381997b5e99b0fce1b38961fccf08a075a"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "scene": "scene12",
+        "source": "poly_synth",
+        "mode": "pingpong",
+        "feedback": 85,
+        "sample_rate": 44100,
+        "synthetic": true,
+        "tier": "main_16s",
+        "slots": [
+          {
+            "code": "X",
+            "files": {
+              "RAW": {
+                "path": "scene12-X-RAW.wav",
+                "sha256": "679a31e29b69ab6a669692bc1303738ee88bbb5a28c30abcc0a70edbf1ae4467"
+              },
+              "MATCHED": {
+                "path": "scene12-X-MATCHED.wav",
+                "sha256": "9c1d8c5985e1cbc2fdf78a12f5547a8f976f9e6992d7f4249fefff1135d0af25"
+              }
+            }
+          },
+          {
+            "code": "Y",
+            "files": {
+              "RAW": {
+                "path": "scene12-Y-RAW.wav",
+                "sha256": "b2295c390b80ea544f3b40e14fb9303117e2ac34b628da2ac943d75435937be1"
+              },
+              "MATCHED": {
+                "path": "scene12-Y-MATCHED.wav",
+                "sha256": "a05d47fef0a49387105097bed69a82fd6d5ec3fcbaf810a49023a8f8074777c1"
+              }
+            }
+          },
+          {
+            "code": "Z",
+            "files": {
+              "RAW": {
+                "path": "scene12-Z-RAW.wav",
+                "sha256": "999458e0fa374cf61bd0e0629eec434c1facebb8d025a7a419ae78e9772c320c"
+              },
+              "MATCHED": {
+                "path": "scene12-Z-MATCHED.wav",
+                "sha256": "999458e0fa374cf61bd0e0629eec434c1facebb8d025a7a419ae78e9772c320c"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "scene": "scene13",
+        "source": "electric_bass_proxy",
+        "mode": "single",
+        "feedback": 95,
+        "sample_rate": 44100,
+        "synthetic": true,
+        "tier": "stress_60s",
+        "slots": [
+          {
+            "code": "X",
+            "files": {
+              "RAW": {
+                "path": "scene13-X-RAW.wav",
+                "sha256": "fa129908b1708ea415ce04191110aa2e4f5bd01b87d4bfd8c1f59465dbfddfe0"
+              },
+              "MATCHED": {
+                "path": "scene13-X-MATCHED.wav",
+                "sha256": "c9574b7d705118cb790f495e06a2bcef77b9943c13456d65f94ad8079948802b"
+              }
+            }
+          },
+          {
+            "code": "Y",
+            "files": {
+              "RAW": {
+                "path": "scene13-Y-RAW.wav",
+                "sha256": "50475bb3f724082038b8a31da7704768d8e231fb2c6d999612310f860e97715b"
+              },
+              "MATCHED": {
+                "path": "scene13-Y-MATCHED.wav",
+                "sha256": "50475bb3f724082038b8a31da7704768d8e231fb2c6d999612310f860e97715b"
+              }
+            }
+          },
+          {
+            "code": "Z",
+            "files": {
+              "RAW": {
+                "path": "scene13-Z-RAW.wav",
+                "sha256": "c6857080a83e4ec6a483f62e987e8369bf2f3c48cce0ce8c2eb265bcdc0e75e7"
+              },
+              "MATCHED": {
+                "path": "scene13-Z-MATCHED.wav",
+                "sha256": "62aec9d2e0bef96c2ff815c42a76d6b170e4ce678004b13589687cac008ee373"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "scene": "scene14",
+        "source": "low_mono_synth",
+        "mode": "single",
+        "feedback": 100,
+        "sample_rate": 44100,
+        "synthetic": true,
+        "tier": "stress_60s",
+        "slots": [
+          {
+            "code": "X",
+            "files": {
+              "RAW": {
+                "path": "scene14-X-RAW.wav",
+                "sha256": "2864cc062ab555f855fc4a3935899172285dc62683a70a9a81d1339d6b26bb52"
+              },
+              "MATCHED": {
+                "path": "scene14-X-MATCHED.wav",
+                "sha256": "00f853a42264aadded3052b4039064d6a00ae9e4b9f5722502fbc0ed9b5b446c"
+              }
+            }
+          },
+          {
+            "code": "Y",
+            "files": {
+              "RAW": {
+                "path": "scene14-Y-RAW.wav",
+                "sha256": "d68fda77a4be7abb1829e239396aaaa009a84cd28661eb8fc7cc679750519df0"
+              },
+              "MATCHED": {
+                "path": "scene14-Y-MATCHED.wav",
+                "sha256": "50ce34104d96ed9e1a72ac0f6e93877d582ff4e7f2c353e9ca58738aa8bd3ac3"
+              }
+            }
+          },
+          {
+            "code": "Z",
+            "files": {
+              "RAW": {
+                "path": "scene14-Z-RAW.wav",
+                "sha256": "5b2ce064d4a749901c679c6fff1a00edda1897cbafa5c491b95eebb2893120a4"
+              },
+              "MATCHED": {
+                "path": "scene14-Z-MATCHED.wav",
+                "sha256": "5b2ce064d4a749901c679c6fff1a00edda1897cbafa5c491b95eebb2893120a4"
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "provenance": {
+      "dsp_source_sha256": "a841ec1fbfca17ec8727316b435054d5e3fab371d993217d41a3cc1d4b68763e",
+      "calibration_header_sha256": "a710f5df9991a1c3016f6d697d8c2015709d379985749d312e7cd9b6e184a79e",
+      "block_size": 128,
+      "rate": 44100,
+      "sample_format": "PCM24 round-to-even, no dither",
+      "compiler": "g++ (MinGW-W64 x86_64-ucrt-posix-seh, built by Brecht Sanders, r2) 14.2.0",
+      "lifecycle": "fresh create_v1_4/prepare/reset; IDs ascending except command29; internal tempo/play/commit; 128 frames; no preroll",
+      "randomization": "Python random.Random(20261123), one fixed X/Y/Z allocation per scene, same in RAW/MATCHED"
+    }
+  },
+  "private_provenance_location": "CI artifact render-provenance.json, outside blind listening folder",
+  "file_integrity": {
+    "answer-key.json": "fd68716eb1ff0c137669699a2b4995721dd05262cad65278c8d281f101ad995c",
+    "index.html": "c62f95b7256969686834cdd9234e68b296ddbe06976d27c9ef79074c2a495d41",
+    "lab/app.mjs": "aff6fbf78eda7c7a693c8b83747c9b33a047fc3c4a3074175df304e86d8d0734",
+    "lab/audio.mjs": "925824e45077803a4731890b299a3f9b9e2be0dea557cad9ae2a762926baeecd",
+    "lab/browser.test.mjs": "6e734a33f8668f9fa321f29e1f7bc31f845e0f5eb57fcd27ed21a7add3cb5dde",
+    "lab/index.html": "829e841c93a3fff0c24eae20ae3baf10a3101ca677544ad58a3d969f20dfdb4a",
+    "lab/inventory.mjs": "88e5991a06d053f20309cee3912ad5d80674eaaa67f2df7546ad6482d9487263",
+    "lab/lab.test.mjs": "f4e2061321dece36aff42402d9b8fcdbb34a183ac8a6cb35f06deaf97aaf1bd2",
+    "lab/provenance/release-gate-tapecore.json": "57d01092b205ed69e6bdc73204bf2364c1f0e050b9e7dbe7c6af7708cf22dc52",
+    "lab/README.md": "03feebacefde1cad5bbb84de59f2d1c6ce4205d3850a6428c7aadb4e4f029d9c",
+    "lab/session.mjs": "06eade839dd7643e23e5ad1bb820a978916b0a10dd1b6d724df77ac32974f5ec",
+    "lab/style.css": "f01f09682e9bd864a61ae46748d058f55b2a7f8c2a48e282620089283efd16a4",
+    "lab/wave.mjs": "794ffe50a63e33ece4a7933c054c62e3711cbd4aba47113bddf5483cdb543fca",
+    "LEIA-ME.md": "10af3896dad5e2ef2523699fc1d7df6f143e86325c6adbaa3815b23b38309e93",
+    "listening.mjs": "37613fca2e5dff3c2731e8c03f5b93e50dc61ef3995a235db06362224289cc49",
+    "manifest.json": "f3c4519fdfb0624c613b64a1547202c98def2416620ffdd11cd464c555062274",
+    "scene01-X-MATCHED.wav": "007e1d2bf112bf4ccecd9b01ede36e0f292a820af217afcd328c0096760bce2c",
+    "scene01-X-RAW.wav": "41acc0f10a69f0d79e502b62ee1a0bddf94e208bc47ae1ffc4eb2652ce1ee350",
+    "scene01-Y-MATCHED.wav": "4d5df83330b212107c52ab68a1d5192c04bb3c899b73273ba069e1f8bdbbe079",
+    "scene01-Y-RAW.wav": "7d006419c09bc6104304f290a07d5567520983d01d658544614203a8f87cd800",
+    "scene01-Z-MATCHED.wav": "9d7ccba90782ce33b3f67fcc46a3c17d86bde2ca7305e95cff5d95bb9253c4c6",
+    "scene01-Z-RAW.wav": "9d7ccba90782ce33b3f67fcc46a3c17d86bde2ca7305e95cff5d95bb9253c4c6",
+    "scene02-X-MATCHED.wav": "635b20f7cab27182b198f89e78f6f27248995fccff191173c87709b514075b63",
+    "scene02-X-RAW.wav": "b704924a069a32c51ab96ea4a0b0a8c1897d19643bf24f1b1e5bf2243d71f7b1",
+    "scene02-Y-MATCHED.wav": "86173f6ae4391c6e9e20464ea8ee5f3983feeac2072c2ef72ca8c60b0208a0a9",
+    "scene02-Y-RAW.wav": "2df3bb303986a596952a004fdd920705c5e0803891cac86360e833be97ec6be7",
+    "scene02-Z-MATCHED.wav": "8cfe599e23f917dd37fc255de4b06d0e222cf79442f6f55e28210a48eca4bc50",
+    "scene02-Z-RAW.wav": "7e8d3b9c39a6365d154e1077e360678df4d1d84f835b4583cb6240cfced74efd",
+    "scene03-X-MATCHED.wav": "86434c054eb360900b34750a8497559b4e3220acf259ea223cb5ea6d348a3625",
+    "scene03-X-RAW.wav": "85069195cd2b9c6b065ce6d3663c3e1bd7f83fe927835c17abbd7b6f33d8fc6e",
+    "scene03-Y-MATCHED.wav": "12059de66759ac84a9f63f2863696d035acd10ff823eb14fc13096d3e9c2b213",
+    "scene03-Y-RAW.wav": "12059de66759ac84a9f63f2863696d035acd10ff823eb14fc13096d3e9c2b213",
+    "scene03-Z-MATCHED.wav": "58a2739b956bc72efdaa481f1cfbbe0827b3268ded525fc8a571dc63d8a41846",
+    "scene03-Z-RAW.wav": "f5b1c68c2d2ef7eae89aa54197588a610c889097a949e10222e41f73849767e0",
+    "scene04-X-MATCHED.wav": "651d07a36a4b493e8bb2393c0e9e49e231422c237b9c15f2910faa91addc9c42",
+    "scene04-X-RAW.wav": "1d928136560c0b2b2adccd96cd22bdca23ca8a84b6cb309223388369a162fc31",
+    "scene04-Y-MATCHED.wav": "60ee420b64aa63c72c4aafecd5ca658fbca2df11da1cca1e5caff5e934bc5791",
+    "scene04-Y-RAW.wav": "60ee420b64aa63c72c4aafecd5ca658fbca2df11da1cca1e5caff5e934bc5791",
+    "scene04-Z-MATCHED.wav": "cf72ba3aa6c7ea71c973ca39cf1353ed44a64452de4e5a0613742008c27f391b",
+    "scene04-Z-RAW.wav": "b526921335682efb6d562a673cd6479ad0a594976fc1c33f43ead270e5f59d27",
+    "scene05-X-MATCHED.wav": "c62665be30ae0ec52ae273b461d98c732c14084eb095144189afc2eda73d54f8",
+    "scene05-X-RAW.wav": "7c49bfda4149bab59fb4c6b7092d92653d70158a44fe73fdec56361a21522160",
+    "scene05-Y-MATCHED.wav": "5a438403ce08400ef04689da3f40daf8be0b33e9115524d3e2cbd9e66bfe4c67",
+    "scene05-Y-RAW.wav": "f06cf9de0c8ff3de9a587d4ba9905fad0f2fdda90d223ae012429d25f27fe37a",
+    "scene05-Z-MATCHED.wav": "ee55903cf79c71a646c29ccfecbc576ae400eaae34a7ba90e3bb51a246b9f9b8",
+    "scene05-Z-RAW.wav": "ee55903cf79c71a646c29ccfecbc576ae400eaae34a7ba90e3bb51a246b9f9b8",
+    "scene06-X-MATCHED.wav": "4b46086b870667865b264f771017f722a86ea3f64794bc07ef68667804c1ad40",
+    "scene06-X-RAW.wav": "8574d548c5092d975807d0a19892eee52a5ae02ea4624a63d0e529b2a9172c9f",
+    "scene06-Y-MATCHED.wav": "88c5ecd8a4b7029327e8eb625793f1d4896d2788691b7166842f8f79d0b4fec7",
+    "scene06-Y-RAW.wav": "88c5ecd8a4b7029327e8eb625793f1d4896d2788691b7166842f8f79d0b4fec7",
+    "scene06-Z-MATCHED.wav": "05629d586fa0ef96fdd1f05dc8b3c7822282d8bee54d57f69a3df215c68c13f5",
+    "scene06-Z-RAW.wav": "0a927f68602f49eede81c36cccab0b3392990e0f66589dabd8e02b3d38e0ef52",
+    "scene07-X-MATCHED.wav": "f74eb79a69388e39023eb9bea85780094e1e2fdfc026f67e7cf81d347c036313",
+    "scene07-X-RAW.wav": "dec0458d809975f659fb2c20e5be781b5e32a9bf3af6d473e5b1da6c38c04f96",
+    "scene07-Y-MATCHED.wav": "64bd46780d8cdd69288e969441202da616326a2f6b374b7bbb0f1258c5b7c830",
+    "scene07-Y-RAW.wav": "4eaa862a58117f3e152de0a04af86486ac516bd4a224254019656cece4fe2754",
+    "scene07-Z-MATCHED.wav": "643455628d5274a52f38e98536a99e4416a03cacc6d2954cc8162621cd38ab1c",
+    "scene07-Z-RAW.wav": "643455628d5274a52f38e98536a99e4416a03cacc6d2954cc8162621cd38ab1c",
+    "scene08-X-MATCHED.wav": "9bb150823cab7bedb9fc6810ed0720108c66543aba99d9669611081fb007ce1e",
+    "scene08-X-RAW.wav": "9bb150823cab7bedb9fc6810ed0720108c66543aba99d9669611081fb007ce1e",
+    "scene08-Y-MATCHED.wav": "3b9fbf2ef80505e9b5f86390e4c5b09402631df4b771a7f8a362d8c7d38ec97d",
+    "scene08-Y-RAW.wav": "062b3de082fb841aa321b0864f27988ea8451a56fa2f073f75666d7325d49ee7",
+    "scene08-Z-MATCHED.wav": "e98f02008990ee6122f668e36257a974424c59d67bffe4a4d1cccf7ba22ab516",
+    "scene08-Z-RAW.wav": "a280256218c1d2b4d3f70d3938c7b3b5afa1361d17f8b75e7c9be0b33751fabf",
+    "scene09-X-MATCHED.wav": "1094ef41c22043469ecfe0c92cabd5c91c61bdb9d55857d1e15e63dd45a89c58",
+    "scene09-X-RAW.wav": "1094ef41c22043469ecfe0c92cabd5c91c61bdb9d55857d1e15e63dd45a89c58",
+    "scene09-Y-MATCHED.wav": "3e6400ea3628c8061848448d8dc33d1832e4555c4b7e112e3f654a3aba329b77",
+    "scene09-Y-RAW.wav": "ca95900b523071bf49b7c4059ccf7328ce414665a98eefcd7e43bfb5aa4295bc",
+    "scene09-Z-MATCHED.wav": "98112d40976225dbef824c85d7078af47adc4090a6642f426b461c37340f6f95",
+    "scene09-Z-RAW.wav": "45d2964dd4cb4e55e540d9dea2b956e3d167c19d712223bcb0ce66361864db73",
+    "scene10-X-MATCHED.wav": "4617f21ed6b22fdfced311cb730895f9e0ffdce5bc0c9e307d90ecf6d2181ba3",
+    "scene10-X-RAW.wav": "1c0b5ceca2a0f7d31b01ff4f11a63a8735917660359916d8512b27a75bf16745",
+    "scene10-Y-MATCHED.wav": "65c4bed477d709a8c99389e38d85f4faa22cb51f40064f0371159c158e1ccddd",
+    "scene10-Y-RAW.wav": "a6f3d80766cdeaaff6662d19c761b5aa286ade5ef1ebb00dd11fbe23ea584074",
+    "scene10-Z-MATCHED.wav": "0794e6a3b0d4f00ca62a1b3c864512ed3e5583e1addf584c71c3c9992715cd96",
+    "scene10-Z-RAW.wav": "9145a6aa40a25a928b60f4c13cc2564fc2664db77011f5ec9253213fda59042f",
+    "scene11-X-MATCHED.wav": "9bfda6fcf8a4f83a97fd160a9d7adbcfb14a4c682c5dec0333968f4e33de2ab3",
+    "scene11-X-RAW.wav": "237afab6cda48a84a407d446f013026a8f6936f3823617bd9399bdbcf8fd7b87",
+    "scene11-Y-MATCHED.wav": "27c8d2624d5895a9070c8aea1d6acb9488c2da359a743e449c7c57d1e2c35089",
+    "scene11-Y-RAW.wav": "39e1bb0824ede8eaa333f7124c570f8d0cc1f3ea19f8c889bf63f2faa9772453",
+    "scene11-Z-MATCHED.wav": "0901064eb181eba7f964529befe3e3381997b5e99b0fce1b38961fccf08a075a",
+    "scene11-Z-RAW.wav": "0901064eb181eba7f964529befe3e3381997b5e99b0fce1b38961fccf08a075a",
+    "scene12-X-MATCHED.wav": "9c1d8c5985e1cbc2fdf78a12f5547a8f976f9e6992d7f4249fefff1135d0af25",
+    "scene12-X-RAW.wav": "679a31e29b69ab6a669692bc1303738ee88bbb5a28c30abcc0a70edbf1ae4467",
+    "scene12-Y-MATCHED.wav": "a05d47fef0a49387105097bed69a82fd6d5ec3fcbaf810a49023a8f8074777c1",
+    "scene12-Y-RAW.wav": "b2295c390b80ea544f3b40e14fb9303117e2ac34b628da2ac943d75435937be1",
+    "scene12-Z-MATCHED.wav": "999458e0fa374cf61bd0e0629eec434c1facebb8d025a7a419ae78e9772c320c",
+    "scene12-Z-RAW.wav": "999458e0fa374cf61bd0e0629eec434c1facebb8d025a7a419ae78e9772c320c",
+    "scene13-X-MATCHED.wav": "c9574b7d705118cb790f495e06a2bcef77b9943c13456d65f94ad8079948802b",
+    "scene13-X-RAW.wav": "fa129908b1708ea415ce04191110aa2e4f5bd01b87d4bfd8c1f59465dbfddfe0",
+    "scene13-Y-MATCHED.wav": "50475bb3f724082038b8a31da7704768d8e231fb2c6d999612310f860e97715b",
+    "scene13-Y-RAW.wav": "50475bb3f724082038b8a31da7704768d8e231fb2c6d999612310f860e97715b",
+    "scene13-Z-MATCHED.wav": "62aec9d2e0bef96c2ff815c42a76d6b170e4ce678004b13589687cac008ee373",
+    "scene13-Z-RAW.wav": "c6857080a83e4ec6a483f62e987e8369bf2f3c48cce0ce8c2eb265bcdc0e75e7",
+    "scene14-X-MATCHED.wav": "00f853a42264aadded3052b4039064d6a00ae9e4b9f5722502fbc0ed9b5b446c",
+    "scene14-X-RAW.wav": "2864cc062ab555f855fc4a3935899172285dc62683a70a9a81d1339d6b26bb52",
+    "scene14-Y-MATCHED.wav": "50ce34104d96ed9e1a72ac0f6e93877d582ff4e7f2c353e9ca58738aa8bd3ac3",
+    "scene14-Y-RAW.wav": "d68fda77a4be7abb1829e239396aaaa009a84cd28661eb8fc7cc679750519df0",
+    "scene14-Z-MATCHED.wav": "5b2ce064d4a749901c679c6fff1a00edda1897cbafa5c491b95eebb2893120a4",
+    "scene14-Z-RAW.wav": "5b2ce064d4a749901c679c6fff1a00edda1897cbafa5c491b95eebb2893120a4"
+  }
+}

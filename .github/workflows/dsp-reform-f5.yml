@@ -1,0 +1,252 @@
+name: F5 musical timing
+
+# Two independent build categories:
+#
+#   production regression  -> original production-A configuration, no
+#                             experimental defines in CMAKE_CXX_FLAGS
+#   F5 qualification       -> F5-A/B/C compiled through explicit, target-level
+#                             CMake definitions, identical for Native and WASM
+#
+# The production suite must never run under Classic C / F2 / F3 / F5 flags,
+# and the experimental variants must never be compared against a differently
+# configured binary. See docs/evidence/dsp-reform-f5/NATIVE_WASM_VALIDATION.md.
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [experiment/dsp-reform-f5-musical-timing]
+    paths-ignore:
+      - 'docs/evidence/dsp-reform-f5/**/*.md'
+      - 'docs/evidence/dsp-reform-f5/**/*.json'
+
+permissions:
+  contents: read
+
+jobs:
+  # A. Regression of production A: original flags, full CTest, goldens, ABI,
+  # Reverse, Warp, Tap Tempo, MIDI Clock, Transport and public parameters.
+  production-regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.14'
+      - run: pip install numpy==2.4.1 scipy==1.17.0
+      - uses: mymindstorm/setup-emsdk@v14
+        with:
+          version: '3.1.62'
+
+      - name: Configure production Native (no experimental flags)
+        run: |
+          cmake -S . -B build/native -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=ON
+
+      - name: Build and test production Native (full CTest)
+        run: |
+          cmake --build build/native -j 2
+          ctest --test-dir build/native -E '^f5_' --output-on-failure
+
+      - name: Configure production WASM (no experimental flags)
+        run: |
+          emcmake cmake -S . -B build/wasm -DBUILD_WEB=ON -DBUILD_TESTING=ON \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DHYDRA_NATIVE_TRACE_RUNNER="$PWD/build/native/hydra_render_trace_native"
+
+      - name: Build and test production WASM (full CTest)
+        run: |
+          cmake --build build/wasm -j 2
+          ctest --test-dir build/wasm -E '^f5_' --output-on-failure
+
+  # B. Qualification of the three experimental timing variants. Each matrix
+  # entry compiles F5-A, F5-B or F5-C on both toolchains with the same explicit
+  # definitions and compares the two DSP binaries at the strict limits.
+  f5-qualification:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        variant: [0, 1, 2]
+    name: f5-${{ matrix.variant }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.14'
+      - uses: mymindstorm/setup-emsdk@v14
+        with:
+          version: '3.1.62'
+
+      - name: Configure Native build tree (production defaults)
+        run: |
+          cmake -S . -B build/native -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=ON
+
+      - name: Build F5-${{ matrix.variant }} Native contract and trace witness
+        run: |
+          cmake --build build/native -j 2 \
+            --target hydra_f5_timing_test_v${{ matrix.variant }} \
+                     hydra_f5_trace_v${{ matrix.variant }}
+
+      - name: Run F5-${{ matrix.variant }} Native timing contract
+        run: |
+          ctest --test-dir build/native -R '^f5_timing_v${{ matrix.variant }}$' --output-on-failure
+
+      - name: Configure WASM build tree (production defaults)
+        run: |
+          emcmake cmake -S . -B build/wasm -DBUILD_WEB=ON -DBUILD_TESTING=ON \
+            -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build F5-${{ matrix.variant }} WASM contract and trace witness
+        run: |
+          cmake --build build/wasm -j 2 \
+            --target hydra_f5_timing_test_v${{ matrix.variant }} \
+                     hydra_f5_trace_v${{ matrix.variant }}
+
+      - name: Run F5-${{ matrix.variant }} WASM timing contract
+        run: |
+          node build/wasm/hydra_f5_timing_test_v${{ matrix.variant }}.js
+
+      - name: F5-${{ matrix.variant }} strict Native/WASM parity
+        run: |
+          mkdir -p artifacts/f5-qualification
+          python tests/core/compare_native_wasm.py \
+            --native build/native/hydra_f5_trace_v${{ matrix.variant }} \
+            --wasm-js build/wasm/wasm-tests/hydra_f5_trace_v${{ matrix.variant }}.js \
+            --max-abs-threshold 1e-5 --rmse-threshold 1e-6 \
+            --test-name f5_v${{ matrix.variant }}_native_wasm \
+            --report-json artifacts/f5-qualification/parity_v${{ matrix.variant }}.json \
+            --report-txt artifacts/f5-qualification/parity_v${{ matrix.variant }}.txt
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: f5-qualification-v${{ matrix.variant }}
+          path: artifacts/f5-qualification/
+          retention-days: 30
+
+  # C. Numeric evidence and the listening package. Every stage is mandatory:
+  # a failure fails the job, and a package is published only when all contracts
+  # above are green.
+  f5-evidence-and-listening:
+    needs: [production-regression, f5-qualification]
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.14'
+      - run: pip install numpy==2.4.1 scipy==1.17.0
+
+      - name: Build F5-A/B/C libraries and record provenance
+        run: python docs/evidence/dsp-reform-f5/run.py build
+
+      - name: F5=0 against the frozen F3-A reference (10/10 bit-exact)
+        run: python docs/evidence/dsp-reform-f5/run.py baseline
+
+      - name: Static preservation without tempo commands
+        run: python docs/evidence/dsp-reform-f5/run.py static
+
+      - name: Instrumentation equivalence (hooks vs plain)
+        run: python docs/evidence/dsp-reform-f5/run.py equiv
+
+      - name: Block-size contract 37/64/128/256
+        run: python docs/evidence/dsp-reform-f5/run.py blocksize
+
+      - name: Timing transitions, Tap and MIDI clock
+        run: python docs/evidence/dsp-reform-f5/run.py measure
+
+      - name: Reverse V2 synchronization
+        run: python docs/evidence/dsp-reform-f5/run.py reverse
+
+      - name: 60-second transport drift and feedback tails
+        run: |
+          python docs/evidence/dsp-reform-f5/run.py drift
+          python docs/evidence/dsp-reform-f5/run.py tail
+
+      - name: Render the A/B/C listening candidates
+        run: python docs/evidence/dsp-reform-f5/run.py render
+
+      - name: Package, hash and summarize the listening set
+        run: |
+          python docs/evidence/dsp-reform-f5/run.py package
+          python docs/evidence/dsp-reform-f5/summarize.py
+
+      - name: Verify the produced package before publishing
+        run: |
+          python - <<'PY'
+          import hashlib, json, pathlib, sys
+          root = pathlib.Path('artifacts/dsp-reform-f5/listening')
+          manifest = json.loads((root / 'manifest.json').read_text())
+          hashes = json.loads((root / 'sha256.json').read_text())
+          wavs = sorted(root.glob('*.wav'))
+          problems = []
+          if len(manifest['scenes']) != 11:
+              problems.append(f"scenes={len(manifest['scenes'])} (expected 11)")
+          if len(wavs) != 66:
+              problems.append(f"wavs={len(wavs)} (expected 66)")
+          for slot in (s for scene in manifest['scenes'] for s in scene['slots']):
+              for fmt in ('RAW', 'MATCHED'):
+                  entry = slot['files'][fmt]
+                  path = root / entry['path']
+                  if not path.exists():
+                      problems.append(f"missing {path.name}")
+                  elif hashlib.sha256(path.read_bytes()).hexdigest() != entry['sha256']:
+                      problems.append(f"hash mismatch {path.name}")
+          for name, digest in hashes.items():
+              path = root / name
+              if not path.exists():
+                  problems.append(f"unhashed missing file {name}")
+              elif hashlib.sha256(path.read_bytes()).hexdigest() != digest:
+                  problems.append(f"sha256.json mismatch {name}")
+          if problems:
+              print('\n'.join(problems))
+              sys.exit(1)
+          print(f"package verified: {len(manifest['scenes'])} scenes, "
+                f"{len(wavs)} WAVs, {len(hashes)} hashed files")
+          PY
+
+      - name: Publish the verified listening artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: hydra-dsp-reform-f5-listening
+          path: |
+            artifacts/dsp-reform-f5/listening/
+            artifacts/dsp-reform-f5/*.json
+          retention-days: 30
+
+      - name: Keep diagnostics even when the package was not produced
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: hydra-dsp-reform-f5-diagnostics
+          path: |
+            artifacts/dsp-reform-f5/
+            docs/evidence/dsp-reform-f5/
+          retention-days: 30
+
+  # D. Firmware builds only. This is not physical validation.
+  esp32-build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install platformio
+      - run: pio run -e esp32-s3-f5-a -e esp32-s3-f5-b -e esp32-s3-f5-c
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: hydra-f5-esp32-builds-not-physical-validation
+          path: |
+            .pio/build/esp32-s3-f5-*/firmware.*
+            .pio/build/esp32-s3-f5-*/hydra_firmware_identity.h

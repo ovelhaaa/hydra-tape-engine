@@ -1,0 +1,72 @@
+{
+  "frame": 303104,
+  "seconds": 6.873106575963718,
+  "variants": {
+    "0": {
+      "37": {
+        "max_abs_vs_128": 0.0,
+        "rmse_vs_128": 0.0,
+        "sha256": "44ea9a7d4ee94bfec4d0338d76434b19a8bab166e870504394a6e7adf96c0304"
+      },
+      "64": {
+        "max_abs_vs_128": 0.0,
+        "rmse_vs_128": 0.0,
+        "sha256": "44ea9a7d4ee94bfec4d0338d76434b19a8bab166e870504394a6e7adf96c0304"
+      },
+      "128": {
+        "max_abs_vs_128": 0.0,
+        "rmse_vs_128": 0.0,
+        "sha256": "44ea9a7d4ee94bfec4d0338d76434b19a8bab166e870504394a6e7adf96c0304"
+      },
+      "256": {
+        "max_abs_vs_128": 0.0,
+        "rmse_vs_128": 0.0,
+        "sha256": "44ea9a7d4ee94bfec4d0338d76434b19a8bab166e870504394a6e7adf96c0304"
+      }
+    },
+    "1": {
+      "37": {
+        "max_abs_vs_128": 0.0,
+        "rmse_vs_128": 0.0,
+        "sha256": "8cdc95fb2cb009cdf57a23633e616857ba2f6fb8bd4eb21c5ad5398485c347ed"
+      },
+      "64": {
+        "max_abs_vs_128": 0.0,
+        "rmse_vs_128": 0.0,
+        "sha256": "8cdc95fb2cb009cdf57a23633e616857ba2f6fb8bd4eb21c5ad5398485c347ed"
+      },
+      "128": {
+        "max_abs_vs_128": 0.0,
+        "rmse_vs_128": 0.0,
+        "sha256": "8cdc95fb2cb009cdf57a23633e616857ba2f6fb8bd4eb21c5ad5398485c347ed"
+      },
+      "256": {
+        "max_abs_vs_128": 0.0,
+        "rmse_vs_128": 0.0,
+        "sha256": "8cdc95fb2cb009cdf57a23633e616857ba2f6fb8bd4eb21c5ad5398485c347ed"
+      }
+    },
+    "2": {
+      "37": {
+        "max_abs_vs_128": 0.0,
+        "rmse_vs_128": 0.0,
+        "sha256": "8cdc95fb2cb009cdf57a23633e616857ba2f6fb8bd4eb21c5ad5398485c347ed"
+      },
+      "64": {
+        "max_abs_vs_128": 0.0,
+        "rmse_vs_128": 0.0,
+        "sha256": "8cdc95fb2cb009cdf57a23633e616857ba2f6fb8bd4eb21c5ad5398485c347ed"
+      },
+      "128": {
+        "max_abs_vs_128": 0.0,
+        "rmse_vs_128": 0.0,
+        "sha256": "8cdc95fb2cb009cdf57a23633e616857ba2f6fb8bd4eb21c5ad5398485c347ed"
+      },
+      "256": {
+        "max_abs_vs_128": 0.0,
+        "rmse_vs_128": 0.0,
+        "sha256": "8cdc95fb2cb009cdf57a23633e616857ba2f6fb8bd4eb21c5ad5398485c347ed"
+      }
+    }
+  }
+}

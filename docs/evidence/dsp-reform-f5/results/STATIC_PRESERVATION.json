@@ -1,0 +1,117 @@
+{
+  "f0_scenes": {
+    "01_clean_guitar_fb45": {
+      "v1_vs_v0": {
+        "bit_exact": true,
+        "max_abs": 0.0
+      },
+      "v2_vs_v0": {
+        "bit_exact": true,
+        "max_abs": 0.0
+      }
+    },
+    "02_driven_guitar_fb55": {
+      "v1_vs_v0": {
+        "bit_exact": true,
+        "max_abs": 0.0
+      },
+      "v2_vs_v0": {
+        "bit_exact": true,
+        "max_abs": 0.0
+      }
+    },
+    "03_mono_synth_fb65": {
+      "v1_vs_v0": {
+        "bit_exact": true,
+        "max_abs": 0.0
+      },
+      "v2_vs_v0": {
+        "bit_exact": true,
+        "max_abs": 0.0
+      }
+    },
+    "04_poly_synth_fb60_multihead": {
+      "v1_vs_v0": {
+        "bit_exact": true,
+        "max_abs": 0.0
+      },
+      "v2_vs_v0": {
+        "bit_exact": true,
+        "max_abs": 0.0
+      }
+    },
+    "05_drum_machine_fb55_pingpong": {
+      "v1_vs_v0": {
+        "bit_exact": true,
+        "max_abs": 0.0
+      },
+      "v2_vs_v0": {
+        "bit_exact": true,
+        "max_abs": 0.0
+      }
+    },
+    "06_irregular_perc_fb75": {
+      "v1_vs_v0": {
+        "bit_exact": true,
+        "max_abs": 0.0
+      },
+      "v2_vs_v0": {
+        "bit_exact": true,
+        "max_abs": 0.0
+      }
+    },
+    "07_impulse_tail_fb45_moderate": {
+      "v1_vs_v0": {
+        "bit_exact": true,
+        "max_abs": 0.0
+      },
+      "v2_vs_v0": {
+        "bit_exact": true,
+        "max_abs": 0.0
+      }
+    },
+    "08_impulse_tail_fb80_high": {
+      "v1_vs_v0": {
+        "bit_exact": true,
+        "max_abs": 0.0
+      },
+      "v2_vs_v0": {
+        "bit_exact": true,
+        "max_abs": 0.0
+      }
+    },
+    "09_impulse_tail_fb92_60s_near_selfosc": {
+      "v1_vs_v0": {
+        "bit_exact": true,
+        "max_abs": 0.0
+      },
+      "v2_vs_v0": {
+        "bit_exact": true,
+        "max_abs": 0.0
+      }
+    },
+    "10_silence_hiss_floor": {
+      "v1_vs_v0": {
+        "bit_exact": true,
+        "max_abs": 0.0
+      },
+      "v2_vs_v0": {
+        "bit_exact": true,
+        "max_abs": 0.0
+      }
+    }
+  },
+  "scene_controls": {
+    "control_static": {
+      "v1_vs_v0": true,
+      "v2_vs_v0": true
+    },
+    "control_static_reverse": {
+      "v1_vs_v0": true,
+      "v2_vs_v0": true
+    }
+  },
+  "f0_v1_bit_exact": 10,
+  "f0_v2_bit_exact": 10,
+  "f0_total": 10
+}

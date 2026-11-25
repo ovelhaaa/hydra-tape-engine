@@ -268,3 +268,104 @@ identidade/flags/full-work/automação; #62 overhead Classic-vs-#61 e caudas/esc
 Nenhum impedimento documental foi transformado em alegação de regressão DSP.
 Fases F0–F11 permanecem no roteiro, com objetivos reconciliados e sem duplicar
 Repeat Aging, Motion ou independência C. Nova implementação depende de nova ordem.
+
+---
+
+# F5.1 — Inventário #58–#70 e mapa de dependências
+
+2026-11-24. Auditoria via API do GitHub sobre as heads abaixo. Nenhuma PR foi
+fechada, mesclada, rebaseada ou teve a base alterada nesta rodada. Checks são os
+da head indicada; `deploy` skipped é esperado. Esta seção **não** substitui a
+matriz #58–#62 acima: ela registra o estado atual e o caminho seguro de integração.
+
+## Cadeia construída
+
+```
+main (6d94af5, API 1.7/38)
+ ├─ #58 feat/phase7-3-classic-c-web-default (C já existente, web/firmware)
+ │   ├─ #59 experiment/phase7-4a-repeat-aging        (C1/C2/C3)
+ │   ├─ #60 experiment/phase7-4b-organic-motion      (M0–M3 por macro)
+ │   └─ #61 feature/phase7-4c-unified-motion         (M0–M3 runtime, API 1.8/47)
+ │        └─ #62 experiment/phase7-5a1-studio-signal-path (Studio, API 1.9/49)
+ └─ #63 codex/f0-1-test-infrastructure (testes/CI)
+     └─ #64 codex/dsp-reform-f0-1-consolidation (docs F0.1)
+         └─ #65 codex/dsp-reform-f0-2-reproducible-baseline (docs F0.2)
+             └─ #66 codex/dsp-reform-f1-c0-reference (F1, C0)
+                 └─ #67 experiment/dsp-reform-f2-feedback-calibration (F2)
+                     └─ #68 experiment/dsp-reform-f3-saturation (F3, Vintage A/B/C)
+                         ├─ #69 experiment/dsp-reform-f4-performance-transitions (F4)
+                         └─ #70 experiment/dsp-reform-f5-musical-timing (F5)
+```
+
+Os dois troncos são independentes: #58–#62 experimentam topologia/API novas
+(1.8/47 e 1.9/49); #63–#70 mantêm a API 1.7/38 e o TapeCore canônico. **Não
+misturar as duas linhagens** sem uma decisão explícita de arquitetura.
+
+## Inventário
+
+| PR / HEAD | Base | Natureza | Validação na head | Audição / decisão humana | Físico | Conflito |
+|---|---|---|---|---|---|---|
+| [#58](https://github.com/ovelhaaa/hydra-tape-engine/pull/58) `d2d36dd2` | main | C opt-in em firmware/web | 15 success, 1 skipped | C aceita historicamente; sem novo A/B | pendente | base de #59–#62; não é produção da main |
+| [#59](https://github.com/ovelhaaa/hydra-tape-engine/pull/59) `20b3b269` | #58 | Repeat Aging C1/C2/C3 | 15 success, 2 skipped | C1–C3 aceitáveis, muito semelhantes | pendente | sobrepõe F8; não contém #61 |
+| [#60](https://github.com/ovelhaaa/hydra-tape-engine/pull/60) `c1331a7d` | #58 | Motion M1–M3 por macro | 15 success, 1 skipped | M1–M3 aprovados como opções | pendente | fonte de #61; flags históricas não rerodadas |
+| [#61](https://github.com/ovelhaaa/hydra-tape-engine/pull/61) `c1f996b0` | #58 | Motion M0–M3 runtime, API 1.8/47 | 15 success, 1 skipped | sem sign-off do motor unificado | incompleto | **API/ABI divergente**; depende #58, não contém #59 |
+| [#62](https://github.com/ovelhaaa/hydra-tape-engine/pull/62) `565ae355` | #61 | Studio dry/wet, API 1.9/49 | 14 success, 1 skipped | sem sign-off Studio | pendente | **API/ABI divergente**; depende #61 |
+| [#63](https://github.com/ovelhaaa/hydra-tape-engine/pull/63) `6f3bc243` | main | infraestrutura de teste/CI | 15 success, 1 skipped | n/a | n/a | baixo; independente de #64 |
+| [#64](https://github.com/ovelhaaa/hydra-tape-engine/pull/64) `3cc6c1b5` | main | consolidação documental F0.1 | 15 success, 1 skipped | n/a | n/a | base de #65 |
+| [#65](https://github.com/ovelhaaa/hydra-tape-engine/pull/65) `18d92369` | #64 | baseline A reprodutível F0.2 | 13 success, 1 skipped | n/a (áudio de referência) | n/a | retarget para main após #64 |
+| [#66](https://github.com/ovelhaaa/hydra-tape-engine/pull/66) `f3281d0e` | #65 | referência C0 da F1 | 15 success, 1 skipped | `PENDING_HUMAN` para nova escuta | pendente | retarget após #65 |
+| [#67](https://github.com/ovelhaaa/hydra-tape-engine/pull/67) `2c15b886` | #66 | calibração F2 Warm/Vintage | 13 success, 1 skipped | **registrada**: Vintage escolhida; Warm aceita | pendente | retarget após #66 |
+| [#68](https://github.com/ovelhaaa/hydra-tape-engine/pull/68) `29f50258` | #67 | saturação F3 A/B/C | 15 success, 1 skipped | **26/26 equivalentes**; nenhuma preferência | pendente | base de #69 e #70 |
+| [#69](https://github.com/ovelhaaa/hydra-tape-engine/pull/69) `aa2178bd` | #68 | transições F4 | 13 success, **1 failure (`validate`)**, 1 skipped | pendente | pendente | **irmã da #70**; conflito textual em `tape_core.cpp`/CI |
+| [#70](https://github.com/ovelhaaa/hydra-tape-engine/pull/70) `a8bc9c5` | #68 | timing musical F5 A/B/C | ver `dsp-reform-f5.yml` na head | pendente | pendente | **irmã da #69**; não incorpora F4 |
+
+## Leitura do estado
+
+- **#58–#62:** todas draft, nenhuma integrada; #61 e #62 mudam a ABI para
+  1.8/47 e 1.9/49. São experimentos de outra linhagem arquitetural. Integrá-las
+  exigiria rebase, revisão de ABI/presets/hosts e nova qualificação — não é
+  caminho da F5 e não foi feito aqui.
+- **#63–#68:** cadeia documental/experimental linear. Como cada PR aponta para a
+  anterior, a integração segura é sequencial, retargetando para `main` depois de
+  cada merge. Nenhuma delas deve ser squashada em conjunto.
+- **#69 e #70:** derivam ambas da #68. São avaliações musicais paralelas:
+  transições de performance (F4) e política temporal (F5). **Não incorporar F4 na
+  F5 nem o contrário.** A decisão de escuta deve ocorrer antes de qualquer merge.
+- **#69:** o check `validate` está vermelho na head. Não foi tocado nesta rodada;
+  a correção pertence ao escopo da F4. O `validate` vermelho não deve ser
+  mascarado nem usado para bloquear a F5.
+
+## Conflitos prováveis (textuais, não resolvidos)
+
+| Área | PRs | Observação |
+|---|---|---|
+| `dsp/core/tape_core.cpp` / `.hpp` | #69 × #70 | ambas adicionam estados e hooks ao mesmo hot path |
+| `CMakeLists.txt` | #69 × #70 | cada uma adiciona alvos de teste próprios |
+| `platformio.ini` | #69 × #70 | envs `esp32-s3-f4-*` vs `esp32-s3-f5-*` |
+| `.github/workflows/` | #69 × #70 | workflows distintos; sem conflito de nome |
+| ABI/presets | #58–#62 × #63–#70 | 1.8/47 e 1.9/49 vs 1.7/38 |
+
+## Caminho seguro de integração futura
+
+1. **Não integrar nada automaticamente.** Todas permanecem draft.
+2. Se a #63 for aceita, mergeá-la isoladamente (infraestrutura, sem DSP).
+3. #64 → #65 → #66 → #67 → #68, uma por vez, retargetando a base para `main`
+   após cada merge e repetindo os checks da PR seguinte.
+4. **Decisão musical primeiro:** ouvir o pacote F3 (#68) e os pacotes F4 (#69) e
+   F5 (#70). Só a preferência humana define qual ramo segue.
+5. O ramo escolhido vira uma PR de promoção com: ABI/presets/goldens
+   revalidados, Native/WASM nos limites 1e-5/1e-6, 60 s de cauda, Reverse/Tap/
+   MIDI, e qualificação física na mesma placa.
+6. O ramo não escolhido permanece disponível como experimento congelado —
+   sem fechar PR, sem apagar branch.
+7. #58–#62 só entram se houver uma decisão arquitetural explícita que aceite
+   ABI 1.8/1.9; nesse caso, rebase e nova qualificação completa.
+
+## Ações executadas na F5.1
+
+- #70 criada como **Draft**, base `experiment/dsp-reform-f3-saturation`
+  (`29f50258`), head `experiment/dsp-reform-f5-musical-timing`. Nenhum merge,
+  squash, force push ou fechamento de PR.
+- Nenhuma PR antiga foi fechada por parecer obsoleta; nenhuma branch apagada.
+- A #69 não foi modificada e a F5 não contém a flag
+  `HYDRA_DSP_REFORM_F4_TRANSITIONS`.

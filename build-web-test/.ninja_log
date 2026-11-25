@@ -1,0 +1,5 @@
+# ninja log v6
+30	864	8171129960805943	CMakeFiles/hydra_render_trace_wasm.dir/dsp/core/hydra_dsp_c_api.cpp.o	b4772d11f19b0be6
+20	1023	8171129960704730	CMakeFiles/hydra_render_trace_wasm.dir/dsp/core/tape_core.cpp.o	9df00d2ca3a466f0
+39	2095	8171129960907569	CMakeFiles/hydra_render_trace_wasm.dir/tests/core/render_trace.cpp.o	da5e24274fb1ece3
+2095	2863	8171129981464824	wasm-tests/hydra_render_trace.js	e637f0aab564fe2c

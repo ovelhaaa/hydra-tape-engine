@@ -1,0 +1,7 @@
+{
+  "feedbackRouting": "PHASE72_CLASSIC_C",
+  "motionEngine": "UNIFIED_7_4C",
+  "buildTarget": "hydra_dsp_web",
+  "gitCommit": "bb2fb89da70d",
+  "emscriptenVersion": "19.0.0"
+}

@@ -1,0 +1,6 @@
+{
+  "feedbackRouting": "LEGACY_A",
+  "buildTarget": "hydra_dsp_web",
+  "gitCommit": "ca42230d481d",
+  "emscriptenVersion": "19.0.0"
+}

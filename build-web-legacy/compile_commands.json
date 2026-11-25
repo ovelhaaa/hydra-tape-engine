@@ -1,0 +1,26 @@
+[
+{
+  "directory": "C:/Users/devx/Documents/PlatformIO/Projects/hydra/build-web-legacy",
+  "command": "C:\\emsdk\\upstream\\emscripten\\em++.bat  @CMakeFiles/hydra_dsp_core.dir/includes_CXX.rsp -O3 -DNDEBUG -std=c++17 -ffp-contract=off -o CMakeFiles\\hydra_dsp_core.dir\\dsp\\core\\tape_core.cpp.o -c C:\\Users\\devx\\Documents\\PlatformIO\\Projects\\hydra\\dsp\\core\\tape_core.cpp",
+  "file": "C:/Users/devx/Documents/PlatformIO/Projects/hydra/dsp/core/tape_core.cpp",
+  "output": "CMakeFiles/hydra_dsp_core.dir/dsp/core/tape_core.cpp.o"
+},
+{
+  "directory": "C:/Users/devx/Documents/PlatformIO/Projects/hydra/build-web-legacy",
+  "command": "C:\\emsdk\\upstream\\emscripten\\em++.bat  @CMakeFiles/hydra_dsp_core.dir/includes_CXX.rsp -O3 -DNDEBUG -std=c++17 -ffp-contract=off -o CMakeFiles\\hydra_dsp_core.dir\\dsp\\core\\hydra_dsp_c_api.cpp.o -c C:\\Users\\devx\\Documents\\PlatformIO\\Projects\\hydra\\dsp\\core\\hydra_dsp_c_api.cpp",
+  "file": "C:/Users/devx/Documents/PlatformIO/Projects/hydra/dsp/core/hydra_dsp_c_api.cpp",
+  "output": "CMakeFiles/hydra_dsp_core.dir/dsp/core/hydra_dsp_c_api.cpp.o"
+},
+{
+  "directory": "C:/Users/devx/Documents/PlatformIO/Projects/hydra/build-web-legacy",
+  "command": "C:\\emsdk\\upstream\\emscripten\\em++.bat -DHYDRA_PHASE72_CLASSIC_FEEDBACK_ROUTING=0 @CMakeFiles/hydra_dsp_web.dir/includes_CXX.rsp -O3 -DNDEBUG -std=c++17 -ffp-contract=off -o CMakeFiles\\hydra_dsp_web.dir\\dsp\\core\\tape_core.cpp.o -c C:\\Users\\devx\\Documents\\PlatformIO\\Projects\\hydra\\dsp\\core\\tape_core.cpp",
+  "file": "C:/Users/devx/Documents/PlatformIO/Projects/hydra/dsp/core/tape_core.cpp",
+  "output": "CMakeFiles/hydra_dsp_web.dir/dsp/core/tape_core.cpp.o"
+},
+{
+  "directory": "C:/Users/devx/Documents/PlatformIO/Projects/hydra/build-web-legacy",
+  "command": "C:\\emsdk\\upstream\\emscripten\\em++.bat -DHYDRA_PHASE72_CLASSIC_FEEDBACK_ROUTING=0 @CMakeFiles/hydra_dsp_web.dir/includes_CXX.rsp -O3 -DNDEBUG -std=c++17 -ffp-contract=off -o CMakeFiles\\hydra_dsp_web.dir\\dsp\\core\\hydra_dsp_c_api.cpp.o -c C:\\Users\\devx\\Documents\\PlatformIO\\Projects\\hydra\\dsp\\core\\hydra_dsp_c_api.cpp",
+  "file": "C:/Users/devx/Documents/PlatformIO/Projects/hydra/dsp/core/hydra_dsp_c_api.cpp",
+  "output": "CMakeFiles/hydra_dsp_web.dir/dsp/core/hydra_dsp_c_api.cpp.o"
+}
+]

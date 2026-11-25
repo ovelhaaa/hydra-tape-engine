@@ -8,6 +8,11 @@
 #include "TapeDelay.h"
 #include "hydra_dsp_esp32_adapter.h"
 #include "hydra_pcm.hpp"
+#if HYDRA_AUDIO_HWTEST
+#include "hydra_audio_hardware.hpp"
+#include <atomic>
+#include <esp_arduino_version.h>
+#endif
 #include "realtime_profile.hpp"
 #include "hydra_firmware_identity.h"
 #include "DisplayUI.h"
@@ -51,6 +56,18 @@
 #define I2S_DMA_BUF_LEN 512
 #define I2S_DMA_BUF_COUNT 4
 #define I2S_PORT I2S_NUM_0
+
+#if HYDRA_AUDIO_HWTEST
+using HwRoute = hydra::hardware::Route;
+std::atomic<HwRoute> g_hw_route{HwRoute::Normal};
+static_assert(std::atomic<HwRoute>::is_always_lock_free && std::atomic<unsigned>::is_always_lock_free,
+              "Hardware diagnostic mailbox must be lock-free");
+// Request/result mailbox: release/acquire publishes capture without locks.
+// State 0 idle, 1 requested, 2 capturing, 3 ready. CLI is sole requester.
+std::atomic<unsigned> g_adc_state{0};
+hydra::hardware::Capture g_adc_capture;
+uint32_t g_hw_phase=0;
+#endif
 
 // ============================================
 // CONTROLS & GLOBALS
@@ -825,14 +842,41 @@ void audioTask(void *parameter) {
     size_t bytesWritten = 0;
     // A concurrent 'src' command cannot switch source between acquisition
     // and conversion and make an uninitialized rxBuf become audible.
+    #if HYDRA_AUDIO_HWTEST
+    const HwRoute hwRoute=g_hw_route.load(std::memory_order_relaxed);
+    const AudioSource blockSource = hwRoute==HwRoute::Normal ? p_source : SOURCE_I2S_IN;
+    if(g_adc_state.load(std::memory_order_acquire)==1) {
+      g_adc_capture=hydra::hardware::Capture{};
+      g_adc_state.store(2,std::memory_order_release);
+    }
+#else
     const AudioSource blockSource = p_source;
+#endif
     int32_t rxBuf[AUDIO_CHUNK_SIZE * 2];
 
     if (blockSource == SOURCE_I2S_IN) {
       memset(rxBuf, 0, sizeof(rxBuf));
       size_t bytesRead = 0;
       // Non-blocking read (short timeout) to prevent WDT issues
+      #if HYDRA_AUDIO_HWTEST
+      const esp_err_t rxError=i2s_read(I2S_PORT, rxBuf, sizeof(rxBuf), &bytesRead, pdMS_TO_TICKS(10));
+      // Discard incomplete stereo frames; no partially populated channel pairs.
+      const size_t validBytes=(bytesRead/8)*8;
+      memset(reinterpret_cast<uint8_t*>(rxBuf)+validBytes,0,sizeof(rxBuf)-validBytes);
+      if(g_adc_state.load(std::memory_order_relaxed)==2) {
+        if(rxError!=ESP_OK) ++g_adc_capture.failures;
+        if(bytesRead!=sizeof(rxBuf)) ++g_adc_capture.shortReads;
+        for(size_t i=0;i<validBytes/8;++i) g_adc_capture.add(rxBuf[2*i],rxBuf[2*i+1]);
+        // Bounded window even if ADC/driver returns no data.
+        static unsigned captureBlocks=0;
+        if(++captureBlocks>=128) {
+          captureBlocks=0;
+          g_adc_state.store(3,std::memory_order_release);
+        }
+      }
+#else
       i2s_read(I2S_PORT, rxBuf, sizeof(rxBuf), &bytesRead, pdMS_TO_TICKS(10));
+#endif
     }
 
     int64_t block_start_us = esp_timer_get_time();
@@ -862,8 +906,13 @@ void audioTask(void *parameter) {
       if (blockSource == SOURCE_I2S_IN) {
         constexpr float kInvInt32 = 1.0f / 2147483648.0f;
         for (int i = 0; i < AUDIO_CHUNK_SIZE; ++i) {
+          #if HYDRA_AUDIO_HWTEST
+          blockL[i] = hydra::hardware::pcm24Float(rxBuf[i*2]);
+          blockR[i] = hydra::hardware::pcm24Float(rxBuf[i*2+1]);
+#else
           blockL[i] = (float)rxBuf[i * 2] * kInvInt32;
           blockR[i] = (float)rxBuf[i * 2 + 1] * kInvInt32;
+#endif
         }
       } else if (blockSource == SOURCE_SYNTH && p_genActive && melody) {
         melody->nextStereoBlock(blockL, blockR, AUDIO_CHUNK_SIZE);
@@ -879,7 +928,11 @@ void audioTask(void *parameter) {
 
       // === STAGE A2: TAPECORE / DSP ENGINE ===
       bool appliedTapeCore = false;
-      if (!isBypassed) {
+      if (!isBypassed
+#if HYDRA_AUDIO_HWTEST
+          && hwRoute==HwRoute::Normal
+#endif
+      ) {
         if (p_bubblesMode && bubbles && bubbles->isAllocated()) {
           for (int i = 0; i < AUDIO_CHUNK_SIZE; ++i) {
             bubbles->processStereo(blockL[i], blockR[i], &blockL[i], &blockR[i]);
@@ -926,7 +979,11 @@ void audioTask(void *parameter) {
       }
 
       // === STAGE A3a: EXTERNAL TANHF (SKIP WHEN TAPECORE ALREADY SATURATES & LIMITS) ===
-      if (!appliedTapeCore) {
+      if (!appliedTapeCore
+#if HYDRA_AUDIO_HWTEST
+          && hwRoute==HwRoute::Normal
+#endif
+      ) {
         for (int i = 0; i < AUDIO_CHUNK_SIZE; ++i) {
           blockL[i] = tanhf(blockL[i]);
           blockR[i] = tanhf(blockR[i]);
@@ -939,7 +996,11 @@ void audioTask(void *parameter) {
       }
 
       // === STAGE A3b: STEREO NOISE GATE ===
-      if (gate) {
+      if (gate
+#if HYDRA_AUDIO_HWTEST
+          && hwRoute==HwRoute::Normal
+#endif
+      ) {
         gate->processBlock(blockL, blockR, AUDIO_CHUNK_SIZE);
       }
       if (stageProfActive) {
@@ -949,7 +1010,11 @@ void audioTask(void *parameter) {
       }
 
       // === STAGE A3c: FREEVERB POST-PROCESSING ===
-      if (p_freeverbEnabled && freeverb && freeverb->isAllocated()) {
+      if (p_freeverbEnabled && freeverb && freeverb->isAllocated()
+#if HYDRA_AUDIO_HWTEST
+          && hwRoute==HwRoute::Normal
+#endif
+      ) {
         freeverb->processStereoBlock(blockL, blockR, blockL, blockR, AUDIO_CHUNK_SIZE);
       }
       if (stageProfActive) {
@@ -959,6 +1024,14 @@ void audioTask(void *parameter) {
       }
 
       // === STAGE A3d: PCM PACKING FOR I2S ===
+#if HYDRA_AUDIO_HWTEST
+      if(hwRoute!=HwRoute::Normal) {
+        for(int i=0;i<AUDIO_CHUNK_SIZE;++i) {
+          hydra::hardware::diagnosticFrame(hwRoute,blockL[i],blockR[i],g_hw_phase,
+                                          synthBuf[2*i],synthBuf[2*i+1]);
+        }
+      } else
+#endif
       if (out) {
         out->writeStereoBlock(blockL, blockR, synthBuf, AUDIO_CHUNK_SIZE);
       }
@@ -1371,6 +1444,10 @@ void printHelp() {
   dualPrintln("  wmd <0-3>   : Warp Mode (0=2T-Herm, 1=1T-Herm, 2=1T-Raw, 3=2T-Raw)");
   dualPrintln("  perf        : DSP Performance & Telemetry Stats");
   dualPrintln("  identity    : Firmware commit/source/ELF identity and boot configuration");
+  #if HYDRA_AUDIO_HWTEST
+  dualPrintln("  hw normal|silence|tone|left|right|monitor : Hardware diagnostics");
+  dualPrintln("  adc         : Capture 128 blocks, report peak/RMS/DC/near-FS per channel");
+#endif
   dualPrintln("  audiohealth : One real PCM block and I2S write result (outside benchmark)");
   dualPrintln(" [GLOBAL TRANSPORT CLOCK]");
   dualPrintln("  tempo <bpm> : Set global BPM");
@@ -1476,6 +1553,36 @@ void executeCommand(String line) {
   if (line.length() == 0)
     return;
 
+  #if HYDRA_AUDIO_HWTEST
+  if(line.startsWith("hw ")) {
+    const String mode=line.substring(3);
+    HwRoute route;
+    if(mode=="normal") route=HwRoute::Normal;
+    else if(mode=="silence") route=HwRoute::Silence;
+    else if(mode=="tone") route=HwRoute::Tone;
+    else if(mode=="left") route=HwRoute::Left;
+    else if(mode=="right") route=HwRoute::Right;
+    else if(mode=="monitor") route=HwRoute::Monitor;
+    else { dualPrintln("hw normal|silence|tone|left|right|monitor"); return; }
+    g_hw_route.store(route,std::memory_order_relaxed);
+    dualPrintf("HardwareRoute=%s (tone -20dBFS; monitor gain=0.25)\n",mode.c_str());
+    return;
+  }
+  if(line=="adc") {
+    if(p_source!=SOURCE_I2S_IN && g_hw_route.load()==HwRoute::Normal) {
+      dualPrintln("ADC requires src 2 or hw diagnostic route"); return;
+    }
+    if(g_adc_state.load(std::memory_order_acquire)==0) g_adc_state.store(1,std::memory_order_release);
+    const int64_t deadline=esp_timer_get_time()+3000000;
+    while(g_adc_state.load(std::memory_order_acquire)!=3 && esp_timer_get_time()<deadline) vTaskDelay(1);
+    if(g_adc_state.load(std::memory_order_acquire)!=3) { dualPrintln("ADC pending; retry adc (do not reset mailbox)"); return; }
+    const auto capture=g_adc_capture;
+    g_adc_state.store(0,std::memory_order_release);
+    dualPrintf("ADC Frames=%u Samples=%u ReadErrors=%u ShortReads=%u\n",capture.frames,capture.frames*2,capture.failures,capture.shortReads);
+    for(int c=0;c<2;++c) dualPrintf("ADC %s Peak=%.8f RMS=%.8f DC=%.8f NearFS=%u\n",c ? "R":"L",capture.peak[c],capture.frames ? sqrtf(capture.squares[c]/capture.frames):0,capture.frames ? capture.sum[c]/capture.frames:0,capture.clips[c]);
+    return;
+  }
+#endif
   if (line == "identity") {
 #if ESP_IDF_VERSION_MAJOR >= 5
     const esp_app_desc_t* app = esp_app_get_description();
@@ -1492,6 +1599,9 @@ void executeCommand(String line) {
     dualPrintln("FeedbackRouting=PHASE72_CLASSIC_C");
 #endif
     dualPrintf("BuildName=%s\nBuildFlags=%s\n", HYDRA_FIRMWARE_BUILD_NAME, HYDRA_FIRMWARE_FLAGS);
+#if HYDRA_AUDIO_HWTEST
+    dualPrintf("Arduino=%s IDF=%s\nMCLK=GPIO14 BCLK=GPIO15 WS=GPIO16 TX=GPIO17 RX=GPIO18\nI2S0 MASTER TX_RX Philips Stereo Slots=32 PCM1808=24MSB MCLKMultiple=256 APLL=0\nNominalMCLK=11289600 NominalBCLK=2822400 NominalWS=44100 Measured=NO\nDriverReportedRate=%.3f\n",ESP_ARDUINO_VERSION_STR,esp_get_idf_version(),g_i2s_initialized ? i2s_get_clk(I2S_PORT) : 0.0f);
+#endif
     dualPrintln("=== IDENTITY END ===");
     return;
   }
@@ -2301,7 +2411,7 @@ void setup() {
     dualPrintln("FS Mounted");
   }
 
-  // 3. I2S CONFIG (TX ONLY)
+  // 3. I2S full-duplex master; hardware test clock is explicit.
   i2s_config_t i2s_config = {
       .mode = (i2s_mode_t)(I2S_MODE_MASTER | I2S_MODE_TX | I2S_MODE_RX),
       .sample_rate = SAMPLE_RATE,
@@ -2317,6 +2427,14 @@ void setup() {
                                  .data_out_num = I2S_DOUT,
                                  .data_in_num = I2S_DIN};
   
+#if HYDRA_AUDIO_HWTEST
+  static_assert(I2S_BCLK==hydra::hardware::bclkPin && I2S_LRCK==hydra::hardware::wsPin && I2S_DOUT==hydra::hardware::doutPin && I2S_DIN==hydra::hardware::dinPin,"pinout mismatch");
+  pin_config.mck_io_num=hydra::hardware::mclkPin;
+  i2s_config.mclk_multiple=I2S_MCLK_MULTIPLE_256;
+  i2s_config.bits_per_chan=I2S_BITS_PER_CHAN_32BIT;
+  i2s_config.fixed_mclk=0; // S3 uses PLL_160M + fractional divider, not APLL.
+  i2s_config.tx_desc_auto_clear=true;
+#endif
   // Install I2S driver with error handling
   esp_err_t i2s_err = i2s_driver_install(I2S_PORT, &i2s_config, 0, NULL);
   if (i2s_err != ESP_OK) {
@@ -2329,12 +2447,21 @@ void setup() {
     }
   }
   
+#if HYDRA_AUDIO_HWTEST
+  if(i2s_err!=ESP_OK) { dualPrintln("I2S INIT HALTED; no audio task"); return; }
+#endif
   i2s_err = i2s_set_pin(I2S_PORT, &pin_config);
   if (i2s_err != ESP_OK) {
     dualPrintf("WARN: I2S pin config failed: %d\n", i2s_err);
   }
   
+#if HYDRA_AUDIO_HWTEST
+  if(i2s_err==ESP_OK) i2s_err=i2s_set_clk(I2S_PORT,SAMPLE_RATE,I2S_BITS_PER_SAMPLE_32BIT,I2S_CHANNEL_STEREO);
+  if(i2s_err==ESP_OK) i2s_err=i2s_zero_dma_buffer(I2S_PORT);
+  if(i2s_err!=ESP_OK) { dualPrintf("I2S INIT HALTED: %s\n",esp_err_to_name(i2s_err)); i2s_driver_uninstall(I2S_PORT); return; }
+#else
   i2s_zero_dma_buffer(I2S_PORT);
+#endif
   g_i2s_initialized = i2s_err == ESP_OK;
 
   Serial.println("I2S Configured. Starting Tasks...");

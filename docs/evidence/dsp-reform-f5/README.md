@@ -4,7 +4,9 @@
 **Base:** F3 `29f50258f1ac47139ac8f1fdb21aa59424ca9a75` (PR #68)  
 **Default:** `HYDRA_DSP_REFORM_F5_TIMING_VARIANT=0` — Vintage F3-A, bit-exact.  
 **Estado:** `READY_FOR_HUMAN_LISTENING` após o artifact da CI; **hardware
-`PENDING_PHYSICAL`**; decisão musical **humana e pendente**.
+`PENDING_PHYSICAL`**; decisão musical **humana e pendente**. PR
+[#70](https://github.com/ovelhaaa/hydra-tape-engine/pull/70) em Draft, base F3
+(#68), sem merge.
 
 ## Resultado em uma frase
 
@@ -20,9 +22,9 @@ promovida.
 | F5=0 vs manifesto F3-A (10 cenários F0.2) | **10/10 bit-exact** |
 | F5=1/2 vs F5=0 sem mudança de tempo (10 + controles) | **10/10 + 2/2 bit-exact** |
 | Instrumentado vs não instrumentado | **39/39 bit-exact** |
-| CTest Native | **23/23 PASS** |
-| Native vs WASM | **max_abs = 0, RMSE = 0** |
-| F5 v0/v1/v2 no WASM | **3/3 PASS** |
+| CTest de produção (sem flags experimentais) | **20/20 Native e 20/20 WASM** |
+| Contratos F5 A/B/C | **3/3 Native e 3/3 WASM** |
+| Paridade Native/WASM por variante | **max_abs = 0, RMSE = 0** nas três |
 | Blocos 37/64/128/256 vs 128 | **max_abs = 0** nas três variantes |
 | 120→100 musical: A / B / C | salto de 4.410 amostras / 1,270 s / 1,270 s até 1 ms |
 | 120→125 MIDI: A / B / C | 20,0 ms de erro permanente / 0,416 s / 0,242 s até 1 ms |
@@ -90,8 +92,9 @@ python docs/evidence/dsp-reform-f5/run.py package
   instantaneidade, a decisão é F7 (leitor de transição), não esta fase.
 - **Custo:** `.text` +3,1 KB no objeto e +1 KB no firmware; estado 56 B. Não é aprovação
   física.
-- **Publicação:** o pacote local está verificado por SHA-256; o artifact público depende
-  do workflow `dsp-reform-f5.yml`.
+- **Publicação:** o pacote local está verificado por SHA-256; o artifact público é
+  publicado pelo workflow `dsp-reform-f5.yml` e conferido após o download. Ver
+  [PUBLICATION_STATUS.md](PUBLICATION_STATUS.md).
 - **F4/#69:** não integrada; esta branch não contém as transições da F4.
 - **Golden/ABI:** preservados; nenhuma regeneração.
 
@@ -110,4 +113,5 @@ python docs/evidence/dsp-reform-f5/run.py package
 | [LISTENING_GUIDE.md](LISTENING_GUIDE.md) | como ouvir o pacote A/B/C |
 | [MEASUREMENT_TABLES.md](MEASUREMENT_TABLES.md) | tabelas geradas das medições |
 | [PR_DRAFT.md](PR_DRAFT.md) | texto da PR Draft |
+| [PUBLICATION_STATUS.md](PUBLICATION_STATUS.md) | estado real da publicação e verificação |
 | [HANDOFF.md](HANDOFF.md) | handoff e recomendação F6/F7 |

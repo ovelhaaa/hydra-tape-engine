@@ -1,11 +1,13 @@
 # F5 — Draft PR
 
-**Título:** `experiment(F5): musical capstan glide and clock-focused timing (Vintage F3-A preserved)`
+**Título:** `experiment(F5): musical capstan glide and clock-focused timing`
 
-**Base:** `experiment/dsp-reform-f3-saturation` @ `29f5025` (PR #68).  
-**Head:** `experiment/dsp-reform-f5-musical-timing` (HEAD registrado em `build.json`).  
-**Não integrar automaticamente.** Não altera a PR #69 (F4). A F4 não está incluída nesta
-branch; `HYDRA_DSP_REFORM_F4_TRANSITIONS` não é definido aqui e permanece 0 no seu escopo.
+**PR:** [#70](https://github.com/ovelhaaa/hydra-tape-engine/pull/70) (Draft)
+**Base:** `experiment/dsp-reform-f3-saturation` @ `29f5025` (PR #68).
+**Head:** `experiment/dsp-reform-f5-musical-timing`.
+**Não integrar automaticamente.** Não altera a PR #69 (F4). A F4 não está incluída
+nesta branch; `HYDRA_DSP_REFORM_F4_TRANSITIONS` não é definido aqui e permanece 0
+no seu escopo.
 
 ## O que muda
 
@@ -22,25 +24,43 @@ branch; `HYDRA_DSP_REFORM_F4_TRANSITIONS` não é definido aqui e permanece 0 no
 - Hook de diagnóstico read-only (`HYDRA_DSP_TEST_HOOKS`), comprovadamente sem efeito no
   áudio; três alvos CTest e três envs PlatformIO de build.
 
+## F5.1 — limpeza e arquitetura de CI
+
+- `build-web-legacy/` e `build-web-test/` (77 arquivos, 27.939 linhas de cache CMake,
+  objetos, `.wasm` de 79 KB e de 672 KB) saíram do versionamento; continuam no disco
+  local. `.gitignore` recebeu entradas específicas, sem regra genérica que esconda
+  fontes, hosts, testes ou fixtures.
+- `scripts/create_phase6_pr.py` saiu do diff e permanece fora do Git.
+- A CI deixou de exportar `Classic C=1/F2=2/F3=0` como `CMAKE_CXX_FLAGS` globais.
+  Regressão de produção roda na configuração original; a qualificação F5 usa
+  definições explícitas por alvo, iguais em Native e WASM.
+- Causa raiz reproduzida localmente: `core_regression` passa na configuração de produção
+  e falha em `regression_core.cpp:255` com os três defines globais. Nenhum teste foi
+  relaxado.
+- `f5bench.build` passou a usar `-fPIC` fora do Windows, corrigindo o link da biblioteca
+  compartilhada no Linux.
+
 ## Evidência principal
 
 | Verificação | Resultado |
 |---|---|
-| F5=0 vs manifesto F3-A | 10/10 bit-exact |
+| F5=0 vs manifesto F3-A (CI Linux) | 10/10 bit-exact |
 | F5=1/2 vs F5=0 em cenas sem mudança de tempo | 10/10 + controles bit-exact |
-| CTest Native | 23/23 PASS |
-| Native vs WASM (comparador estrito) | max_abs 0 / RMSE 0 |
-| F5 v0/v1/v2 no WASM (Node) | 3/3 PASS |
+| CTest de produção Native (sem flags F5) | 20/20 PASS |
+| CTest de produção WASM | 20/20 PASS |
+| Contratos F5 A/B/C | 3/3 Native e 3/3 WASM |
+| Paridade Native/WASM por variante | max_abs 0 / RMSE 0 nas três |
 | Blocos 37/64/128/256 vs 128 | max_abs 0 nas três variantes |
-| Drift de transporte em 60 s | ≤1e-9 beat |
-| Firmware ESP32-S3 builds | 3/3 SUCCESS (a/b/c), +980/+1.136 B flash |
+| Drift de transporte em 60 s | ≤1,42e-14 beat |
+| Caudas de 60 s, FB95 | finitas, 0 dB no último segundo |
+| Reverse V2, 9 divisões | effective == requested, clamped=0 |
+| Firmware ESP32-S3 builds | 3/3 SUCCESS (a/b/c), não é validação física |
 | Hardware físico | `PENDING_PHYSICAL` |
-| Pacote de escuta | `artifacts/dsp-reform-f5/listening/` (11 cenas, 66 WAVs) |
+| Pacote de escuta | 11 cenas, 66 WAVs RAW+MATCHED, `sha256.json` verificado |
 
-Números completos: `docs/evidence/dsp-reform-f5/MEASUREMENT_TABLES.md`,
-`TIMING_MEASUREMENTS.json`, `DRIFT_*.json`, `LONG_TAIL_CHECK.json`,
-`REVERSE_VALIDATION.json`, `BLOCK_SIZE_CONTRACT.json`,
-`INSTRUMENTATION_EQUIVALENCE.json`.
+Números completos: `MEASUREMENT_TABLES.md`, `TIMING_MEASUREMENTS.json`, `DRIFT_*.json`,
+`LONG_TAIL_CHECK.json`, `REVERSE_VALIDATION.json`, `BLOCK_SIZE_CONTRACT.json`,
+`INSTRUMENTATION_EQUIVALENCE.json`, `NATIVE_WASM_VALIDATION.md`.
 
 ## Achados
 
@@ -58,15 +78,28 @@ ABI 1.7/38, IDs, presets, goldens, LUT/bias, saturação F3, feedback, topologia
 cabeçotes, Reverse, Warp, Freeze, Ping-Pong, Multi-Head, Mix/Drive/Tone, interface.
 Nenhum seletor público de modo temporal. Nenhum leitor extra ou buffer novo.
 
+## Publicação
+
+**Publicado e verificado:** [artifact 14985866516 — `hydra-dsp-reform-f5-listening`](https://github.com/ovelhaaa/hydra-tape-engine/actions/runs/45532866456/artifacts/14985866516),
+na execução [45532866456](https://github.com/ovelhaaa/hydra-tape-engine/actions/runs/45532866456),
+head `a8bc9c5`. ZIP de 117.591.429 bytes, SHA-256
+`a7115ef0c54a5d62798a217b237086b22bf8409631baf23f15d796caf2153feb`. Após o
+download, 82/82 hashes conferem, 66 WAVs e 11 cenas confirmados; os 66 WAVs foram
+reproduzidos bit-exact numa reconstrução local.
+
+Artifacts anteriores classificados em `PUBLICATION_STATUS.md`: `14985175520`
+(superseded, cena 02 sem semente) e `14982026827` (inválido, 97.286 bytes sem
+WAVs, da execução 45524614234 que falhou antes do pacote existir).
+
 ## Riscos
 
 - F5=2 é deliberadamente mais lenta que B em mudanças grandes; a limitação de leitor único
   está documentada e é candidata a F7 somente se a escuta justificar.
 - O custo físico não foi medido; não promover com benchmark desktop.
-- A publicação do artifact depende do workflow `dsp-reform-f5.yml`; o pacote local está
-  verificado por SHA-256, mas o link público só existe após a CI.
+- O artifact expira em 30 dias; `run.py`/`f5bench.py` permitem regerar o pacote.
 
 ## Decisão
 
-`READY_FOR_HUMAN_LISTENING` condicionado a: CI publicar o artifact, escuta humana A/B/C e
-`PENDING_PHYSICAL` explicitamente aceito como pendência. Nenhuma promoção automática.
+`READY_FOR_HUMAN_LISTENING` condicionado a: artifact publicado e verificado, escuta humana
+A/B/C e `PENDING_PHYSICAL` explicitamente aceito como pendência. Nenhuma promoção
+automática, merge, rebase ou force push.

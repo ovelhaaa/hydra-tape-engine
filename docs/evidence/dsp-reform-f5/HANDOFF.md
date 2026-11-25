@@ -2,7 +2,8 @@
 
 ```
 FASE: F5 — música: tempo, capstan e clock
-STATUS: READY_FOR_HUMAN_LISTENING (CI/artifact pendente) / PENDING_PHYSICAL
+STATUS: READY_FOR_HUMAN_LISTENING / PENDING_PHYSICAL — PR #70 Draft, CI verde,
+  artifact publicado e verificado (ver PUBLICATION_STATUS.md)
 BASE HEAD: 29f50258f1ac47139ac8f1fdb21aa59424ca9a75 (F3, PR #68)
 CANDIDATE HEAD: experiment/dsp-reform-f5-musical-timing (SHA em build.json)
 ARQUIVOS LIDOS: AGENTS.md; docs/TAPE_DELAY_DSP_MUSICAL_AUDIT_2026-11-23.md;
@@ -27,10 +28,12 @@ DIFERENÇAS IMPLEMENTADAS:
 SEM MUDANÇAS NÃO RELACIONADAS: sim; nenhum ABI/preset/golden/peso de cabeçote,
   feedback, saturação, LUT, Reverse, Warp, UI ou default alterado.
 BACKEND NATIVE/WASM: max_abs 0 / RMSE 0; F5 v0/v1/v2 PASS em ambos.
-TESTES CORE/ABI/REVERSE/WARP: Native 23/23; WASM goldens 3/3; F5 3/3; Reverse
-  effective==requested em 9 divisões; blocos 37/64/128/256 max_abs 0.
+TESTES CORE/ABI/REVERSE/WARP: produção Native 20/20 e WASM 20/20; contratos F5
+  3/3 Native e 3/3 WASM; paridade 0/0 por variante; Reverse effective==requested
+  em 9 divisões; blocos 37/64/128/256 max_abs 0.
 SONIC A/B RAW/MATCHED: 11 cenas / 66 WAVs; manifesto + gabarito + SHA-256;
-  publicação pendente do workflow. Nenhuma decisão humana inferida.
+  artifact `hydra-dsp-reform-f5-listening` publicado e conferido. Nenhuma
+  decisão humana inferida.
 CPU FÍSICA: PENDING_PHYSICAL. Objeto +3,1/+3,2 KB text; firmware +980/+1.136 B;
   estado 56 B; nenhuma alocação/lock/thread.
 I2S / OVERRUNS / MEMÓRIA / STACK: não medidos na placa.

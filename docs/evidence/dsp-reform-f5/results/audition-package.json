@@ -1,7 +1,9 @@
 {
   "scene_count": 11,
-  "wav_files": 80,
-  "manifest_sha256": "ad8c2b44d9d7633b80fa4564d38a6c9509da1ad848ef35c224274f6e9782d58e",
-  "answer_key_sha256": "bd4ed43d9f75352c343c42633fc7208f8bc327c57384adc8371eec6e2a58f4ad",
-  "publication": "PENDING_CI_ARTIFACT"
+  "wav_files": 66,
+  "wav_files_note": "counted in the published package; run.py's legacy field used hashes-2",
+  "manifest_sha256": "02927878f51cf39dcbb0c6859129394d5e1e584bae7d9c697d9f2d346b4b2697",
+  "answer_key_sha256": "6baaa1336a8317922ce955ce1c37166ace0fdd6a5983f5b0d0cafcc30a1f35ab",
+  "publication": "PUBLISHED_AND_VERIFIED",
+  "artifact_id": 14985866516
 }

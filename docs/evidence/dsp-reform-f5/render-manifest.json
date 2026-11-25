@@ -2,7 +2,7 @@
   "package": "artifacts/dsp-reform-f5/listening",
   "scene_count": 11,
   "files": 82,
-  "manifest_sha256": "ad8c2b44d9d7633b80fa4564d38a6c9509da1ad848ef35c224274f6e9782d58e",
+  "manifest_sha256": "b5c5ccc242d624e91dc7b0544d3b93933a96b49e62681ca5a8bc58accacbf6af",
   "answer_key_sha256": "bd4ed43d9f75352c343c42633fc7208f8bc327c57384adc8371eec6e2a58f4ad",
   "sha256": {
     "01_manual_120_100_clean-X-MATCHED.wav": "f6851339ddd261696fff264ac9da9a074680bfd35abf3e2b921bfd589efbba56",
@@ -11,12 +11,12 @@
     "01_manual_120_100_clean-Y-RAW.wav": "e3c25c67a5057c8e024b2565ea9c7802f26276e4b9b2ef765fd2226052098f68",
     "01_manual_120_100_clean-Z-MATCHED.wav": "e3c25c67a5057c8e024b2565ea9c7802f26276e4b9b2ef765fd2226052098f68",
     "01_manual_120_100_clean-Z-RAW.wav": "e3c25c67a5057c8e024b2565ea9c7802f26276e4b9b2ef765fd2226052098f68",
-    "02_manual_80_160_driven-X-MATCHED.wav": "0f396bceb0cc688cc4937469ba25b1d187adcff02a170d9823696d69abd0c917",
-    "02_manual_80_160_driven-X-RAW.wav": "67fa0351fd2f40be36f4f846235ebbabf97db76e04518eaa05a1deaf1ed7ce73",
-    "02_manual_80_160_driven-Y-MATCHED.wav": "22c53ff1363e56a45e9a4416ace370adc8ba99d50cf1a41dd58661e28781cc65",
-    "02_manual_80_160_driven-Y-RAW.wav": "22c53ff1363e56a45e9a4416ace370adc8ba99d50cf1a41dd58661e28781cc65",
-    "02_manual_80_160_driven-Z-MATCHED.wav": "2dcc17d3b8bfdf6ec3ecbd0c16cf7afefb1a6f3d95affab12ad63ba6893f9124",
-    "02_manual_80_160_driven-Z-RAW.wav": "9d101b26da3bc82b64b28916335a754a5eb901ded2d374577d7fa3647e6e6adc",
+    "02_manual_80_160_driven-X-MATCHED.wav": "e8a82fb9011e50a8f19bbab6ddce5e72d7e034484c25960f18065ceb2c99f4b4",
+    "02_manual_80_160_driven-X-RAW.wav": "0a6b22a16cb1db0ebb5e7d20613d783fb0dcbc3e23880c8038b84ece4d8db5eb",
+    "02_manual_80_160_driven-Y-MATCHED.wav": "17dc549ef289abf57ba957770f053f78879dfbcd421c55388872d177cab80b4d",
+    "02_manual_80_160_driven-Y-RAW.wav": "17dc549ef289abf57ba957770f053f78879dfbcd421c55388872d177cab80b4d",
+    "02_manual_80_160_driven-Z-MATCHED.wav": "e8a82fb9011e50a8f19bbab6ddce5e72d7e034484c25960f18065ceb2c99f4b4",
+    "02_manual_80_160_driven-Z-RAW.wav": "0a6b22a16cb1db0ebb5e7d20613d783fb0dcbc3e23880c8038b84ece4d8db5eb",
     "03_ramp_120_100_poly-X-MATCHED.wav": "2709ab6ddaee7ff029f91f9ce906ff25452b9bb70fcf0751470dbfbdfaa6feda",
     "03_ramp_120_100_poly-X-RAW.wav": "2709ab6ddaee7ff029f91f9ce906ff25452b9bb70fcf0751470dbfbdfaa6feda",
     "03_ramp_120_100_poly-Y-MATCHED.wav": "0f3d32ba50ecbd57802c1771c15dc465577b9c7eb2cec362349ca91cedfa0007",
@@ -86,7 +86,7 @@
     "lab/wave.mjs": "a86e7f06839fc227d133b7c001a35e1888e03977c17965876ef3f9d2146cf4c6",
     "LEIA-ME.md": "4b28cb5bd01e91a1a0ca2ab591d08d21357573bfd4e76b06906712c1f6a4b608",
     "listening.mjs": "d396aba16fb9e27074aa6668696ba5be0467257ec2acf1bd8c53277b4bfbfeea",
-    "manifest.json": "ad8c2b44d9d7633b80fa4564d38a6c9509da1ad848ef35c224274f6e9782d58e"
+    "manifest.json": "b5c5ccc242d624e91dc7b0544d3b93933a96b49e62681ca5a8bc58accacbf6af"
   },
   "provenance": {
     "source_commit": "4a8cfbbfed2088b72e2456c3799980ce96717f9a",
@@ -122,5 +122,10 @@
     "randomization": "Python random.Random(20261124), one fixed X/Y/Z permutation per scene",
     "commands": "parameter/tap/MIDI commits at documented frames, identical in A/B/C"
   },
-  "publication": "PENDING_CI_ARTIFACT"
+  "publication": "PUBLISHED_ARTIFACT_14985866516",
+  "published_artifact": {
+    "run_id": 45532866456,
+    "artifact_id": 14985866516,
+    "zip_sha256": "a7115ef0c54a5d62798a217b237086b22bf8409631baf23f15d796caf2153feb"
+  }
 }

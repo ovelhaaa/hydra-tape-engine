@@ -75,11 +75,11 @@
           "files": {
             "RAW": {
               "path": "02_manual_80_160_driven-X-RAW.wav",
-              "sha256": "67fa0351fd2f40be36f4f846235ebbabf97db76e04518eaa05a1deaf1ed7ce73"
+              "sha256": "0a6b22a16cb1db0ebb5e7d20613d783fb0dcbc3e23880c8038b84ece4d8db5eb"
             },
             "MATCHED": {
               "path": "02_manual_80_160_driven-X-MATCHED.wav",
-              "sha256": "0f396bceb0cc688cc4937469ba25b1d187adcff02a170d9823696d69abd0c917"
+              "sha256": "e8a82fb9011e50a8f19bbab6ddce5e72d7e034484c25960f18065ceb2c99f4b4"
             }
           }
         },
@@ -88,11 +88,11 @@
           "files": {
             "RAW": {
               "path": "02_manual_80_160_driven-Y-RAW.wav",
-              "sha256": "22c53ff1363e56a45e9a4416ace370adc8ba99d50cf1a41dd58661e28781cc65"
+              "sha256": "17dc549ef289abf57ba957770f053f78879dfbcd421c55388872d177cab80b4d"
             },
             "MATCHED": {
               "path": "02_manual_80_160_driven-Y-MATCHED.wav",
-              "sha256": "22c53ff1363e56a45e9a4416ace370adc8ba99d50cf1a41dd58661e28781cc65"
+              "sha256": "17dc549ef289abf57ba957770f053f78879dfbcd421c55388872d177cab80b4d"
             }
           }
         },
@@ -101,19 +101,19 @@
           "files": {
             "RAW": {
               "path": "02_manual_80_160_driven-Z-RAW.wav",
-              "sha256": "9d101b26da3bc82b64b28916335a754a5eb901ded2d374577d7fa3647e6e6adc"
+              "sha256": "0a6b22a16cb1db0ebb5e7d20613d783fb0dcbc3e23880c8038b84ece4d8db5eb"
             },
             "MATCHED": {
               "path": "02_manual_80_160_driven-Z-MATCHED.wav",
-              "sha256": "2dcc17d3b8bfdf6ec3ecbd0c16cf7afefb1a6f3d95affab12ad63ba6893f9124"
+              "sha256": "e8a82fb9011e50a8f19bbab6ddce5e72d7e034484c25960f18065ceb2c99f4b4"
             }
           }
         }
       ],
       "matched_gain": {
-        "X": 0.9359640904540953,
+        "X": 0.9360321894471427,
         "Y": 1.0,
-        "Z": 0.9359762467932146
+        "Z": 0.9360321894471427
       }
     },
     {
@@ -645,7 +645,7 @@
     }
   ],
   "provenance": {
-    "source_commit": "4a8cfbbfed2088b72e2456c3799980ce96717f9a",
+    "source_commit": "a8bc9c56d3a0c81d784260dae643cf2560a33b42",
     "branch": "experiment/dsp-reform-f5-musical-timing",
     "flags": {
       "A": [
@@ -668,9 +668,9 @@
       ]
     },
     "libraries": {
-      "A": "4085ca014d93ea345a1c3926003d96efc50f66678a137f84c65d4e6bc880d978",
-      "B": "2185adfcec989fb8ff44d58d245685a7597b75b69beedcf07e40132534049f8f",
-      "C": "309cebfa55e74e75845775451020b97739188d7121d412f0eaaeeef737725181"
+      "A": "84e8ddc10d152948237bba553a4d716060a788567ed6937988b448cd27afd1cd",
+      "B": "27a937b0e901647cec0b0b0998598f6c6dd1c665f4ec68413028d8afeac35105",
+      "C": "be73206219614761e9b57001b15d0b6ddbf032a02a92c1fc5efadfc320c2e807"
     },
     "block_size": 128,
     "rate": 44100,

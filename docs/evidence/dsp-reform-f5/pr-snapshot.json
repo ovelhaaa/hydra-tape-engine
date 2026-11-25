@@ -1,25 +1,42 @@
 {
   "phase": "F5",
   "repository": "ovelhaaa/hydra-tape-engine",
-  "generated_at": "2026-11-24T21:30:00-03:00",
-  "remote_access": false,
-  "github_api": "unreachable (SSL/credentials)",
+  "generated_at": "2026-11-25T02:40:00Z",
+  "remote_access": true,
+  "github_api": "reachable; authenticated as the repository owner",
+  "network_note": "Git for Windows needed http.sslBackend=openssl; Schannel failed with SEC_E_NO_CREDENTIALS",
   "dsp_commit": "4a8cfbbfed2088b72e2456c3799980ce96717f9a",
   "branch": "experiment/dsp-reform-f5-musical-timing",
   "base_branch": "experiment/dsp-reform-f3-saturation",
   "base_head": "29f50258f1ac47139ac8f1fdb21aa59424ca9a75",
   "pull_request": {
-    "number": null,
-    "state": "NOT_CREATED",
-    "draft_required": true,
-    "reason": "push failed with SEC_E_NO_CREDENTIALS; no remote branch exists"
+    "number": 70,
+    "state": "open",
+    "draft": true,
+    "url": "https://github.com/ovelhaaa/hydra-tape-engine/pull/70",
+    "head_sha": "a8bc9c56d3a0c81d784260dae643cf2560a33b42",
+    "checks": "20 checks; 19 success, deploy skipped"
+  },
+  "workflow": {
+    "file": ".github/workflows/dsp-reform-f5.yml",
+    "run_id": 45532866456,
+    "run_url": "https://github.com/ovelhaaa/hydra-tape-engine/actions/runs/45532866456",
+    "conclusion": "success",
+    "artifact": {
+      "name": "hydra-dsp-reform-f5-listening",
+      "id": 14985866516,
+      "url": "https://github.com/ovelhaaa/hydra-tape-engine/actions/runs/45532866456/artifacts/14985866516",
+      "bytes": 117591429,
+      "sha256": "a7115ef0c54a5d62798a217b237086b22bf8409631baf23f15d796caf2153feb",
+      "verified": true
+    }
   },
   "pr_text": "docs/evidence/dsp-reform-f5/PR_DRAFT.md",
   "notes": [
-    "This branch was created from the verified F3 HEAD, not from F4/#69.",
-    "F4 is not integrated and its flag is absent from this branch.",
-    "The PR body must be copied from PR_DRAFT.md once push credentials exist."
-  ],
-  "dsp_commit_at_pr": "4a8cfbbfed2088b72e2456c3799980ce96717f9a",
-  "branch_head_note": "docs-only commits after the DSP commit; use git rev-parse HEAD"
+    "Branch exists remotely and the PR was created as Draft with base F3, not main.",
+    "F5.1 removed build-web-legacy/, build-web-test/ and scripts/create_phase6_pr.py from the diff.",
+    "Production regression and F5 qualification are separate CI jobs; F5 flags are per target.",
+    "The listening package was published and verified after the source-seeding fix.",
+    "No merge, squash, force push, branch deletion or PR closure was performed."
+  ]
 }

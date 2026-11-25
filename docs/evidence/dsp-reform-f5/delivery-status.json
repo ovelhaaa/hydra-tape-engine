@@ -1,11 +1,18 @@
 {
   "phase": "F5",
-  "state": "READY_FOR_HUMAN_LISTENING_PENDING_CI_ARTIFACT",
+  "state": "READY_FOR_HUMAN_LISTENING_ARTIFACT_VERIFIED",
   "dsp_commit": "4a8cfbbfed2088b72e2456c3799980ce96717f9a",
   "source_commit": "4a8cfbbfed2088b72e2456c3799980ce96717f9a",
   "branch": "experiment/dsp-reform-f5-musical-timing",
+  "branch_head_at_evidence": "a8bc9c56d3a0c81d784260dae643cf2560a33b42",
   "base_branch": "experiment/dsp-reform-f3-saturation",
   "base_head": "29f50258f1ac47139ac8f1fdb21aa59424ca9a75",
+  "pull_request": {
+    "number": 70,
+    "state": "open",
+    "draft": true,
+    "url": "https://github.com/ovelhaaa/hydra-tape-engine/pull/70"
+  },
   "default_variant": 0,
   "variants": {
     "0": "Vintage F3-A (bit-exact reference)",
@@ -13,12 +20,14 @@
     "2": "Clock-Focused Timing"
   },
   "gates": {
-    "F5_0_bit_exact_F3_A": "10/10",
+    "F5_0_bit_exact_F3_A": "10/10 (CI Linux, run 45532866456)",
     "F5_1_2_static_bit_exact": "10/10 + 2/2 controls",
     "instrumentation_equivalence": "39/39 bit-exact",
-    "ctest_native": "23/23 PASS",
-    "native_wasm_comparator": "max_abs=0 RMSE=0 PASS",
-    "f5_wasm_tests": "3/3 PASS",
+    "ctest_production_native": "20/20 PASS (no experimental flags)",
+    "ctest_production_wasm": "20/20 PASS (no experimental flags)",
+    "f5_contracts_native": "3/3 PASS",
+    "f5_contracts_wasm": "3/3 PASS",
+    "native_wasm_per_variant": "max_abs=0 RMSE=0 for A/B/C",
     "block_size_37_64_128_256": "max_abs=0 all variants",
     "reverse_9_divisions": "effective==requested, clamped=0",
     "drift_60s_transport": "<=1.42e-14 beats",
@@ -33,25 +42,75 @@
     "wav_files": 66,
     "hash_files": 82,
     "verified": true,
-    "manifest_sha256": "ad8c2b44d9d7633b80fa4564d38a6c9509da1ad848ef35c224274f6e9782d58e",
-    "public_url": null,
-    "publication": "BLOCKED_NO_GITHUB_CREDENTIALS",
-    "local_zip": "artifacts/dsp-reform-f5/hydra-dsp-reform-f5-listening.zip",
-    "local_zip_sha256": "21f76c31d0ea30111a2a6c44466a47501b6d34b9f4abb55b30db8d79694637b9",
-    "local_zip_bytes": 136201439
+    "manifest_sha256": "02927878f51cf39dcbb0c6859129394d5e1e584bae7d9c697d9f2d346b4b2697",
+    "answer_key_sha256": "6baaa1336a8317922ce955ce1c37166ace0fdd6a5983f5b0d0cafcc30a1f35ab",
+    "public_url": "https://github.com/ovelhaaa/hydra-tape-engine/actions/runs/45532866456/artifacts/14985866516",
+    "publication": "PUBLISHED_AND_VERIFIED",
+    "artifact_id": 14985866516,
+    "run_id": 45532866456,
+    "zip_bytes": 117591429,
+    "zip_sha256": "a7115ef0c54a5d62798a217b237086b22bf8409631baf23f15d796caf2153feb",
+    "reproducible_audio": "66/66 WAV hashes equal a local Windows rebuild",
+    "legacy_local_zip": {
+      "path": "artifacts/dsp-reform-f5/hydra-dsp-reform-f5-listening.zip",
+      "bytes": 136201439,
+      "sha256": "21f76c31d0ea30111a2a6c44466a47501b6d34b9f4abb55b30db8d79694637b9",
+      "status": "SUPERSEDED_PRE_FIX_UNSEEDED_SCENE_02"
+    }
   },
   "publication": {
-    "pr_created": false,
-    "ci_run": false,
-    "push_attempted": true,
-    "push_error": "fatal: unable to access 'https://github.com/ovelhaaa/hydra-tape-engine.git/': schannel: AcquireCredentialsHandle failed: SEC_E_NO_CREDENTIALS (0x8009030E)",
-    "reason": "no GitHub credentials in this environment; gh CLI absent; GitHub API unreachable",
-    "recipe": "docs/evidence/dsp-reform-f5/PUBLICATION_BLOCKED.md"
+    "pr_created": true,
+    "ci_run": true,
+    "run_id": 45532866456,
+    "run_url": "https://github.com/ovelhaaa/hydra-tape-engine/actions/runs/45532866456",
+    "run_conclusion": "success",
+    "artifact_id": 14985866516,
+    "zip_sha256": "a7115ef0c54a5d62798a217b237086b22bf8409631baf23f15d796caf2153feb",
+    "previous_artifacts": [
+      {
+        "artifact_id": 14985175520,
+        "run_id": 45529728140,
+        "status": "SUPERSEDED_UNSEEDED_SOURCE"
+      },
+      {
+        "artifact_id": 14982026827,
+        "run_id": 45524614234,
+        "status": "INVALID_PARTIAL",
+        "bytes": 97286,
+        "reason": "no WAVs; uploaded by the run that failed before rendering"
+      }
+    ],
+    "details": "docs/evidence/dsp-reform-f5/PUBLICATION_STATUS.md"
+  },
+  "cleanup": {
+    "diff_vs_f3_before": {
+      "files_changed": 130,
+      "insertions": 42843,
+      "build_trees": ["build-web-legacy/", "build-web-test/"],
+      "build_files": 77,
+      "build_lines": 27758,
+      "out_of_scope_script": "scripts/create_phase6_pr.py"
+    },
+    "diff_vs_f3_after_functional_commits": {
+      "files_changed": 53,
+      "insertions": 15207,
+      "deletions": 1,
+      "commit": "59a121a0259b4bc91bb436d6e37ebc4000c42d52"
+    },
+    "removed_from_index": 78,
+    "kept_on_disk": true,
+    "gitignore_specific_entries": ["/build-web-legacy/", "/build-web-test/"]
+  },
+  "ci_architecture": {
+    "production_regression": "original flags, full CTest, Native and WASM",
+    "f5_qualification": "matrix A/B/C with explicit target-level defines on both toolchains",
+    "root_cause": "global CMAKE_CXX_FLAGS made production tests run in an experimental topology",
+    "f5_bench_fixes": ["-fPIC on Linux", "seeded driven-guitar source for reproducibility"]
   },
   "decisions": {
     "music_decision": "HUMAN_PENDING",
     "candidate_promoted": false,
     "f4_integrated": false
   },
-  "head_at_evidence": "8c324f446c475c367adae6ae531797586a2e5aa4"
+  "head_at_evidence": "a8bc9c56d3a0c81d784260dae643cf2560a33b42"
 }

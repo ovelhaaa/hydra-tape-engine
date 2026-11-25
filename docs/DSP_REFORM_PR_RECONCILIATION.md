@@ -317,7 +317,7 @@ misturar as duas linhagens** sem uma decisão explícita de arquitetura.
 | [#67](https://github.com/ovelhaaa/hydra-tape-engine/pull/67) `2c15b886` | #66 | calibração F2 Warm/Vintage | 13 success, 1 skipped | **registrada**: Vintage escolhida; Warm aceita | pendente | retarget após #66 |
 | [#68](https://github.com/ovelhaaa/hydra-tape-engine/pull/68) `29f50258` | #67 | saturação F3 A/B/C | 15 success, 1 skipped | **26/26 equivalentes**; nenhuma preferência | pendente | base de #69 e #70 |
 | [#69](https://github.com/ovelhaaa/hydra-tape-engine/pull/69) `aa2178bd` | #68 | transições F4 | 13 success, **1 failure (`validate`)**, 1 skipped | pendente | pendente | **irmã da #70**; conflito textual em `tape_core.cpp`/CI |
-| [#70](https://github.com/ovelhaaa/hydra-tape-engine/pull/70) `6cfeb620` | #68 | timing musical F5 A/B/C | ver `dsp-reform-f5.yml` na head | pendente | pendente | **irmã da #69**; não incorpora F4 |
+| [#70](https://github.com/ovelhaaa/hydra-tape-engine/pull/70) `a8bc9c5` | #68 | timing musical F5 A/B/C | ver `dsp-reform-f5.yml` na head | pendente | pendente | **irmã da #69**; não incorpora F4 |
 
 ## Leitura do estado
 
@@ -369,4 +369,3 @@ misturar as duas linhagens** sem uma decisão explícita de arquitetura.
 - Nenhuma PR antiga foi fechada por parecer obsoleta; nenhuma branch apagada.
 - A #69 não foi modificada e a F5 não contém a flag
   `HYDRA_DSP_REFORM_F4_TRANSITIONS`.
-

@@ -44,13 +44,13 @@ new_rec = (old_rec + "\n    if(ch==0&&phase64_diag::enabled&&phase64_diag::n<819
 assert text.count(old_rec) == 1
 text = text.replace(old_rec, new_rec)
 
-old_mag = "if(!impl_->freeze) buffer[impl_->writeHead]=mag.process(recSig, allowBias);"
-new_mag = ("float magOut=0.0f;\n"
-           "    if(!impl_->freeze) { magOut=mag.process(recSig, allowBias); buffer[impl_->writeHead]=magOut; }\n"
-           "    if(ch==0&&phase64_diag::enabled&&phase64_diag::n<8192)"
-           "{phase64_diag::g[phase64_diag::n].mag=magOut;}")
-assert text.count(old_mag) == 1
-text = text.replace(old_mag, new_mag)
+# Explicit semantic boundary: read the value already stored after magnetics,
+# including F4 release gain. Never call mag.process twice or write while frozen.
+mag_anchor = "    // HYDRA_TEST_POINT_MAGNETIC_WRITE: stored post-magnetics value; zero when frozen."
+if text.count(mag_anchor) != 1:
+    raise RuntimeError("expected exactly one post-magnetics test point")
+text = text.replace(mag_anchor, mag_anchor + "\n    if(ch==0&&phase64_diag::enabled&&phase64_diag::n<8192)"
+                    "{phase64_diag::g[phase64_diag::n].mag=impl_->freeze?0.f:buffer[impl_->writeHead];}")
 
 old_calls = ("*outL=writeCh(inL,frameL.tapeOutput,frameL,feedbackL,impl_->delayLine,impl_->dcBlocker,impl_->magneticsL);\n"
              "  *outR=writeCh(inR,frameR.tapeOutput,frameR,feedbackR,impl_->delayLineR,impl_->dcBlockerR,impl_->magneticsR);")

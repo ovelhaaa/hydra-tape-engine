@@ -29,6 +29,7 @@ target_include_directories(hydra_dsp_core
 
 if(BUILD_TESTING)
   include(CTest)
+  include(cmake/HydraLive.cmake)
   find_package(Python3 COMPONENTS Interpreter REQUIRED)
   add_test(NAME fast_tanh_integrity
     COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/tests/core/fast_tanh_integrity.py)

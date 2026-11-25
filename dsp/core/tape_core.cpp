@@ -1637,6 +1637,7 @@ HYDRA_DSP_IRAM void TapeCore::processStereoBlock(const float* inLBlock,const flo
 #endif
       buffer[impl_->writeHead]=mag.process(writeSig, allowBias);
     }
+    // HYDRA_TEST_POINT_MAGNETIC_WRITE: stored post-magnetics value; zero when frozen.
     HYDRA_PROFILE_END(MagneticWrite, tMagWrite);
     HYDRA_PROFILE_START(tLim);
     const float limited = impl_->outputLimiter((input*dryGain)+dryTapeOutput);

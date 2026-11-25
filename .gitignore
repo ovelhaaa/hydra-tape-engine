@@ -39,3 +39,7 @@ __pycache__/
 /build-f5-wasm/
 /build-f5-wasm-cache/
 /build-f5-probe/
+
+# Live v0.1 local qualification trees
+/build-live-native/
+/build-live-wasm/

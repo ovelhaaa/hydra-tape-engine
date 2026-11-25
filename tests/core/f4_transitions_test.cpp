@@ -213,6 +213,54 @@ void test_commands_during_transition() {
   CHECK(boundary_step(y, 46100, 512) <= 0.2);
 }
 
+// Commands at exact sample offsets, independent of process block boundaries.
+// Each spacing is shorter than the 10 ms ramp; masks reverse direction.
+std::vector<float> rapid_render(int spacing, int block) {
+  const int frames=2*kRate;
+  auto l=make_signal(frames,0), r=make_signal(frames,1);
+  std::vector<float> out(frames), right(frames);
+  Engine e;
+  e.set(HYDRA_DSP_PARAM_HEADS_MUSICAL,1.f);
+  e.set(HYDRA_DSP_PARAM_FEEDBACK,95.f);
+  CHECK(hydra_dsp_commit(e.handle)==0);
+  const int masks[]={7,1,7,4,3,4,7,1,7,4,3,4};
+  int event=0, start=0;
+  while(start<frames){
+    const int next=kRate+event*spacing;
+    if(event<12 && start==next){
+      e.set(HYDRA_DSP_PARAM_ACTIVE_HEADS,float(masks[event]));
+      e.set(HYDRA_DSP_PARAM_BPM,(event%2)?155.f:85.f);
+      e.set(HYDRA_DSP_PARAM_DRIVE,(event%2)?20.f:80.f);
+      e.set(HYDRA_DSP_PARAM_DRY_WET,(event%2)?30.f:70.f);
+      e.set(HYDRA_DSP_PARAM_DELAY_WET,(event%2)?30.f:70.f);
+      if(event==2 || event==6) e.set(HYDRA_DSP_PARAM_FREEZE,event==2?1.f:0.f);
+      CHECK(hydra_dsp_commit(e.handle)==0);
+      ++event;
+    }
+    int n=std::min(block,frames-start);
+    if(event<12) n=std::min(n,kRate+event*spacing-start);
+    CHECK(n>0);
+    e.process(l.data()+start,r.data()+start,out.data()+start,right.data()+start,n);
+    start+=n;
+  }
+  CHECK(event==12);
+  for(int i=0;i<frames;++i){
+    CHECK(std::isfinite(out[i]) && std::isfinite(right[i]));
+    CHECK(std::fabs(out[i])<=.99f && std::fabs(right[i])<=.99f);
+  }
+  // Existing F4 discontinuity ceiling, measured throughout the interrupted ramps.
+  CHECK(boundary_step(out,kRate,12*spacing+441)<=.2);
+  out.insert(out.end(),right.begin(),right.end());
+  return out;
+}
+void test_sub_ramp_retargeting(){
+  for(int spacing : {88,176,265}) { // nearest frames to 2,4,6 ms at 44.1 kHz
+    const auto reference=rapid_render(spacing,1);
+    for(int block : {37,64,128,256}) CHECK(reference==rapid_render(spacing,block));
+    std::fprintf(stderr,"rapid commands spacing=%d frames: PASS\n",spacing);
+  }
+}
+
 void test_freeze_release_is_bounded() {
   const int frames = 3 * kRate;
   auto inL = make_signal(frames, 0);
@@ -252,6 +300,7 @@ int main() {
   test_mix_recovers_static_final_value();
   test_head_transition_is_below_natural_slope();
   test_commands_during_transition();
+  test_sub_ramp_retargeting();
   test_freeze_release_is_bounded();
   std::puts("F4 performance-transition contract: PASS");
   return 0;

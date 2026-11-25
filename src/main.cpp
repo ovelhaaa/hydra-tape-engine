@@ -1491,6 +1491,7 @@ void executeCommand(String line) {
 #if defined(HYDRA_PHASE72_CLASSIC_FEEDBACK_ROUTING) && HYDRA_PHASE72_CLASSIC_FEEDBACK_ROUTING
     dualPrintln("FeedbackRouting=PHASE72_CLASSIC_C");
 #endif
+    dualPrintf("BuildName=%s\nBuildFlags=%s\n", HYDRA_FIRMWARE_BUILD_NAME, HYDRA_FIRMWARE_FLAGS);
     dualPrintln("=== IDENTITY END ===");
     return;
   }

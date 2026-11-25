@@ -115,7 +115,10 @@ def main():
     parser.add_argument("--output", type=Path, default=ROOT / "artifacts/phase64/feedback")
     parser.add_argument("--stages", action="store_true", help="Build a diagnostic copy and compare pre-limiter windows at 5 and 55 seconds")
     parser.add_argument("--define", action="append", default=[], help="Compile definition matching the measured library (repeatable)")
+    parser.add_argument("--include-feedback100", action="store_true", help="Add the Live full-feedback tail without replacing historical cases")
     args = parser.parse_args()
+    if args.include_feedback100:
+        CASES["feedback100"] = {13: 100}
 
     lib = render.HydraEngineRunner(args.library)
     args.output.mkdir(parents=True, exist_ok=True)

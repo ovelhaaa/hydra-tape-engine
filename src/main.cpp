@@ -1532,38 +1532,57 @@ void executeCommand(String line) {
   float val = valStr.toFloat();
 
   if (cmd == "bench") {
+    // Optional asynchronous capture reuses the existing counters and histogram.
+    // All parsing/reporting remains on the CLI task; audio work is unchanged.
+    static uint32_t capturedWarmup = 256;
+    const bool reportOnly = (valStr == "result");
+    const bool async = valStr.startsWith("start");
+    if (async) { valStr = valStr.substring(5); valStr.trim(); }
+    if (reportOnly && g_bench.state != BENCH_DONE) {
+      dualPrintf("BENCH NOT READY (state=%u)\n", (unsigned)g_bench.state);
+      return;
+    }
     uint32_t blocks = 1024;
     uint32_t warmup = 256;
-    if (valStr.length() > 0) {
-      int sp2 = valStr.indexOf(' ');
-      if (sp2 > 0) {
-        long b = valStr.substring(0, sp2).toInt();
-        long w = valStr.substring(sp2 + 1).toInt();
-        if (b > 0) blocks = (uint32_t)b;
-        if (w > 0) warmup = (uint32_t)w;
-      } else {
-        long b = valStr.toInt();
-        if (b > 0) blocks = (uint32_t)b;
+    if (!reportOnly) {
+      if (g_bench.state == BENCH_WARMUP || g_bench.state == BENCH_RUNNING) {
+        dualPrintln("BENCH BUSY");
+        return;
       }
-    }
-    if (!g_bench.hist) {
-      dualPrintln("BENCH ERR: histogram not allocated");
-      return;
-    }
-    memset(g_bench.hist, 0, kBenchHistBins * sizeof(uint32_t));
-    g_bench.targetBlocks = blocks;
-    g_bench.warmupRemain = (warmup > 0) ? warmup : 1;
-    g_bench.state = BENCH_WARMUP;
-    const int64_t deadlineUs = esp_timer_get_time() + ((int64_t)(blocks + warmup) * 15000LL) + 10000000LL;
-    while (g_bench.state != BENCH_DONE && esp_timer_get_time() < deadlineUs) {
-      vTaskDelay(pdMS_TO_TICKS(10));
-    }
-    if (g_bench.state != BENCH_DONE) {
-      dualPrintf("BENCH TIMEOUT (state=%u collected=%lu/%lu)\n",
-                 (unsigned)g_bench.state, (unsigned long)g_bench.collected, (unsigned long)g_bench.targetBlocks);
-      g_bench.state = BENCH_IDLE;
-      return;
-    }
+      if (valStr.length() > 0) {
+        int sp2 = valStr.indexOf(' ');
+        if (sp2 > 0) {
+          long b = valStr.substring(0, sp2).toInt();
+          long w = valStr.substring(sp2 + 1).toInt();
+          if (b > 0) blocks = (uint32_t)b;
+          if (w > 0) warmup = (uint32_t)w;
+        } else {
+          long b = valStr.toInt();
+          if (b > 0) blocks = (uint32_t)b;
+        }
+      }
+      if (!g_bench.hist) {
+        dualPrintln("BENCH ERR: histogram not allocated");
+        return;
+      }
+      memset(g_bench.hist, 0, kBenchHistBins * sizeof(uint32_t));
+      g_bench.targetBlocks = blocks;
+      g_bench.warmupRemain = (warmup > 0) ? warmup : 1;
+      capturedWarmup = warmup;
+      g_bench.state = BENCH_WARMUP;
+      if (async) { dualPrintln("BENCH STARTED; use bench result after capture"); return; }
+      const int64_t deadlineUs = esp_timer_get_time() + ((int64_t)(blocks + warmup) * 15000LL) + 10000000LL;
+      while (g_bench.state != BENCH_DONE && esp_timer_get_time() < deadlineUs) {
+        vTaskDelay(pdMS_TO_TICKS(10));
+      }
+      if (g_bench.state != BENCH_DONE) {
+        dualPrintf("BENCH TIMEOUT (state=%u collected=%lu/%lu)\n",
+                   (unsigned)g_bench.state, (unsigned long)g_bench.collected, (unsigned long)g_bench.targetBlocks);
+        g_bench.state = BENCH_IDLE;
+        return;
+      }
+    } // capture; result path reads only after BENCH_DONE
+    warmup = capturedWarmup;
     const uint32_t n = g_bench.collected;
     const uint32_t r50 = (n + 1u) / 2u;
     const uint32_t r95 = (uint32_t)((95ULL * n + 99ULL) / 100ULL);

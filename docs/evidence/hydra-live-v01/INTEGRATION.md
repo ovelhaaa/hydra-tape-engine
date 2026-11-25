@@ -86,3 +86,8 @@ O relatório local inicial passou Native 29/29 e WASM 29/29. Matriz estática:
 10/10 bit-exact entre configurações e com F3-A; musical estático bit-exact.
 Resultados finais e SHA são os do run/artifact validado, não os destas notas
 de preparação. Roteiro: `docs/HYDRA_LIVE_V01_HARDWARE_TEST.md`.
+
+A observabilidade inclui `bench start`/`bench result`, subcomandos CLI que
+reutilizam a captura existente e permitem comandos durante a medição sem
+bloquear o prompt. Nenhuma instrução nova entra na audio task. A cauda Live
+inclui também feedback 100%, mantendo intactos os casos históricos.

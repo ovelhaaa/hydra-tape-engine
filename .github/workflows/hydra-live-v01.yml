@@ -47,7 +47,7 @@ jobs:
       - name: Integrated Live feedback and Reverse, including instrumentation equivalence
         run: |
           python scripts/phase64_validate_engine.py --library build-native/libhydra_live_11.so --output artifacts/live/gates/live-engine
-          python scripts/phase64_feedback_stability.py --library build-native/libhydra_live_11.so --seconds 60 --stages --define HYDRA_PHASE72_CLASSIC_FEEDBACK_ROUTING=1 --define HYDRA_DSP_REFORM_F2_VARIANT=2 --define HYDRA_DSP_REFORM_F3_VARIANT=0 --define HYDRA_DSP_REFORM_F4_TRANSITIONS=1 --define HYDRA_DSP_REFORM_F5_TIMING_VARIANT=1 --output artifacts/live/gates/live-feedback
+          python scripts/phase64_feedback_stability.py --library build-native/libhydra_live_11.so --seconds 60 --stages --include-feedback100 --define HYDRA_PHASE72_CLASSIC_FEEDBACK_ROUTING=1 --define HYDRA_DSP_REFORM_F2_VARIANT=2 --define HYDRA_DSP_REFORM_F3_VARIANT=0 --define HYDRA_DSP_REFORM_F4_TRANSITIONS=1 --define HYDRA_DSP_REFORM_F5_TIMING_VARIANT=1 --output artifacts/live/gates/live-feedback
       - uses: actions/upload-artifact@v4
         if: always()
         with:

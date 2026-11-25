@@ -90,10 +90,12 @@ PSRAM/flash e I2S inicializado. `src 2` seleciona a entrada I2S.
 7. **Estresse:** toque com `fbk 95` e, brevemente, `fbk 100`; alterne BPM,
    cabeçotes, Mix/Drive e Freeze. Deixe a cauda por 60 segundos. Compare
    `perf` antes/depois. Use `bench 4096 256` para obter P50/P95/P99/peak,
-   overruns, I2S, memória e custo de parâmetros. O comando bench ocupa a CLI
-   até terminar; use as mudanças manuais com `perf` e, separadamente, bench
-   em estado estacionário. Para medir transições concorrentes com bench,
-   use apenas uma interface de controle já disponível no instrumento.
+   overruns, I2S, memória e custo de parâmetros. Para medir transições no mesmo
+   ensaio, use `bench start 16384 256`, envie as mudanças de BPM/cabeçotes/
+   Mix/Drive/Freeze durante os próximos 48 segundos e consulte `bench result`.
+   Se ainda coletando, o comando informa NOT READY; repita após completar.
+   Não reinicie uma captura ativa. Esses subcomandos reutilizam os contadores
+   e liberam a CLI durante a medição, sem trabalho extra na audio task.
 
 ## Registrar e comparar
 

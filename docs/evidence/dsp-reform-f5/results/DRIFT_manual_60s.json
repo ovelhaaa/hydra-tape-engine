@@ -1,0 +1,46 @@
+{
+  "duration_s": 60.0,
+  "schedule": [
+    [
+      10.0,
+      100.0
+    ],
+    [
+      30.0,
+      133.0
+    ],
+    [
+      50.0,
+      80.0
+    ]
+  ],
+  "variants": {
+    "0": {
+      "finite": true,
+      "peak": 0.03732893615961075,
+      "transport_position_error_beats": 0.0,
+      "transport_bpm_final": 80.0,
+      "head_error_samples": 0.0,
+      "head_target_bpm": 80.0,
+      "tail_rms_last_second": 0.0
+    },
+    "1": {
+      "finite": true,
+      "peak": 0.03554340824484825,
+      "transport_position_error_beats": 0.0,
+      "transport_bpm_final": 80.0,
+      "head_error_samples": 0.0,
+      "head_target_bpm": 80.0,
+      "tail_rms_last_second": 0.0
+    },
+    "2": {
+      "finite": true,
+      "peak": 0.03554340824484825,
+      "transport_position_error_beats": 0.0,
+      "transport_bpm_final": 80.0,
+      "head_error_samples": 0.0,
+      "head_target_bpm": 80.0,
+      "tail_rms_last_second": 0.0
+    }
+  }
+}

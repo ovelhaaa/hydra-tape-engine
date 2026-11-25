@@ -1,0 +1,37 @@
+{
+  "artifact": "hydra-dsp-reform-f5-listening",
+  "artifact_id": 14985866516,
+  "artifact_url": "https://github.com/ovelhaaa/hydra-tape-engine/actions/runs/45532866456/artifacts/14985866516",
+  "run_id": 45532866456,
+  "run_url": "https://github.com/ovelhaaa/hydra-tape-engine/actions/runs/45532866456",
+  "run_head": "a8bc9c56d3a0c81d784260dae643cf2560a33b42",
+  "run_conclusion": "success",
+  "zip_bytes": 117591429,
+  "zip_sha256": "a7115ef0c54a5d62798a217b237086b22bf8409631baf23f15d796caf2153feb",
+  "zip_sha256_source": "GitHub artifact digest, recomputed after download: match",
+  "zip_entries": 95,
+  "package_entries": 83,
+  "scene_count": 11,
+  "wav_files": 66,
+  "hashed_files": 82,
+  "hashes_verified": "82/82 after download",
+  "manifest_sha256": "02927878f51cf39dcbb0c6859129394d5e1e584bae7d9c697d9f2d346b4b2697",
+  "answer_key_sha256": "6baaa1336a8317922ce955ce1c37166ace0fdd6a5983f5b0d0cafcc30a1f35ab",
+  "reproducibility": "all 66 WAV hashes equal a local Windows rebuild of the same sources; manifest/answer-key differ only by toolchain provenance and checkout line endings",
+  "expires": "30 days after 2026-11-25",
+  "previous_artifacts": [
+    {
+      "artifact_id": 14985175520,
+      "run_id": 45529728140,
+      "status": "SUPERSEDED_UNSEEDED_SOURCE",
+      "reason": "scene 02 used an unseeded RNG and could not be regenerated"
+    },
+    {
+      "artifact_id": 14982026827,
+      "run_id": 45524614234,
+      "status": "INVALID_PARTIAL",
+      "reason": "97,286 bytes, no WAVs: uploaded by the failed run before the CI fix"
+    }
+  ],
+  "publication": "PUBLISHED_AND_VERIFIED"
+}

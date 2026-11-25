@@ -1,0 +1,162 @@
+{
+  "decisions": {
+    "manual_120_100": {
+      "bit_exact": true,
+      "max_abs": 0.0
+    },
+    "manual_100_120": {
+      "bit_exact": true,
+      "max_abs": 0.0
+    },
+    "manual_120_90": {
+      "bit_exact": true,
+      "max_abs": 0.0
+    },
+    "manual_90_135": {
+      "bit_exact": true,
+      "max_abs": 0.0
+    },
+    "manual_80_160": {
+      "bit_exact": true,
+      "max_abs": 0.0
+    },
+    "manual_160_80": {
+      "bit_exact": true,
+      "max_abs": 0.0
+    },
+    "ms_500_600": {
+      "bit_exact": true,
+      "max_abs": 0.0
+    },
+    "ms_600_500": {
+      "bit_exact": true,
+      "max_abs": 0.0
+    },
+    "ms_500_666": {
+      "bit_exact": true,
+      "max_abs": 0.0
+    },
+    "ms_666_444": {
+      "bit_exact": true,
+      "max_abs": 0.0
+    },
+    "ms_750_375": {
+      "bit_exact": true,
+      "max_abs": 0.0
+    },
+    "ms_375_750": {
+      "bit_exact": true,
+      "max_abs": 0.0
+    },
+    "ramp_120_100": {
+      "bit_exact": true,
+      "max_abs": 0.0
+    },
+    "ramp_80_160": {
+      "bit_exact": true,
+      "max_abs": 0.0
+    },
+    "mode_single_head": {
+      "bit_exact": true,
+      "max_abs": 0.0
+    },
+    "mode_multi_head": {
+      "bit_exact": true,
+      "max_abs": 0.0
+    },
+    "mode_pingpong": {
+      "bit_exact": true,
+      "max_abs": 0.0
+    },
+    "mode_freeze": {
+      "bit_exact": true,
+      "max_abs": 0.0
+    },
+    "mode_fb95": {
+      "bit_exact": true,
+      "max_abs": 0.0
+    },
+    "mode_reverse_v2": {
+      "bit_exact": true,
+      "max_abs": 0.0
+    },
+    "control_static": {
+      "bit_exact": true,
+      "max_abs": 0.0
+    },
+    "control_static_reverse": {
+      "bit_exact": true,
+      "max_abs": 0.0
+    },
+    "tap_regular_120": {
+      "bit_exact": true,
+      "max_abs": 0.0
+    },
+    "tap_regular_90": {
+      "bit_exact": true,
+      "max_abs": 0.0
+    },
+    "tap_accelerando": {
+      "bit_exact": true,
+      "max_abs": 0.0
+    },
+    "tap_ritardando": {
+      "bit_exact": true,
+      "max_abs": 0.0
+    },
+    "tap_outlier": {
+      "bit_exact": true,
+      "max_abs": 0.0
+    },
+    "tap_two_taps_new": {
+      "bit_exact": true,
+      "max_abs": 0.0
+    },
+    "tap_bounce": {
+      "bit_exact": true,
+      "max_abs": 0.0
+    },
+    "tap_timeout": {
+      "bit_exact": true,
+      "max_abs": 0.0
+    },
+    "midi_stable_120": {
+      "bit_exact": true,
+      "max_abs": 0.0
+    },
+    "midi_120_125": {
+      "bit_exact": true,
+      "max_abs": 0.0
+    },
+    "midi_120_90": {
+      "bit_exact": true,
+      "max_abs": 0.0
+    },
+    "midi_jitter": {
+      "bit_exact": true,
+      "max_abs": 0.0
+    },
+    "midi_loss_1": {
+      "bit_exact": true,
+      "max_abs": 0.0
+    },
+    "midi_loss_2": {
+      "bit_exact": true,
+      "max_abs": 0.0
+    },
+    "midi_holdover_reacquire": {
+      "bit_exact": true,
+      "max_abs": 0.0
+    },
+    "midi_start_stop_continue": {
+      "bit_exact": true,
+      "max_abs": 0.0
+    },
+    "source_switch_internal_midi": {
+      "bit_exact": true,
+      "max_abs": 0.0
+    }
+  },
+  "bit_exact_count": 39,
+  "total": 39
+}

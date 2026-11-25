@@ -1,0 +1,82 @@
+name: Hydra Vintage Live v0.1
+on:
+  workflow_dispatch:
+  push:
+    branches: [integration/hydra-vintage-live-v0.1]
+permissions:
+  contents: read
+jobs:
+  qualification:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.14'
+      - run: pip install numpy==2.4.1 scipy==1.17.0
+      - uses: mymindstorm/setup-emsdk@v14
+        with:
+          version: '3.1.62'
+      - name: Production A and isolated/integrated Native contracts
+        run: |
+          mkdir -p artifacts/live/gates
+          cmake -S . -B build-native -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=ON
+          cmake --build build-native -j 2
+          set -o pipefail
+          ctest --test-dir build-native --output-on-failure | tee artifacts/live/gates/native.txt
+      - name: Production A and isolated/integrated WASM contracts
+        run: |
+          emcmake cmake -S . -B build-wasm -DCMAKE_BUILD_TYPE=Release -DBUILD_WEB=ON -DBUILD_TESTING=ON -DHYDRA_NATIVE_TRACE_RUNNER="$PWD/build-native/hydra_render_trace_native"
+          cmake --build build-wasm -j 2
+          set -o pipefail
+          ctest --test-dir build-wasm --output-on-failure | tee artifacts/live/gates/wasm.txt
+      - name: Strict identical-configuration parity in all four configurations
+        run: |
+          for pair in 00 10 01 11; do
+            python tests/core/compare_native_wasm.py --native build-native/hydra_live_trace_$pair --wasm-js build-wasm/hydra_live_trace_$pair.js --max-abs-threshold 1e-5 --rmse-threshold 1e-6 --report-json artifacts/live/gates/parity-$pair.json
+          done
+      - name: Frozen Vintage reference and static matrix bit equality
+        run: python scripts/live_v01_validate.py --build build-native --output artifacts/live/gates/static.json
+      - name: Production feedback and Reverse, including instrumentation equivalence
+        run: |
+          python scripts/phase64_validate_engine.py --library build-native/libhydra_abi_test_library.so --output artifacts/live/gates/production-engine
+          python scripts/phase64_feedback_stability.py --library build-native/libhydra_abi_test_library.so --seconds 60 --stages --output artifacts/live/gates/production-feedback
+      - name: Integrated Live feedback and Reverse, including instrumentation equivalence
+        run: |
+          python scripts/phase64_validate_engine.py --library build-native/libhydra_live_11.so --output artifacts/live/gates/live-engine
+          python scripts/phase64_feedback_stability.py --library build-native/libhydra_live_11.so --seconds 60 --stages --include-feedback100 --define HYDRA_PHASE72_CLASSIC_FEEDBACK_ROUTING=1 --define HYDRA_DSP_REFORM_F2_VARIANT=2 --define HYDRA_DSP_REFORM_F3_VARIANT=0 --define HYDRA_DSP_REFORM_F4_TRANSITIONS=1 --define HYDRA_DSP_REFORM_F5_TIMING_VARIANT=1 --output artifacts/live/gates/live-feedback
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: hydra-live-v01-gates
+          path: artifacts/live/gates
+  firmware:
+    needs: qualification
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - run: pip install platformio==6.2.0
+      - uses: actions/download-artifact@v4
+        with:
+          name: hydra-live-v01-gates
+          path: artifacts/live/gates
+      - name: Build both physical targets without flashing
+        run: |
+          set -o pipefail
+          pio run -e esp32-s3-hydra-live -e esp32-s3-hydra-vintage-reference | tee artifacts/live/gates/esp32-build.txt
+      - name: Verify identity and SHA256, package only validated builds
+        run: python scripts/package_live_firmware.py --gates artifacts/live/gates
+      - uses: actions/upload-artifact@v4
+        with:
+          name: hydra-vintage-live-v0.1-firmware
+          path: artifacts/hydra-vintage-live-v0.1-firmware
+          retention-days: 30

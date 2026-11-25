@@ -29,6 +29,7 @@ target_include_directories(hydra_dsp_core
 
 if(BUILD_TESTING)
   include(CTest)
+  include(cmake/HydraLive.cmake)
   find_package(Python3 COMPONENTS Interpreter REQUIRED)
   add_test(NAME fast_tanh_integrity
     COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/tests/core/fast_tanh_integrity.py)
@@ -58,6 +59,84 @@ if(BUILD_TESTING)
     HYDRA_PHASE72_CLASSIC_FEEDBACK_ROUTING=1
   )
   add_test(NAME phase72_classic_core_smoke COMMAND hydra_phase72_classic_core_smoke)
+
+  # F4 transition experiment is compile-time opt-in. Built explicitly so the
+  # production core and its goldens keep HYDRA_DSP_REFORM_F4_TRANSITIONS=0.
+  add_executable(hydra_f4_transitions_test
+    tests/core/f4_transitions_test.cpp
+    dsp/core/tape_core.cpp
+    dsp/core/hydra_dsp_c_api.cpp
+  )
+  target_include_directories(hydra_f4_transitions_test PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/dsp/core
+  )
+  target_compile_definitions(hydra_f4_transitions_test PRIVATE
+    HYDRA_PHASE72_CLASSIC_FEEDBACK_ROUTING=1
+    HYDRA_DSP_REFORM_F2_VARIANT=2
+    HYDRA_DSP_REFORM_F3_VARIANT=0
+    HYDRA_DSP_REFORM_F4_TRANSITIONS=1
+  )
+  add_test(NAME f4_performance_transitions COMMAND hydra_f4_transitions_test)
+  # F5 musical-timing experiment. Three explicit builds keep the production
+  # core at HYDRA_DSP_REFORM_F5_TIMING_VARIANT=0; only these targets opt in.
+  foreach(_f5_variant 0 1 2)
+    add_executable(hydra_f5_timing_test_v${_f5_variant}
+      tests/core/f5_timing_test.cpp
+      dsp/core/tape_core.cpp
+      dsp/core/hydra_dsp_c_api.cpp
+    )
+    target_include_directories(hydra_f5_timing_test_v${_f5_variant} PRIVATE
+      ${CMAKE_CURRENT_SOURCE_DIR}/include
+      ${CMAKE_CURRENT_SOURCE_DIR}/dsp/core
+    )
+    target_compile_definitions(hydra_f5_timing_test_v${_f5_variant} PRIVATE
+      HYDRA_PHASE72_CLASSIC_FEEDBACK_ROUTING=1
+      HYDRA_DSP_REFORM_F2_VARIANT=2
+      HYDRA_DSP_REFORM_F3_VARIANT=0
+      HYDRA_DSP_REFORM_F5_TIMING_VARIANT=${_f5_variant}
+      HYDRA_DSP_TEST_HOOKS=1
+    )
+    add_test(NAME f5_timing_v${_f5_variant}
+             COMMAND hydra_f5_timing_test_v${_f5_variant})
+    if(EMSCRIPTEN)
+      # The contract renders several long scenes; the default 16 MB wasm heap
+      # is too small for the full test matrix.
+      target_link_options(hydra_f5_timing_test_v${_f5_variant} PRIVATE
+        "SHELL:-sALLOW_MEMORY_GROWTH=1" "SHELL:-sINITIAL_MEMORY=64MB")
+    endif()
+  endforeach()
+
+  # Native/WASM parity witnesses for the three F5 variants. Each witness is
+  # built with the same explicit experimental definitions on both toolchains,
+  # so a parity result compares two identically configured DSP binaries. The
+  # production trace runner above stays free of experimental defines.
+  foreach(_f5_variant 0 1 2)
+    add_executable(hydra_f5_trace_v${_f5_variant}
+      tests/core/render_trace.cpp
+      dsp/core/tape_core.cpp
+      dsp/core/hydra_dsp_c_api.cpp
+    )
+    target_include_directories(hydra_f5_trace_v${_f5_variant} PRIVATE
+      ${CMAKE_CURRENT_SOURCE_DIR}/include
+      ${CMAKE_CURRENT_SOURCE_DIR}/dsp/core
+    )
+    target_compile_definitions(hydra_f5_trace_v${_f5_variant} PRIVATE
+      HYDRA_PHASE72_CLASSIC_FEEDBACK_ROUTING=1
+      HYDRA_DSP_REFORM_F2_VARIANT=2
+      HYDRA_DSP_REFORM_F3_VARIANT=0
+      HYDRA_DSP_REFORM_F5_TIMING_VARIANT=${_f5_variant}
+    )
+    if(EMSCRIPTEN)
+      set_target_properties(hydra_f5_trace_v${_f5_variant} PROPERTIES
+        OUTPUT_NAME "hydra_f5_trace_v${_f5_variant}"
+        SUFFIX ".js"
+        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/wasm-tests"
+      )
+      target_link_options(hydra_f5_trace_v${_f5_variant} PRIVATE
+        "SHELL:-sENVIRONMENT=node")
+    endif()
+  endforeach()
 
   add_executable(hydra_core_smoke tests/core/smoke_core.cpp)
   target_link_libraries(hydra_core_smoke PRIVATE hydra_dsp_core)

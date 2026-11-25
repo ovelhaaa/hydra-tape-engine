@@ -114,7 +114,11 @@ def main():
     parser.add_argument("--rates", type=int, nargs="+", default=[44100, 48000])
     parser.add_argument("--output", type=Path, default=ROOT / "artifacts/phase64/feedback")
     parser.add_argument("--stages", action="store_true", help="Build a diagnostic copy and compare pre-limiter windows at 5 and 55 seconds")
+    parser.add_argument("--define", action="append", default=[], help="Compile definition matching the measured library (repeatable)")
+    parser.add_argument("--include-feedback100", action="store_true", help="Add the Live full-feedback tail without replacing historical cases")
     args = parser.parse_args()
+    if args.include_feedback100:
+        CASES["feedback100"] = {13: 100}
 
     lib = render.HydraEngineRunner(args.library)
     args.output.mkdir(parents=True, exist_ok=True)
@@ -134,6 +138,7 @@ def main():
         command = [compiler, '-O3', '-DNDEBUG', '-std=c++17', '-ffp-contract=off', '-I' + str(ROOT / 'include'),
                    '-I' + str(ROOT / 'dsp/core'), str(source), str(ROOT / 'dsp/core/hydra_dsp_c_api.cpp'),
                    str(ROOT / 'tests/core/feedback_probe.cpp'), '-o', str(executable)]
+        command[1:1] = ["-D" + value for value in args.define]
         subprocess.run(command, check=True)
         report['stage_build'] = dict(command=command, source_sha256=render.sha256_file(source),
                                     executable_sha256=render.sha256_file(executable))

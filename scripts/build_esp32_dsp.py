@@ -2,6 +2,7 @@ Import("env")
 
 # Stamp the actual firmware inputs, including dirty builds, without changing DSP.
 import hashlib
+import json
 from pathlib import Path
 import subprocess
 
@@ -18,7 +19,9 @@ identity = root / env.subst("$BUILD_DIR") / "hydra_firmware_identity.h"
 identity.parent.mkdir(parents=True, exist_ok=True)
 content = ('#pragma once\n#define HYDRA_FIRMWARE_COMMIT "' + commit
            + ('-dirty' if dirty else '') + '"\n#define HYDRA_FIRMWARE_SOURCE_SHA256 "'
-           + digest.hexdigest() + '"\n')
+           + digest.hexdigest() + '"\n'
+           + '#define HYDRA_FIRMWARE_BUILD_NAME "' + env.subst('$PIOENV') + '"\n'
+           + '#define HYDRA_FIRMWARE_FLAGS ' + json.dumps(str(env.get('BUILD_FLAGS', []))) + '\n')
 if not identity.exists() or identity.read_text() != content:
     identity.write_text(content)
 env.AppendUnique(CPPPATH=[env.subst("$BUILD_DIR")])

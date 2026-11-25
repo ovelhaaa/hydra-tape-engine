@@ -1,0 +1,22 @@
+{
+  "input": {
+    "native_sha256": "e629e0248b9833c0f280f3771a07b95047e89d9efb3e9afddc06d3209ea559dc",
+    "wasm_sha256": "e629e0248b9833c0f280f3771a07b95047e89d9efb3e9afddc06d3209ea559dc",
+    "native_count": 4096,
+    "wasm_count": 4096,
+    "divergent_values": 0,
+    "first_divergence": null,
+    "max_ulp": 0,
+    "status": "PASS"
+  },
+  "lut": {
+    "native_sha256": "d1724b91fed053e18aa3674b7862e8322b9ec9efbddab337fbddc030192238e5",
+    "wasm_sha256": "d1724b91fed053e18aa3674b7862e8322b9ec9efbddab337fbddc030192238e5",
+    "native_count": 1025,
+    "wasm_count": 1025,
+    "divergent_values": 0,
+    "first_divergence": null,
+    "max_ulp": 0,
+    "status": "PASS"
+  }
+}

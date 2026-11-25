@@ -1,0 +1,11 @@
+Test project C:/Users/devx/Documents/PlatformIO/Projects/hydra-f02/build-wasm
+    Start 15: test_golden_delay_modes_wasm
+1/3 Test #15: test_golden_delay_modes_wasm ........   Passed    0.86 sec
+    Start 16: test_golden_reset_state_wasm
+2/3 Test #16: test_golden_reset_state_wasm ........   Passed    0.76 sec
+    Start 17: test_golden_param_automation_wasm
+3/3 Test #17: test_golden_param_automation_wasm ...   Passed    1.45 sec
+
+100% tests passed, 0 tests failed out of 3
+
+Total Test time (real) =   3.10 sec

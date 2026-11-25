@@ -1,0 +1,16 @@
+{
+  "f0-historical-preserved": {
+    "local_path": "artifacts/dsp-reform-f0-2/f0-historical-preserved.zip",
+    "sha256": "ba96c014915f8b9e5fba4d234134cc126d7c1a1f839e508eca2e3ef00e9ef162",
+    "size": 35917517,
+    "url": null,
+    "status": "LOCAL_ONLY_NOT_PUBLIC"
+  },
+  "f0-2-reference-v1": {
+    "local_path": "artifacts/dsp-reform-f0-2/f0-2-reference-v1.zip",
+    "sha256": "87eecfbdad0d680d73f11cc38690d65499cf3b1a67edcf28c4d29f67387f7ad8",
+    "size": 93555851,
+    "url": null,
+    "status": "LOCAL_ONLY_NOT_PUBLIC"
+  }
+}

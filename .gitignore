@@ -28,3 +28,9 @@ __pycache__/
 *.bak
 *.log
 /tools/phase6-listening-lab/node_modules/
+
+# F5 local validation build trees
+/build-f5-native/
+/build-f5-wasm/
+/build-f5-wasm-cache/
+/build-f5-probe/

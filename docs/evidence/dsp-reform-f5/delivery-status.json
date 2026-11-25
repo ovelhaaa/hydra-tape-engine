@@ -1,0 +1,47 @@
+{
+  "phase": "F5",
+  "state": "READY_FOR_HUMAN_LISTENING_PENDING_CI_ARTIFACT",
+  "branch": "experiment/dsp-reform-f5-musical-timing",
+  "base_branch": "experiment/dsp-reform-f3-saturation",
+  "base_head": "29f50258f1ac47139ac8f1fdb21aa59424ca9a75",
+  "default_variant": 0,
+  "variants": {
+    "0": "Vintage F3-A (bit-exact reference)",
+    "1": "Musical Capstan Glide",
+    "2": "Clock-Focused Timing"
+  },
+  "gates": {
+    "F5_0_bit_exact_F3_A": "10/10",
+    "F5_1_2_static_bit_exact": "10/10 + 2/2 controls",
+    "instrumentation_equivalence": "39/39 bit-exact",
+    "ctest_native": "23/23 PASS",
+    "native_wasm_comparator": "max_abs=0 RMSE=0 PASS",
+    "f5_wasm_tests": "3/3 PASS",
+    "block_size_37_64_128_256": "max_abs=0 all variants",
+    "reverse_9_divisions": "effective==requested, clamped=0",
+    "drift_60s_transport": "<=1.42e-14 beats",
+    "tail_60s_fb95": "finite, 0 dB last-second growth",
+    "esp32_builds": "3/3 SUCCESS (a/b/c)",
+    "physical": "PENDING_PHYSICAL"
+  },
+  "audition_package": {
+    "local_path": "artifacts/dsp-reform-f5/listening",
+    "scenes": 11,
+    "wav_files": 66,
+    "hash_files": 82,
+    "verified": true,
+    "public_url": null,
+    "publication": "BLOCKED_NO_GITHUB_CREDENTIALS"
+  },
+  "publication": {
+    "pr_created": false,
+    "ci_run": false,
+    "reason": "git ls-remote origin failed with SEC_E_NO_CREDENTIALS; no gh CLI and no GitHub API access",
+    "recipe": "docs/evidence/dsp-reform-f5/PUBLICATION_BLOCKED.md"
+  },
+  "decisions": {
+    "music_decision": "HUMAN_PENDING",
+    "candidate_promoted": false,
+    "f4_integrated": false
+  }
+}

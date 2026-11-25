@@ -1,0 +1,57 @@
+{
+  "01_manual_120_100_clean": {
+    "X": "Vintage F3-A (F5=0)",
+    "Y": "Clock-Focused (F5=2)",
+    "Z": "Capstan Glide (F5=1)"
+  },
+  "02_manual_80_160_driven": {
+    "X": "Clock-Focused (F5=2)",
+    "Y": "Vintage F3-A (F5=0)",
+    "Z": "Capstan Glide (F5=1)"
+  },
+  "03_ramp_120_100_poly": {
+    "X": "Capstan Glide (F5=1)",
+    "Y": "Vintage F3-A (F5=0)",
+    "Z": "Clock-Focused (F5=2)"
+  },
+  "04_tap_120_90_clean": {
+    "X": "Capstan Glide (F5=1)",
+    "Y": "Vintage F3-A (F5=0)",
+    "Z": "Clock-Focused (F5=2)"
+  },
+  "05_midi_120_125_poly": {
+    "X": "Clock-Focused (F5=2)",
+    "Y": "Vintage F3-A (F5=0)",
+    "Z": "Capstan Glide (F5=1)"
+  },
+  "06_midi_lost_recovered_bass": {
+    "X": "Vintage F3-A (F5=0)",
+    "Y": "Capstan Glide (F5=1)",
+    "Z": "Clock-Focused (F5=2)"
+  },
+  "07_division_quarter_to_eighth_reverse": {
+    "X": "Vintage F3-A (F5=0)",
+    "Y": "Capstan Glide (F5=1)",
+    "Z": "Clock-Focused (F5=2)"
+  },
+  "08_multihead_sync_120_100": {
+    "X": "Vintage F3-A (F5=0)",
+    "Y": "Clock-Focused (F5=2)",
+    "Z": "Capstan Glide (F5=1)"
+  },
+  "09_pad_reverse_90": {
+    "X": "Clock-Focused (F5=2)",
+    "Y": "Vintage F3-A (F5=0)",
+    "Z": "Capstan Glide (F5=1)"
+  },
+  "10_drums_120_90": {
+    "X": "Clock-Focused (F5=2)",
+    "Y": "Capstan Glide (F5=1)",
+    "Z": "Vintage F3-A (F5=0)"
+  },
+  "11_control_static_guitar": {
+    "X": "Capstan Glide (F5=1)",
+    "Y": "Clock-Focused (F5=2)",
+    "Z": "Vintage F3-A (F5=0)"
+  }
+}

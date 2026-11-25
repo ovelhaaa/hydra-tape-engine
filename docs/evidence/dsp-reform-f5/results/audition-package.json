@@ -1,0 +1,7 @@
+{
+  "scene_count": 11,
+  "wav_files": 80,
+  "manifest_sha256": "4777a414889ec032282d517bca47f2fa45d5df467337f1302d8ca01535e77087",
+  "answer_key_sha256": "bd4ed43d9f75352c343c42633fc7208f8bc327c57384adc8371eec6e2a58f4ad",
+  "publication": "PENDING_CI_ARTIFACT"
+}

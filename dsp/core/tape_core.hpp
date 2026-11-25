@@ -85,6 +85,30 @@ public:
   void processStereo(float inL, float inR, float* outL, float* outR);
   void processStereoBlock(const float* inL, const float* inR, float* outL, float* outR, uint32_t frames);
 
+#if defined(HYDRA_DSP_TEST_HOOKS)
+  // Read-only timing snapshot for the F5 bench. Never touches DSP state and is
+  // absent from production builds.
+  struct TimingDiagnostics {
+    double transportBpm = 0.0;
+    double musicalPosition = 0.0;
+    uint64_t absoluteSamplePosition = 0;
+    uint64_t transportSamplePosition = 0;
+    float targetBeatMs = 0.0f;
+    float effectiveBeatMs = 0.0f;
+    float headDelaySamples[3] = {0.0f, 0.0f, 0.0f};
+    float targetHeadSamples[3] = {0.0f, 0.0f, 0.0f};
+    float smoothedDelaySamples = 0.0f;
+    float targetDelaySamples = 0.0f;
+    float reverseRequestedMs = 0.0f;
+    float reverseEffectiveMs = 0.0f;
+    int reverseClamped = 0;
+    int musical = 0;
+    int gliding = 0;
+    int variant = 0;
+  };
+  bool timingDiagnostics(TimingDiagnostics* out) const;
+#endif
+
 private:
   struct Impl;
   Impl* impl_;

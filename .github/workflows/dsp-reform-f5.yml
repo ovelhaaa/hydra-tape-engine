@@ -1,0 +1,90 @@
+name: F5 musical timing
+on:
+  workflow_dispatch:
+  push:
+    branches: [experiment/dsp-reform-f5-musical-timing]
+    paths-ignore:
+      - 'docs/evidence/dsp-reform-f5/*.md'
+      - 'docs/evidence/dsp-reform-f5/*.json'
+      - 'docs/evidence/dsp-reform-f5/pr-snapshot.json'
+permissions:
+  contents: read
+jobs:
+  native-wasm:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.14'
+      - run: pip install numpy==2.4.1 scipy==1.17.0
+      - uses: mymindstorm/setup-emsdk@v14
+        with:
+          version: '3.1.62'
+      - name: Configure and build Native
+        run: |
+          cmake -S . -B build/f5-native -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=ON \
+            "-DCMAKE_CXX_FLAGS=-DHYDRA_PHASE72_CLASSIC_FEEDBACK_ROUTING=1 -DHYDRA_DSP_REFORM_F2_VARIANT=2 -DHYDRA_DSP_REFORM_F3_VARIANT=0"
+          cmake --build build/f5-native -j 2
+          ctest --test-dir build/f5-native --output-on-failure
+      - name: Configure and build WASM
+        run: |
+          emcmake cmake -S . -B build/f5-wasm -DBUILD_WEB=ON -DBUILD_TESTING=ON -DCMAKE_BUILD_TYPE=Release \
+            -DHYDRA_NATIVE_TRACE_RUNNER="$PWD/build/f5-native/hydra_render_trace_native"
+          cmake --build build/f5-wasm -j 2
+          ctest --test-dir build/f5-wasm -R 'f5_timing|test_golden' --output-on-failure
+      - name: Native/WASM strict parity and F5 contracts
+        run: |
+          python tests/core/compare_native_wasm.py \
+            --native build/f5-native/hydra_render_trace_native \
+            --wasm-js build/f5-wasm/wasm-tests/hydra_render_trace.js \
+            --max-abs-threshold 1e-5 --rmse-threshold 1e-6
+          for v in 0 1 2; do
+            node build/f5-wasm/hydra_f5_timing_test_v$v.js
+          done
+      - name: Baseline, static preservation and instrumentation equivalence
+        run: |
+          python docs/evidence/dsp-reform-f5/run.py build
+          python docs/evidence/dsp-reform-f5/run.py baseline
+          python docs/evidence/dsp-reform-f5/run.py static
+          python docs/evidence/dsp-reform-f5/run.py equiv
+          python docs/evidence/dsp-reform-f5/run.py blocksize
+      - name: Transition, Tap, MIDI, Reverse and drift measurements
+        run: |
+          python docs/evidence/dsp-reform-f5/run.py measure
+          python docs/evidence/dsp-reform-f5/run.py drift
+          python docs/evidence/dsp-reform-f5/run.py tail
+      - name: Render and verify A/B/C listening package
+        run: |
+          python docs/evidence/dsp-reform-f5/run.py render
+          python docs/evidence/dsp-reform-f5/run.py package
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: hydra-dsp-reform-f5-listening
+          path: |
+            artifacts/dsp-reform-f5/listening/
+            artifacts/dsp-reform-f5/*.json
+            artifacts/dsp-reform-f5/variant*/*.json
+            docs/evidence/dsp-reform-f5/
+          retention-days: 30
+  esp32-build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install platformio
+      - run: pio run -e esp32-s3-f5-a -e esp32-s3-f5-b -e esp32-s3-f5-c
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: hydra-f5-esp32-builds-not-physical-validation
+          path: |
+            .pio/build/esp32-s3-f5-*/firmware.*
+            .pio/build/esp32-s3-f5-*/hydra_firmware_identity.h

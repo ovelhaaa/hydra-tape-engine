@@ -25,6 +25,7 @@
 #include "feedback_routing_experiment.hpp"
 #endif
 #include "reverse_windows.hpp"
+#include "musical_timing_experiment.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -344,7 +345,20 @@ struct TapeCore::Impl {
   float maxHistoryMs() const {
     return (sampleRate > 0.f) ? (static_cast<float>(bufferSize) / sampleRate * 1000.f) : 0.f;
   }
-  void updateSampleRateConstants(){ const float fs=std::max(1.0f,sampleRate); invSampleRate=1.0f/fs; reverseFadeStep=1.f/std::max(1.f,0.010f*fs); reverseControlAlpha=1.f-std::exp(-1.f/(0.015f*fs)); maxDropoutFc=0.45f*fs; delaySmoothAlpha=1.f-std::exp(-1.f/(0.200f*fs)); delayRampInc=1.f/(0.250f*fs); azimuthInc=0.2f*invSampleRate; mechNoiseSlowAlpha=mechNoiseOnePoleAlpha(fs,kMechNoiseSlowTimeSeconds); mechNoiseFastAlpha=mechNoiseOnePoleAlpha(fs,kMechNoiseFastTimeSeconds); duckAttackCoeff=1.f-std::exp(-1.f/(kHissDuckAttackTimeSeconds*fs)); duckReleaseCoeff=1.f-std::exp(-1.f/(kHissDuckReleaseTimeSeconds*fs)); }
+  void updateSampleRateConstants(){ const float fs=std::max(1.0f,sampleRate); invSampleRate=1.0f/fs; reverseFadeStep=1.f/std::max(1.f,0.010f*fs); reverseControlAlpha=1.f-std::exp(-1.f/(0.015f*fs)); maxDropoutFc=0.45f*fs; delaySmoothAlpha=1.f-std::exp(-1.f/(0.200f*fs)); delayRampInc=1.f/(0.250f*fs); azimuthInc=0.2f*invSampleRate; mechNoiseSlowAlpha=mechNoiseOnePoleAlpha(fs,kMechNoiseSlowTimeSeconds); mechNoiseFastAlpha=mechNoiseOnePoleAlpha(fs,kMechNoiseFastTimeSeconds); duckAttackCoeff=1.f-std::exp(-1.f/(kHissDuckAttackTimeSeconds*fs)); duckReleaseCoeff=1.f-std::exp(-1.f/(kHissDuckReleaseTimeSeconds*fs));
+#if HYDRA_DSP_REFORM_F5_TIMING_VARIANT != 0
+    // Policies are compiled in; only the sample-rate conversion happens here.
+    timingAlphaClockFast = 1.0f - std::exp(-1.0f / (experimental::f5::kClockFast.tauSeconds * fs));
+    timingAlphaClockLarge = 1.0f - std::exp(-1.0f / (experimental::f5::kClockLarge.tauSeconds * fs));
+    timingCapstanMaxStepSamples = experimental::f5::kCapstan.maxPitch;
+    timingClockFastMaxStepSamples = experimental::f5::kClockFast.maxPitch;
+    timingClockLargeMaxStepSamples = experimental::f5::kClockLarge.maxPitch;
+    timingCapstanDeadbandSamples = experimental::f5::kCapstan.deadbandSamples;
+    timingClockHoldSamples = experimental::f5::kClockFast.holdSamples;
+    timingClockTargetDeadbandSamples =
+        experimental::f5::kClockTargetDeadbandMs * fs / 1000.0f;
+#endif
+  }
   void updateCachedParams();
   void updateFilters();
   void updatePlaybackFilters();
@@ -384,11 +398,188 @@ struct TapeCore::Impl {
   double tapEstimatedBpm = 120.0;
   double midiEstimatedBpm = 120.0;
   float lastConfiguredReverseBpm = 120.0f;
+#if HYDRA_DSP_REFORM_F5_TIMING_VARIANT != 0
+  // F5 timing glide. The transport clock above is never smoothed; only these
+  // read-position states move, and `musicalHeadDelay*` stays the single source
+  // of truth consumed by the existing read path.
+  //
+  // The glide state is kept as the *remaining error* in samples-per-beat.
+  // Accumulating a sub-sample step into a ~22050 float would stall at ~8
+  // samples because the step falls below one float ulp; accumulating the
+  // error instead stays exact down to the bit. The reported position is
+  // reconstructed as target - error.
+  float timingBeatMsTarget = 0.0f;
+  float timingBeatSamplesTarget = 0.0f;
+  float timingBeatSamplesSmooth = 0.0f;
+  float timingBeatErrorSamples = 0.0f;
+  float timingAlphaClockFast = 0.0f;
+  float timingAlphaClockLarge = 0.0f;
+  float timingCapstanMaxStepSamples = 0.0f;
+  float timingClockFastMaxStepSamples = 0.0f;
+  float timingClockLargeMaxStepSamples = 0.0f;
+  float timingCapstanDeadbandSamples = 0.0f;
+  float timingClockHoldSamples = 0.0f;
+  float timingClockTargetDeadbandSamples = 0.0f;
+  float timingClockEpisodeStart = 0.0f;
+  uint8_t timingPolicy = 0;  // 0 capstan, 1 clock fast, 2 clock large
+  bool timingClockEpisodeActive = false;
+  bool timingPrimed = false;
+  bool timingBeatStable = true;
+
+  // Exact Vintage expression, used whenever the glide is prime/stable so a
+  // scene without tempo changes reproduces F3-A bit for bit.
+  void recomputeMusicalHeadDelaysExact(float beatMs) {
+    musicalHeadDelay1 = beatMs * 0.333f * sampleRate * 0.001f;
+    musicalHeadDelay2 = beatMs * 0.75f * sampleRate * 0.001f;
+    musicalHeadDelay3 = beatMs * sampleRate * 0.001f;
+  }
+
+  void finishTimingGlide() {
+    // Land without moving the read head: a snap of the old 0.5-sample hold
+    // would itself be a one-sample 700-cent blip. The residual stays below
+    // the dead-band and the next event starts from the reported position.
+    timingBeatStable = true;
+    timingClockEpisodeActive = false;
+  }
+
+  void snapTimingGlide() {
+    timingBeatErrorSamples = 0.0f;
+    timingBeatSamplesSmooth = timingBeatSamplesTarget;
+    recomputeMusicalHeadDelaysExact(timingBeatMsTarget);
+    timingBeatStable = true;
+    timingClockEpisodeActive = false;
+  }
+
+  void setTimingTarget(float beatMs) {
+    const float beatSamples = beatMs * sampleRate * 0.001f;
+#if HYDRA_DSP_REFORM_F5_TIMING_VARIANT == 2
+    // Clock jitter filter. The MIDI PLL already averages 24 pulses, but its
+    // applied BPM still breathes by a fraction of a millisecond per pulse.
+    // Hold the musical target for sub-2 ms moves so the read head does not
+    // chase every pulse; a real tempo change is far above this window.
+    if (tempoSource != TempoSource::Internal && timingPrimed &&
+        std::fabs(beatSamples - timingBeatSamplesTarget) <
+            timingClockTargetDeadbandSamples) {
+      return;
+    }
+#endif
+    if (beatSamples != timingBeatSamplesTarget) {
+      const float current = timingBeatStable ? timingBeatSamplesTarget
+                                             : timingBeatSamplesSmooth;
+#if HYDRA_DSP_REFORM_F5_TIMING_VARIANT == 2
+      // Classify the cumulative clock episode, not the per-pulse increment:
+      // MIDI applies a large tempo change as a ramp of small BPM steps, and a
+      // jitter episode must stay classified as a micro move. The episode ends
+      // when the glide lands.
+      timingPolicy = 0;
+      if (tempoSource != TempoSource::Internal) {
+        if (!timingClockEpisodeActive) {
+          timingClockEpisodeStart = timingBeatSamplesTarget;
+          timingClockEpisodeActive = true;
+        }
+        const float stepBeats = std::fabs(beatSamples - timingClockEpisodeStart) /
+                                std::max(1.0f, beatSamples);
+        if (stepBeats > experimental::f5::kSmallStepBeats) {
+          timingPolicy = 2;
+        } else if (stepBeats > experimental::f5::kMicroStepBeats) {
+          timingPolicy = 1;
+        }
+      }
+#endif
+      timingBeatSamplesTarget = beatSamples;
+      timingBeatMsTarget = beatMs;
+      timingBeatErrorSamples = beatSamples - current;
+      timingBeatStable = false;
+    } else {
+      timingBeatMsTarget = beatMs;
+    }
+  }
+
+  // Per-sample, block-size independent read-position glide. One state serves
+  // all three musical heads because their ratios are fixed; the millisecond
+  // mode reuses the already approved `smoothedDelaySamples` state.
+  HYDRA_AUDIO_INLINE void stepTimingGlide(float targetDelaySamples) {
+    if (headsMusical) {
+      if (timingBeatStable) return;
+      const float target = timingBeatSamplesTarget;
+      float err = timingBeatErrorSamples;
+      float alpha = delaySmoothAlpha;
+      float cap = timingCapstanMaxStepSamples;
+      float deadband = timingCapstanDeadbandSamples;
+      float hold = 0.0f;
+#if HYDRA_DSP_REFORM_F5_TIMING_VARIANT == 2
+      if (timingPolicy == 1) {
+        alpha = timingAlphaClockFast;
+        cap = timingClockFastMaxStepSamples;
+        deadband = 0.0f;
+        hold = timingClockHoldSamples;
+      } else if (timingPolicy == 2) {
+        alpha = timingAlphaClockLarge;
+        cap = timingClockLargeMaxStepSamples;
+        deadband = 0.0f;
+        hold = timingClockHoldSamples;
+      }
+#endif
+      if (std::fabs(err) <= hold) {
+        // Clock policies land exactly once inside the hold window; the
+        // capstan policy keeps its own dead-band snap.
+        if (timingPolicy != 0) snapTimingGlide();
+        return;
+      }
+      float step = alpha * err;
+      if (step > cap) step = cap;
+      else if (step < -cap) step = -cap;
+      err -= step;
+      if (deadband > 0.0f && std::fabs(err) <= deadband) {
+        snapTimingGlide();
+        return;
+      }
+      timingBeatErrorSamples = err;
+      timingBeatSamplesSmooth = target - err;
+      if (timingBeatSamplesSmooth == target) {
+        // The remaining error is below one float ulp at this magnitude.
+        snapTimingGlide();
+        return;
+      }
+      musicalHeadDelay1 = timingBeatSamplesSmooth * 0.333f;
+      musicalHeadDelay2 = timingBeatSamplesSmooth * 0.75f;
+      musicalHeadDelay3 = timingBeatSamplesSmooth;
+    } else {
+      const float err = targetDelaySamples - smoothedDelaySamples;
+      if (err != 0.0f) {
+        float step = delaySmoothAlpha * err;
+        const float cap = timingCapstanMaxStepSamples;
+        if (step > cap) step = cap;
+        else if (step < -cap) step = -cap;
+        const float before = smoothedDelaySamples;
+        smoothedDelaySamples += step;
+        if (smoothedDelaySamples == before) {
+          // The step fell below one float ulp at this magnitude: land exactly.
+          smoothedDelaySamples = targetDelaySamples;
+        } else if (timingCapstanDeadbandSamples > 0.0f &&
+                   std::fabs(targetDelaySamples - smoothedDelaySamples) <=
+                       timingCapstanDeadbandSamples) {
+          smoothedDelaySamples = targetDelaySamples;
+        }
+      }
+    }
+  }
+#endif
 
   void applyEffectiveBpm(double bpm) {
     bpm = std::clamp(bpm, 30.0, 300.0);
     transportClock.setBpm(bpm);
     currentParams.bpm = static_cast<float>(bpm);
+#if HYDRA_DSP_REFORM_F5_TIMING_VARIANT != 0
+    // Keep the musical read target coherent with the clock even when the
+    // caller only changes the transport BPM (no parameter commit).
+    const float beatMs = 60000.0f / std::max(1.0f, static_cast<float>(bpm));
+    setTimingTarget(beatMs);
+    if (!timingPrimed) {
+      snapTimingGlide();
+      timingPrimed = true;
+    }
+#endif
 
     // Reverse V2 stability: avoid micro-reconfigurations of windows unless difference is significant
     if (currentParams.reverse && currentParams.reverseMode == 0) {
@@ -434,9 +625,19 @@ HYDRA_DSP_IRAM void TapeCore::Impl::updateCachedParams(){
   toneNorm=currentParams.tone*0.01f;
   azimuthErrorNorm=currentParams.azimuthError*0.01f;
   float beatMs=60000.f/std::max(1.f,currentParams.bpm);
+#if HYDRA_DSP_REFORM_F5_TIMING_VARIANT != 0
+  setTimingTarget(beatMs);
+  // Prime on creation, reset, delay re-activation and on a musical-mode edge.
+  // Otherwise the effective head delays stay owned by the per-sample glide.
+  if(!timingPrimed||currentParams.headsMusical!=headsMusical){
+    snapTimingGlide();
+    timingPrimed=true;
+  }
+#else
   musicalHeadDelay1=beatMs*0.333f*sampleRate*0.001f;
   musicalHeadDelay2=beatMs*0.75f*sampleRate*0.001f;
   musicalHeadDelay3=beatMs*sampleRate*0.001f;
+#endif
   float springDecayNorm=currentParams.springDecay*0.01f;
   springStages=3+static_cast<int>(springDecayNorm*3.f);
   springFeedbackGain=springDecayNorm*0.85f;
@@ -721,6 +922,48 @@ int TapeCore::midiClockReset() {
   return 0;
 }
 
+#if defined(HYDRA_DSP_TEST_HOOKS)
+bool TapeCore::timingDiagnostics(TimingDiagnostics* out) const {
+  if (!out || !impl_) return false;
+  const GlobalTransportClock& t = impl_->transportClock;
+  out->transportBpm = t.bpm();
+  out->musicalPosition = t.musicalPosition();
+  out->absoluteSamplePosition = t.absoluteSamplePosition();
+  out->transportSamplePosition = t.transportSamplePosition();
+  const float paramBeatMs =
+      60000.0f / std::max(1.0f, static_cast<float>(impl_->currentParams.bpm));
+  out->targetBeatMs = paramBeatMs;
+#if HYDRA_DSP_REFORM_F5_TIMING_VARIANT != 0
+  out->effectiveBeatMs = impl_->timingBeatSamplesSmooth * 1000.0f / impl_->sampleRate;
+  out->targetBeatMs = impl_->timingBeatMsTarget;
+  out->gliding = (impl_->headsMusical && !impl_->timingBeatStable) ? 1 : 0;
+  const float headScale = impl_->sampleRate * 0.001f;
+  out->targetHeadSamples[0] = impl_->timingBeatMsTarget * 0.333f * headScale;
+  out->targetHeadSamples[1] = impl_->timingBeatMsTarget * 0.75f * headScale;
+  out->targetHeadSamples[2] = impl_->timingBeatMsTarget * headScale;
+#else
+  out->effectiveBeatMs = paramBeatMs;
+  out->gliding = 0;
+  const float headScale = impl_->sampleRate * 0.001f;
+  out->targetHeadSamples[0] = paramBeatMs * 0.333f * headScale;
+  out->targetHeadSamples[1] = paramBeatMs * 0.75f * headScale;
+  out->targetHeadSamples[2] = paramBeatMs * headScale;
+#endif
+  out->headDelaySamples[0] = impl_->musicalHeadDelay1;
+  out->headDelaySamples[1] = impl_->musicalHeadDelay2;
+  out->headDelaySamples[2] = impl_->musicalHeadDelay3;
+  out->smoothedDelaySamples = impl_->smoothedDelaySamples;
+  out->targetDelaySamples =
+      impl_->currentParams.delayTimeMs * impl_->sampleRate * 0.001f;
+  out->reverseRequestedMs = impl_->requestedReverseMs();
+  out->reverseEffectiveMs = impl_->reverseWindows.effectiveMs();
+  out->reverseClamped = impl_->reverseWindows.isClamped() ? 1 : 0;
+  out->musical = impl_->headsMusical ? 1 : 0;
+  out->variant = HYDRA_DSP_REFORM_F5_TIMING_VARIANT;
+  return true;
+}
+#endif
+
 void TapeCore::reset(){
   if(!isValid()) return;
   // Explicit destructive reset. Not part of routine parameter automation: the
@@ -733,6 +976,9 @@ void TapeCore::reset(){
   impl_->mechStateL=Impl::MechanicalState{};
   impl_->mechStateR=Impl::MechanicalState{0,0,0,0,0x2468ACE1u,0x56473829u};
   impl_->freezeFade=0; impl_->delayEnableRamp=0; impl_->smoothedDelaySamples=0; impl_->smoothedAzCoeff=0; impl_->springFB_L=impl_->springFB_R=0;
+#if HYDRA_DSP_REFORM_F5_TIMING_VARIANT != 0
+  impl_->timingPrimed=false;
+#endif
   impl_->dcBlocker.clear(); impl_->dcBlockerR.clear(); impl_->magneticsL.reset(); impl_->magneticsR.reset(); impl_->dropout.reset(); impl_->dropout.setSampleRate(impl_->sampleRate); impl_->noiseGen.reset(impl_->sampleRate, 123456789u); impl_->noiseGenR.reset(impl_->sampleRate, 987654321u); impl_->mechNoiseL.reset(); impl_->mechNoiseR.reset();
   impl_->flutterLPF.reset(); impl_->flutterLPFR.reset(); impl_->warpHPF_L.reset(); impl_->warpHPF_R.reset(); impl_->warpLPF_L.reset(); impl_->warpLPF_R.reset(); impl_->reproHeadBump.reset(); impl_->reproHeadBumpR.reset(); impl_->tapeRolloff.reset(); impl_->tapeRolloffR.reset(); impl_->gapLossLPF.reset(); impl_->gapLossLPFR.reset(); impl_->dropoutLPF.reset(); impl_->dropoutLPFR.reset();
   impl_->inputHPF.reset(); impl_->inputHPFR.reset(); impl_->inputLPF.reset(); impl_->inputLPFR.reset(); impl_->feedbackGapLoss.reset(); impl_->feedbackGapLossR.reset(); impl_->feedbackHeadBump.reset(); impl_->feedbackHeadBumpR.reset(); impl_->feedbackHPF.reset(); impl_->feedbackHPFR.reset();
@@ -785,6 +1031,11 @@ HYDRA_DSP_IRAM void TapeCore::updateParams(const TapeParams& newParams){
     impl_->delayEverEnabled = true;
     impl_->reverseCounter=0; impl_->reverseWindowSize=0; impl_->resetReverse(); impl_->warpPhase=0.0f;
     impl_->smoothedDelaySamples = newParams.delayTimeMs * impl_->sampleRate * 0.001f;
+#if HYDRA_DSP_REFORM_F5_TIMING_VARIANT != 0
+    // Re-activation is a defined state boundary: snap the musical read target
+    // rather than gliding from a stale, inaudible position.
+    impl_->timingPrimed = false;
+#endif
   }
   if(!impl_->currentParams.warpActive && newParams.warpActive){
     impl_->warpPhase=0.0f;
@@ -908,7 +1159,11 @@ HYDRA_DSP_IRAM void TapeCore::processStereoBlock(const float* inLBlock,const flo
   impl_->flutterPhase += impl_->flutterInc; if(impl_->flutterPhase>TWO_PI) impl_->flutterPhase-=TWO_PI;
   impl_->wowPhase += impl_->wowInc; if(impl_->wowPhase>TWO_PI) impl_->wowPhase-=TWO_PI;
 
+#if HYDRA_DSP_REFORM_F5_TIMING_VARIANT != 0
+  impl_->stepTimingGlide(targetDelay);
+#else
   impl_->smoothedDelaySamples += impl_->delaySmoothAlpha*(targetDelay-impl_->smoothedDelaySamples);
+#endif
 
   float scrapeL=impl_->mechNoiseL.lowRate(impl_->mechNoiseSlowAlpha,impl_->mechNoiseFastAlpha);
   float scrapeR=impl_->mechNoiseR.lowRate(impl_->mechNoiseSlowAlpha,impl_->mechNoiseFastAlpha);

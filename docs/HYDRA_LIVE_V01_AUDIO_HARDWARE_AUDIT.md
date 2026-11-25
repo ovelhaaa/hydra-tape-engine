@@ -39,13 +39,26 @@ Driver legacy auditado nos headers efetivos Arduino3.3.6/IDF5.5.2: mck_io_num,
 PLL_160M, múltiplo256, Philips32 estéreo e RX slave interno do TX. Fração nominal
 14+76/441 exata no S3. Detalhes elétricos/fontes no documento de montagem.
 
+Diferença de toolchain: o artifact original #71 usou espressif32 **8.0.0**,
+Arduino **3.3.12** (pacote4.30312.261116), GCC14.2.0+20260121
+([log138986513353](https://github.com/ovelhaaa/hydra-tape-engine/actions/runs/45548830524/job/138986513353)).
+O alias sem versão não era estável. Hwtest fixa a plataforma pioarduino disponível
+e auditada localmente, Arduino3.3.6/IDF5.5.2/GCC14.2.0+20251107. Não alegar
+equivalência binária com #71: mesmos algoritmos/flags não provam som bit-exact
+entre toolchains ESP. Essa diferença exige A/B físico antes de promoção.
+Ambientes anteriores não tiveram plataforma/flags alteradas.
+
 `src`, `identity`, `perf`, `bench`, `audiohealth` preservados. CLI adiciona
 `hw normal|silence|tone|left|right|monitor` e `adc`. Frame de diagnóstico é
 compartilhado com teste Native/WASM: silêncio, senoide440Hz moderada L/R,
 monitor linear ganho0,25. Normal mantém DSP/ganho anteriores.
 
 Mailbox usa somente loads/stores alinhados de32 bits com acquire/release;
-desmontagem do ELF deve confirmar aus�ncia de helpers/locks at�micos. Estado fixo <128B; nenhum buffer
+desmontagem do objeto confirma l32i/s32i/memw sem helpers atômicos externos.
+O empacotador repete esse gate no Actions e arquiva o disassembly. A garantia
+genérica std::atomic::is_always_lock_free não era fornecida pela libstdc++
+Xtensa; usamos builtins somente de load/store, sem RMW/CAS/retry.
+Estado fixo <128B; nenhum buffer
 longo/motor/tarefa extra. Normal: conversão24bit, decisões por bloco, inspeção
 de retorno e bytes. Captura solicitada: 256 samples/bloco com soma/quadrado/pico
 e near-FS por canal durante128 blocos. Sqrt/prints só na CLI. Tom só em diagnóstico,
@@ -69,12 +82,12 @@ e build ESP32. Logs/JSON são incluídos no artifact
 flags, pinout, hashes BIN/ELF e situação física. O pacote exige checkout limpo.
 Não há flash, merge, alteração de PR F4/F5 ou atualização de goldens.
 
-Valida��o local: Native30/30, WASM30/30; paridade00/10/01/11 com
-max_abs=0/RMSE=0; matriz congelada bit-exact; full-engine27/27 em produ��o e
-Live; feedback interno/sa�da instrumentada60s: produ��o6/6 e Live8/8.
-O diagn�stico hist�rico de monotonicidade continua registrando sustain limitado
-na produ��o; n�o � gate de instabilidade nem foi relaxado. Build ESP32 SUCCESS
-na primeira rodada; revis�o final � novamente compilada pelo workflow. Logs de execução e
+Validação local: Native30/30, WASM30/30; paridade00/10/01/11 com
+max_abs=0/RMSE=0; matriz congelada bit-exact; full-engine27/27 em produção e
+Live; feedback interno/saída instrumentada60s: produção6/6 e Live8/8.
+O diagnóstico histórico de monotonicidade continua registrando sustain limitado
+na produção; não é gate de instabilidade nem foi relaxado. Build ESP32 SUCCESS
+na primeira rodada; revisão final é novamente compilada pelo workflow. Logs de execução e
 demais resultados finais ficam em `gates/` no artifact, associados ao commit
 do manifesto; não confundir esta observação com certificado físico.
 

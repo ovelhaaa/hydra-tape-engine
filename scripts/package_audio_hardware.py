@@ -43,12 +43,21 @@ def main():
     for name in ('native','wasm'):
         log=(gates/f'{name}.txt').read_text(encoding='utf-8-sig')
         require('100% tests passed' in log and 'audio_hardware_pcm24_gpio' in log, name+' ctest')
+    assembly=(gates/'audio-task-disassembly.txt').read_text(encoding='utf-8-sig')
+    require(all(word in assembly for word in ('g_hw_route','g_adc_state','memw','l32i','s32i')), 'mailbox disassembly missing')
+    require('__atomic_' not in assembly, 'unexpected out-of-line atomic helper in audio object')
     source=ROOT/'.pio/build'/ENV
     identity=(source/'hydra_firmware_identity.h').read_text()
     require(f'#define HYDRA_FIRMWARE_COMMIT "{commit}"' in identity,'identity commit/dirty')
     require(f'#define HYDRA_FIRMWARE_BUILD_NAME "{ENV}"' in identity,'identity environment')
     for flag,value in FLAGS.items():
         require(f'{flag}={value}' in identity,flag)
+    paths=subprocess.check_output(['git','ls-files','src','include','lib','dsp/core','host/native/esp32',
+                                   'platformio.ini','scripts/build_esp32_dsp.py'],cwd=ROOT,text=True).splitlines()
+    digest=hashlib.sha256()
+    for name in sorted(paths):
+        digest.update(name.encode()+b'\0'+(ROOT/name).read_bytes()+b'\0')
+    require(f'#define HYDRA_FIRMWARE_SOURCE_SHA256 "{digest.hexdigest()}"' in identity, 'identity source digest')
     for name in ('firmware.bin','firmware.elf'):
         require((source/name).stat().st_size>0,name)
     dest=args.output

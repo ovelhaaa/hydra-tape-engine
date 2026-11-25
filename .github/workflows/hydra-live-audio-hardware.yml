@@ -74,7 +74,9 @@ jobs:
           set -o pipefail
           pio run -e esp32-s3-hydra-live-hwtest | tee artifacts/live/gates/esp32-build.txt
       - name: Verify identity and SHA256, package only validated builds
-        run: python scripts/package_audio_hardware.py --gates artifacts/live/gates
+        run: |
+          ~/.platformio/packages/toolchain-xtensa-esp-elf/bin/xtensa-esp-elf-objdump -drC .pio/build/esp32-s3-hydra-live-hwtest/src/main.cpp.o > artifacts/live/gates/audio-task-disassembly.txt
+          python scripts/package_audio_hardware.py --gates artifacts/live/gates
       - uses: actions/upload-artifact@v4
         with:
           name: hydra-live-v01-pcm1808-pcm5102-hwtest

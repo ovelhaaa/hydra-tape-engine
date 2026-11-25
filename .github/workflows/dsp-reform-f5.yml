@@ -16,7 +16,8 @@ on:
   push:
     branches: [experiment/dsp-reform-f5-musical-timing]
     paths-ignore:
-      - 'docs/evidence/dsp-reform-f5/**'
+      - 'docs/evidence/dsp-reform-f5/**/*.md'
+      - 'docs/evidence/dsp-reform-f5/**/*.json'
 
 permissions:
   contents: read

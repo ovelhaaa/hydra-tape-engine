@@ -511,7 +511,10 @@ def build(variant: int, hooks: bool = True) -> Path:
     if lib.exists():
         return lib
     compiler = os.environ.get('CXX', 'g++')
+    # Linux links a PIE by default and rejects non-PIC objects in a shared
+    # library; Windows PE builds do not need the flag.
     cmd = [compiler, '-O3', '-DNDEBUG', '-std=c++17', '-ffp-contract=off', '-shared',
+           *(['-fPIC'] if os.name != 'nt' else []),
            *FLAGS[variant], *([TIMING_HOOK] if hooks else []),
            '-I' + str(ROOT / 'include'), '-I' + str(ROOT / 'dsp/core'),
            str(ROOT / 'dsp/core/tape_core.cpp'),

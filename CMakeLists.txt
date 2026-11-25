@@ -29,6 +29,9 @@ target_include_directories(hydra_dsp_core
 
 if(BUILD_TESTING)
   include(CTest)
+  add_executable(hydra_audio_hardware_test tests/core/audio_hardware_test.cpp)
+  target_include_directories(hydra_audio_hardware_test PRIVATE ${CMAKE_SOURCE_DIR}/include)
+  add_test(NAME audio_hardware_pcm24_gpio COMMAND hydra_audio_hardware_test)
   include(cmake/HydraLive.cmake)
   find_package(Python3 COMPONENTS Interpreter REQUIRED)
   add_test(NAME fast_tanh_integrity

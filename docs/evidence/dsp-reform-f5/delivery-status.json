@@ -1,7 +1,6 @@
 {
   "phase": "F5",
   "state": "READY_FOR_HUMAN_LISTENING_PENDING_CI_ARTIFACT",
-  "head": "8c324f446c475c367adae6ae531797586a2e5aa4",
   "dsp_commit": "4a8cfbbfed2088b72e2456c3799980ce96717f9a",
   "source_commit": "4a8cfbbfed2088b72e2456c3799980ce96717f9a",
   "branch": "experiment/dsp-reform-f5-musical-timing",
@@ -49,5 +48,6 @@
     "music_decision": "HUMAN_PENDING",
     "candidate_promoted": false,
     "f4_integrated": false
-  }
+  },
+  "head_at_evidence": "8c324f446c475c367adae6ae531797586a2e5aa4"
 }

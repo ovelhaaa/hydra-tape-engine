@@ -1,0 +1,22 @@
+{
+  "status": "HUMAN_LISTENING_COMPLETED_EQUIVALENT",
+  "phase": "F3",
+  "human": "COMPLETED_EQUIVALENT",
+  "physical": "PENDING_PHYSICAL",
+  "PR": 68,
+  "draft": true,
+  "merged": false,
+  "audition_artifact_run": 45321905632,
+  "audition_artifact_id": 14888527811,
+  "audition_source_commit": "1e454ebf5f02d7f39a4e0ea634bb107f32da4217",
+  "reference": "F2_C_SELECTED_FOR_F3",
+  "Warm": "accepted alternative retained",
+  "next_phase_authorized": false,
+  "notes": [
+    "No flash or release.",
+    "Local browser initial reveal timeout then complete rerun PASS; published ZIP browser PASS.",
+    "All measured candidates remain experimental.",
+    "26/26 user evaluations: equivalent; confidence24 medium/2 high; no candidate preference or rejection."
+  ],
+  "human_evidence": "human-listening-summary.json"
+}

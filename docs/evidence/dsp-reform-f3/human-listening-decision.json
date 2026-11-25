@@ -1,0 +1,136 @@
+{
+  "manifest_sha256": "96ceb6480421406be0c533684095b15757ec6dc772139fe6569c1723548904a2",
+  "method": "MATCHED: stereo RMS in common 0..6s window, one constant gain/file relative to Vintage F3-A; common headroom trim <=.98; no limiter. RAW untouched. All stimuli synthetic.",
+  "decisions": {
+    "scene01/RAW": {
+      "preference": "Equivalentes",
+      "confidence": "Média",
+      "comments": ""
+    },
+    "scene02/RAW": {
+      "preference": "Equivalentes",
+      "confidence": "Alta",
+      "comments": ""
+    },
+    "scene03/RAW": {
+      "preference": "Equivalentes",
+      "confidence": "Alta",
+      "comments": ""
+    },
+    "scene04/RAW": {
+      "preference": "Equivalentes",
+      "confidence": "Média",
+      "comments": ""
+    },
+    "scene05/RAW": {
+      "preference": "Equivalentes",
+      "confidence": "Média",
+      "comments": ""
+    },
+    "scene06/RAW": {
+      "preference": "Equivalentes",
+      "confidence": "Média",
+      "comments": ""
+    },
+    "scene07/RAW": {
+      "preference": "Equivalentes",
+      "confidence": "Média",
+      "comments": ""
+    },
+    "scene08/RAW": {
+      "preference": "Equivalentes",
+      "confidence": "Média",
+      "comments": ""
+    },
+    "scene09/RAW": {
+      "preference": "Equivalentes",
+      "confidence": "Média",
+      "comments": ""
+    },
+    "scene10/RAW": {
+      "preference": "Equivalentes",
+      "confidence": "Média",
+      "comments": ""
+    },
+    "scene11/RAW": {
+      "preference": "Equivalentes",
+      "confidence": "Média",
+      "comments": ""
+    },
+    "scene12/RAW": {
+      "preference": "Equivalentes",
+      "confidence": "Média",
+      "comments": ""
+    },
+    "scene13/RAW": {
+      "preference": "Equivalentes",
+      "confidence": "Média",
+      "comments": ""
+    },
+    "scene13/MATCHED": {
+      "preference": "Equivalentes",
+      "confidence": "Média",
+      "comments": ""
+    },
+    "scene12/MATCHED": {
+      "preference": "Equivalentes",
+      "confidence": "Média",
+      "comments": ""
+    },
+    "scene11/MATCHED": {
+      "preference": "Equivalentes",
+      "confidence": "Média",
+      "comments": ""
+    },
+    "scene10/MATCHED": {
+      "preference": "Equivalentes",
+      "confidence": "Média",
+      "comments": ""
+    },
+    "scene09/MATCHED": {
+      "preference": "Equivalentes",
+      "confidence": "Média",
+      "comments": ""
+    },
+    "scene08/MATCHED": {
+      "preference": "Equivalentes",
+      "confidence": "Média",
+      "comments": ""
+    },
+    "scene07/MATCHED": {
+      "preference": "Equivalentes",
+      "confidence": "Média",
+      "comments": ""
+    },
+    "scene06/MATCHED": {
+      "preference": "Equivalentes",
+      "confidence": "Média",
+      "comments": ""
+    },
+    "scene05/MATCHED": {
+      "preference": "Equivalentes",
+      "confidence": "Média",
+      "comments": ""
+    },
+    "scene04/MATCHED": {
+      "preference": "Equivalentes",
+      "confidence": "Média",
+      "comments": ""
+    },
+    "scene03/MATCHED": {
+      "preference": "Equivalentes",
+      "confidence": "Média",
+      "comments": ""
+    },
+    "scene02/MATCHED": {
+      "preference": "Equivalentes",
+      "confidence": "Média",
+      "comments": ""
+    },
+    "scene01/MATCHED": {
+      "preference": "Equivalentes",
+      "confidence": "Média",
+      "comments": ""
+    }
+  }
+}

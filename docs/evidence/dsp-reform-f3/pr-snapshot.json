@@ -1,0 +1,112 @@
+[
+  {
+    "number": 58,
+    "state": "open",
+    "draft": true,
+    "merged": false,
+    "head": "feat/phase7-3-classic-c-web-default",
+    "head_sha": "d2d36dd2b5d0fe06e66aca6d309a532a13001d87",
+    "base": "main",
+    "base_sha": "6849edf738c0d60731f51e96f7a16d1deac08cfe",
+    "url": "https://github.com/ovelhaaa/hydra-tape-engine/pull/58"
+  },
+  {
+    "number": 59,
+    "state": "open",
+    "draft": true,
+    "merged": false,
+    "head": "experiment/phase7-4a-repeat-aging",
+    "head_sha": "20b3b2695a3090a47f28d9bb2769c92de2452997",
+    "base": "feat/phase7-3-classic-c-web-default",
+    "base_sha": "d2d36dd2b5d0fe06e66aca6d309a532a13001d87",
+    "url": "https://github.com/ovelhaaa/hydra-tape-engine/pull/59"
+  },
+  {
+    "number": 60,
+    "state": "open",
+    "draft": true,
+    "merged": false,
+    "head": "experiment/phase7-4b-organic-motion",
+    "head_sha": "c1331a7d81b8b989df0ed523c9ae10c73c21a15e",
+    "base": "feat/phase7-3-classic-c-web-default",
+    "base_sha": "d2d36dd2b5d0fe06e66aca6d309a532a13001d87",
+    "url": "https://github.com/ovelhaaa/hydra-tape-engine/pull/60"
+  },
+  {
+    "number": 61,
+    "state": "open",
+    "draft": true,
+    "merged": false,
+    "head": "feature/phase7-4c-unified-motion",
+    "head_sha": "c1f996b0dbe22117238252b6d5530e15d5ebe26f",
+    "base": "feat/phase7-3-classic-c-web-default",
+    "base_sha": "d2d36dd2b5d0fe06e66aca6d309a532a13001d87",
+    "url": "https://github.com/ovelhaaa/hydra-tape-engine/pull/61"
+  },
+  {
+    "number": 62,
+    "state": "open",
+    "draft": true,
+    "merged": false,
+    "head": "experiment/phase7-5a1-studio-signal-path",
+    "head_sha": "565ae355b75741ee8aca37fc6c09c0aac449bf8b",
+    "base": "feature/phase7-4c-unified-motion",
+    "base_sha": "c1f996b0dbe22117238252b6d5530e15d5ebe26f",
+    "url": "https://github.com/ovelhaaa/hydra-tape-engine/pull/62"
+  },
+  {
+    "number": 63,
+    "state": "open",
+    "draft": true,
+    "merged": false,
+    "head": "codex/f0-1-test-infrastructure",
+    "head_sha": "6f3bc243bf26b36eabc21236f3e193b2c0fef33d",
+    "base": "main",
+    "base_sha": "6d94af5557f8ec23ef4627af3d0a584f7e5fd517",
+    "url": "https://github.com/ovelhaaa/hydra-tape-engine/pull/63"
+  },
+  {
+    "number": 64,
+    "state": "open",
+    "draft": true,
+    "merged": false,
+    "head": "codex/dsp-reform-f0-1-consolidation",
+    "head_sha": "3cc6c1b5f4ce8b93d7665744d266a82cb42e80e2",
+    "base": "main",
+    "base_sha": "6d94af5557f8ec23ef4627af3d0a584f7e5fd517",
+    "url": "https://github.com/ovelhaaa/hydra-tape-engine/pull/64"
+  },
+  {
+    "number": 65,
+    "state": "open",
+    "draft": true,
+    "merged": false,
+    "head": "codex/dsp-reform-f0-2-reproducible-baseline",
+    "head_sha": "18d92369aa7ecb30890c9509e552526240f4ba30",
+    "base": "codex/dsp-reform-f0-1-consolidation",
+    "base_sha": "3cc6c1b5f4ce8b93d7665744d266a82cb42e80e2",
+    "url": "https://github.com/ovelhaaa/hydra-tape-engine/pull/65"
+  },
+  {
+    "number": 66,
+    "state": "open",
+    "draft": true,
+    "merged": false,
+    "head": "codex/dsp-reform-f1-c0-reference",
+    "head_sha": "f3281d0e9230ad151bcad94c574042adc7996467",
+    "base": "codex/dsp-reform-f0-2-reproducible-baseline",
+    "base_sha": "18d92369aa7ecb30890c9509e552526240f4ba30",
+    "url": "https://github.com/ovelhaaa/hydra-tape-engine/pull/66"
+  },
+  {
+    "number": 67,
+    "state": "open",
+    "draft": true,
+    "merged": false,
+    "head": "experiment/dsp-reform-f2-feedback-calibration",
+    "head_sha": "2c15b88680ff65aff8bd5ac09543fab44b52c785",
+    "base": "codex/dsp-reform-f1-c0-reference",
+    "base_sha": "f3281d0e9230ad151bcad94c574042adc7996467",
+    "url": "https://github.com/ovelhaaa/hydra-tape-engine/pull/67"
+  }
+]

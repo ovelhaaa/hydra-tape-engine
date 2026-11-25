@@ -1,0 +1,23 @@
+{
+  "status": "HUMAN_LISTENING_COMPLETED_EQUIVALENT",
+  "manifest_sha256": "96ceb6480421406be0c533684095b15757ec6dc772139fe6569c1723548904a2",
+  "export_sha256": "ad3a30248ac12ec9125c6480b1c65a45b7a455c7e5c06fba2ffeaaf8cb91926a",
+  "manifest_verified": true,
+  "expected_evaluations": 26,
+  "completed_evaluations": 26,
+  "preferences": {
+    "Equivalentes": 26
+  },
+  "confidence": {
+    "Média": 24,
+    "Alta": 2
+  },
+  "comments_provided": 0,
+  "preferred_candidate": null,
+  "rejected_candidates": [],
+  "reference": "Vintage F3-A (existing reference preserved)",
+  "physical": "PENDING_PHYSICAL",
+  "promotion_authorized": false,
+  "merge_authorized": false,
+  "next_phase_authorized": false
+}

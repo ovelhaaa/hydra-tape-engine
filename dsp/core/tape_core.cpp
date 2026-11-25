@@ -14,6 +14,7 @@
 #include "tape_integrity.hpp"
 #include "realtime_profile.hpp"
 #include "feedback_calibration_experiment.hpp"
+#include "saturation_calibration_experiment.hpp"
 // The B and C listening variants are deliberately separate binaries.
 #if defined(HYDRA_PHASE72_EXPERIMENTAL_FEEDBACK_ROUTING) && HYDRA_PHASE72_EXPERIMENTAL_FEEDBACK_ROUTING && \
     defined(HYDRA_PHASE72_CLASSIC_FEEDBACK_ROUTING) && HYDRA_PHASE72_CLASSIC_FEEDBACK_ROUTING
@@ -1203,9 +1204,15 @@ HYDRA_DSP_IRAM void TapeCore::processStereoBlock(const float* inLBlock,const flo
         float satIn=feedSig*impl_->feedbackPreEmph;
 
         // two light saturation stages with trim between them (less harsh than single heavy drive)
+#if HYDRA_DSP_REFORM_F3_VARIANT != 0
+        satIn=fastSatRational(satIn*experimental::kF3FirstDrive);
+        satIn *= experimental::kF3InterstageTrim;
+        satIn=fastSatRational(satIn*experimental::kF3SecondDrive);
+#else
         satIn=fastSatRational(satIn*1.10f);
         satIn *= 0.82f;
         satIn=fastSatRational(satIn*1.08f);
+#endif
 
         // complementary de-emphasis via cached reciprocal to avoid per-sample division
         feedSig=satIn*impl_->feedbackDeEmph;

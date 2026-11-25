@@ -24,7 +24,8 @@
     "drift_60s_transport": "<=1.42e-14 beats",
     "tail_60s_fb95": "finite, 0 dB last-second growth",
     "esp32_builds": "3/3 SUCCESS (a/b/c)",
-    "physical": "PENDING_PHYSICAL"
+    "physical": "PENDING_PHYSICAL",
+    "feedback_stability": "9/9 PASS (3 cases x 3 variants)"
   },
   "audition_package": {
     "local_path": "artifacts/dsp-reform-f5/listening",

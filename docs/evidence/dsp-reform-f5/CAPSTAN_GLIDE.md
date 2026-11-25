@@ -58,7 +58,7 @@ números por cena estão em `TIMING_MEASUREMENTS.json`.
 
 ## 4. Custo
 
-48–56 bytes de estado, sem buffer. Em regime estacionário, um branch. Durante o glide,
+56 bytes de estado, sem buffer. Em regime estacionário, um branch. Durante o glide,
 ~8 operações escalares por amostra. `.text` +3.064 B no objeto; firmware +980 B. Nenhuma
 transcendente por amostra.
 

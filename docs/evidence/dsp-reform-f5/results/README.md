@@ -16,6 +16,7 @@ recriado por `run.py render && run.py package` e publicado pelo workflow
 | `DRIFT_manual_60s*.json` | transporte e alvo após 60 s |
 | `LONG_TAIL_CHECK.json` | caudas FB95 de 60 s |
 | `REVERSE_VALIDATION.json` | 9 divisões, 120→90 |
+| `FEEDBACK_STABILITY_v*.json` | gates FB95/multi-head/Reverse, 60 s |
 | `listening-manifest.json`, `answer-key.json` | cegueira e comandos do pacote |
 
 `build.json.head` é o commit usado para compilar/renderizar; o commit de documentação

@@ -30,6 +30,7 @@ promovida.
 | Pitch de pico (maior gesto manual) | B/C 223 cents (A: descontinuidade) |
 | Jitter MIDI ±1,5 ms | B 50 cents / C 53 cents (sem chasing) |
 | Reverse V2, 9 divisões, 120→90 | `effective == requested` exato em A/B/C |
+| Feedback stability (FB95/multi/Reverse, 60 s) | **9/9 PASS** (3 casos × 3 variantes), 0 clipped |
 | Firmware ESP32-S3 | **3/3 builds SUCCESS**, +980/+1.136 B de flash |
 | Pacote de escuta | **11 cenas, 66 WAVs RAW+MATCHED** em `artifacts/dsp-reform-f5/listening/` |
 | Hardware físico | **PENDING_PHYSICAL** |

@@ -11,9 +11,9 @@ na placa ESP32-S3 continua `PENDING_PHYSICAL`.
 | `.data` / `.bss` do objeto | 0 / 0 | 0 / 0 | 0 / 0 |
 | Firmware ESP32-S3 `firmware.bin` (build CI local) | 633.664 B | 634.640 B (+976) | 634.800 B (+1.136) |
 | RAM estática do firmware (linker) | 26.368 B | 26.368 B | 26.368 B |
-| Estados novos no `Impl` | 0 | 48 B | 48 B |
+| Estados novos no `Impl` | 0 | 56 B | 56 B |
 
-Contagem dos estados: 11 `float` + 2 `bool` = 46 B, arredondados para 48 B. Não há
+Contagem dos estados: 13 `float` (52 B) + `uint8`/3 `bool` (4 B) = 56 B. Não há
 buffer, alocação, thread, lock ou leitor extra. O firmware usa 3,8% de 16 MB de flash;
 o delta de 1 KB não é restrição de memória.
 

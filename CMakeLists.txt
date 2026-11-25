@@ -88,6 +88,37 @@ if(BUILD_TESTING)
     endif()
   endforeach()
 
+  # Native/WASM parity witnesses for the three F5 variants. Each witness is
+  # built with the same explicit experimental definitions on both toolchains,
+  # so a parity result compares two identically configured DSP binaries. The
+  # production trace runner above stays free of experimental defines.
+  foreach(_f5_variant 0 1 2)
+    add_executable(hydra_f5_trace_v${_f5_variant}
+      tests/core/render_trace.cpp
+      dsp/core/tape_core.cpp
+      dsp/core/hydra_dsp_c_api.cpp
+    )
+    target_include_directories(hydra_f5_trace_v${_f5_variant} PRIVATE
+      ${CMAKE_CURRENT_SOURCE_DIR}/include
+      ${CMAKE_CURRENT_SOURCE_DIR}/dsp/core
+    )
+    target_compile_definitions(hydra_f5_trace_v${_f5_variant} PRIVATE
+      HYDRA_PHASE72_CLASSIC_FEEDBACK_ROUTING=1
+      HYDRA_DSP_REFORM_F2_VARIANT=2
+      HYDRA_DSP_REFORM_F3_VARIANT=0
+      HYDRA_DSP_REFORM_F5_TIMING_VARIANT=${_f5_variant}
+    )
+    if(EMSCRIPTEN)
+      set_target_properties(hydra_f5_trace_v${_f5_variant} PROPERTIES
+        OUTPUT_NAME "hydra_f5_trace_v${_f5_variant}"
+        SUFFIX ".js"
+        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/wasm-tests"
+      )
+      target_link_options(hydra_f5_trace_v${_f5_variant} PRIVATE
+        "SHELL:-sENVIRONMENT=node")
+    endif()
+  endforeach()
+
   add_executable(hydra_core_smoke tests/core/smoke_core.cpp)
   target_link_libraries(hydra_core_smoke PRIVATE hydra_dsp_core)
   add_test(NAME core_smoke COMMAND hydra_core_smoke)

@@ -1,0 +1,62 @@
+[
+  {
+    "scenario": "01_clean_guitar_fb45",
+    "expected": "b750f35c1bf9fc27b0e4d4e075673f46544192b0fa3d7600abab11fb98b5c9e0",
+    "actual": "b750f35c1bf9fc27b0e4d4e075673f46544192b0fa3d7600abab11fb98b5c9e0",
+    "match": true
+  },
+  {
+    "scenario": "02_driven_guitar_fb55",
+    "expected": "386ae14a38d63a3a6b1b79e985d236ca95290b04b7fb7d0815900ab529171e38",
+    "actual": "386ae14a38d63a3a6b1b79e985d236ca95290b04b7fb7d0815900ab529171e38",
+    "match": true
+  },
+  {
+    "scenario": "03_mono_synth_fb65",
+    "expected": "18acf49f5615e098075fbe6992387e5d35e28d5a15a90aad1a69c6b695d373da",
+    "actual": "18acf49f5615e098075fbe6992387e5d35e28d5a15a90aad1a69c6b695d373da",
+    "match": true
+  },
+  {
+    "scenario": "04_poly_synth_fb60_multihead",
+    "expected": "9e1c0778171c34e7c0f50218f3367c3a9951357abb4cba7611519aea8b2b3d2c",
+    "actual": "9e1c0778171c34e7c0f50218f3367c3a9951357abb4cba7611519aea8b2b3d2c",
+    "match": true
+  },
+  {
+    "scenario": "05_drum_machine_fb55_pingpong",
+    "expected": "7693e8eecedaf9f3dca88727bb061de1644b6de751fa3165697f9b5b8802da4e",
+    "actual": "7693e8eecedaf9f3dca88727bb061de1644b6de751fa3165697f9b5b8802da4e",
+    "match": true
+  },
+  {
+    "scenario": "06_irregular_perc_fb75",
+    "expected": "04fce33c9aa1fea8352ab68dcab0db38b413923e72feeb405d3af14bf285c921",
+    "actual": "04fce33c9aa1fea8352ab68dcab0db38b413923e72feeb405d3af14bf285c921",
+    "match": true
+  },
+  {
+    "scenario": "07_impulse_tail_fb45_moderate",
+    "expected": "bb80a50814de6997c73032cdf288a026377c67319667c017be6ff953ec218f90",
+    "actual": "bb80a50814de6997c73032cdf288a026377c67319667c017be6ff953ec218f90",
+    "match": true
+  },
+  {
+    "scenario": "08_impulse_tail_fb80_high",
+    "expected": "b1c9876e8a6fc61d3ed9f0a87b85cc973a6242412e947feabc4aba3efe085fae",
+    "actual": "b1c9876e8a6fc61d3ed9f0a87b85cc973a6242412e947feabc4aba3efe085fae",
+    "match": true
+  },
+  {
+    "scenario": "09_impulse_tail_fb92_60s_near_selfosc",
+    "expected": "e4599a96d0d37a1078a30a25ccfa1e3659119b09e8946a3f01ecc753dbaa7837",
+    "actual": "e4599a96d0d37a1078a30a25ccfa1e3659119b09e8946a3f01ecc753dbaa7837",
+    "match": true
+  },
+  {
+    "scenario": "10_silence_hiss_floor",
+    "expected": "089b4f7f4a3283d27de3f5aaf7b58fe6d0cc9bf55a12753f38cb9d8e39072a55",
+    "actual": "089b4f7f4a3283d27de3f5aaf7b58fe6d0cc9bf55a12753f38cb9d8e39072a55",
+    "match": true
+  }
+]

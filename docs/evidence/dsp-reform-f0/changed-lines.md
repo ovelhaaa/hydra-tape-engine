@@ -1,0 +1,384 @@
+# Inventário de alterações auditadas
+
+Linhas novas por hunk de git diff --unified=0 base...HEAD. Linhas pertencem ao SHA indicado.
+
+## PR #58 — `d2d36dd2b5d0fe06e66aca6d309a532a13001d87`
+
+- [.github/workflows/core-equivalence.yml](https://github.com/ovelhaaa/hydra-tape-engine/blob/d2d36dd2b5d0fe06e66aca6d309a532a13001d87/.github/workflows/core-equivalence.yml)
+  - linhas novas 362
+  - linhas novas 364,14
+- [.github/workflows/web-pages.yml](https://github.com/ovelhaaa/hydra-tape-engine/blob/d2d36dd2b5d0fe06e66aca6d309a532a13001d87/.github/workflows/web-pages.yml)
+  - linhas novas 49
+  - linhas novas 60,19
+  - linhas novas 100,7
+  - linhas novas 111,3
+- [CMakeLists.txt](https://github.com/ovelhaaa/hydra-tape-engine/blob/d2d36dd2b5d0fe06e66aca6d309a532a13001d87/CMakeLists.txt)
+  - linhas novas 5
+  - linhas novas 203,28
+  - linhas novas 267,5
+- [docs/PHASE7_3_WEB_CLASSIC_C_QUICKSTART.md](https://github.com/ovelhaaa/hydra-tape-engine/blob/d2d36dd2b5d0fe06e66aca6d309a532a13001d87/docs/PHASE7_3_WEB_CLASSIC_C_QUICKSTART.md)
+  - linhas novas 1,91
+- [docs/phase7-3/WEB_LISTENING_ACCEPTANCE.md](https://github.com/ovelhaaa/hydra-tape-engine/blob/d2d36dd2b5d0fe06e66aca6d309a532a13001d87/docs/phase7-3/WEB_LISTENING_ACCEPTANCE.md)
+  - linhas novas 1,122
+- [host/web/index.html](https://github.com/ovelhaaa/hydra-tape-engine/blob/d2d36dd2b5d0fe06e66aca6d309a532a13001d87/host/web/index.html)
+  - linhas novas 397
+- [host/web/main.js](https://github.com/ovelhaaa/hydra-tape-engine/blob/d2d36dd2b5d0fe06e66aca6d309a532a13001d87/host/web/main.js)
+  - linhas novas 119,43
+  - linhas novas 172
+  - linhas novas 191,5
+  - linhas novas 253
+  - linhas novas 263,5
+  - linhas novas 298
+  - linhas novas 310
+  - linhas novas 324
+  - linhas novas 376
+  - linhas novas 383
+  - linhas novas 972
+  - linhas novas 1050
+- [host/web/tests/webClassicCAudioProcessing.test.mjs](https://github.com/ovelhaaa/hydra-tape-engine/blob/d2d36dd2b5d0fe06e66aca6d309a532a13001d87/host/web/tests/webClassicCAudioProcessing.test.mjs)
+  - linhas novas 1,187
+- [platformio.ini](https://github.com/ovelhaaa/hydra-tape-engine/blob/d2d36dd2b5d0fe06e66aca6d309a532a13001d87/platformio.ini)
+  - linhas novas 4,6
+  - linhas novas 66,14
+  - linhas novas 89
+  - linhas novas 92,0
+  - linhas novas 94
+  - linhas novas 96,0
+  - linhas novas 97,0
+  - linhas novas 99
+  - linhas novas 101
+- [scripts/generate_phase73_web_listening.mjs](https://github.com/ovelhaaa/hydra-tape-engine/blob/d2d36dd2b5d0fe06e66aca6d309a532a13001d87/scripts/generate_phase73_web_listening.mjs)
+  - linhas novas 1,346
+- [src/main.cpp](https://github.com/ovelhaaa/hydra-tape-engine/blob/d2d36dd2b5d0fe06e66aca6d309a532a13001d87/src/main.cpp)
+  - linhas novas 1493,4
+- [tools/phase6-listening-lab/tests/classicCBrowserAudition.mjs](https://github.com/ovelhaaa/hydra-tape-engine/blob/d2d36dd2b5d0fe06e66aca6d309a532a13001d87/tools/phase6-listening-lab/tests/classicCBrowserAudition.mjs)
+  - linhas novas 1,226
+## PR #59 — `20b3b2695a3090a47f28d9bb2769c92de2452997`
+
+- [.github/workflows/phase74-repeat-aging.yml](https://github.com/ovelhaaa/hydra-tape-engine/blob/20b3b2695a3090a47f28d9bb2769c92de2452997/.github/workflows/phase74-repeat-aging.yml)
+  - linhas novas 1,145
+- [CMakeLists.txt](https://github.com/ovelhaaa/hydra-tape-engine/blob/20b3b2695a3090a47f28d9bb2769c92de2452997/CMakeLists.txt)
+  - linhas novas 6
+  - linhas novas 64,17
+  - linhas novas 227
+  - linhas novas 229,4
+  - linhas novas 234,9
+  - linhas novas 260
+  - linhas novas 298
+- [docs/phase7-4a/DSP_AUDIT.md](https://github.com/ovelhaaa/hydra-tape-engine/blob/20b3b2695a3090a47f28d9bb2769c92de2452997/docs/phase7-4a/DSP_AUDIT.md)
+  - linhas novas 1,104
+- [docs/phase7-4a/EXPERIMENTAL_ARCHITECTURE.md](https://github.com/ovelhaaa/hydra-tape-engine/blob/20b3b2695a3090a47f28d9bb2769c92de2452997/docs/phase7-4a/EXPERIMENTAL_ARCHITECTURE.md)
+  - linhas novas 1,85
+- [docs/phase7-4a/LISTENING_DECISION.md](https://github.com/ovelhaaa/hydra-tape-engine/blob/20b3b2695a3090a47f28d9bb2769c92de2452997/docs/phase7-4a/LISTENING_DECISION.md)
+  - linhas novas 1,40
+- [docs/phase7-4a/REALTIME_FEASIBILITY.md](https://github.com/ovelhaaa/hydra-tape-engine/blob/20b3b2695a3090a47f28d9bb2769c92de2452997/docs/phase7-4a/REALTIME_FEASIBILITY.md)
+  - linhas novas 1,34
+- [docs/phase7-4a/SPECTRAL_ANALYSIS.md](https://github.com/ovelhaaa/hydra-tape-engine/blob/20b3b2695a3090a47f28d9bb2769c92de2452997/docs/phase7-4a/SPECTRAL_ANALYSIS.md)
+  - linhas novas 1,89
+- [dsp/core/repeat_aging_experiment.hpp](https://github.com/ovelhaaa/hydra-tape-engine/blob/20b3b2695a3090a47f28d9bb2769c92de2452997/dsp/core/repeat_aging_experiment.hpp)
+  - linhas novas 1,211
+- [dsp/core/tape_core.cpp](https://github.com/ovelhaaa/hydra-tape-engine/blob/20b3b2695a3090a47f28d9bb2769c92de2452997/dsp/core/tape_core.cpp)
+  - linhas novas 25,9
+  - linhas novas 282,5
+  - linhas novas 358,5
+  - linhas novas 430,4
+  - linhas novas 762,3
+  - linhas novas 794,3
+  - linhas novas 866,3
+  - linhas novas 1294,28
+- [scripts/generate_phase74a_listening.mjs](https://github.com/ovelhaaa/hydra-tape-engine/blob/20b3b2695a3090a47f28d9bb2769c92de2452997/scripts/generate_phase74a_listening.mjs)
+  - linhas novas 1,890
+- [tests/core/c0_equivalence_runner.cpp](https://github.com/ovelhaaa/hydra-tape-engine/blob/20b3b2695a3090a47f28d9bb2769c92de2452997/tests/core/c0_equivalence_runner.cpp)
+  - linhas novas 1,243
+- [tests/core/phase74_repeat_aging_test.cpp](https://github.com/ovelhaaa/hydra-tape-engine/blob/20b3b2695a3090a47f28d9bb2769c92de2452997/tests/core/phase74_repeat_aging_test.cpp)
+  - linhas novas 1,272
+- [tests/core/verify_c0_bit_exact.py](https://github.com/ovelhaaa/hydra-tape-engine/blob/20b3b2695a3090a47f28d9bb2769c92de2452997/tests/core/verify_c0_bit_exact.py)
+  - linhas novas 1,181
+## PR #60 — `c1331a7d81b8b989df0ed523c9ae10c73c21a15e`
+
+- [.github/workflows/phase74b-organic-motion.yml](https://github.com/ovelhaaa/hydra-tape-engine/blob/c1331a7d81b8b989df0ed523c9ae10c73c21a15e/.github/workflows/phase74b-organic-motion.yml)
+  - linhas novas 1,207
+- [CMakeLists.txt](https://github.com/ovelhaaa/hydra-tape-engine/blob/c1331a7d81b8b989df0ed523c9ae10c73c21a15e/CMakeLists.txt)
+  - linhas novas 7
+  - linhas novas 64,18
+  - linhas novas 232,10
+  - linhas novas 258
+- [docs/phase7-4b/EXISTING_MOTION_AUDIT.md](https://github.com/ovelhaaa/hydra-tape-engine/blob/c1331a7d81b8b989df0ed523c9ae10c73c21a15e/docs/phase7-4b/EXISTING_MOTION_AUDIT.md)
+  - linhas novas 1,43
+- [docs/phase7-4b/LISTENING_DECISION.md](https://github.com/ovelhaaa/hydra-tape-engine/blob/c1331a7d81b8b989df0ed523c9ae10c73c21a15e/docs/phase7-4b/LISTENING_DECISION.md)
+  - linhas novas 1,15
+- [docs/phase7-4b/MECHANICAL_MODEL.md](https://github.com/ovelhaaa/hydra-tape-engine/blob/c1331a7d81b8b989df0ed523c9ae10c73c21a15e/docs/phase7-4b/MECHANICAL_MODEL.md)
+  - linhas novas 1,36
+- [docs/phase7-4b/MODULATION_ANALYSIS.md](https://github.com/ovelhaaa/hydra-tape-engine/blob/c1331a7d81b8b989df0ed523c9ae10c73c21a15e/docs/phase7-4b/MODULATION_ANALYSIS.md)
+  - linhas novas 1,78
+- [docs/phase7-4b/REALTIME_FEASIBILITY.md](https://github.com/ovelhaaa/hydra-tape-engine/blob/c1331a7d81b8b989df0ed523c9ae10c73c21a15e/docs/phase7-4b/REALTIME_FEASIBILITY.md)
+  - linhas novas 1,66
+- [dsp/core/organic_motion_experiment.hpp](https://github.com/ovelhaaa/hydra-tape-engine/blob/c1331a7d81b8b989df0ed523c9ae10c73c21a15e/dsp/core/organic_motion_experiment.hpp)
+  - linhas novas 1,387
+- [dsp/core/tape_core.cpp](https://github.com/ovelhaaa/hydra-tape-engine/blob/c1331a7d81b8b989df0ed523c9ae10c73c21a15e/dsp/core/tape_core.cpp)
+  - linhas novas 27,10
+  - linhas novas 367,4
+  - linhas novas 497,13
+  - linhas novas 757,3
+  - linhas novas 940
+  - linhas novas 944,9
+- [platformio.ini](https://github.com/ovelhaaa/hydra-tape-engine/blob/c1331a7d81b8b989df0ed523c9ae10c73c21a15e/platformio.ini)
+  - linhas novas 80,34
+- [scripts/bench_phase74b_esp32.py](https://github.com/ovelhaaa/hydra-tape-engine/blob/c1331a7d81b8b989df0ed523c9ae10c73c21a15e/scripts/bench_phase74b_esp32.py)
+  - linhas novas 1,244
+- [scripts/generate_phase74b_listening.mjs](https://github.com/ovelhaaa/hydra-tape-engine/blob/c1331a7d81b8b989df0ed523c9ae10c73c21a15e/scripts/generate_phase74b_listening.mjs)
+  - linhas novas 1,780
+- [scripts/phase74b_demodulator.mjs](https://github.com/ovelhaaa/hydra-tape-engine/blob/c1331a7d81b8b989df0ed523c9ae10c73c21a15e/scripts/phase74b_demodulator.mjs)
+  - linhas novas 1,214
+- [scripts/test_phase74b_control_semantics.mjs](https://github.com/ovelhaaa/hydra-tape-engine/blob/c1331a7d81b8b989df0ed523c9ae10c73c21a15e/scripts/test_phase74b_control_semantics.mjs)
+  - linhas novas 1,136
+- [scripts/test_phase74b_demodulator.mjs](https://github.com/ovelhaaa/hydra-tape-engine/blob/c1331a7d81b8b989df0ed523c9ae10c73c21a15e/scripts/test_phase74b_demodulator.mjs)
+  - linhas novas 1,62
+- [scripts/test_phase74b_player.mjs](https://github.com/ovelhaaa/hydra-tape-engine/blob/c1331a7d81b8b989df0ed523c9ae10c73c21a15e/scripts/test_phase74b_player.mjs)
+  - linhas novas 1,189
+- [scripts/test_phase74b_wasm_api.mjs](https://github.com/ovelhaaa/hydra-tape-engine/blob/c1331a7d81b8b989df0ed523c9ae10c73c21a15e/scripts/test_phase74b_wasm_api.mjs)
+  - linhas novas 1,225
+- [tests/core/m0_equivalence_runner.cpp](https://github.com/ovelhaaa/hydra-tape-engine/blob/c1331a7d81b8b989df0ed523c9ae10c73c21a15e/tests/core/m0_equivalence_runner.cpp)
+  - linhas novas 1,75
+- [tests/core/phase74b_organic_motion_test.cpp](https://github.com/ovelhaaa/hydra-tape-engine/blob/c1331a7d81b8b989df0ed523c9ae10c73c21a15e/tests/core/phase74b_organic_motion_test.cpp)
+  - linhas novas 1,247
+- [tests/core/verify_m0_bit_exact.py](https://github.com/ovelhaaa/hydra-tape-engine/blob/c1331a7d81b8b989df0ed523c9ae10c73c21a15e/tests/core/verify_m0_bit_exact.py)
+  - linhas novas 1,104
+## PR #61 — `c1f996b0dbe22117238252b6d5530e15d5ebe26f`
+
+- [.github/workflows/phase74c-unified-motion.yml](https://github.com/ovelhaaa/hydra-tape-engine/blob/c1f996b0dbe22117238252b6d5530e15d5ebe26f/.github/workflows/phase74c-unified-motion.yml)
+  - linhas novas 1,111
+- [CMakeLists.txt](https://github.com/ovelhaaa/hydra-tape-engine/blob/c1f996b0dbe22117238252b6d5530e15d5ebe26f/CMakeLists.txt)
+  - linhas novas 47,4
+  - linhas novas 233
+  - linhas novas 252
+- [docs/phase7-4c/LISTENING_ACCEPTANCE.md](https://github.com/ovelhaaa/hydra-tape-engine/blob/c1f996b0dbe22117238252b6d5530e15d5ebe26f/docs/phase7-4c/LISTENING_ACCEPTANCE.md)
+  - linhas novas 1,19
+- [docs/phase7-4c/PARAMETER_CONTRACT.md](https://github.com/ovelhaaa/hydra-tape-engine/blob/c1f996b0dbe22117238252b6d5530e15d5ebe26f/docs/phase7-4c/PARAMETER_CONTRACT.md)
+  - linhas novas 1,27
+- [docs/phase7-4c/PRESET_MIGRATION.md](https://github.com/ovelhaaa/hydra-tape-engine/blob/c1f996b0dbe22117238252b6d5530e15d5ebe26f/docs/phase7-4c/PRESET_MIGRATION.md)
+  - linhas novas 1,16
+- [docs/phase7-4c/REALTIME_FEASIBILITY.md](https://github.com/ovelhaaa/hydra-tape-engine/blob/c1f996b0dbe22117238252b6d5530e15d5ebe26f/docs/phase7-4c/REALTIME_FEASIBILITY.md)
+  - linhas novas 1,35
+- [docs/phase7-4c/RESET_FOLLOWUP.md](https://github.com/ovelhaaa/hydra-tape-engine/blob/c1f996b0dbe22117238252b6d5530e15d5ebe26f/docs/phase7-4c/RESET_FOLLOWUP.md)
+  - linhas novas 1,12
+- [docs/phase7-4c/RUNTIME_SWITCHING.md](https://github.com/ovelhaaa/hydra-tape-engine/blob/c1f996b0dbe22117238252b6d5530e15d5ebe26f/docs/phase7-4c/RUNTIME_SWITCHING.md)
+  - linhas novas 1,16
+- [docs/phase7-4c/UNIFIED_ENGINE_ARCHITECTURE.md](https://github.com/ovelhaaa/hydra-tape-engine/blob/c1f996b0dbe22117238252b6d5530e15d5ebe26f/docs/phase7-4c/UNIFIED_ENGINE_ARCHITECTURE.md)
+  - linhas novas 1,31
+- [docs/phase7-4c/WEB_INTERFACE.md](https://github.com/ovelhaaa/hydra-tape-engine/blob/c1f996b0dbe22117238252b6d5530e15d5ebe26f/docs/phase7-4c/WEB_INTERFACE.md)
+  - linhas novas 1,28
+- [dsp/core/hydra_dsp_c_api.cpp](https://github.com/ovelhaaa/hydra-tape-engine/blob/c1f996b0dbe22117238252b6d5530e15d5ebe26f/dsp/core/hydra_dsp_c_api.cpp)
+  - linhas novas 62,9
+  - linhas novas 164,12
+  - linhas novas 294,9
+  - linhas novas 570,8
+- [dsp/core/tape_core.cpp](https://github.com/ovelhaaa/hydra-tape-engine/blob/c1f996b0dbe22117238252b6d5530e15d5ebe26f/dsp/core/tape_core.cpp)
+  - linhas novas 26
+  - linhas novas 358,103
+  - linhas novas 587,33
+  - linhas novas 867,6
+  - linhas novas 1053,2
+  - linhas novas 1459,5
+- [dsp/core/tape_core.hpp](https://github.com/ovelhaaa/hydra-tape-engine/blob/c1f996b0dbe22117238252b6d5530e15d5ebe26f/dsp/core/tape_core.hpp)
+  - linhas novas 48,9
+  - linhas novas 73
+- [dsp/core/tape_motion_engine.hpp](https://github.com/ovelhaaa/hydra-tape-engine/blob/c1f996b0dbe22117238252b6d5530e15d5ebe26f/dsp/core/tape_motion_engine.hpp)
+  - linhas novas 1,642
+- [host/native/esp32/hydra_dsp_esp32_adapter.cpp](https://github.com/ovelhaaa/hydra-tape-engine/blob/c1f996b0dbe22117238252b6d5530e15d5ebe26f/host/native/esp32/hydra_dsp_esp32_adapter.cpp)
+  - linhas novas 221,4
+  - linhas novas 412,8
+- [host/native/esp32/hydra_dsp_esp32_adapter.h](https://github.com/ovelhaaa/hydra-tape-engine/blob/c1f996b0dbe22117238252b6d5530e15d5ebe26f/host/native/esp32/hydra_dsp_esp32_adapter.h)
+  - linhas novas 17,2
+  - linhas novas 29,2
+  - linhas novas 91
+- [host/web/hydra-processor.js](https://github.com/ovelhaaa/hydra-tape-engine/blob/c1f996b0dbe22117238252b6d5530e15d5ebe26f/host/web/hydra-processor.js)
+  - linhas novas 88,9
+  - linhas novas 149,4
+  - linhas novas 159
+  - linhas novas 165
+  - linhas novas 169,3
+  - linhas novas 194,5
+  - linhas novas 202
+  - linhas novas 204,3
+  - linhas novas 260,3
+  - linhas novas 313,2
+  - linhas novas 319,19
+  - linhas novas 501,10
+  - linhas novas 527,2
+- [host/web/index.html](https://github.com/ovelhaaa/hydra-tape-engine/blob/c1f996b0dbe22117238252b6d5530e15d5ebe26f/host/web/index.html)
+  - linhas novas 388,173
+  - linhas novas 701
+  - linhas novas 779,25
+  - linhas novas 805,30
+  - linhas novas 869,55
+- [host/web/main.js](https://github.com/ovelhaaa/hydra-tape-engine/blob/c1f996b0dbe22117238252b6d5530e15d5ebe26f/host/web/main.js)
+  - linhas novas 46,10
+  - linhas novas 65,3
+  - linhas novas 107,10
+  - linhas novas 140,4
+  - linhas novas 171,2
+  - linhas novas 345,3
+  - linhas novas 391,50
+  - linhas novas 442,7
+  - linhas novas 457
+  - linhas novas 674,17
+  - linhas novas 1016,38
+- [host/web/presetSerialization.js](https://github.com/ovelhaaa/hydra-tape-engine/blob/c1f996b0dbe22117238252b6d5530e15d5ebe26f/host/web/presetSerialization.js)
+  - linhas novas 53,11
+  - linhas novas 109,11
+- [host/web/tests/webUnifiedMotion.test.mjs](https://github.com/ovelhaaa/hydra-tape-engine/blob/c1f996b0dbe22117238252b6d5530e15d5ebe26f/host/web/tests/webUnifiedMotion.test.mjs)
+  - linhas novas 1,240
+- [include/hydra_dsp.h](https://github.com/ovelhaaa/hydra-tape-engine/blob/c1f996b0dbe22117238252b6d5530e15d5ebe26f/include/hydra_dsp.h)
+  - linhas novas 16
+  - linhas novas 55,7
+  - linhas novas 205,10
+  - linhas novas 311,12
+- [platformio.ini](https://github.com/ovelhaaa/hydra-tape-engine/blob/c1f996b0dbe22117238252b6d5530e15d5ebe26f/platformio.ini)
+  - linhas novas 80,10
+- [scripts/bench_phase74c_esp32.py](https://github.com/ovelhaaa/hydra-tape-engine/blob/c1f996b0dbe22117238252b6d5530e15d5ebe26f/scripts/bench_phase74c_esp32.py)
+  - linhas novas 1,210
+- [scripts/generate_phase74c_listening.mjs](https://github.com/ovelhaaa/hydra-tape-engine/blob/c1f996b0dbe22117238252b6d5530e15d5ebe26f/scripts/generate_phase74c_listening.mjs)
+  - linhas novas 1,438
+- [scripts/package_phase6_final.py](https://github.com/ovelhaaa/hydra-tape-engine/blob/c1f996b0dbe22117238252b6d5530e15d5ebe26f/scripts/package_phase6_final.py)
+  - linhas novas 33
+  - linhas novas 38
+- [scripts/phase64_audio_delta.py](https://github.com/ovelhaaa/hydra-tape-engine/blob/c1f996b0dbe22117238252b6d5530e15d5ebe26f/scripts/phase64_audio_delta.py)
+  - linhas novas 100
+  - linhas novas 104
+- [scripts/render_phase6_review.py](https://github.com/ovelhaaa/hydra-tape-engine/blob/c1f996b0dbe22117238252b6d5530e15d5ebe26f/scripts/render_phase6_review.py)
+  - linhas novas 25
+  - linhas novas 85,19
+  - linhas novas 186
+  - linhas novas 190
+  - linhas novas 197,6
+  - linhas novas 275,45
+- [scripts/test_listening_lab.py](https://github.com/ovelhaaa/hydra-tape-engine/blob/c1f996b0dbe22117238252b6d5530e15d5ebe26f/scripts/test_listening_lab.py)
+  - linhas novas 11
+  - linhas novas 110,53
+- [scripts/test_phase74c_browser.mjs](https://github.com/ovelhaaa/hydra-tape-engine/blob/c1f996b0dbe22117238252b6d5530e15d5ebe26f/scripts/test_phase74c_browser.mjs)
+  - linhas novas 1,232
+- [scripts/verify_phase74c_equivalence.py](https://github.com/ovelhaaa/hydra-tape-engine/blob/c1f996b0dbe22117238252b6d5530e15d5ebe26f/scripts/verify_phase74c_equivalence.py)
+  - linhas novas 1,369
+- [src/main.cpp](https://github.com/ovelhaaa/hydra-tape-engine/blob/c1f996b0dbe22117238252b6d5530e15d5ebe26f/src/main.cpp)
+  - linhas novas 100,5
+  - linhas novas 162,10
+  - linhas novas 907,13
+  - linhas novas 1565,39
+  - linhas novas 1626,3
+  - linhas novas 1681,2
+  - linhas novas 2056,22
+- [tests/core/midi_clock_test.cpp](https://github.com/ovelhaaa/hydra-tape-engine/blob/c1f996b0dbe22117238252b6d5530e15d5ebe26f/tests/core/midi_clock_test.cpp)
+  - linhas novas 548
+  - linhas novas 550
+  - linhas novas 552,4
+- [tests/core/phase74c_unified_motion_test.cpp](https://github.com/ovelhaaa/hydra-tape-engine/blob/c1f996b0dbe22117238252b6d5530e15d5ebe26f/tests/core/phase74c_unified_motion_test.cpp)
+  - linhas novas 1,588
+- [tests/core/web_param_ids_check.py](https://github.com/ovelhaaa/hydra-tape-engine/blob/c1f996b0dbe22117238252b6d5530e15d5ebe26f/tests/core/web_param_ids_check.py)
+  - linhas novas 50,9
+  - linhas novas 72
+- [tools/phase6-listening-lab/tests/classicCBrowserAudition.mjs](https://github.com/ovelhaaa/hydra-tape-engine/blob/c1f996b0dbe22117238252b6d5530e15d5ebe26f/tools/phase6-listening-lab/tests/classicCBrowserAudition.mjs)
+  - linhas novas 5
+  - linhas novas 97,24
+  - linhas novas 140
+  - linhas novas 146,7
+  - linhas novas 234,4
+## PR #62 — `565ae355b75741ee8aca37fc6c09c0aac449bf8b`
+
+- [.github/workflows/phase75a1-studio-signal-path.yml](https://github.com/ovelhaaa/hydra-tape-engine/blob/565ae355b75741ee8aca37fc6c09c0aac449bf8b/.github/workflows/phase75a1-studio-signal-path.yml)
+  - linhas novas 1,68
+- [CMakeLists.txt](https://github.com/ovelhaaa/hydra-tape-engine/blob/565ae355b75741ee8aca37fc6c09c0aac449bf8b/CMakeLists.txt)
+  - linhas novas 256,6
+  - linhas novas 384,21
+- [docs/phase7-5a/CLASSIC_PARITY.md](https://github.com/ovelhaaa/hydra-tape-engine/blob/565ae355b75741ee8aca37fc6c09c0aac449bf8b/docs/phase7-5a/CLASSIC_PARITY.md)
+  - linhas novas 1,30
+- [docs/phase7-5a/DECISION_RECORD.md](https://github.com/ovelhaaa/hydra-tape-engine/blob/565ae355b75741ee8aca37fc6c09c0aac449bf8b/docs/phase7-5a/DECISION_RECORD.md)
+  - linhas novas 1,39
+- [docs/phase7-5a/ESP32_FEASIBILITY.md](https://github.com/ovelhaaa/hydra-tape-engine/blob/565ae355b75741ee8aca37fc6c09c0aac449bf8b/docs/phase7-5a/ESP32_FEASIBILITY.md)
+  - linhas novas 1,31
+- [docs/phase7-5a/GAIN_AND_HEADROOM.md](https://github.com/ovelhaaa/hydra-tape-engine/blob/565ae355b75741ee8aca37fc6c09c0aac449bf8b/docs/phase7-5a/GAIN_AND_HEADROOM.md)
+  - linhas novas 1,50
+- [docs/phase7-5a/LISTENING_GUIDE.md](https://github.com/ovelhaaa/hydra-tape-engine/blob/565ae355b75741ee8aca37fc6c09c0aac449bf8b/docs/phase7-5a/LISTENING_GUIDE.md)
+  - linhas novas 1,45
+- [docs/phase7-5a/SIGNAL_PATH_ARCHITECTURE.md](https://github.com/ovelhaaa/hydra-tape-engine/blob/565ae355b75741ee8aca37fc6c09c0aac449bf8b/docs/phase7-5a/SIGNAL_PATH_ARCHITECTURE.md)
+  - linhas novas 1,87
+- [docs/phase7-5a/STUDIO_SIGNAL_PATH_AUDIT.md](https://github.com/ovelhaaa/hydra-tape-engine/blob/565ae355b75741ee8aca37fc6c09c0aac449bf8b/docs/phase7-5a/STUDIO_SIGNAL_PATH_AUDIT.md)
+  - linhas novas 1,66
+- [dsp/core/hydra_dsp_c_api.cpp](https://github.com/ovelhaaa/hydra-tape-engine/blob/565ae355b75741ee8aca37fc6c09c0aac449bf8b/dsp/core/hydra_dsp_c_api.cpp)
+  - linhas novas 71,2
+  - linhas novas 178,6
+  - linhas novas 311,2
+- [dsp/core/tape_core.cpp](https://github.com/ovelhaaa/hydra-tape-engine/blob/565ae355b75741ee8aca37fc6c09c0aac449bf8b/dsp/core/tape_core.cpp)
+  - linhas novas 346
+  - linhas novas 352,5
+  - linhas novas 527
+  - linhas novas 709,5
+  - linhas novas 879,3
+  - linhas novas 978
+  - linhas novas 1260
+  - linhas novas 1264
+  - linhas novas 1337,10
+  - linhas novas 1441,12
+  - linhas novas 1482,9
+- [dsp/core/tape_core.hpp](https://github.com/ovelhaaa/hydra-tape-engine/blob/565ae355b75741ee8aca37fc6c09c0aac449bf8b/dsp/core/tape_core.hpp)
+  - linhas novas 57,2
+- [host/web/hydra-processor.js](https://github.com/ovelhaaa/hydra-tape-engine/blob/565ae355b75741ee8aca37fc6c09c0aac449bf8b/host/web/hydra-processor.js)
+  - linhas novas 96
+  - linhas novas 197,2
+  - linhas novas 315
+  - linhas novas 328
+- [host/web/index.html](https://github.com/ovelhaaa/hydra-tape-engine/blob/565ae355b75741ee8aca37fc6c09c0aac449bf8b/host/web/index.html)
+  - linhas novas 258,2
+  - linhas novas 808,15
+  - linhas novas 977
+- [host/web/main.js](https://github.com/ovelhaaa/hydra-tape-engine/blob/565ae355b75741ee8aca37fc6c09c0aac449bf8b/host/web/main.js)
+  - linhas novas 55,2
+  - linhas novas 68
+  - linhas novas 73,2
+  - linhas novas 349
+  - linhas novas 449,2
+  - linhas novas 465
+  - linhas novas 1024,24
+- [host/web/presetSerialization.js](https://github.com/ovelhaaa/hydra-tape-engine/blob/565ae355b75741ee8aca37fc6c09c0aac449bf8b/host/web/presetSerialization.js)
+  - linhas novas 11,2
+  - linhas novas 69,2
+- [host/web/tests/webStudioSignalPath.test.mjs](https://github.com/ovelhaaa/hydra-tape-engine/blob/565ae355b75741ee8aca37fc6c09c0aac449bf8b/host/web/tests/webStudioSignalPath.test.mjs)
+  - linhas novas 1,38
+- [include/hydra_dsp.h](https://github.com/ovelhaaa/hydra-tape-engine/blob/565ae355b75741ee8aca37fc6c09c0aac449bf8b/include/hydra_dsp.h)
+  - linhas novas 16
+  - linhas novas 214,6
+- [platformio.ini](https://github.com/ovelhaaa/hydra-tape-engine/blob/565ae355b75741ee8aca37fc6c09c0aac449bf8b/platformio.ini)
+  - linhas novas 137,4
+- [scripts/package_phase6_final_ab.py](https://github.com/ovelhaaa/hydra-tape-engine/blob/565ae355b75741ee8aca37fc6c09c0aac449bf8b/scripts/package_phase6_final_ab.py)
+  - linhas novas 116
+- [scripts/package_phase72_feedback_ab.py](https://github.com/ovelhaaa/hydra-tape-engine/blob/565ae355b75741ee8aca37fc6c09c0aac449bf8b/scripts/package_phase72_feedback_ab.py)
+  - linhas novas 172,2
+- [scripts/package_phase75a.py](https://github.com/ovelhaaa/hydra-tape-engine/blob/565ae355b75741ee8aca37fc6c09c0aac449bf8b/scripts/package_phase75a.py)
+  - linhas novas 1,28
+- [scripts/package_phase7_ab.py](https://github.com/ovelhaaa/hydra-tape-engine/blob/565ae355b75741ee8aca37fc6c09c0aac449bf8b/scripts/package_phase7_ab.py)
+  - linhas novas 90
+- [scripts/package_reverse_ab.py](https://github.com/ovelhaaa/hydra-tape-engine/blob/565ae355b75741ee8aca37fc6c09c0aac449bf8b/scripts/package_reverse_ab.py)
+  - linhas novas 115
+- [scripts/phase75a_studio_lab.py](https://github.com/ovelhaaa/hydra-tape-engine/blob/565ae355b75741ee8aca37fc6c09c0aac449bf8b/scripts/phase75a_studio_lab.py)
+  - linhas novas 1,152
+- [scripts/phase75a_wasm.mjs](https://github.com/ovelhaaa/hydra-tape-engine/blob/565ae355b75741ee8aca37fc6c09c0aac449bf8b/scripts/phase75a_wasm.mjs)
+  - linhas novas 1,41
+- [scripts/test_phase74c_browser.mjs](https://github.com/ovelhaaa/hydra-tape-engine/blob/565ae355b75741ee8aca37fc6c09c0aac449bf8b/scripts/test_phase74c_browser.mjs)
+  - linhas novas 87,6
+  - linhas novas 106
+  - linhas novas 184,22
+  - linhas novas 227,2
+  - linhas novas 258,3
+- [scripts/test_phase75a_lab_browser.mjs](https://github.com/ovelhaaa/hydra-tape-engine/blob/565ae355b75741ee8aca37fc6c09c0aac449bf8b/scripts/test_phase75a_lab_browser.mjs)
+  - linhas novas 1,26
+- [src/main.cpp](https://github.com/ovelhaaa/hydra-tape-engine/blob/565ae355b75741ee8aca37fc6c09c0aac449bf8b/src/main.cpp)
+  - linhas novas 1345,6
+- [tests/core/phase74c_unified_motion_test.cpp](https://github.com/ovelhaaa/hydra-tape-engine/blob/565ae355b75741ee8aca37fc6c09c0aac449bf8b/tests/core/phase74c_unified_motion_test.cpp)
+  - linhas novas 84,2
+- [tests/core/phase75a_studio_test.cpp](https://github.com/ovelhaaa/hydra-tape-engine/blob/565ae355b75741ee8aca37fc6c09c0aac449bf8b/tests/core/phase75a_studio_test.cpp)
+  - linhas novas 1,117
+- [tests/core/web_param_ids_check.py](https://github.com/ovelhaaa/hydra-tape-engine/blob/565ae355b75741ee8aca37fc6c09c0aac449bf8b/tests/core/web_param_ids_check.py)
+  - linhas novas 12,2
+  - linhas novas 74
+- [tools/phase6-listening-lab/tests/classicCBrowserAudition.mjs](https://github.com/ovelhaaa/hydra-tape-engine/blob/565ae355b75741ee8aca37fc6c09c0aac449bf8b/tools/phase6-listening-lab/tests/classicCBrowserAudition.mjs)
+  - linhas novas 151

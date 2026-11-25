@@ -1,0 +1,454 @@
+Firmware SHA256: 59cbb93fce0bd6482217f777e58c59c1c2d4d3a5e9146360b108c1b8efeae9ea
+Port: COM15
+Motion Mode: 0 (Classic), Amount: 100%, Stereo: 100%
+> motion updated
+Motion Mode: 0 (Classic)
+> motion updated
+Motion Mode: 0 (Classic), Amount: 100%, Stereo: 100%
+> motion updated
+Bypass: OFF
+Generator: ON
+Source: 1 (0=MP3, 1=SYNTH, 2=I2S)
+Reverse: OFF
+> rev updated
+Accidental Warp: OFF
+> wrp updated
+Spring Reverb: OFF
+> spr updated
+> hds updated
+Delay: 340 ms
+Feedback     [##########----------] 50%
+Wow          [#####---------------] 25%
+> wwr updated
+Flutter      [#####---------------] 25%
+> ftr updated
+Age          [#######-------------] 39%
+Motion Amount: 100.0%
+> motion updated
+Stereo Motion: 100.0%
+> motion updated
+[M0 / 1_standard_single_head]
+
+=== BENCH RESULT (FW Nov 23 2026 01:34:47) ===
+Cfg: src=1 gen=1 byp=0 mod=0 dly=340 fbk=50 hds=4 tps=50 tpa=40 drv=40 nlv=30 ftd=11 wwd=9 dps=8 wrp=0 wmd=0 wsp=1.00 wgr=80 wst=0.50 wfb=0 fv=0 ngt=0.0010 ppg=0 frz=0 rev=0 spr=0
+Blocks=1024 Warmup=256 WallMs=2969.4 BudgetUs=2902.49
+MeanUs=1553.14 MinUs=1528 P50Us=1542 P95Us=1597 P99Us=1614 PeakUs=1829
+BudgetMeanPct=53.51% BudgetP99Pct=55.61% Overruns=0 (0.00%) SatBins=0
+I2SFailDelta=0 HeapStart=116420 HeapEnd=116420 HeapMin=116420 PsramStart=1662792 PsramEnd=1662792 MaxParamUpdUs=225
+StackMinWords=27268
+=========================================
+Bypass: OFF
+Generator: ON
+Source: 1 (0=MP3, 1=SYNTH, 2=I2S)
+Reverse: OFF
+> rev updated
+Accidental Warp: OFF
+> wrp updated
+Spring Reverb: ON
+> spr updated
+> hds updated
+Delay: 340 ms
+Feedback     [#############-------] 65%
+Wow          [#####---------------] 29%
+> wwr updated
+Flutter      [#####---------------] 28%
+> ftr updated
+Age          [##########----------] 50%
+Motion Amount: 100.0%
+> motion updated
+Stereo Motion: 100.0%
+> motion updated
+[M0 / 2_multihead_spring]
+
+=== BENCH RESULT (FW Nov 23 2026 01:34:47) ===
+Cfg: src=1 gen=1 byp=0 mod=0 dly=340 fbk=65 hds=7 tps=50 tpa=50 drv=40 nlv=30 ftd=13 wwd=10 dps=8 wrp=0 wmd=0 wsp=1.00 wgr=80 wst=0.50 wfb=0 fv=0 ngt=0.0010 ppg=0 frz=0 rev=0 spr=1
+Blocks=1024 Warmup=256 WallMs=2969.8 BudgetUs=2902.49
+MeanUs=1785.21 MinUs=1756 P50Us=1777 P95Us=1829 P99Us=1844 PeakUs=2007
+BudgetMeanPct=61.51% BudgetP99Pct=63.53% Overruns=0 (0.00%) SatBins=0
+I2SFailDelta=0 HeapStart=116420 HeapEnd=116420 HeapMin=116420 PsramStart=1662792 PsramEnd=1662792 MaxParamUpdUs=295
+StackMinWords=27268
+=========================================
+Bypass: OFF
+Generator: ON
+Source: 1 (0=MP3, 1=SYNTH, 2=I2S)
+Reverse: ON
+> rev updated
+Reverse mode: 0
+> revmode updated
+Reverse division: 0
+> revdiv updated
+Accidental Warp: OFF
+> wrp updated
+Spring Reverb: ON
+> spr updated
+> hds updated
+Delay: 360 ms
+Feedback     [###############-----] 75%
+Wow          [#######-------------] 35%
+> wwr updated
+Flutter      [#######-------------] 39%
+> ftr updated
+Age          [#############-------] 65%
+Tempo: 120.0 BPM
+> tempo updated
+Transport: PLAY
+> transport updated
+Motion Amount: 100.0%
+> motion updated
+Stereo Motion: 100.0%
+> motion updated
+[M0 / 3_multihead_reverse_spring]
+
+=== BENCH RESULT (FW Nov 23 2026 01:34:47) ===
+Cfg: src=1 gen=1 byp=0 mod=0 dly=360 fbk=75 hds=7 tps=50 tpa=65 drv=40 nlv=30 ftd=18 wwd=12 dps=8 wrp=0 wmd=0 wsp=1.00 wgr=80 wst=0.50 wfb=0 fv=0 ngt=0.0010 ppg=0 frz=0 rev=1 spr=1
+Blocks=1024 Warmup=256 WallMs=2974.4 BudgetUs=2902.49
+MeanUs=1793.64 MinUs=1757 P50Us=1781 P95Us=1836 P99Us=1858 PeakUs=2067
+BudgetMeanPct=61.80% BudgetP99Pct=64.01% Overruns=0 (0.00%) SatBins=0
+I2SFailDelta=0 HeapStart=116420 HeapEnd=116420 HeapMin=116420 PsramStart=1662792 PsramEnd=1662792 MaxParamUpdUs=295
+StackMinWords=27268
+=========================================
+Motion Mode: 1 (Motor Drift)
+> motion updated
+Motion Mode: 1 (Motor Drift), Amount: 100%, Stereo: 100%
+> motion updated
+Bypass: OFF
+Generator: ON
+Source: 1 (0=MP3, 1=SYNTH, 2=I2S)
+Reverse: OFF
+> rev updated
+Accidental Warp: OFF
+> wrp updated
+Spring Reverb: OFF
+> spr updated
+> hds updated
+Delay: 340 ms
+Feedback     [##########----------] 50%
+Wow          [#####---------------] 25%
+> wwr updated
+Flutter      [#####---------------] 25%
+> ftr updated
+Age          [#######-------------] 39%
+Motion Amount: 100.0%
+> motion updated
+Stereo Motion: 100.0%
+> motion updated
+[M1 / 1_standard_single_head]
+
+=== BENCH RESULT (FW Nov 23 2026 01:34:47) ===
+Cfg: src=1 gen=1 byp=0 mod=0 dly=340 fbk=50 hds=4 tps=50 tpa=40 drv=40 nlv=30 ftd=11 wwd=9 dps=8 wrp=0 wmd=0 wsp=1.00 wgr=80 wst=0.50 wfb=0 fv=0 ngt=0.0010 ppg=0 frz=0 rev=0 spr=0
+Blocks=1024 Warmup=256 WallMs=2975.4 BudgetUs=2902.49
+MeanUs=1509.03 MinUs=1434 P50Us=1489 P95Us=1625 P99Us=1641 PeakUs=1821
+BudgetMeanPct=51.99% BudgetP99Pct=56.54% Overruns=0 (0.00%) SatBins=0
+I2SFailDelta=0 HeapStart=116420 HeapEnd=116420 HeapMin=116420 PsramStart=1662792 PsramEnd=1662792 MaxParamUpdUs=387
+StackMinWords=27268
+=========================================
+Bypass: OFF
+Generator: ON
+Source: 1 (0=MP3, 1=SYNTH, 2=I2S)
+Reverse: OFF
+> rev updated
+Accidental Warp: OFF
+> wrp updated
+Spring Reverb: ON
+> spr updated
+> hds updated
+Delay: 340 ms
+Feedback     [#############-------] 65%
+Wow          [#####---------------] 29%
+> wwr updated
+Flutter      [#####---------------] 28%
+> ftr updated
+Age          [##########----------] 50%
+Motion Amount: 100.0%
+> motion updated
+Stereo Motion: 100.0%
+> motion updated
+[M1 / 2_multihead_spring]
+
+=== BENCH RESULT (FW Nov 23 2026 01:34:47) ===
+Cfg: src=1 gen=1 byp=0 mod=0 dly=340 fbk=65 hds=7 tps=50 tpa=50 drv=40 nlv=30 ftd=13 wwd=10 dps=8 wrp=0 wmd=0 wsp=1.00 wgr=80 wst=0.50 wfb=0 fv=0 ngt=0.0010 ppg=0 frz=0 rev=0 spr=1
+Blocks=1024 Warmup=256 WallMs=2970.0 BudgetUs=2902.49
+MeanUs=1787.43 MinUs=1662 P50Us=1811 P95Us=1871 P99Us=1881 PeakUs=2135
+BudgetMeanPct=61.58% BudgetP99Pct=64.81% Overruns=0 (0.00%) SatBins=0
+I2SFailDelta=0 HeapStart=116420 HeapEnd=116420 HeapMin=116420 PsramStart=1662792 PsramEnd=1662792 MaxParamUpdUs=387
+StackMinWords=27268
+=========================================
+Bypass: OFF
+Generator: ON
+Source: 1 (0=MP3, 1=SYNTH, 2=I2S)
+Reverse: ON
+> rev updated
+Reverse mode: 0
+> revmode updated
+Reverse division: 0
+> revdiv updated
+Accidental Warp: OFF
+> wrp updated
+Spring Reverb: ON
+> spr updated
+> hds updated
+Delay: 360 ms
+Feedback     [###############-----] 75%
+Wow          [#######-------------] 35%
+> wwr updated
+Flutter      [#######-------------] 39%
+> ftr updated
+Age          [#############-------] 65%
+Tempo: 120.0 BPM
+> tempo updated
+Transport: PLAY
+> transport updated
+Motion Amount: 100.0%
+> motion updated
+Stereo Motion: 100.0%
+> motion updated
+[M1 / 3_multihead_reverse_spring]
+
+=== BENCH RESULT (FW Nov 23 2026 01:34:47) ===
+Cfg: src=1 gen=1 byp=0 mod=0 dly=360 fbk=75 hds=7 tps=50 tpa=65 drv=40 nlv=30 ftd=18 wwd=12 dps=8 wrp=0 wmd=0 wsp=1.00 wgr=80 wst=0.50 wfb=0 fv=0 ngt=0.0010 ppg=0 frz=0 rev=1 spr=1
+Blocks=1024 Warmup=256 WallMs=2974.0 BudgetUs=2902.49
+MeanUs=1792.77 MinUs=1663 P50Us=1854 P95Us=1875 P99Us=1902 PeakUs=2099
+BudgetMeanPct=61.77% BudgetP99Pct=65.53% Overruns=0 (0.00%) SatBins=0
+I2SFailDelta=0 HeapStart=116420 HeapEnd=116420 HeapMin=116420 PsramStart=1662792 PsramEnd=1662792 MaxParamUpdUs=387
+StackMinWords=27268
+=========================================
+Motion Mode: 2 (Capstan Flutter)
+> motion updated
+Motion Mode: 2 (Capstan Flutter), Amount: 100%, Stereo: 100%
+> motion updated
+Bypass: OFF
+Generator: ON
+Source: 1 (0=MP3, 1=SYNTH, 2=I2S)
+Reverse: OFF
+> rev updated
+Accidental Warp: OFF
+> wrp updated
+Spring Reverb: OFF
+> spr updated
+> hds updated
+Delay: 340 ms
+Feedback     [##########----------] 50%
+Wow          [#####---------------] 25%
+> wwr updated
+Flutter      [#####---------------] 25%
+> ftr updated
+Age          [#######-------------] 39%
+Motion Amount: 100.0%
+> motion updated
+Stereo Motion: 100.0%
+> motion updated
+[M2 / 1_standard_single_head]
+
+=== BENCH RESULT (FW Nov 23 2026 01:34:47) ===
+Cfg: src=1 gen=1 byp=0 mod=0 dly=340 fbk=50 hds=4 tps=50 tpa=40 drv=40 nlv=30 ftd=11 wwd=9 dps=8 wrp=0 wmd=0 wsp=1.00 wgr=80 wst=0.50 wfb=0 fv=0 ngt=0.0010 ppg=0 frz=0 rev=0 spr=0
+Blocks=1024 Warmup=256 WallMs=2970.0 BudgetUs=2902.49
+MeanUs=1595.85 MinUs=1488 P50Us=1561 P95Us=1694 P99Us=1763 PeakUs=1955
+BudgetMeanPct=54.98% BudgetP99Pct=60.74% Overruns=0 (0.00%) SatBins=0
+I2SFailDelta=0 HeapStart=116420 HeapEnd=116420 HeapMin=116420 PsramStart=1662792 PsramEnd=1662792 MaxParamUpdUs=387
+StackMinWords=27268
+=========================================
+Bypass: OFF
+Generator: ON
+Source: 1 (0=MP3, 1=SYNTH, 2=I2S)
+Reverse: OFF
+> rev updated
+Accidental Warp: OFF
+> wrp updated
+Spring Reverb: ON
+> spr updated
+> hds updated
+Delay: 340 ms
+Feedback     [#############-------] 65%
+Wow          [#####---------------] 29%
+> wwr updated
+Flutter      [#####---------------] 28%
+> ftr updated
+Age          [##########----------] 50%
+Motion Amount: 100.0%
+> motion updated
+Stereo Motion: 100.0%
+> motion updated
+[M2 / 2_multihead_spring]
+
+=== BENCH RESULT (FW Nov 23 2026 01:34:47) ===
+Cfg: src=1 gen=1 byp=0 mod=0 dly=340 fbk=65 hds=7 tps=50 tpa=50 drv=40 nlv=30 ftd=13 wwd=10 dps=8 wrp=0 wmd=0 wsp=1.00 wgr=80 wst=0.50 wfb=0 fv=0 ngt=0.0010 ppg=0 frz=0 rev=0 spr=1
+Blocks=1024 Warmup=256 WallMs=2974.5 BudgetUs=2902.49
+MeanUs=1816.69 MinUs=1718 P50Us=1786 P95Us=1933 P99Us=1949 PeakUs=2207
+BudgetMeanPct=62.59% BudgetP99Pct=67.15% Overruns=0 (0.00%) SatBins=0
+I2SFailDelta=0 HeapStart=116420 HeapEnd=116420 HeapMin=116420 PsramStart=1662792 PsramEnd=1662792 MaxParamUpdUs=387
+StackMinWords=27268
+=========================================
+Bypass: OFF
+Generator: ON
+Source: 1 (0=MP3, 1=SYNTH, 2=I2S)
+Reverse: ON
+> rev updated
+Reverse mode: 0
+> revmode updated
+Reverse division: 0
+> revdiv updated
+Accidental Warp: OFF
+> wrp updated
+Spring Reverb: ON
+> spr updated
+> hds updated
+Delay: 360 ms
+Feedback     [###############-----] 75%
+Wow          [#######-------------] 35%
+> wwr updated
+Flutter      [#######-------------] 39%
+> ftr updated
+Age          [#############-------] 65%
+Tempo: 120.0 BPM
+> tempo updated
+Transport: PLAY
+> transport updated
+Motion Amount: 100.0%
+> motion updated
+Stereo Motion: 100.0%
+> motion updated
+[M2 / 3_multihead_reverse_spring]
+
+=== BENCH RESULT (FW Nov 23 2026 01:34:47) ===
+Cfg: src=1 gen=1 byp=0 mod=0 dly=360 fbk=75 hds=7 tps=50 tpa=65 drv=40 nlv=30 ftd=18 wwd=12 dps=8 wrp=0 wmd=0 wsp=1.00 wgr=80 wst=0.50 wfb=0 fv=0 ngt=0.0010 ppg=0 frz=0 rev=1 spr=1
+Blocks=1024 Warmup=256 WallMs=2973.8 BudgetUs=2902.49
+MeanUs=1820.67 MinUs=1718 P50Us=1849 P95Us=1927 P99Us=1946 PeakUs=2226
+BudgetMeanPct=62.73% BudgetP99Pct=67.05% Overruns=0 (0.00%) SatBins=0
+I2SFailDelta=0 HeapStart=116420 HeapEnd=116420 HeapMin=116420 PsramStart=1662792 PsramEnd=1662792 MaxParamUpdUs=387
+StackMinWords=27268
+=========================================
+Motion Mode: 3 (Worn Transport)
+> motion updated
+Motion Mode: 3 (Worn Transport), Amount: 100%, Stereo: 100%
+> motion updated
+Bypass: OFF
+Generator: ON
+Source: 1 (0=MP3, 1=SYNTH, 2=I2S)
+Reverse: OFF
+> rev updated
+Accidental Warp: OFF
+> wrp updated
+Spring Reverb: OFF
+> spr updated
+> hds updated
+Delay: 340 ms
+Feedback     [##########----------] 50%
+Wow          [#####---------------] 25%
+> wwr updated
+Flutter      [#####---------------] 25%
+> ftr updated
+Age          [#######-------------] 39%
+Motion Amount: 100.0%
+> motion updated
+Stereo Motion: 100.0%
+> motion updated
+[M3 / 1_standard_single_head]
+
+=== BENCH RESULT (FW Nov 23 2026 01:34:47) ===
+Cfg: src=1 gen=1 byp=0 mod=0 dly=340 fbk=50 hds=4 tps=50 tpa=40 drv=40 nlv=30 ftd=11 wwd=9 dps=8 wrp=0 wmd=0 wsp=1.00 wgr=80 wst=0.50 wfb=0 fv=0 ngt=0.0010 ppg=0 frz=0 rev=0 spr=0
+Blocks=1024 Warmup=256 WallMs=2974.0 BudgetUs=2902.49
+MeanUs=1714.07 MinUs=1619 P50Us=1695 P95Us=1804 P99Us=1834 PeakUs=2063
+BudgetMeanPct=59.06% BudgetP99Pct=63.19% Overruns=0 (0.00%) SatBins=0
+I2SFailDelta=0 HeapStart=116420 HeapEnd=116420 HeapMin=116420 PsramStart=1662792 PsramEnd=1662792 MaxParamUpdUs=387
+StackMinWords=27268
+=========================================
+Bypass: OFF
+Generator: ON
+Source: 1 (0=MP3, 1=SYNTH, 2=I2S)
+Reverse: OFF
+> rev updated
+Accidental Warp: OFF
+> wrp updated
+Spring Reverb: ON
+> spr updated
+> hds updated
+Delay: 340 ms
+Feedback     [#############-------] 65%
+Wow          [#####---------------] 29%
+> wwr updated
+Flutter      [#####---------------] 28%
+> ftr updated
+Age          [##########----------] 50%
+Motion Amount: 100.0%
+> motion updated
+Stereo Motion: 100.0%
+> motion updated
+[M3 / 2_multihead_spring]
+
+=== BENCH RESULT (FW Nov 23 2026 01:34:47) ===
+Cfg: src=1 gen=1 byp=0 mod=0 dly=340 fbk=65 hds=7 tps=50 tpa=50 drv=40 nlv=30 ftd=13 wwd=10 dps=8 wrp=0 wmd=0 wsp=1.00 wgr=80 wst=0.50 wfb=0 fv=0 ngt=0.0010 ppg=0 frz=0 rev=0 spr=1
+Blocks=1024 Warmup=256 WallMs=2970.4 BudgetUs=2902.49
+MeanUs=2017.91 MinUs=1851 P50Us=2036 P95Us=2077 P99Us=2129 PeakUs=2340
+BudgetMeanPct=69.52% BudgetP99Pct=73.35% Overruns=0 (0.00%) SatBins=0
+I2SFailDelta=0 HeapStart=116420 HeapEnd=116420 HeapMin=116420 PsramStart=1662792 PsramEnd=1662792 MaxParamUpdUs=387
+StackMinWords=27268
+=========================================
+Bypass: OFF
+Generator: ON
+Source: 1 (0=MP3, 1=SYNTH, 2=I2S)
+Reverse: ON
+> rev updated
+Reverse mode: 0
+> revmode updated
+Reverse division: 0
+> revdiv updated
+Accidental Warp: OFF
+> wrp updated
+Spring Reverb: ON
+> spr updated
+> hds updated
+Delay: 360 ms
+Feedback     [###############-----] 75%
+Wow          [#######-------------] 35%
+> wwr updated
+Flutter      [#######-------------] 39%
+> ftr updated
+Age          [#############-------] 65%
+Tempo: 120.0 BPM
+> tempo updated
+Transport: PLAY
+> transport updated
+Motion Amount: 100.0%
+> motion updated
+Stereo Motion: 100.0%
+> motion updated
+[M3 / 3_multihead_reverse_spring]
+
+=== BENCH RESULT (FW Nov 23 2026 01:34:47) ===
+Cfg: src=1 gen=1 byp=0 mod=0 dly=360 fbk=75 hds=7 tps=50 tpa=65 drv=40 nlv=30 ftd=18 wwd=12 dps=8 wrp=0 wmd=0 wsp=1.00 wgr=80 wst=0.50 wfb=0 fv=0 ngt=0.0010 ppg=0 frz=0 rev=1 spr=1
+Blocks=1024 Warmup=256 WallMs=2973.7 BudgetUs=2902.49
+MeanUs=1973.82 MinUs=1853 P50Us=1942 P95Us=2076 P99Us=2129 PeakUs=2331
+BudgetMeanPct=68.00% BudgetP99Pct=73.35% Overruns=0 (0.00%) SatBins=0
+I2SFailDelta=0 HeapStart=116420 HeapEnd=116420 HeapMin=116420 PsramStart=1662792 PsramEnd=1662792 MaxParamUpdUs=387
+StackMinWords=27268
+=========================================
+[runtime_transitions_and_automation]
+
+=== BENCH RESULT (FW Nov 23 2026 01:34:47) ===
+Cfg: src=1 gen=1 byp=0 mod=0 dly=360 fbk=75 hds=7 tps=50 tpa=65 drv=40 nlv=30 ftd=18 wwd=12 dps=8 wrp=0 wmd=0 wsp=1.00 wgr=80 wst=0.50 wfb=0 fv=0 ngt=0.0010 ppg=0 frz=0 rev=1 spr=1
+Blocks=1024 Warmup=128 WallMs=2970.4 BudgetUs=2902.49
+MeanUs=1897.52 MinUs=1848 P50Us=1887 P95Us=1940 P99Us=1953 PeakUs=2239
+BudgetMeanPct=65.38% BudgetP99Pct=67.29% Overruns=0 (0.00%) SatBins=0
+I2SFailDelta=0 HeapStart=116420 HeapEnd=116420 HeapMin=116420 PsramStart=1662792 PsramEnd=1662792 MaxParamUpdUs=387
+StackMinWords=27268
+=========================================
+Motion Mode: 1 (Motor Drift)
+> motion updated
+Motion Amount: 80.0%
+> motion updated
+Stereo Motion: 60.0%
+> motion updated
+Motion Mode: 2 (Capstan Flutter)
+> motion updated
+Wow          [#####---------------] 28%
+Flutter      [######--------------] 32%
+Motion Mode: 3 (Worn Transport)
+> motion updated
+Feedback     [###############-----] 79%
+Delay: 420 ms
+Motion Mode: 0 (Classic)
+> motion updated
+Motion Amount: 100.0%
+> motion updated
+Stereo Motion: 100.0%
+> motion updated

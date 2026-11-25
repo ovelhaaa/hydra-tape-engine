@@ -1,0 +1,453 @@
+Start testing: Nov 23 20:01 Hora oficial do Brasil
+----------------------------------------------------------
+1/19 Testing: fast_tanh_integrity
+1/19 Test: fast_tanh_integrity
+Command: "C:/Users/devx/AppData/Local/Python/pythoncore-3.14-64/python.exe" "C:/Users/devx/Documents/PlatformIO/Projects/hydra/tests/core/fast_tanh_integrity.py"
+Directory: C:/Users/devx/Documents/PlatformIO/Projects/hydra/build-native
+"fast_tanh_integrity" start time: Nov 23 20:01 Hora oficial do Brasil
+Output:
+----------------------------------------------------------
+PASS: 1025 float32 values, SHA-256, endpoints, symmetry, monotonicity, known points, decimal generation and LUT mapping
+<end of output>
+Test time =   0.53 sec
+----------------------------------------------------------
+Test Passed.
+"fast_tanh_integrity" end time: Nov 23 20:01 Hora oficial do Brasil
+"fast_tanh_integrity" time elapsed: 00:00:00
+----------------------------------------------------------
+
+2/19 Testing: phase7_dsp_integrity
+2/19 Test: phase7_dsp_integrity
+Command: "C:/Users/devx/Documents/PlatformIO/Projects/hydra/build-native/hydra_phase7_integrity.exe"
+Directory: C:/Users/devx/Documents/PlatformIO/Projects/hydra/build-native
+"phase7_dsp_integrity" start time: Nov 23 20:01 Hora oficial do Brasil
+Output:
+----------------------------------------------------------
+Phase7.1 biquad and feedback knee integrity PASS
+<end of output>
+Test time =   0.07 sec
+----------------------------------------------------------
+Test Passed.
+"phase7_dsp_integrity" end time: Nov 23 20:01 Hora oficial do Brasil
+"phase7_dsp_integrity" time elapsed: 00:00:00
+----------------------------------------------------------
+
+3/19 Testing: phase72_feedback_routing_contract
+3/19 Test: phase72_feedback_routing_contract
+Command: "C:/Users/devx/Documents/PlatformIO/Projects/hydra/build-native/hydra_phase72_feedback_routing_test.exe"
+Directory: C:/Users/devx/Documents/PlatformIO/Projects/hydra/build-native
+"phase72_feedback_routing_contract" start time: Nov 23 20:01 Hora oficial do Brasil
+Output:
+----------------------------------------------------------
+Phase 7.2 B/C routing scalar contract PASS
+<end of output>
+Test time =   0.07 sec
+----------------------------------------------------------
+Test Passed.
+"phase72_feedback_routing_contract" end time: Nov 23 20:01 Hora oficial do Brasil
+"phase72_feedback_routing_contract" time elapsed: 00:00:00
+----------------------------------------------------------
+
+4/19 Testing: phase72_classic_core_smoke
+4/19 Test: phase72_classic_core_smoke
+Command: "C:/Users/devx/Documents/PlatformIO/Projects/hydra/build-native/hydra_phase72_classic_core_smoke.exe"
+Directory: C:/Users/devx/Documents/PlatformIO/Projects/hydra/build-native
+"phase72_classic_core_smoke" start time: Nov 23 20:01 Hora oficial do Brasil
+Output:
+----------------------------------------------------------
+<end of output>
+Test time =   0.09 sec
+----------------------------------------------------------
+Test Passed.
+"phase72_classic_core_smoke" end time: Nov 23 20:01 Hora oficial do Brasil
+"phase72_classic_core_smoke" time elapsed: 00:00:00
+----------------------------------------------------------
+
+5/19 Testing: core_smoke
+5/19 Test: core_smoke
+Command: "C:/Users/devx/Documents/PlatformIO/Projects/hydra/build-native/hydra_core_smoke.exe"
+Directory: C:/Users/devx/Documents/PlatformIO/Projects/hydra/build-native
+"core_smoke" start time: Nov 23 20:01 Hora oficial do Brasil
+Output:
+----------------------------------------------------------
+<end of output>
+Test time =   0.07 sec
+----------------------------------------------------------
+Test Passed.
+"core_smoke" end time: Nov 23 20:01 Hora oficial do Brasil
+"core_smoke" time elapsed: 00:00:00
+----------------------------------------------------------
+
+6/19 Testing: core_regression
+6/19 Test: core_regression
+Command: "C:/Users/devx/Documents/PlatformIO/Projects/hydra/build-native/hydra_core_regression.exe"
+Directory: C:/Users/devx/Documents/PlatformIO/Projects/hydra/build-native
+"core_regression" start time: Nov 23 20:01 Hora oficial do Brasil
+Output:
+----------------------------------------------------------
+regression_core: ok
+<end of output>
+Test time =   0.10 sec
+----------------------------------------------------------
+Test Passed.
+"core_regression" end time: Nov 23 20:01 Hora oficial do Brasil
+"core_regression" time elapsed: 00:00:00
+----------------------------------------------------------
+
+7/19 Testing: core_audible_controls
+7/19 Test: core_audible_controls
+Command: "C:/Users/devx/Documents/PlatformIO/Projects/hydra/build-native/hydra_audible_controls.exe"
+Directory: C:/Users/devx/Documents/PlatformIO/Projects/hydra/build-native
+"core_audible_controls" start time: Nov 23 20:01 Hora oficial do Brasil
+Output:
+----------------------------------------------------------
+audible_controls: ok
+<end of output>
+Test time =   0.27 sec
+----------------------------------------------------------
+Test Passed.
+"core_audible_controls" end time: Nov 23 20:01 Hora oficial do Brasil
+"core_audible_controls" time elapsed: 00:00:00
+----------------------------------------------------------
+
+8/19 Testing: core_warp_test
+8/19 Test: core_warp_test
+Command: "C:/Users/devx/Documents/PlatformIO/Projects/hydra/build-native/hydra_warp_core_test.exe"
+Directory: C:/Users/devx/Documents/PlatformIO/Projects/hydra/build-native
+"core_warp_test" start time: Nov 23 20:01 Hora oficial do Brasil
+Output:
+----------------------------------------------------------
+Running Accidental Warp V1.3 Comprehensive DSP Test Suite...
+[Warp Pitch Test] Freq Entrada: 440 Hz | Freq Medida Saida: 880 Hz
+[Warp Stereo Test] DiffSum L/R: 139.428
+[Warp Feedback 0%] Late Energy: 0
+[Warp repeat] 50% difference=0.0779329
+[Warp repeat] 80% difference=0.135034
+[Warp Mode 0] Energy L: 534.835 | R: 538.499
+[Warp Mode 1] Energy L: 486.45 | R: 454.283
+[Warp Mode 2] Energy L: 486.067 | R: 454.049
+[Warp Mode 3] Energy L: 534.836 | R: 538.497
+[Bias gate] 44100 Hz peak=6.19735e-07 step=5.17104e-07
+[Bias decay] 44100 Hz Warp=0 0.00147684 0 0 0 0
+[Bias decay] 44100 Hz Warp=1 0.000695743 0 0 0 0
+[Bias gate] 48000 Hz peak=5.47999e-07 step=3.3942e-07
+[Bias decay] 48000 Hz Warp=0 0.00137219 0 0 0 0
+[Bias decay] 48000 Hz Warp=1 0.000667126 0 0 0 0
+All Accidental Warp V1.3 Tests PASSED successfully!
+<end of output>
+Test time =   0.90 sec
+----------------------------------------------------------
+Test Passed.
+"core_warp_test" end time: Nov 23 20:01 Hora oficial do Brasil
+"core_warp_test" time elapsed: 00:00:00
+----------------------------------------------------------
+
+9/19 Testing: core_reverse_test
+9/19 Test: core_reverse_test
+Command: "C:/Users/devx/Documents/PlatformIO/Projects/hydra/build-native/hydra_reverse_core_test.exe"
+Directory: C:/Users/devx/Documents/PlatformIO/Projects/hydra/build-native
+"core_reverse_test" start time: Nov 23 20:01 Hora oficial do Brasil
+Output:
+----------------------------------------------------------
+Running Reverse Tape Echo V2 Comprehensive DSP Test Suite...
+[Test 0] ReverseWindows unit test: OK
+[Test A] Reverse Impulse Timing (rate=48000): Peak at 47973 (999.438 ms), mag=0.384498: OK
+[Test A] Reverse Impulse Timing (rate=44100): Peak at 44073 (999.388 ms), mag=0.395496: OK
+[Test B] Reverse Window Continuity (rate=48000): max step=0.0141894: OK
+[Test B] Reverse Window Continuity (rate=44100): max step=0.0144751: OK
+[Test C] BPM Accuracy across 60, 90, 120, 140, 180 BPM and 9 subdivisions: OK
+[Ping-Pong] L echo peak=0.384876 R first crossing=48174 (1.00363 s) peak=0.0871756 R return=96001 (2.00002 s) peak=0.0902799
+[Test D] Stereo Integrity & Ping-Pong: OK
+[Test E] Feedback Stability (0% to 95% 5s renders): OK
+[Test F] Parameter Automation (BPM, division, feedback, mode, reverse on/off): OK
+[Test G] Silence and Reset: OK
+[Test H] Block Size Independence (1 frame vs 128 frames, avgDiff=0): OK
+[Test I] Musical Timing Audit (30-300 BPM, 9 subdivisions, 10k cycles drift < 0.025 ms, jitter <= 1 frame): OK
+[Test J] Boundary Transitions Audit (BPM, subdivisions, modes, toggle): OK
+[Test K] Clique / Boundary Discontinuity Characterization (smoothstep windowing verified across 7 signals): OK
+[Test L] Reverse Status & Clamping Verification: OK
+All Reverse Tape Echo V2 Tests PASSED successfully!
+<end of output>
+Test time =   1.17 sec
+----------------------------------------------------------
+Test Passed.
+"core_reverse_test" end time: Nov 23 20:01 Hora oficial do Brasil
+"core_reverse_test" time elapsed: 00:00:01
+----------------------------------------------------------
+
+10/19 Testing: core_transport_clock_test
+10/19 Test: core_transport_clock_test
+Command: "C:/Users/devx/Documents/PlatformIO/Projects/hydra/build-native/hydra_transport_clock_test.exe"
+Directory: C:/Users/devx/Documents/PlatformIO/Projects/hydra/build-native
+"core_transport_clock_test" start time: Nov 23 20:01 Hora oficial do Brasil
+Output:
+----------------------------------------------------------
+=== HYDRA GLOBAL TRANSPORT CLOCK TEST SUITE ===
+[PASS] Sample Accuracy (44.1 kHz & 48 kHz)
+[PASS] Long-Term Drift (5M frames, drift < 1e-9 beats)
+[PASS] Fractional Periods
+[PASS] Block Independence (1 vs 32, 64, 128, 256 frames)
+[PASS] Time Signatures (4/4, 3/4, 6/8, 7/8, 5/16 + Strict Validation)
+[PASS] Transport Controls (Play, Pause, Stop, Reset, Locate)
+[PASS] BPM Changes (Phase Preservation & Boundary Stability)
+[PASS] Two-Consumer Synchronization
+[PASS] Reverse Integration & TapeCore Transport
+[PASS] C-API Transport Functions (API 1.5)
+[PASS] Long Session Stability (100M frames / ~34.7 minutes continuous)
+[PASS] NaN, Infinity, and Invalid Input Hardening
+[PASS] Limited History Diagnostics & Safe Clamping
+[PASS] DSP Precedence (Accidental Warp takes priority over Reverse V2)
+[Block boundary equivalence] OK
+>>> ALL GLOBAL TRANSPORT CLOCK TESTS PASSED <<<
+<end of output>
+Test time =   0.18 sec
+----------------------------------------------------------
+Test Passed.
+"core_transport_clock_test" end time: Nov 23 20:01 Hora oficial do Brasil
+"core_transport_clock_test" time elapsed: 00:00:00
+----------------------------------------------------------
+
+11/19 Testing: core_tap_tempo_test
+11/19 Test: core_tap_tempo_test
+Command: "C:/Users/devx/Documents/PlatformIO/Projects/hydra/build-native/hydra_tap_tempo_test.exe"
+Directory: C:/Users/devx/Documents/PlatformIO/Projects/hydra/build-native
+"core_tap_tempo_test" start time: Nov 23 20:01 Hora oficial do Brasil
+Output:
+----------------------------------------------------------
+=== HYDRA TAP TEMPO V1 TEST SUITE ===
+[PASS] Basic Tap Tempo (60, 90, 120, 140, 180, 240 BPM)
+[PASS] Debounce (5, 20, 50 ms rejected without reference corruption)
+[PASS] Outlier Rejection (isolated deviation preserved stable BPM)
+[PASS] Intentional Tempo Change (120 -> 90 BPM fast convergence)
+[PASS] Timeout (>3s session separation preserves BPM, resets sequence)
+[PASS] Sample Rate Independence (44.1 kHz & 48 kHz)
+[PASS] Timestamp Validation (out-of-order, out-of-range, high offsets)
+[PASS] Transport Integration (tempo changed without phase/position jump)
+[PASS] Reverse Synchronization (Reverse adapts to tap tempo)
+[PASS] Block Independence (invariant across block offsets)
+[PASS] Thread Handoff & State Query
+[PASS] Legacy Compatibility (ABI 116, 140, 148 bytes intact)
+[PASS] SPSC Queue & State Publisher (Lock-Free FIFO, Overflow Protection, Triple Buffer)
+[PASS] Parameter Update Elimination (No updates on Tap 1, Outlier, Bounce, OutOfRange)
+[PASS] Concurrent Tap Tempo Handoff (Multi-threaded Stress, Lock-Free SPSC, Zero Corruption)
+[PASS] Concurrent Transport & Manual BPM (Full Concurrency Interleaving Invariant)
+[PASS] StatePublisher Stress & High-Frequency (100k publishes, zero corruption, 95891 consistent reads)
+[PASS] Snapshot Consistency Invariants (zero torn reads across 19486 snapshots)
+[PASS] Slow Reader Protection (Writer safely cycled without corrupting reader's buffer)
+[PASS] SPSC Queue Overflow & FIFO Order (Capacity 32 exact, non-blocking drop)
+>>> ALL 20 TAP TEMPO & CONCURRENCY TESTS PASSED <<<
+<end of output>
+Test time =   0.34 sec
+----------------------------------------------------------
+Test Passed.
+"core_tap_tempo_test" end time: Nov 23 20:01 Hora oficial do Brasil
+"core_tap_tempo_test" time elapsed: 00:00:00
+----------------------------------------------------------
+
+12/19 Testing: core_midi_clock_test
+12/19 Test: core_midi_clock_test
+Command: "C:/Users/devx/Documents/PlatformIO/Projects/hydra/build-native/hydra_midi_clock_test.exe"
+Directory: C:/Users/devx/Documents/PlatformIO/Projects/hydra/build-native
+"core_midi_clock_test" start time: Nov 23 20:01 Hora oficial do Brasil
+Output:
+----------------------------------------------------------
+=== HYDRA MIDI CLOCK EXTERNAL SYNC V1 TEST SUITE ===
+[PASS] A. MIDI Real-Time Parser (Interleaving & Status Preservation)
+[PASS] B. BPM Acquisition (60..300 BPM across 44.1k & 48k)
+[PASS] C. Phase Lock & Alignment (Start -> 0.0, zero phase drift)
+[PASS] D. Start / Stop / Continue (Position Preserved, Clock while Stopped Safe)
+[PASS] E. Jitter Filtering (±0.5ms .. ±5ms noise rejection)
+[PASS] F. Tempo Ramp (120 -> 140 BPM smooth tracking)
+[PASS] G. Sudden Tempo Change (Fast convergence without stalls)
+[PASS] H. Missing Pulses (Detected & seamlessly bridged)
+[PASS] I. Clock Loss & Holdover (Locked -> Holdover -> Lost)
+[PASS] J. Reconnection (Reacquisition to new tempo after signal loss)
+[PASS] K. Source Switching (All 6 transition pairs clickless & preserved)
+[PASS] L. Reverse Synchronization (Rhythmic windows adapt to MIDI Clock)
+[PASS] M. Multi-Head Synchronization (Musical heads scale with external BPM)
+[PASS] N. SPSC Concurrency & Overflow Protection (64 capacity FIFO, wait-free drop)
+[PASS] O. ABI Compatibility & C API 1.7 (Zero struct offset or ABI regression)
+[PASS] P. Long-Running Stability (100k pulses, zero drift: error < 0.01)
+[PASS] Q. Section 3.4 Source Arbitration (Tests A, B, C, D, E)
+[PASS] R. Hardened Phase Lock & Rejection (Integer beat offsets, duplicate/out-of-order)
+[PASS] S. Start/Stop/Continue Edge Cases (Continue without Start, repeated Start/Stop)
+[PASS] T. SPSC Queue Overflow Recovery (Overflow counter and reacquisition reset)
+[PASS] U. Section 3.3 C-API Source Authority (Tests A, B, C, D, E passed)
+
+--- SECTION 5 PHASE RECOVERY DETERMINISTIC RESULTS ---
+Scenario | InitErr | PostErr | WrapErr | AbsErr | EstBPM | AppBPM | Pulses | Locked | Locate | GenDelta
+---------+---------+---------+---------+--------+--------+--------+--------+--------+--------+---------
+1/24 beat (~0.0417) |  0.0417 | -0.0001 | -0.0001 | -0.0001 | 120.00 | 120.00 |    100 | YES    | NO     |       0
+1/8 beat (0.1250) |  0.1250 | -0.0004 | -0.0004 | -0.0004 | 120.00 | 119.99 |    190 | YES    | NO     |       0
+1/4 beat (0.2500) |  0.2500 | -0.0010 | -0.0010 | -0.0010 | 120.00 | 119.97 |    263 | YES    | NO     |       0
+1/2 beat (0.5000) |  0.5000 | -0.0056 | -0.0056 | -0.0056 | 120.00 | 119.80 |    407 | YES    | NO     |       0
+1 beat (1.0000) |  1.0000 |  0.0000 |  0.0000 | 0.0000 | 120.00 | 120.00 |     21 | YES    | YES    |       1
+2 beats (2.0000) |  2.0000 |  0.0000 |  0.0000 | 0.0000 | 120.00 | 120.00 |     21 | YES    | YES    |       1
+4 beats (4.0000) |  4.0000 |  0.0000 |  0.0000 | 0.0000 | 120.00 | 120.00 |     21 | YES    | YES    |       1
+[PASS] V. Section 5 Deterministic Phase Recovery Suite (All 7 offsets & Cases A..G)
+[PASS] W. Section 8 Reverse V2 Stability (Deadband, Jitter rejection & Tempo steps)
+>>> ALL 23 MIDI CLOCK SUITE TESTS PASSED <<<
+<end of output>
+Test time =   0.13 sec
+----------------------------------------------------------
+Test Passed.
+"core_midi_clock_test" end time: Nov 23 20:01 Hora oficial do Brasil
+"core_midi_clock_test" time elapsed: 00:00:00
+----------------------------------------------------------
+
+13/19 Testing: web_param_ids
+13/19 Test: web_param_ids
+Command: "C:/Users/devx/AppData/Local/Python/pythoncore-3.14-64/python.exe" "C:/Users/devx/Documents/PlatformIO/Projects/hydra/tests/core/web_param_ids_check.py"
+Directory: C:/Users/devx/Documents/PlatformIO/Projects/hydra/build-native
+"web_param_ids" start time: Nov 23 20:01 Hora oficial do Brasil
+Output:
+----------------------------------------------------------
+web_param_ids_check: ok
+<end of output>
+Test time =   0.14 sec
+----------------------------------------------------------
+Test Passed.
+"web_param_ids" end time: Nov 23 20:01 Hora oficial do Brasil
+"web_param_ids" time elapsed: 00:00:00
+----------------------------------------------------------
+
+14/19 Testing: core_abi_symbols
+14/19 Test: core_abi_symbols
+Command: "C:/Users/devx/AppData/Local/Python/pythoncore-3.14-64/python.exe" "C:/Users/devx/Documents/PlatformIO/Projects/hydra/tests/core/abi_symbols_check.py" "--nm" "C:/Users/devx/AppData/Local/Microsoft/WinGet/Packages/BrechtSanders.WinLibs.POSIX.UCRT.LLVM_Microsoft.Winget.Source_8wekyb3d8bbwe/mingw64/bin/nm.exe" "--library" "C:/Users/devx/Documents/PlatformIO/Projects/hydra/build-native/libhydra_dsp_core.a"
+Directory: C:/Users/devx/Documents/PlatformIO/Projects/hydra/build-native
+"core_abi_symbols" start time: Nov 23 20:01 Hora oficial do Brasil
+Output:
+----------------------------------------------------------
+ABI symbol sanity check passed
+<end of output>
+Test time =   0.61 sec
+----------------------------------------------------------
+Test Passed.
+"core_abi_symbols" end time: Nov 23 20:01 Hora oficial do Brasil
+"core_abi_symbols" time elapsed: 00:00:00
+----------------------------------------------------------
+
+15/19 Testing: core_abi_legacy_consumer
+15/19 Test: core_abi_legacy_consumer
+Command: "C:/Users/devx/Documents/PlatformIO/Projects/hydra/build-native/hydra_abi_legacy_consumer.exe"
+Directory: C:/Users/devx/Documents/PlatformIO/Projects/hydra/build-native
+"core_abi_legacy_consumer" start time: Nov 23 20:01 Hora oficial do Brasil
+Output:
+----------------------------------------------------------
+<end of output>
+Test time =   0.07 sec
+----------------------------------------------------------
+Test Passed.
+"core_abi_legacy_consumer" end time: Nov 23 20:01 Hora oficial do Brasil
+"core_abi_legacy_consumer" time elapsed: 00:00:00
+----------------------------------------------------------
+
+16/19 Testing: core_transition_characterization
+16/19 Test: core_transition_characterization
+Command: "C:/Users/devx/AppData/Local/Python/pythoncore-3.14-64/python.exe" "C:/Users/devx/Documents/PlatformIO/Projects/hydra/tests/core/listening_review.py" "--native" "C:/Users/devx/Documents/PlatformIO/Projects/hydra/build-native/hydra_listen_native.exe" "--characterize-only" "--output-dir" "C:/Users/devx/Documents/PlatformIO/Projects/hydra/build-native/transition_review"
+Directory: C:/Users/devx/Documents/PlatformIO/Projects/hydra/build-native
+"core_transition_characterization" start time: Nov 23 20:01 Hora oficial do Brasil
+Output:
+----------------------------------------------------------
+C:\Users\devx\Documents\PlatformIO\Projects\hydra\tests\core\listen.cpp:35: check failed: input && automation && output
+Traceback (most recent call last):
+  File "C:\Users\devx\Documents\PlatformIO\Projects\hydra\tests\core\listening_review.py", line 334, in <module>
+    main()
+    ~~~~^^
+  File "C:\Users\devx\Documents\PlatformIO\Projects\hydra\tests\core\listening_review.py", line 304, in main
+    audio = {name: run_scene(cmd, scene, input_path, work, len(stimulus))
+                   ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\devx\Documents\PlatformIO\Projects\hydra\tests\core\listening_review.py", line 125, in run_scene
+    subprocess.run([*command, input_path, schedule, output], check=True)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\devx\AppData\Local\Python\pythoncore-3.14-64\Lib\subprocess.py", line 577, in run
+    raise CalledProcessError(retcode, process.args,
+                             output=stdout, stderr=stderr)
+subprocess.CalledProcessError: Command '[WindowsPath('C:/Users/devx/Documents/PlatformIO/Projects/hydra/build-native/hydra_listen_native.exe'), WindowsPath('C:/Users/devx/AppData/Local/Temp/tmp7hwxpai9/input.f32'), WindowsPath('C:/Users/devx/AppData/Local/Temp/tmp7hwxpai9/automation.txt'), WindowsPath('C:/Users/devx/AppData/Local/Temp/tmp7hwxpai9/output.f32')]' returned non-zero exit status 1.
+<end of output>
+Test time =   0.83 sec
+----------------------------------------------------------
+Test Failed.
+"core_transition_characterization" end time: Nov 23 20:01 Hora oficial do Brasil
+"core_transition_characterization" time elapsed: 00:00:00
+----------------------------------------------------------
+
+17/19 Testing: test_golden_delay_modes
+17/19 Test: test_golden_delay_modes
+Command: "C:/Users/devx/AppData/Local/Python/pythoncore-3.14-64/python.exe" "C:/Users/devx/Documents/PlatformIO/Projects/hydra/tests/core/golden_test.py" "--runner" "C:/Users/devx/Documents/PlatformIO/Projects/hydra/build-native/hydra_golden_regression_native.exe" "--scenario" "delay_modes" "--fixtures-root" "C:/Users/devx/Documents/PlatformIO/Projects/hydra/tests/fixtures" "--compare-script" "C:/Users/devx/Documents/PlatformIO/Projects/hydra/tests/core/golden_compare.py"
+Directory: C:/Users/devx/Documents/PlatformIO/Projects/hydra/build-native
+"test_golden_delay_modes" start time: Nov 23 20:01 Hora oficial do Brasil
+Output:
+----------------------------------------------------------
+failed to open output path: C:\Users\devx\AppData\Local\Temp\tmpmxenvoig\delay_modes.csv
+Traceback (most recent call last):
+  File "C:\Users\devx\Documents\PlatformIO\Projects\hydra\tests\core\golden_test.py", line 67, in <module>
+    raise SystemExit(main())
+                     ~~~~^^
+  File "C:\Users\devx\Documents\PlatformIO\Projects\hydra\tests\core\golden_test.py", line 49, in main
+    subprocess.check_call(cmd, env={**os.environ, 'LC_ALL': 'C'})
+    ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\devx\AppData\Local\Python\pythoncore-3.14-64\Lib\subprocess.py", line 419, in check_call
+    raise CalledProcessError(retcode, cmd)
+subprocess.CalledProcessError: Command '['C:/Users/devx/Documents/PlatformIO/Projects/hydra/build-native/hydra_golden_regression_native.exe', '--scenario', 'delay_modes', '--input', 'C:\\Users\\devx\\Documents\\PlatformIO\\Projects\\hydra\\tests\\fixtures\\input\\sweep_log.csv', '--output', 'C:\\Users\\devx\\AppData\\Local\\Temp\\tmpmxenvoig\\delay_modes.csv']' returned non-zero exit status 1.
+<end of output>
+Test time =   0.38 sec
+----------------------------------------------------------
+Test Failed.
+"test_golden_delay_modes" end time: Nov 23 20:01 Hora oficial do Brasil
+"test_golden_delay_modes" time elapsed: 00:00:00
+----------------------------------------------------------
+
+18/19 Testing: test_golden_reset_state
+18/19 Test: test_golden_reset_state
+Command: "C:/Users/devx/AppData/Local/Python/pythoncore-3.14-64/python.exe" "C:/Users/devx/Documents/PlatformIO/Projects/hydra/tests/core/golden_test.py" "--runner" "C:/Users/devx/Documents/PlatformIO/Projects/hydra/build-native/hydra_golden_regression_native.exe" "--scenario" "reset_state" "--fixtures-root" "C:/Users/devx/Documents/PlatformIO/Projects/hydra/tests/fixtures" "--compare-script" "C:/Users/devx/Documents/PlatformIO/Projects/hydra/tests/core/golden_compare.py"
+Directory: C:/Users/devx/Documents/PlatformIO/Projects/hydra/build-native
+"test_golden_reset_state" start time: Nov 23 20:01 Hora oficial do Brasil
+Output:
+----------------------------------------------------------
+failed to open output path: C:\Users\devx\AppData\Local\Temp\tmpb4xitxle\reset_state.csv
+Traceback (most recent call last):
+  File "C:\Users\devx\Documents\PlatformIO\Projects\hydra\tests\core\golden_test.py", line 67, in <module>
+    raise SystemExit(main())
+                     ~~~~^^
+  File "C:\Users\devx\Documents\PlatformIO\Projects\hydra\tests\core\golden_test.py", line 49, in main
+    subprocess.check_call(cmd, env={**os.environ, 'LC_ALL': 'C'})
+    ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\devx\AppData\Local\Python\pythoncore-3.14-64\Lib\subprocess.py", line 419, in check_call
+    raise CalledProcessError(retcode, cmd)
+subprocess.CalledProcessError: Command '['C:/Users/devx/Documents/PlatformIO/Projects/hydra/build-native/hydra_golden_regression_native.exe', '--scenario', 'reset_state', '--input', 'C:\\Users\\devx\\Documents\\PlatformIO\\Projects\\hydra\\tests\\fixtures\\input\\impulse.csv', '--output', 'C:\\Users\\devx\\AppData\\Local\\Temp\\tmpb4xitxle\\reset_state.csv']' returned non-zero exit status 1.
+<end of output>
+Test time =   0.30 sec
+----------------------------------------------------------
+Test Failed.
+"test_golden_reset_state" end time: Nov 23 20:01 Hora oficial do Brasil
+"test_golden_reset_state" time elapsed: 00:00:00
+----------------------------------------------------------
+
+19/19 Testing: test_golden_param_automation
+19/19 Test: test_golden_param_automation
+Command: "C:/Users/devx/AppData/Local/Python/pythoncore-3.14-64/python.exe" "C:/Users/devx/Documents/PlatformIO/Projects/hydra/tests/core/golden_test.py" "--runner" "C:/Users/devx/Documents/PlatformIO/Projects/hydra/build-native/hydra_golden_regression_native.exe" "--scenario" "param_automation" "--fixtures-root" "C:/Users/devx/Documents/PlatformIO/Projects/hydra/tests/fixtures" "--compare-script" "C:/Users/devx/Documents/PlatformIO/Projects/hydra/tests/core/golden_compare.py"
+Directory: C:/Users/devx/Documents/PlatformIO/Projects/hydra/build-native
+"test_golden_param_automation" start time: Nov 23 20:01 Hora oficial do Brasil
+Output:
+----------------------------------------------------------
+failed to open output path: C:\Users\devx\AppData\Local\Temp\tmp9i_amvgd\param_automation.csv
+Traceback (most recent call last):
+  File "C:\Users\devx\Documents\PlatformIO\Projects\hydra\tests\core\golden_test.py", line 67, in <module>
+    raise SystemExit(main())
+                     ~~~~^^
+  File "C:\Users\devx\Documents\PlatformIO\Projects\hydra\tests\core\golden_test.py", line 49, in main
+    subprocess.check_call(cmd, env={**os.environ, 'LC_ALL': 'C'})
+    ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\devx\AppData\Local\Python\pythoncore-3.14-64\Lib\subprocess.py", line 419, in check_call
+    raise CalledProcessError(retcode, cmd)
+subprocess.CalledProcessError: Command '['C:/Users/devx/Documents/PlatformIO/Projects/hydra/build-native/hydra_golden_regression_native.exe', '--scenario', 'param_automation', '--input', 'C:\\Users\\devx\\Documents\\PlatformIO\\Projects\\hydra\\tests\\fixtures\\input\\music_excerpt.csv', '--output', 'C:\\Users\\devx\\AppData\\Local\\Temp\\tmp9i_amvgd\\param_automation.csv']' returned non-zero exit status 1.
+<end of output>
+Test time =   0.29 sec
+----------------------------------------------------------
+Test Failed.
+"test_golden_param_automation" end time: Nov 23 20:01 Hora oficial do Brasil
+"test_golden_param_automation" time elapsed: 00:00:00
+----------------------------------------------------------
+
+End testing: Nov 23 20:01 Hora oficial do Brasil

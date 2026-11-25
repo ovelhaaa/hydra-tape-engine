@@ -1,0 +1,144 @@
+{
+  "date": "2026-11-23",
+  "artifacts": [
+    {
+      "pr": 58,
+      "artifacts": [
+        {
+          "id": 14782575290,
+          "name": "hydra-phase7-2-feedback-audio-abc",
+          "size_in_bytes": 123814138,
+          "url": "https://api.github.com/repos/ovelhaaa/hydra-tape-engine/actions/artifacts/14782575290",
+          "archive_download_url": "https://api.github.com/repos/ovelhaaa/hydra-tape-engine/actions/artifacts/14782575290/zip",
+          "expired": false,
+          "created_at": "2026-11-23T01:10:23Z",
+          "expires_at": "2026-12-23T01:10:18Z",
+          "updated_at": "2026-11-23T01:10:23Z",
+          "digest": "sha256:d14bd957168ed3997f2b8418f7526154e194c93aa33eb950f513352424defa3d",
+          "workflow_run": {
+            "id": 45092867386,
+            "repository_id": 1116598225,
+            "head_repository_id": 1116598225,
+            "head_branch": "feat/phase7-3-classic-c-web-default",
+            "head_sha": "d2d36dd2b5d0fe06e66aca6d309a532a13001d87"
+          }
+        },
+        {
+          "id": 14781863215,
+          "name": "hydra-phase7-2c-esp32-test-binaries",
+          "size_in_bytes": 712537,
+          "url": "https://api.github.com/repos/ovelhaaa/hydra-tape-engine/actions/artifacts/14781863215",
+          "archive_download_url": "https://api.github.com/repos/ovelhaaa/hydra-tape-engine/actions/artifacts/14781863215/zip",
+          "expired": false,
+          "created_at": "2026-11-23T01:11:54Z",
+          "expires_at": "2026-12-07T01:11:53Z",
+          "updated_at": "2026-11-23T01:11:54Z",
+          "digest": "sha256:f70563c9cce32f667f2c6a514596c2d87371790ad97ed5586ea3f6cab692937e",
+          "workflow_run": {
+            "id": 45092867386,
+            "repository_id": 1116598225,
+            "head_repository_id": 1116598225,
+            "head_branch": "feat/phase7-3-classic-c-web-default",
+            "head_sha": "d2d36dd2b5d0fe06e66aca6d309a532a13001d87"
+          }
+        }
+      ]
+    },
+    {
+      "pr": 59,
+      "artifacts": [
+        {
+          "id": 14782835106,
+          "name": "hydra-phase74a-repeat-aging-listening",
+          "size_in_bytes": 21886813,
+          "url": "https://api.github.com/repos/ovelhaaa/hydra-tape-engine/actions/artifacts/14782835106",
+          "archive_download_url": "https://api.github.com/repos/ovelhaaa/hydra-tape-engine/actions/artifacts/14782835106/zip",
+          "expired": false,
+          "created_at": "2026-11-23T01:12:22Z",
+          "expires_at": "2026-12-23T01:12:20Z",
+          "updated_at": "2026-11-23T01:12:22Z",
+          "digest": "sha256:af0ff31a86cb9e66d4455637c7c41d0d6976f4f0c94772b7c78e105562911277",
+          "workflow_run": {
+            "id": 45093042484,
+            "repository_id": 1116598225,
+            "head_repository_id": 1116598225,
+            "head_branch": "experiment/phase7-4a-repeat-aging",
+            "head_sha": "20b3b2695a3090a47f28d9bb2769c92de2452997"
+          }
+        }
+      ]
+    },
+    {
+      "pr": 60,
+      "artifacts": [
+        {
+          "id": 14786998341,
+          "name": "hydra-phase74b-organic-motion-listening",
+          "size_in_bytes": 35311194,
+          "url": "https://api.github.com/repos/ovelhaaa/hydra-tape-engine/actions/artifacts/14786998341",
+          "archive_download_url": "https://api.github.com/repos/ovelhaaa/hydra-tape-engine/actions/artifacts/14786998341/zip",
+          "expired": false,
+          "created_at": "2026-11-23T03:26:14Z",
+          "expires_at": "2026-12-23T03:26:11Z",
+          "updated_at": "2026-11-23T03:26:14Z",
+          "digest": "sha256:d780b82e82e82e483c9bae85f86a7172cfbdca38cd91850dc1eea70d8794b055",
+          "workflow_run": {
+            "id": 45105796732,
+            "repository_id": 1116598225,
+            "head_repository_id": 1116598225,
+            "head_branch": "experiment/phase7-4b-organic-motion",
+            "head_sha": "c1331a7d81b8b989df0ed523c9ae10c73c21a15e"
+          }
+        }
+      ]
+    },
+    {
+      "pr": 61,
+      "artifacts": [
+        {
+          "id": 14859537980,
+          "name": "hydra-phase74c-unified-motion-listening",
+          "size_in_bytes": 7499599,
+          "url": "https://api.github.com/repos/ovelhaaa/hydra-tape-engine/actions/artifacts/14859537980",
+          "archive_download_url": "https://api.github.com/repos/ovelhaaa/hydra-tape-engine/actions/artifacts/14859537980/zip",
+          "expired": false,
+          "created_at": "2026-11-23T20:19:17Z",
+          "expires_at": "2026-12-23T20:19:16Z",
+          "updated_at": "2026-11-23T20:19:17Z",
+          "digest": "sha256:09a110a434594054ce32ed7d79be6d5c2fc4f711ae1e038cab08f01822c09fbf",
+          "workflow_run": {
+            "id": 45257834877,
+            "repository_id": 1116598225,
+            "head_repository_id": 1116598225,
+            "head_branch": "feature/phase7-4c-unified-motion",
+            "head_sha": "c1f996b0dbe22117238252b6d5530e15d5ebe26f"
+          }
+        }
+      ]
+    },
+    {
+      "pr": 62,
+      "artifacts": [
+        {
+          "id": 14861902617,
+          "name": "hydra-phase75a1-studio-signal-path-listening",
+          "size_in_bytes": 53473114,
+          "url": "https://api.github.com/repos/ovelhaaa/hydra-tape-engine/actions/artifacts/14861902617",
+          "archive_download_url": "https://api.github.com/repos/ovelhaaa/hydra-tape-engine/actions/artifacts/14861902617/zip",
+          "expired": false,
+          "created_at": "2026-11-23T20:55:45Z",
+          "expires_at": "2026-12-23T20:55:43Z",
+          "updated_at": "2026-11-23T20:55:45Z",
+          "digest": "sha256:6c32d7a56ad7046444f823c64163537aa4cd60d58003a59ff5baa0f7d86f890a",
+          "workflow_run": {
+            "id": 45263172793,
+            "repository_id": 1116598225,
+            "head_repository_id": 1116598225,
+            "head_branch": "experiment/phase7-5a1-studio-signal-path",
+            "head_sha": "565ae355b75741ee8aca37fc6c09c0aac449bf8b"
+          }
+        }
+      ]
+    }
+  ]
+}

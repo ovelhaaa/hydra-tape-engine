@@ -1,0 +1,34 @@
+[
+  {
+    "path": "build-native/libhydra_abi_test_library.dll",
+    "sha256": "5222a9b60a5b8f35cdad1e217f25f8be7e9ca9160531529b692cc4dd999cb929"
+  },
+  {
+    "path": "build-native/hydra_render_trace_native.exe",
+    "sha256": "36d11f97520113655ddb11e4efa1a66f276c3671674bf0705a73f142689a9e2d"
+  },
+  {
+    "path": "build-wasm/wasm-tests/hydra_render_trace.js",
+    "sha256": "d117e2d47fc2807582f4b07437a294fa3a98383b965aa3a655464950c23209e9"
+  },
+  {
+    "path": "build-wasm/wasm-tests/hydra_render_trace.wasm",
+    "sha256": "45462da0f4c9fc9f03a65a73a7ed6346877688cc76e4aaec9a759f115b64f8a7"
+  },
+  {
+    "path": "build-native/compile_commands.json",
+    "sha256": "da788fcf0514e2f5a4b5614d27401bd6b8fdb08a490a2d896043d941231bfca6"
+  },
+  {
+    "path": "build-wasm/compile_commands.json",
+    "sha256": "4cb681a062387199751fa903f91b35c8f9891de930445d4239c00a3e12f41765"
+  },
+  {
+    "path": "physical-61/benchmark_results.json",
+    "sha256": "1b8bfb0f8f59c97aa8d5a236baaccbe46a292320bdc1113fda7f0002ddc2c486"
+  },
+  {
+    "path": "physical-61/serial_log.txt",
+    "sha256": "5c720b7b7ab3afb2a522364206f4d2d95409084e0d65d237e22e530389005cf9"
+  }
+]

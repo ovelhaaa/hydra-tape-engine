@@ -1,0 +1,189 @@
+{
+  "phase": "F0",
+  "commit": "6d94af5557f8ec23ef4627af3d0a584f7e5fd517",
+  "compiler": "g++ (MinGW-W64 x86_64-ucrt-posix-seh, built by Brecht Sanders, r2) 14.2.0",
+  "platform": "Windows-10-10.0.19045-SP0",
+  "sample_rate": 44100,
+  "seed": 20261123,
+  "library_path": "build-native\\libhydra_abi_test_library.dll",
+  "library_sha256": "5222a9b60a5b8f35cdad1e217f25f8be7e9ca9160531529b692cc4dd999cb929",
+  "scenarios": {
+    "01_clean_guitar_fb45": {
+      "source_kind": "clean_guitar",
+      "duration_sec": 6.0,
+      "params_overrides": {
+        "13": 45.0
+      },
+      "stimulus_sha256": "004b0895571ad38a293c4634ec398d7ad2737c686d358bef6db90ca19bc769d3",
+      "output_wav": "artifacts\\dsp-reform-f0\\baseline\\01_clean_guitar_fb45.wav",
+      "output_wav_sha256": "b750f35c1bf9fc27b0e4d4e075673f46544192b0fa3d7600abab11fb98b5c9e0",
+      "finite": true,
+      "peak": 0.752098,
+      "true_peak": 0.752577,
+      "rms": 0.158562,
+      "crest_factor_db": 13.522,
+      "stereo_correlation": 0.958121,
+      "limiter_ceiling_samples": 0
+    },
+    "02_driven_guitar_fb55": {
+      "source_kind": "driven_guitar",
+      "duration_sec": 6.0,
+      "params_overrides": {
+        "13": 55.0,
+        "19": 1.0
+      },
+      "stimulus_sha256": "b84490e10e9aa0d3a7993546db7c7deed41954256e0ee55bfc33ab9fa4220f89",
+      "output_wav": "artifacts\\dsp-reform-f0\\baseline\\02_driven_guitar_fb55.wav",
+      "output_wav_sha256": "386ae14a38d63a3a6b1b79e985d236ca95290b04b7fb7d0815900ab529171e38",
+      "finite": true,
+      "peak": 0.935928,
+      "true_peak": 0.936524,
+      "rms": 0.322296,
+      "crest_factor_db": 9.26,
+      "stereo_correlation": 1.0,
+      "limiter_ceiling_samples": 0
+    },
+    "03_mono_synth_fb65": {
+      "source_kind": "mono_synth",
+      "duration_sec": 6.0,
+      "params_overrides": {
+        "13": 65.0
+      },
+      "stimulus_sha256": "d2973a4b2469ea7ebac69b400018abb4f8fc6fc2109f2008ac9c2886ab570ab5",
+      "output_wav": "artifacts\\dsp-reform-f0\\baseline\\03_mono_synth_fb65.wav",
+      "output_wav_sha256": "18acf49f5615e098075fbe6992387e5d35e28d5a15a90aad1a69c6b695d373da",
+      "finite": true,
+      "peak": 0.854081,
+      "true_peak": 0.935775,
+      "rms": 0.165846,
+      "crest_factor_db": 14.236,
+      "stereo_correlation": 0.999813,
+      "limiter_ceiling_samples": 0
+    },
+    "04_poly_synth_fb60_multihead": {
+      "source_kind": "poly_synth",
+      "duration_sec": 6.0,
+      "params_overrides": {
+        "13": 60.0,
+        "16": 7.0
+      },
+      "stimulus_sha256": "1f24654fccfc90281b76dcb2894bd549d191792ea09d0d0fa5070609392045be",
+      "output_wav": "artifacts\\dsp-reform-f0\\baseline\\04_poly_synth_fb60_multihead.wav",
+      "output_wav_sha256": "9e1c0778171c34e7c0f50218f3367c3a9951357abb4cba7611519aea8b2b3d2c",
+      "finite": true,
+      "peak": 0.571266,
+      "true_peak": 0.57163,
+      "rms": 0.14351,
+      "crest_factor_db": 11.999,
+      "stereo_correlation": -0.051303,
+      "limiter_ceiling_samples": 0
+    },
+    "05_drum_machine_fb55_pingpong": {
+      "source_kind": "drum_machine",
+      "duration_sec": 6.0,
+      "params_overrides": {
+        "13": 55.0,
+        "21": 1.0
+      },
+      "stimulus_sha256": "db6f1d00cdb29d1f6208bdd5d8caa8c29bcf8b1c1cfffb8ca5d732ed54b96e95",
+      "output_wav": "artifacts\\dsp-reform-f0\\baseline\\05_drum_machine_fb55_pingpong.wav",
+      "output_wav_sha256": "7693e8eecedaf9f3dca88727bb061de1644b6de751fa3165697f9b5b8802da4e",
+      "finite": true,
+      "peak": 0.496419,
+      "true_peak": 0.497902,
+      "rms": 0.105912,
+      "crest_factor_db": 13.418,
+      "stereo_correlation": 0.997523,
+      "limiter_ceiling_samples": 0
+    },
+    "06_irregular_perc_fb75": {
+      "source_kind": "irregular_percussion",
+      "duration_sec": 6.0,
+      "params_overrides": {
+        "13": 75.0
+      },
+      "stimulus_sha256": "cd8c3fb02cf1680ebea7b5529effba7cfd272fff4f67a0af6919ba1337e04466",
+      "output_wav": "artifacts\\dsp-reform-f0\\baseline\\06_irregular_perc_fb75.wav",
+      "output_wav_sha256": "04fce33c9aa1fea8352ab68dcab0db38b413923e72feeb405d3af14bf285c921",
+      "finite": true,
+      "peak": 0.757914,
+      "true_peak": 0.758397,
+      "rms": 0.088239,
+      "crest_factor_db": 18.679,
+      "stereo_correlation": 0.744004,
+      "limiter_ceiling_samples": 0
+    },
+    "07_impulse_tail_fb45_moderate": {
+      "source_kind": "impulse",
+      "duration_sec": 10.0,
+      "params_overrides": {
+        "13": 45.0,
+        "12": 250.0
+      },
+      "stimulus_sha256": "b5521a63a73da1a87df824a4e1d8ef81e7fbd8747c075d1863bec17a6f059012",
+      "output_wav": "artifacts\\dsp-reform-f0\\baseline\\07_impulse_tail_fb45_moderate.wav",
+      "output_wav_sha256": "bb80a50814de6997c73032cdf288a026377c67319667c017be6ff953ec218f90",
+      "finite": true,
+      "peak": 0.315052,
+      "true_peak": 0.315253,
+      "rms": 0.007189,
+      "crest_factor_db": 32.835,
+      "stereo_correlation": 0.985575,
+      "limiter_ceiling_samples": 0
+    },
+    "08_impulse_tail_fb80_high": {
+      "source_kind": "impulse",
+      "duration_sec": 20.0,
+      "params_overrides": {
+        "13": 80.0,
+        "12": 250.0
+      },
+      "stimulus_sha256": "6a3948b3c334f4edbcd96606feeae5dbe3bc194c5ae5e2f400e0e58d947f0d4d",
+      "output_wav": "artifacts\\dsp-reform-f0\\baseline\\08_impulse_tail_fb80_high.wav",
+      "output_wav_sha256": "b1c9876e8a6fc61d3ed9f0a87b85cc973a6242412e947feabc4aba3efe085fae",
+      "finite": true,
+      "peak": 0.315053,
+      "true_peak": 0.315254,
+      "rms": 0.005307,
+      "crest_factor_db": 35.47,
+      "stereo_correlation": 0.965884,
+      "limiter_ceiling_samples": 0
+    },
+    "09_impulse_tail_fb92_60s_near_selfosc": {
+      "source_kind": "impulse",
+      "duration_sec": 60.0,
+      "params_overrides": {
+        "13": 92.0,
+        "12": 125.0
+      },
+      "stimulus_sha256": "c412c53e665f9c2c17eeb09066b0127e4ff0d8a569de3bf2a999edb39bd65b12",
+      "output_wav": "artifacts\\dsp-reform-f0\\baseline\\09_impulse_tail_fb92_60s_near_selfosc.wav",
+      "output_wav_sha256": "e4599a96d0d37a1078a30a25ccfa1e3659119b09e8946a3f01ecc753dbaa7837",
+      "finite": true,
+      "peak": 0.315075,
+      "true_peak": 0.315275,
+      "rms": 0.002947,
+      "crest_factor_db": 40.581,
+      "stereo_correlation": 0.869606,
+      "limiter_ceiling_samples": 0
+    },
+    "10_silence_hiss_floor": {
+      "source_kind": "silence",
+      "duration_sec": 6.0,
+      "params_overrides": {
+        "4": 30.0,
+        "13": 65.0
+      },
+      "stimulus_sha256": "5f1e1c00de358de600c509ce668af3223c194fa2725c5274b57323882156f1ab",
+      "output_wav": "artifacts\\dsp-reform-f0\\baseline\\10_silence_hiss_floor.wav",
+      "output_wav_sha256": "089b4f7f4a3283d27de3f5aaf7b58fe6d0cc9bf55a12753f38cb9d8e39072a55",
+      "finite": true,
+      "peak": 0.009438,
+      "true_peak": 0.009467,
+      "rms": 0.002274,
+      "crest_factor_db": 12.363,
+      "stereo_correlation": -0.00273,
+      "limiter_ceiling_samples": 0
+    }
+  }
+}

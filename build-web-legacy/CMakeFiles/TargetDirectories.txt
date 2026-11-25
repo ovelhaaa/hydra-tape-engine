@@ -1,4 +1,0 @@
-C:/Users/devx/Documents/PlatformIO/Projects/hydra/build-web-legacy/CMakeFiles/hydra_dsp_core.dir
-C:/Users/devx/Documents/PlatformIO/Projects/hydra/build-web-legacy/CMakeFiles/hydra_dsp_web.dir
-C:/Users/devx/Documents/PlatformIO/Projects/hydra/build-web-legacy/CMakeFiles/edit_cache.dir
-C:/Users/devx/Documents/PlatformIO/Projects/hydra/build-web-legacy/CMakeFiles/rebuild_cache.dir

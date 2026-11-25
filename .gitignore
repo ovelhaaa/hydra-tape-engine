@@ -18,6 +18,11 @@ test_07_reverse_reverb.wav
 /build-native/
 /build-wasm/
 /build-web/
+# F5.1: these two trees were committed by accident. Keep the patterns
+# directory-specific so real sources, web hosts, tests and fixtures are
+# never hidden by a generic build* rule.
+/build-web-legacy/
+/build-web-test/
 /ci-reports/
 /artifacts/
 /tests/output/warp_ab_validation/

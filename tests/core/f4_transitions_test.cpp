@@ -244,6 +244,13 @@ std::vector<float> rapid_render(int spacing, int block) {
     start+=n;
   }
   CHECK(event==12);
+  for(int j=0;j<12;++j){
+    const size_t at=kRate+j*spacing;
+    // A retarget must not inject a one-sample gain jump. Compare to the
+    // measured natural stereo slope before the first gesture, not limiter headroom.
+    CHECK(boundary_step(out,at,1)<=std::max(1e-6,pre_step(out,kRate,2205)*1.25));
+    CHECK(boundary_step(right,at,1)<=std::max(1e-6,pre_step(right,kRate,2205)*1.25));
+  }
   for(int i=0;i<frames;++i){
     CHECK(std::isfinite(out[i]) && std::isfinite(right[i]));
     CHECK(std::fabs(out[i])<=.99f && std::fabs(right[i])<=.99f);

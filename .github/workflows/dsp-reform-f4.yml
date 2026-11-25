@@ -45,14 +45,14 @@ jobs:
             ctest --test-dir build/f4-1-$kind --output-on-failure -E "test_golden" \
               --output-junit artifacts/dsp-reform-f4/ctest-$kind.xml || true
             python - "$kind" <<'PY'
-import sys, xml.etree.ElementTree as ET
-kind = sys.argv[1]
-root = ET.parse(f'artifacts/dsp-reform-f4/ctest-{kind}.xml')
-failed = [c.attrib['name'] for c in root.iter('testcase') if c.find('failure') is not None]
-# The route-A energy assertion is preserved as a known failure, never hidden.
-assert failed in ([], ['core_regression']), failed
-print(kind, 'ctest failures:', failed)
-PY
+          import sys, xml.etree.ElementTree as ET
+          kind = sys.argv[1]
+          root = ET.parse(f'artifacts/dsp-reform-f4/ctest-{kind}.xml')
+          failed = [c.attrib['name'] for c in root.iter('testcase') if c.find('failure') is not None]
+          # The route-A energy assertion is preserved as a known failure, never hidden.
+          assert failed in ([], ['core_regression']), failed
+          print(kind, 'ctest failures:', failed)
+          PY
           done
           python tests/core/compare_native_wasm.py \
             --native build/f4-1-native/hydra_render_trace_native \

@@ -16,6 +16,18 @@ def main():
     commit=subprocess.check_output(['git','rev-parse','HEAD'],cwd=ROOT,text=True).strip()
     subprocess.run(['git','diff','--exit-code','HEAD','--','src','include','lib','dsp/core','host/native/esp32','platformio.ini','scripts/build_esp32_dsp.py'],cwd=ROOT,check=True)
     assert a.gates.is_dir()
+    static=json.loads((a.gates/'static.json').read_text())
+    assert static['static_matrix_bit_exact'] and static['frozen_F3_A_bit_exact'] and static['musical_static_bit_exact']
+    assert static['canonical_core_sha256']==sha(ROOT/'dsp/core/tape_core.cpp'), 'firmware core differs from qualified core'
+    for pair in ('00','10','01','11'):
+        parity=json.loads((a.gates/f'parity-{pair}.json').read_text())
+        assert parity['status']=='PASS' and parity['max_abs']<=1e-5 and parity['rmse']<=1e-6
+    for mode in ('production','live'):
+        engine=json.loads((a.gates/f'{mode}-engine/engine-gates.json').read_text())
+        assert all(g['pass'] for g in engine['gates'])
+        feedback=json.loads((a.gates/f'{mode}-feedback/feedback-stability.json').read_text())
+        assert all(e['finite'] and e['internal_stable'] and e['stage_output_matches_full_engine'] and e['classification']!='unstable growth' for e in feedback['cases'].values())
+
     a.output.mkdir(parents=True,exist_ok=True)
     manifests={}
     for env,f4,f5 in [('esp32-s3-hydra-live',1,1),('esp32-s3-hydra-vintage-reference',0,0)]:

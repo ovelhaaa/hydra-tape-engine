@@ -20,7 +20,7 @@ def main():
         engines[pair] = B.Engine((a.build / ('libhydra_live_' + pair + suffix)).resolve(), hooks=False)
     frozen = json.loads((ROOT / 'docs/evidence/dsp-reform-f3/F3-A-manifest.json').read_text())
     scenes = json.loads((ROOT / 'docs/evidence/dsp-reform-f0/baseline_renders_manifest.json').read_text())['scenarios']
-    result = {'scenarios': {}, 'static_matrix_bit_exact': True, 'frozen_F3_A_bit_exact': True}
+    result = {'canonical_core_sha256': B.sha((ROOT/'dsp/core/tape_core.cpp').read_bytes()), 'configurations': {'00': [1,2,0,0,0], '10': [1,2,0,1,0], '01': [1,2,0,0,1], '11': [1,2,0,1,1]}, 'scenarios': {}, 'static_matrix_bit_exact': True, 'frozen_F3_A_bit_exact': True}
     for name, scene in scenes.items():
         params = B.b.PARAMS.copy()
         for k, v in scene['params_overrides'].items(): params[int(k)] = v

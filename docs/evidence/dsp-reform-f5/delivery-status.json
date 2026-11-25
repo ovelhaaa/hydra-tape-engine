@@ -35,7 +35,10 @@
     "verified": true,
     "manifest_sha256": "ad8c2b44d9d7633b80fa4564d38a6c9509da1ad848ef35c224274f6e9782d58e",
     "public_url": null,
-    "publication": "BLOCKED_NO_GITHUB_CREDENTIALS"
+    "publication": "BLOCKED_NO_GITHUB_CREDENTIALS",
+    "local_zip": "artifacts/dsp-reform-f5/hydra-dsp-reform-f5-listening.zip",
+    "local_zip_sha256": "21f76c31d0ea30111a2a6c44466a47501b6d34b9f4abb55b30db8d79694637b9",
+    "local_zip_bytes": 136201439
   },
   "publication": {
     "pr_created": false,

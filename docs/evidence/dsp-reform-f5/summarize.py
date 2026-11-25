@@ -2,7 +2,10 @@
 from __future__ import annotations
 
 import json
+import sys
 from pathlib import Path
+
+sys.stdout.reconfigure(encoding='utf-8', errors='replace')
 
 HERE = Path(__file__).resolve().parent
 OUT = HERE.parents[2] / 'artifacts' / 'dsp-reform-f5'

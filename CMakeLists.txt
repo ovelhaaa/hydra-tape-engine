@@ -177,6 +177,14 @@ if(BUILD_TESTING)
               --fixtures-root ${CMAKE_SOURCE_DIR}/tests/fixtures
               --compare-script ${CMAKE_SOURCE_DIR}/tests/core/golden_compare.py
     )
+    if(WIN32)
+      # Python-created user Temp directories can be inaccessible to MinGW
+      # runners. Unique TemporaryDirectory children in the build tree work
+      # across both runtimes; keep this workaround confined to test processes.
+      set_tests_properties(core_transition_characterization
+        test_golden_delay_modes test_golden_reset_state test_golden_param_automation
+        PROPERTIES ENVIRONMENT "TEMP=${CMAKE_BINARY_DIR};TMP=${CMAKE_BINARY_DIR}")
+    endif()
   endif()
 endif()
 

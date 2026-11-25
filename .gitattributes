@@ -2,3 +2,6 @@
 docs/evidence/phase65-physical/** -text
 # Preserve the exact human export bytes across Windows/Linux checkouts.
 docs/evidence/phase66-human-reviews-a7e2202.json -text
+
+# Freeze F1 recipe and measured evidence bytes across platforms.
+docs/evidence/dsp-reform-f1/** -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol

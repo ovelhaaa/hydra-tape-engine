@@ -1,0 +1,56 @@
+name: F1 C0 reference and listening artifacts
+on:
+  workflow_dispatch:
+  push:
+    branches: [codex/dsp-reform-f1-c0-reference]
+  pull_request:
+    paths: ['docs/evidence/dsp-reform-f1/**', '.github/workflows/dsp-reform-f1.yml']
+permissions:
+  contents: read
+jobs:
+  offline-c0:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.14'
+      - run: pip install numpy==2.4.1 scipy==1.17.0
+      - uses: mymindstorm/setup-emsdk@v14
+        with:
+          version: '3.1.62'
+      - name: Explicit C0 builds
+        run: |
+          cmake -S . -B build-native -DCMAKE_BUILD_TYPE=Release -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_CXX_FLAGS=-DHYDRA_PHASE72_CLASSIC_FEEDBACK_ROUTING=1
+          cmake --build build-native -j 2
+          emcmake cmake -S . -B build-wasm -DBUILD_WEB=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_CXX_FLAGS=-DHYDRA_PHASE72_CLASSIC_FEEDBACK_ROUTING=1
+          cmake --build build-wasm -j 2
+      - name: Existing C0 contracts (known A amplitude assertion retained)
+        run: python docs/evidence/dsp-reform-f1/validate_contracts.py --build build-native --output artifacts/dsp-reform-f1/contracts
+      - name: Strict C0 parity
+        run: |
+          mkdir -p artifacts/dsp-reform-f1
+          python tests/core/compare_native_wasm.py --native build-native/hydra_render_trace_native --wasm-js build-wasm/wasm-tests/hydra_render_trace.js --report-json artifacts/dsp-reform-f1/parity.json
+          python tests/core/verify_numerical_inputs.py --native build-native/hydra_render_trace_native --wasm-js build-wasm/wasm-tests/hydra_render_trace.js --output artifacts/dsp-reform-f1/input-lut.json
+      - name: Two independent C0 renders (CI provenance retained separately)
+        run: |
+          python docs/evidence/dsp-reform-f1/baseline.py render --library build-native/libhydra_abi_test_library.so --output artifacts/dsp-reform-f1/replay1
+          python docs/evidence/dsp-reform-f1/baseline.py render --library build-native/libhydra_abi_test_library.so --output artifacts/dsp-reform-f1/replay2
+          cmp artifacts/dsp-reform-f1/replay1/manifest.json artifacts/dsp-reform-f1/replay2/manifest.json
+      - name: Prepare future audition inputs
+        run: python docs/evidence/dsp-reform-f1/prepare_audition.py --output artifacts/dsp-reform-f1/f2-inputs
+      - name: Full engine C0 stability
+        run: python scripts/phase64_validate_engine.py --library "$PWD/build-native/libhydra_abi_test_library.so" --output artifacts/dsp-reform-f1/engine
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: hydra-dsp-reform-f1-c0-listening
+          path: |
+            artifacts/dsp-reform-f1/
+            build-native/Testing/Temporary/LastTest.log
+            build-native/compile_commands.json
+            build-wasm/compile_commands.json
+            docs/evidence/dsp-reform-f1/
+          retention-days: 30

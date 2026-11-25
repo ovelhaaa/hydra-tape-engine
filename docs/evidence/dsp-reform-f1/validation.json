@@ -1,0 +1,94 @@
+{
+  "base_sha": "18d92369aa7ecb30890c9509e552526240f4ba30",
+  "branch": "codex/dsp-reform-f1-c0-reference",
+  "pr58_sha": "d2d36dd2b5d0fe06e66aca6d309a532a13001d87",
+  "canonical_main": "6d94af5557f8ec23ef4627af3d0a584f7e5fd517",
+  "c0_vs_pr58_core_include_diff": "",
+  "production_A_manifest_sha256": "ceb9a2c3dc8535cbe890639c900e31aaf9e0a2d61a9ad097d53c4e591f533646",
+  "production_A_manifest_git_blob": "f20267c9329ea8348ec7af0582927db879f2c294",
+  "compile_commands": {
+    "build-c0-native": [
+      {
+        "file": "C:/Users/devx/Documents/PlatformIO/Projects/hydra-f1/dsp/core/tape_core.cpp",
+        "command": "C:\\Users\\devx\\AppData\\Local\\Microsoft\\WinGet\\Packages\\BrechtSanders.WinLibs.POSIX.UCRT.LLVM_Microsoft.Winget.Source_8wekyb3d8bbwe\\mingw64\\bin\\c++.exe  @CMakeFiles/hydra_dsp_core.dir/includes_CXX.rsp -DHYDRA_PHASE72_CLASSIC_FEEDBACK_ROUTING=1 -O3 -DNDEBUG -std=c++17 -ffp-contract=off -o CMakeFiles\\hydra_dsp_core.dir\\dsp\\core\\tape_core.cpp.obj -c C:\\Users\\devx\\Documents\\PlatformIO\\Projects\\hydra-f1\\dsp\\core\\tape_core.cpp"
+      },
+      {
+        "file": "C:/Users/devx/Documents/PlatformIO/Projects/hydra-f1/dsp/core/hydra_dsp_c_api.cpp",
+        "command": "C:\\Users\\devx\\AppData\\Local\\Microsoft\\WinGet\\Packages\\BrechtSanders.WinLibs.POSIX.UCRT.LLVM_Microsoft.Winget.Source_8wekyb3d8bbwe\\mingw64\\bin\\c++.exe  @CMakeFiles/hydra_dsp_core.dir/includes_CXX.rsp -DHYDRA_PHASE72_CLASSIC_FEEDBACK_ROUTING=1 -O3 -DNDEBUG -std=c++17 -ffp-contract=off -o CMakeFiles\\hydra_dsp_core.dir\\dsp\\core\\hydra_dsp_c_api.cpp.obj -c C:\\Users\\devx\\Documents\\PlatformIO\\Projects\\hydra-f1\\dsp\\core\\hydra_dsp_c_api.cpp"
+      },
+      {
+        "file": "C:/Users/devx/Documents/PlatformIO/Projects/hydra-f1/dsp/core/tape_core.cpp",
+        "command": "C:\\Users\\devx\\AppData\\Local\\Microsoft\\WinGet\\Packages\\BrechtSanders.WinLibs.POSIX.UCRT.LLVM_Microsoft.Winget.Source_8wekyb3d8bbwe\\mingw64\\bin\\c++.exe -DHYDRA_PHASE72_CLASSIC_FEEDBACK_ROUTING=1 @CMakeFiles/hydra_phase72_classic_core_smoke.dir/includes_CXX.rsp -DHYDRA_PHASE72_CLASSIC_FEEDBACK_ROUTING=1 -O3 -DNDEBUG -std=c++17 -ffp-contract=off -o CMakeFiles\\hydra_phase72_classic_core_smoke.dir\\dsp\\core\\tape_core.cpp.obj -c C:\\Users\\devx\\Documents\\PlatformIO\\Projects\\hydra-f1\\dsp\\core\\tape_core.cpp"
+      },
+      {
+        "file": "C:/Users/devx/Documents/PlatformIO/Projects/hydra-f1/dsp/core/hydra_dsp_c_api.cpp",
+        "command": "C:\\Users\\devx\\AppData\\Local\\Microsoft\\WinGet\\Packages\\BrechtSanders.WinLibs.POSIX.UCRT.LLVM_Microsoft.Winget.Source_8wekyb3d8bbwe\\mingw64\\bin\\c++.exe -DHYDRA_PHASE72_CLASSIC_FEEDBACK_ROUTING=1 @CMakeFiles/hydra_phase72_classic_core_smoke.dir/includes_CXX.rsp -DHYDRA_PHASE72_CLASSIC_FEEDBACK_ROUTING=1 -O3 -DNDEBUG -std=c++17 -ffp-contract=off -o CMakeFiles\\hydra_phase72_classic_core_smoke.dir\\dsp\\core\\hydra_dsp_c_api.cpp.obj -c C:\\Users\\devx\\Documents\\PlatformIO\\Projects\\hydra-f1\\dsp\\core\\hydra_dsp_c_api.cpp"
+      },
+      {
+        "file": "C:/Users/devx/Documents/PlatformIO/Projects/hydra-f1/dsp/core/tape_core.cpp",
+        "command": "C:\\Users\\devx\\AppData\\Local\\Microsoft\\WinGet\\Packages\\BrechtSanders.WinLibs.POSIX.UCRT.LLVM_Microsoft.Winget.Source_8wekyb3d8bbwe\\mingw64\\bin\\c++.exe -Dhydra_abi_test_library_EXPORTS @CMakeFiles/hydra_abi_test_library.dir/includes_CXX.rsp -DHYDRA_PHASE72_CLASSIC_FEEDBACK_ROUTING=1 -O3 -DNDEBUG -std=c++17 -ffp-contract=off -o CMakeFiles\\hydra_abi_test_library.dir\\dsp\\core\\tape_core.cpp.obj -c C:\\Users\\devx\\Documents\\PlatformIO\\Projects\\hydra-f1\\dsp\\core\\tape_core.cpp"
+      },
+      {
+        "file": "C:/Users/devx/Documents/PlatformIO/Projects/hydra-f1/dsp/core/hydra_dsp_c_api.cpp",
+        "command": "C:\\Users\\devx\\AppData\\Local\\Microsoft\\WinGet\\Packages\\BrechtSanders.WinLibs.POSIX.UCRT.LLVM_Microsoft.Winget.Source_8wekyb3d8bbwe\\mingw64\\bin\\c++.exe -Dhydra_abi_test_library_EXPORTS @CMakeFiles/hydra_abi_test_library.dir/includes_CXX.rsp -DHYDRA_PHASE72_CLASSIC_FEEDBACK_ROUTING=1 -O3 -DNDEBUG -std=c++17 -ffp-contract=off -o CMakeFiles\\hydra_abi_test_library.dir\\dsp\\core\\hydra_dsp_c_api.cpp.obj -c C:\\Users\\devx\\Documents\\PlatformIO\\Projects\\hydra-f1\\dsp\\core\\hydra_dsp_c_api.cpp"
+      }
+    ],
+    "build-c0-wasm": [
+      {
+        "file": "C:\\Users\\devx\\Documents\\PlatformIO\\Projects\\hydra-f1\\dsp\\core\\tape_core.cpp",
+        "command": "C:\\emsdk\\upstream\\emscripten\\em++.bat -IC:/Users/devx/Documents/PlatformIO/Projects/hydra-f1/include -IC:/Users/devx/Documents/PlatformIO/Projects/hydra-f1/dsp/core -DHYDRA_PHASE72_CLASSIC_FEEDBACK_ROUTING=1 -O3 -DNDEBUG -std=c++17 -ffp-contract=off -o CMakeFiles\\hydra_dsp_core.dir\\dsp\\core\\tape_core.cpp.o -c C:\\Users\\devx\\Documents\\PlatformIO\\Projects\\hydra-f1\\dsp\\core\\tape_core.cpp"
+      },
+      {
+        "file": "C:\\Users\\devx\\Documents\\PlatformIO\\Projects\\hydra-f1\\dsp\\core\\hydra_dsp_c_api.cpp",
+        "command": "C:\\emsdk\\upstream\\emscripten\\em++.bat -IC:/Users/devx/Documents/PlatformIO/Projects/hydra-f1/include -IC:/Users/devx/Documents/PlatformIO/Projects/hydra-f1/dsp/core -DHYDRA_PHASE72_CLASSIC_FEEDBACK_ROUTING=1 -O3 -DNDEBUG -std=c++17 -ffp-contract=off -o CMakeFiles\\hydra_dsp_core.dir\\dsp\\core\\hydra_dsp_c_api.cpp.o -c C:\\Users\\devx\\Documents\\PlatformIO\\Projects\\hydra-f1\\dsp\\core\\hydra_dsp_c_api.cpp"
+      },
+      {
+        "file": "C:\\Users\\devx\\Documents\\PlatformIO\\Projects\\hydra-f1\\dsp\\core\\tape_core.cpp",
+        "command": "C:\\emsdk\\upstream\\emscripten\\em++.bat -DHYDRA_PHASE72_CLASSIC_FEEDBACK_ROUTING=1 -IC:/Users/devx/Documents/PlatformIO/Projects/hydra-f1/include -IC:/Users/devx/Documents/PlatformIO/Projects/hydra-f1/dsp/core -DHYDRA_PHASE72_CLASSIC_FEEDBACK_ROUTING=1 -O3 -DNDEBUG -std=c++17 -ffp-contract=off -o CMakeFiles\\hydra_phase72_classic_core_smoke.dir\\dsp\\core\\tape_core.cpp.o -c C:\\Users\\devx\\Documents\\PlatformIO\\Projects\\hydra-f1\\dsp\\core\\tape_core.cpp"
+      },
+      {
+        "file": "C:\\Users\\devx\\Documents\\PlatformIO\\Projects\\hydra-f1\\dsp\\core\\hydra_dsp_c_api.cpp",
+        "command": "C:\\emsdk\\upstream\\emscripten\\em++.bat -DHYDRA_PHASE72_CLASSIC_FEEDBACK_ROUTING=1 -IC:/Users/devx/Documents/PlatformIO/Projects/hydra-f1/include -IC:/Users/devx/Documents/PlatformIO/Projects/hydra-f1/dsp/core -DHYDRA_PHASE72_CLASSIC_FEEDBACK_ROUTING=1 -O3 -DNDEBUG -std=c++17 -ffp-contract=off -o CMakeFiles\\hydra_phase72_classic_core_smoke.dir\\dsp\\core\\hydra_dsp_c_api.cpp.o -c C:\\Users\\devx\\Documents\\PlatformIO\\Projects\\hydra-f1\\dsp\\core\\hydra_dsp_c_api.cpp"
+      },
+      {
+        "file": "C:\\Users\\devx\\Documents\\PlatformIO\\Projects\\hydra-f1\\dsp\\core\\tape_core.cpp",
+        "command": "C:\\emsdk\\upstream\\emscripten\\em++.bat -IC:/Users/devx/Documents/PlatformIO/Projects/hydra-f1/include -IC:/Users/devx/Documents/PlatformIO/Projects/hydra-f1/dsp/core -DHYDRA_PHASE72_CLASSIC_FEEDBACK_ROUTING=1 -O3 -DNDEBUG -std=c++17 -ffp-contract=off -o CMakeFiles\\hydra_dsp_web.dir\\dsp\\core\\tape_core.cpp.o -c C:\\Users\\devx\\Documents\\PlatformIO\\Projects\\hydra-f1\\dsp\\core\\tape_core.cpp"
+      },
+      {
+        "file": "C:\\Users\\devx\\Documents\\PlatformIO\\Projects\\hydra-f1\\dsp\\core\\hydra_dsp_c_api.cpp",
+        "command": "C:\\emsdk\\upstream\\emscripten\\em++.bat -IC:/Users/devx/Documents/PlatformIO/Projects/hydra-f1/include -IC:/Users/devx/Documents/PlatformIO/Projects/hydra-f1/dsp/core -DHYDRA_PHASE72_CLASSIC_FEEDBACK_ROUTING=1 -O3 -DNDEBUG -std=c++17 -ffp-contract=off -o CMakeFiles\\hydra_dsp_web.dir\\dsp\\core\\hydra_dsp_c_api.cpp.o -c C:\\Users\\devx\\Documents\\PlatformIO\\Projects\\hydra-f1\\dsp\\core\\hydra_dsp_c_api.cpp"
+      },
+      {
+        "file": "C:\\Users\\devx\\Documents\\PlatformIO\\Projects\\hydra-f1\\dsp\\core\\tape_core.cpp",
+        "command": "C:\\emsdk\\upstream\\emscripten\\em++.bat -IC:/Users/devx/Documents/PlatformIO/Projects/hydra-f1/include -IC:/Users/devx/Documents/PlatformIO/Projects/hydra-f1/dsp/core -DHYDRA_PHASE72_CLASSIC_FEEDBACK_ROUTING=1 -O3 -DNDEBUG -std=c++17 -ffp-contract=off -o CMakeFiles\\hydra_render_trace_wasm.dir\\dsp\\core\\tape_core.cpp.o -c C:\\Users\\devx\\Documents\\PlatformIO\\Projects\\hydra-f1\\dsp\\core\\tape_core.cpp"
+      },
+      {
+        "file": "C:\\Users\\devx\\Documents\\PlatformIO\\Projects\\hydra-f1\\dsp\\core\\hydra_dsp_c_api.cpp",
+        "command": "C:\\emsdk\\upstream\\emscripten\\em++.bat -IC:/Users/devx/Documents/PlatformIO/Projects/hydra-f1/include -IC:/Users/devx/Documents/PlatformIO/Projects/hydra-f1/dsp/core -DHYDRA_PHASE72_CLASSIC_FEEDBACK_ROUTING=1 -O3 -DNDEBUG -std=c++17 -ffp-contract=off -o CMakeFiles\\hydra_render_trace_wasm.dir\\dsp\\core\\hydra_dsp_c_api.cpp.o -c C:\\Users\\devx\\Documents\\PlatformIO\\Projects\\hydra-f1\\dsp\\core\\hydra_dsp_c_api.cpp"
+      },
+      {
+        "file": "C:\\Users\\devx\\Documents\\PlatformIO\\Projects\\hydra-f1\\dsp\\core\\tape_core.cpp",
+        "command": "C:\\emsdk\\upstream\\emscripten\\em++.bat -IC:/Users/devx/Documents/PlatformIO/Projects/hydra-f1/include -IC:/Users/devx/Documents/PlatformIO/Projects/hydra-f1/dsp/core -DHYDRA_PHASE72_CLASSIC_FEEDBACK_ROUTING=1 -O3 -DNDEBUG -std=c++17 -ffp-contract=off -o CMakeFiles\\hydra_golden_regression_wasm.dir\\dsp\\core\\tape_core.cpp.o -c C:\\Users\\devx\\Documents\\PlatformIO\\Projects\\hydra-f1\\dsp\\core\\tape_core.cpp"
+      },
+      {
+        "file": "C:\\Users\\devx\\Documents\\PlatformIO\\Projects\\hydra-f1\\dsp\\core\\hydra_dsp_c_api.cpp",
+        "command": "C:\\emsdk\\upstream\\emscripten\\em++.bat -IC:/Users/devx/Documents/PlatformIO/Projects/hydra-f1/include -IC:/Users/devx/Documents/PlatformIO/Projects/hydra-f1/dsp/core -DHYDRA_PHASE72_CLASSIC_FEEDBACK_ROUTING=1 -O3 -DNDEBUG -std=c++17 -ffp-contract=off -o CMakeFiles\\hydra_golden_regression_wasm.dir\\dsp\\core\\hydra_dsp_c_api.cpp.o -c C:\\Users\\devx\\Documents\\PlatformIO\\Projects\\hydra-f1\\dsp\\core\\hydra_dsp_c_api.cpp"
+      }
+    ]
+  },
+  "baseline_comparison": {
+    "two_independent_processes": "10/10 manifests exactly equal, including input/f32/PCM/WAV hashes",
+    "same_inputs_parameters_as_A": true
+  },
+  "tests": {
+    "native_ctest": "15/16; unchanged A amplitude assertion fails at regression_core.cpp:255",
+    "wasm_ctest": "13/14; same assertion fails",
+    "goldens": "A fixtures intentionally not used as C0 sonic expectations; untouched",
+    "native_wasm": "5/5 bit-exact; max_abs=RMSE=0; original thresholds 1e-5/1e-6",
+    "LUT_input": "1025/4096 bit-exact",
+    "full_engine": "27/27; includes six 60s tails",
+    "regression_observation": "All original assertions evaluated; exactly one fails: wrap R energy 6.10860251982e-6 < 1e-5; full/split both channels exact; ping-pong assertion passes",
+    "hardware": "PENDING_PHYSICAL",
+    "listening": "PENDING_HUMAN"
+  }
+}

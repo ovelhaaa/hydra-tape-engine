@@ -1,0 +1,7 @@
+44100/feedback95: gate=PASS delta=-66.837dB class=decayed to silence slope=+0.00000dB/s peak=0.4469 clipped=0
+44100/multihead: gate=PASS delta=-127.420dB class=decayed to silence slope=+0.00000dB/s peak=0.2651 clipped=0
+44100/reverse: gate=PASS delta=-38.128dB class=decayed to silence slope=+0.00000dB/s peak=0.1961 clipped=0
+48000/feedback95: gate=PASS delta=-143.126dB class=decayed to silence slope=+0.00000dB/s peak=0.2817 clipped=0
+48000/multihead: gate=PASS delta=-127.627dB class=decayed to silence slope=+0.00000dB/s peak=0.1604 clipped=0
+48000/reverse: gate=PASS delta=-37.690dB class=decayed to silence slope=+0.00000dB/s peak=0.1376 clipped=0
+wrote artifacts\dsp-reform-f1\feedback\feedback-stability.json

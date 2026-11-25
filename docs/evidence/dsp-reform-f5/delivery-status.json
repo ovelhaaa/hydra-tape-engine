@@ -43,5 +43,7 @@
     "music_decision": "HUMAN_PENDING",
     "candidate_promoted": false,
     "f4_integrated": false
-  }
+  },
+  "head": "4a8cfbbfed2088b72e2456c3799980ce96717f9a",
+  "source_commit": "4a8cfbbfed2088b72e2456c3799980ce96717f9a"
 }
